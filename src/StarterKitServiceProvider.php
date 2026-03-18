@@ -38,6 +38,7 @@ class StarterKitServiceProvider extends ServiceProvider
                 Console\Commands\UpdateCommand::class,
                 Console\Commands\PublishCommand::class,
                 Console\Commands\ReleaseCommand::class,
+                Console\Commands\SyncCommand::class,
                 Console\Commands\MakeDomainCommand::class,
                 Console\Commands\RemoveDomainCommand::class,
                 Console\Commands\EnvSyncCommand::class,
