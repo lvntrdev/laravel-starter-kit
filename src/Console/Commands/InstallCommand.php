@@ -4,18 +4,20 @@ namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 
 class InstallCommand extends Command
 {
     protected $signature = 'sk:install
-        {--force : Overwrite existing files}
-        {--no-interaction : Skip all prompts and use defaults}';
+        {--force : Overwrite existing files}';
 
     protected $description = 'Install the Lvntr Starter Kit scaffolding';
 
@@ -35,30 +37,30 @@ class InstallCommand extends Command
         $this->components->info('Installing Lvntr Starter Kit...');
         $this->newLine();
 
-        // 1. Publish stubs
+        // 1. Database configuration
+        $this->configureDatabaseStep();
+
+        // 2. Publish stubs
         $this->publishStubs();
 
-        // 2. Publish config
+        // 3. Publish config
         $this->publishConfig();
 
-        // 3. Create hash registry directory
+        // 4. Create hash registry directory
         $this->createHashRegistry();
 
-        // 4. Run migrations
+        // 5. Run migrations
         if ($this->confirmStep('Run database migrations?')) {
-            spin(function () {
-                return $this->callSilently('migrate', ['--force' => true]) === 0;
-            }, 'Running migrations...');
-            $this->components->info('Migrations completed.');
+            $this->runMigrations();
         }
 
-        // 5. Run seeders
+        // 6. Run seeders
         if ($this->confirmStep('Run database seeders?')) {
             $this->runSeeders();
             $this->components->info('Seeders completed.');
         }
 
-        // 6. Passport keys
+        // 7. Passport keys
         if ($this->confirmStep('Generate Passport encryption keys?')) {
             spin(function () {
                 return $this->callSilently('passport:keys', ['--force' => true]) === 0;
@@ -66,17 +68,17 @@ class InstallCommand extends Command
             $this->components->info('Passport keys generated.');
         }
 
-        // 7. Create admin user
+        // 8. Create admin user
         if ($this->confirmStep('Create default admin user?')) {
             $this->createAdminUser();
         }
 
-        // 8. Install npm dependencies
+        // 9. Install npm dependencies
         if ($this->confirmStep('Install npm dependencies and build assets?')) {
             $this->installFrontend();
         }
 
-        // 9. Save stub hashes for update tracking
+        // 10. Save stub hashes for update tracking
         $this->saveStubHashes();
 
         // Summary
@@ -95,6 +97,149 @@ class InstallCommand extends Command
 
         return self::SUCCESS;
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // DATABASE CONFIGURATION
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Configure database connection interactively.
+     */
+    private function configureDatabaseStep(): void
+    {
+        if ($this->option('no-interaction')) {
+            return;
+        }
+
+        if (! confirm('Configure database connection?', default: true)) {
+            return;
+        }
+
+        $this->newLine();
+
+        $driver = select(
+            label: 'Database driver',
+            options: [
+                'mysql' => 'MySQL',
+                'mariadb' => 'MariaDB',
+                'pgsql' => 'PostgreSQL',
+                'sqlite' => 'SQLite',
+            ],
+            default: 'mysql',
+        );
+
+        $envValues = ['DB_CONNECTION' => $driver];
+
+        if ($driver === 'sqlite') {
+            $dbPath = text(
+                label: 'Database path',
+                default: 'database/database.sqlite',
+                required: true,
+            );
+            $envValues['DB_DATABASE'] = $dbPath;
+
+            // Create SQLite file if it doesn't exist
+            $fullPath = base_path($dbPath);
+            if (! $this->files->exists($fullPath)) {
+                $this->files->ensureDirectoryExists(dirname($fullPath));
+                touch($fullPath);
+            }
+        } else {
+            $host = text(label: 'Database host', default: '127.0.0.1', required: true);
+            $port = text(label: 'Database port', default: $driver === 'pgsql' ? '5432' : '3306', required: true);
+            $database = text(label: 'Database name', default: 'starter_kit', required: true);
+            $username = text(label: 'Database username', default: 'root', required: true);
+            $password = text(label: 'Database password', default: '');
+
+            $envValues['DB_HOST'] = $host;
+            $envValues['DB_PORT'] = $port;
+            $envValues['DB_DATABASE'] = $database;
+            $envValues['DB_USERNAME'] = $username;
+            $envValues['DB_PASSWORD'] = $password;
+        }
+
+        // Write to .env
+        $this->updateEnvFile($envValues);
+
+        // Reload config so Laravel picks up the new values
+        $this->laravel['config']->set('database.default', $driver);
+
+        if ($driver === 'sqlite') {
+            $this->laravel['config']->set('database.connections.sqlite.database', base_path($envValues['DB_DATABASE']));
+        } else {
+            $this->laravel['config']->set("database.connections.{$driver}.host", $envValues['DB_HOST']);
+            $this->laravel['config']->set("database.connections.{$driver}.port", $envValues['DB_PORT']);
+            $this->laravel['config']->set("database.connections.{$driver}.database", $envValues['DB_DATABASE']);
+            $this->laravel['config']->set("database.connections.{$driver}.username", $envValues['DB_USERNAME']);
+            $this->laravel['config']->set("database.connections.{$driver}.password", $envValues['DB_PASSWORD']);
+        }
+
+        // Purge old connection so new config is used
+        DB::purge();
+
+        // Test connection
+        $this->testDatabaseConnection();
+
+        $this->newLine();
+        $this->components->info('Database configured successfully.');
+    }
+
+    /**
+     * Update values in the .env file.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function updateEnvFile(array $values): void
+    {
+        $envPath = base_path('.env');
+
+        if (! $this->files->exists($envPath)) {
+            $examplePath = base_path('.env.example');
+            if ($this->files->exists($examplePath)) {
+                $this->files->copy($examplePath, $envPath);
+            } else {
+                $this->files->put($envPath, '');
+            }
+        }
+
+        $content = $this->files->get($envPath);
+
+        foreach ($values as $key => $value) {
+            // Wrap value in quotes if it contains spaces or is empty
+            $escapedValue = $value;
+            if ($value === '' || str_contains($value, ' ') || str_contains($value, '#')) {
+                $escapedValue = "\"{$value}\"";
+            }
+
+            if (preg_match("/^{$key}=.*/m", $content)) {
+                // Replace existing key
+                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escapedValue}", $content);
+            } else {
+                // Add new key
+                $content .= "\n{$key}={$escapedValue}";
+            }
+        }
+
+        $this->files->put($envPath, $content);
+    }
+
+    /**
+     * Test the database connection.
+     */
+    private function testDatabaseConnection(): void
+    {
+        try {
+            DB::connection()->getPdo();
+            $this->components->twoColumnDetail('Connection test', '<fg=green>OK</>');
+        } catch (\Exception $e) {
+            $this->components->warn('Could not connect to database: '.$e->getMessage());
+            $this->line('  <fg=gray>You may need to create the database manually before running migrations.</>');
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // PUBLISH STUBS
+    // ══════════════════════════════════════════════════════════════════════
 
     /**
      * Publish all stub files to the application.
@@ -166,6 +311,75 @@ class InstallCommand extends Command
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // MIGRATIONS
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Run migrations with existing data check.
+     */
+    private function runMigrations(): void
+    {
+        // Check if database has existing tables
+        $hasExistingTables = false;
+
+        try {
+            $tables = Schema::getTables();
+            // Filter out the migrations table itself
+            $appTables = array_filter($tables, fn ($table) => ($table['name'] ?? $table) !== 'migrations');
+            $hasExistingTables = ! empty($appTables);
+        } catch (\Exception) {
+            // Connection failed or database doesn't exist — will be handled by migrate
+        }
+
+        if ($hasExistingTables) {
+            $this->newLine();
+            $this->components->warn('The database already contains tables.');
+
+            $action = select(
+                label: 'How would you like to proceed?',
+                options: [
+                    'fresh' => 'Drop all tables and run fresh migrations (data will be lost)',
+                    'migrate' => 'Run pending migrations only (keep existing data)',
+                    'skip' => 'Skip migrations',
+                ],
+                default: 'migrate',
+            );
+
+            if ($action === 'skip') {
+                $this->components->info('Migrations skipped.');
+
+                return;
+            }
+
+            if ($action === 'fresh') {
+                if (! confirm('Are you sure? ALL existing data will be permanently deleted.', default: false)) {
+                    $this->components->info('Migrations skipped.');
+
+                    return;
+                }
+
+                spin(function () {
+                    return $this->callSilently('migrate:fresh', ['--force' => true]) === 0;
+                }, 'Running migrate:fresh...');
+
+                $this->components->info('Fresh migrations completed.');
+
+                return;
+            }
+        }
+
+        spin(function () {
+            return $this->callSilently('migrate', ['--force' => true]) === 0;
+        }, 'Running migrations...');
+
+        $this->components->info('Migrations completed.');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // SEEDERS
+    // ══════════════════════════════════════════════════════════════════════
+
     /**
      * Discover and run seeders from the seeders directory.
      */
@@ -194,6 +408,10 @@ class InstallCommand extends Command
             }, "Seeding: {$displayName}...");
         }
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // ADMIN USER
+    // ══════════════════════════════════════════════════════════════════════
 
     /**
      * Create the default admin user.
@@ -237,6 +455,10 @@ class InstallCommand extends Command
         $this->components->twoColumnDetail('<fg=green>Admin Password</>', $password);
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // FRONTEND
+    // ══════════════════════════════════════════════════════════════════════
+
     /**
      * Install frontend dependencies and build.
      */
@@ -250,6 +472,10 @@ class InstallCommand extends Command
             return exec('npm run build 2>&1', $output, $code) !== false && $code === 0;
         });
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // HASH REGISTRY
+    // ══════════════════════════════════════════════════════════════════════
 
     /**
      * Save hashes of published stub files for update tracking.
