@@ -364,5 +364,11 @@ class UpdateCommand extends Command
             $this->newLine();
             $this->line('  <fg=gray>Use --force to overwrite user-modified files.</>');
         }
+
+        if (! $dryRun && (! empty($this->updated) || ! empty($this->added))) {
+            $this->newLine();
+            $this->components->warn('Run the following commands to apply frontend changes:');
+            $this->line('  <fg=cyan>npm install && npm run build</>');
+        }
     }
 }
