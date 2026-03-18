@@ -1,9 +1,9 @@
 <!-- resources/js/components/Admin/UserForm.vue -->
 <script setup lang="ts">
-    import { FB } from '@lvntr/components/FormBuilder/core';
-    import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
     import roles from '@/routes/roles';
     import adminUsers from '@/routes/users';
+    import { FB } from '@lvntr/components/FormBuilder/core';
+    import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
     import { trans } from 'laravel-vue-i18n';
 
     interface Props {
@@ -77,13 +77,17 @@
 
 <template>
     <div>
-        <AvatarUpload
-            v-if="isEdit && formRef?.remoteData"
-            :avatar-url="(formRef.remoteData as any)?.avatar_url"
-            :upload-url="adminUsers.uploadAvatar.url(userId!)"
-            :delete-url="adminUsers.deleteAvatar.url(userId!)"
-            class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
-        />
+        <Card v-if="isEdit && formRef?.remoteData" class="mb-8">
+            <template #content>
+                <AvatarUpload
+                    :avatar-url="(formRef.remoteData as any)?.avatar_url"
+                    :upload-url="adminUsers.uploadAvatar.url(userId!)"
+                    :delete-url="adminUsers.deleteAvatar.url(userId!)"
+                    class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
+                />
+            </template>
+        </Card>
+
         <SkForm ref="formRef" :config="formConfig" @success="emit('success')" @cancel="emit('cancel')" />
     </div>
 </template>

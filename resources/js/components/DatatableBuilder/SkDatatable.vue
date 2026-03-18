@@ -1,9 +1,5 @@
 <script setup lang="ts">
-    import type {
-        DataTableConfig,
-        DataTableResponse,
-        ActionConfig,
-    } from '@lvntr/components/DatatableBuilder/core';
+    import type { DataTableConfig, DataTableResponse, ActionConfig } from '@lvntr/components/DatatableBuilder/core';
     import { useApi } from '@/composables/useApi';
     import { useRefreshBus } from '@/composables/useRefreshBus';
     import { Link } from '@inertiajs/vue3';
