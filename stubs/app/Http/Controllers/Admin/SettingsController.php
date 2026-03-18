@@ -38,7 +38,7 @@ class SettingsController extends Controller
         return Inertia::render('Admin/Settings/Index', [
             'settings' => $query->all(),
             'timezones' => \DateTimeZone::listIdentifiers(),
-            'availableLanguages' => config('app.available_languages'),
+            'availableLanguages' => config('app.available_languages', ['en' => 'English']),
         ]);
     }
 

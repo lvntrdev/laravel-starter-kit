@@ -80,6 +80,11 @@ class InstallCommand extends Command
             ]);
         });
 
+        // 4b. Inject required config keys into config/app.php
+        $this->step('Configuring application settings', function () {
+            $this->injectAppConfig();
+        });
+
         // 5. Create hash registry directory
         $dir = storage_path('starter-kit');
         if (! $this->files->isDirectory($dir)) {
@@ -505,6 +510,86 @@ class InstallCommand extends Command
             $this->components->twoColumnDetail('Building frontend assets', '<fg=red>FAILED</>');
             $this->line('  <fg=red>'.$npmBuild->getErrorOutput().'</>');
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // APP CONFIG INJECTION
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Inject required config keys into config/app.php if not already present.
+     */
+    private function injectAppConfig(): void
+    {
+        $configPath = config_path('app.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $content = $this->files->get($configPath);
+
+        // Check if already injected
+        if (str_contains($content, "'available_languages'")) {
+            return;
+        }
+
+        $configBlock = <<<'PHP'
+
+    /*
+    |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | The timezone used for displaying dates/times in the UI.
+    | Overridden from database settings at runtime by SettingsServiceProvider.
+    |
+    */
+
+    'display_timezone' => env('APP_TIMEZONE', 'UTC'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Languages
+    |--------------------------------------------------------------------------
+    |
+    | All languages the application can support. The admin settings page
+    | allows selecting which of these are active via checkboxes.
+    |
+    */
+
+    'available_languages' => [
+        'en' => 'English',
+        'tr' => 'Türkçe',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Active Languages
+    |--------------------------------------------------------------------------
+    |
+    | The currently active languages. Overridden from database settings
+    | at runtime by SettingsServiceProvider. Defaults to all available.
+    |
+    */
+
+    'languages' => [
+        'en' => 'English',
+    ],
+
+PHP;
+
+        // Insert before the final ];
+        $content = preg_replace('/\n\];\s*$/', $configBlock."\n];\n", $content);
+
+        $this->files->put($configPath, $content);
+
+        // Also set in runtime config so seeders can use it immediately
+        config([
+            'app.display_timezone' => 'UTC',
+            'app.available_languages' => ['en' => 'English', 'tr' => 'Türkçe'],
+            'app.languages' => ['en' => 'English'],
+        ]);
     }
 
     // ══════════════════════════════════════════════════════════════════════
