@@ -422,7 +422,7 @@ class InstallCommand extends Command
             $user->forceFill(['email_verified_at' => now()])->save();
 
             if (method_exists($user, 'assignRole')) {
-                $user->assignRole('system-admin');
+                $user->assignRole('system_admin');
             }
 
             return true;
