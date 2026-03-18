@@ -1,0 +1,142 @@
+/**
+ * Sidebar Navigation — Menu Item Styles
+ *
+ * Styles for the SidebarMenuItem component inside AdminSidebar:
+ *   1. Section headings (nav-section)
+ *   2. Group buttons (nav-group)
+ *   3. Link items (nav-link)
+ *   4. Icon, dot, label, chevron helper classes
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION TITLE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.nav-section {
+    @apply overflow-hidden whitespace-nowrap px-3 pb-1 pt-5;
+}
+
+.nav-section:first-child {
+    @apply pt-2;
+}
+
+.nav-section__title {
+    @apply text-xs font-semibold uppercase tracking-wider;
+    color: var(--admin-sidebar-text-muted);
+}
+
+/* Collapsed: short divider replaces section title */
+.nav-section__divider {
+    @apply mx-auto block h-px w-6;
+    background: var(--admin-sidebar-border);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GROUP BUTTON
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.nav-group {
+    @apply flex w-full cursor-pointer items-center gap-3 whitespace-nowrap rounded border-none px-3 py-2.5 text-left font-medium transition-colors duration-150;
+    background: transparent;
+    color: var(--admin-sidebar-text);
+
+    &:hover {
+        background: var(--admin-sidebar-item-hover-bg);
+    }
+}
+
+.nav-group--active {
+    background: var(--admin-sidebar-item-active-bg);
+    color: var(--admin-sidebar-item-active-text);
+
+    &:hover {
+        background: var(--admin-sidebar-item-active-bg);
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LINK ITEMS (internal & external)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.nav-link {
+    @apply flex cursor-pointer items-center gap-3 overflow-hidden whitespace-nowrap rounded px-3 py-2.5 font-medium no-underline transition-colors duration-150;
+    color: var(--admin-sidebar-text);
+
+    &:hover {
+        background: var(--admin-sidebar-item-hover-bg);
+    }
+}
+
+.nav-link--active {
+    background: var(--admin-sidebar-item-active-bg);
+    color: var(--admin-sidebar-item-active-text);
+
+    &:hover {
+        background: var(--admin-sidebar-item-active-bg);
+    }
+}
+
+.nav-link--child {
+    @apply px-4 py-1.5 font-normal;
+    color: var(--admin-sidebar-text-muted);
+    background: transparent;
+
+    &:hover {
+        background: transparent;
+        color: var(--admin-sidebar-text);
+    }
+}
+
+.nav-link--child-active {
+    color: var(--admin-sidebar-item-active-text);
+
+    &:hover {
+        color: var(--admin-sidebar-item-active-text);
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HELPERS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Icon wrapper (depth 0) */
+.nav-icon {
+    @apply relative flex size-5 shrink-0 items-center justify-center;
+}
+
+/* Dot indicator (depth > 0) */
+.nav-dot {
+    @apply size-1.5 shrink-0 rounded-full bg-current opacity-40;
+}
+
+.nav-dot--active {
+    @apply opacity-100;
+}
+
+/* Label text */
+.nav-label {
+    @apply transition-opacity duration-300;
+}
+
+.nav-label--hidden {
+    @apply opacity-0;
+}
+
+/* Chevron for group items */
+.nav-chevron {
+    @apply ml-auto shrink-0 text-xs transition-transform duration-300;
+}
+
+.nav-chevron--open {
+    @apply rotate-90;
+}
+
+/* External link indicator */
+.nav-external {
+    @apply ml-auto shrink-0 text-xs opacity-50;
+}
+
+/* Submenu container */
+.nav-submenu {
+    @apply mt-0.5 overflow-hidden py-1.5 pl-2;
+}

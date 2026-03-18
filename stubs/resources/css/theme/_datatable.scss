@@ -1,0 +1,356 @@
+/**
+ * SkDatatable — Modern Data Table Styles
+ *
+ * Structural and cosmetic styles for the SkDatatable component:
+ *   1. Toolbar (search, filters, actions)
+ *   2. Table container & header
+ *   3. Table body & rows
+ *   4. Loading & empty states
+ *   5. Pagination
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOOLBAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-toolbar {
+    @apply p-5 flex flex-col gap-3 sm:flex-row sm:items-center;
+}
+
+.sk-dt-toolbar__search {
+    @apply hidden sm:block sm:w-64 lg:w-80 shrink-0;
+}
+
+.sk-dt-toolbar__search-toggle {
+    @apply sm:hidden;
+}
+
+.sk-dt-search-popover {
+    @apply w-72;
+}
+
+.sk-dt-search-popover__content {
+    @apply flex items-center;
+}
+
+.sk-dt-toolbar__right {
+    @apply flex flex-wrap items-center gap-2 sm:ml-auto;
+}
+
+.sk-dt-toolbar__inline-filter {
+    @apply hidden items-center gap-2 sm:flex;
+}
+
+.sk-dt-toolbar__inline-filter-label {
+    @apply shrink-0 font-medium text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-toolbar__actions {
+    @apply flex gap-2;
+}
+
+.sk-dt-toolbar__search-clear {
+    @apply cursor-pointer opacity-50 transition-opacity duration-150;
+
+    &:hover {
+        @apply opacity-100;
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FILTER POPOVER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-filter-popover {
+    @apply w-72;
+}
+
+.sk-dt-filter-popover__content {
+    @apply flex flex-col gap-4;
+}
+
+.sk-dt-filter-popover__item {
+    @apply flex flex-col gap-1.5;
+}
+
+.sk-dt-filter-popover__label {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400;
+}
+
+/* Inline filters: visible in popover only on mobile, hidden on desktop (already shown in toolbar). */
+.sk-dt-filter-popover__item--inline-only {
+    @apply sm:hidden;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ACTIVE FILTER TAGS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-tags {
+    @apply mb-2 mx-5 flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded p-2;
+}
+
+.sk-dt-tags__tag {
+    @apply inline-flex items-center gap-1.5 rounded p-2 bg-slate-500 text-white;
+}
+
+:root.dark .sk-dt-tags__tag {
+    @apply bg-slate-500 text-white;
+}
+
+.sk-dt-tags__tag-label {
+    @apply font-semibold;
+}
+
+.sk-dt-tags__tag-value {
+    @apply max-w-40 truncate;
+}
+
+.sk-dt-tags__tag-remove {
+    @apply cursor-pointer text-[0.6rem] ml-2 flex items-center justify-center rounded-full p-2 transition-colors duration-150 bg-red-500 hover:bg-red-700;
+}
+
+.sk-dt-tags__clear-all {
+    @apply cursor-pointer rounded border-none bg-transparent px-2 py-1 font-medium transition-colors duration-150 text-slate-500;
+
+    &:hover {
+        @apply text-slate-700 bg-slate-100;
+    }
+}
+
+:root.dark .sk-dt-tags__clear-all {
+    @apply text-slate-400;
+
+    &:hover {
+        @apply text-slate-200 bg-slate-700;
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TABLE CONTAINER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt {
+    @apply overflow-hidden bg-transparent;
+}
+
+.sk-dt__scroll {
+    @apply overflow-auto;
+}
+
+.sk-dt__table {
+    @apply w-full border-collapse;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TABLE HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt__thead {
+    @apply bg-slate-100 dark:bg-slate-800 sticky top-0 z-10;
+}
+
+.sk-dt__th {
+    @apply py-6 px-6 text-left font-semibold uppercase tracking-wider select-none bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400;
+}
+
+.sk-dt__th--sortable {
+    @apply cursor-pointer transition-colors duration-150;
+
+    &:hover {
+        @apply text-slate-900 dark:text-slate-100;
+    }
+}
+
+.sk-dt__th--actions {
+    @apply text-right;
+}
+
+.sk-dt__sort-label {
+    @apply inline-flex items-center gap-1.5;
+}
+
+.sk-dt__sort-icon {
+    @apply text-[0.625rem] opacity-60;
+}
+
+/* Sticky column (left-pinned) */
+.sk-dt__th--sticky,
+.sk-dt__td--sticky {
+    @apply sticky left-0 z-[1] bg-transparent;
+}
+
+.sk-dt__th--sticky {
+    @apply bg-slate-100 dark:bg-slate-800 z-[2];
+}
+
+.sk-dt__row:hover .sk-dt__td--sticky {
+    @apply bg-slate-50 dark:bg-slate-800/50;
+}
+
+/* Sticky actions column (right-pinned) */
+.sk-dt__th--sticky-right,
+.sk-dt__td--sticky-right {
+    @apply sticky right-0 z-[1] bg-transparent;
+    box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.08);
+}
+
+.sk-dt__th--sticky-right {
+    @apply bg-slate-100 dark:bg-slate-800 z-[2];
+}
+
+:root.dark .sk-dt__td--sticky-right {
+    box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.3);
+}
+
+.sk-dt__row:hover .sk-dt__td--sticky-right {
+    @apply bg-slate-50 dark:bg-slate-800/50;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TABLE BODY & ROWS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt__row {
+    @apply transition-colors duration-150 border-b border-slate-100 dark:border-slate-800;
+
+    &:last-child {
+        @apply border-b-0;
+    }
+
+    &:hover {
+        @apply bg-slate-50 dark:bg-slate-800/50;
+    }
+}
+
+.sk-dt__td {
+    @apply py-4 px-6 text-slate-700 dark:text-slate-300;
+}
+
+.sk-dt__td--actions {
+    @apply text-right;
+}
+
+.sk-dt__actions-group {
+    @apply inline-flex items-center gap-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LOADING STATE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt__loading {
+    @apply py-16 text-center;
+}
+
+.sk-dt__loading-spinner {
+    @apply inline-flex flex-col items-center gap-3;
+}
+
+.sk-dt__loading-icon {
+    @apply text-3xl text-slate-500 dark:text-slate-400;
+    animation: sk-dt-spin 0.8s linear infinite;
+}
+
+@keyframes sk-dt-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.sk-dt__loading-text {
+    @apply text-slate-400;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EMPTY STATE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt__empty {
+    @apply py-16 text-center;
+}
+
+.sk-dt__empty-inner {
+    @apply inline-flex flex-col items-center gap-3;
+}
+
+.sk-dt__empty-icon {
+    @apply flex size-16 items-center justify-center rounded-2xl text-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500;
+}
+
+.sk-dt__empty-text {
+    @apply font-medium text-slate-400 dark:text-slate-500;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PAGINATION
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-pagination {
+    @apply flex flex-col items-center justify-between gap-3 px-4 py-3 sm:flex-row border-t border-slate-200 dark:border-slate-700 bg-transparent;
+}
+
+.sk-dt-pagination__info {
+    @apply flex items-center gap-3 text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-pagination__pages {
+    @apply flex gap-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CONTEXT MENU (THREE-DOT)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-menu {
+    --p-menu-border-color: theme('colors.slate.200');
+    --p-menu-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+    --p-menu-background: theme('colors.white');
+    @apply min-w-48;
+}
+
+:root.dark .sk-dt-menu {
+    --p-menu-border-color: theme('colors.slate.700');
+    --p-menu-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --p-menu-background: theme('colors.slate.800');
+}
+
+.sk-dt-menu__link {
+    @apply flex items-center gap-3 px-4 py-2.5 text-slate-700 dark:text-slate-300 no-underline transition-colors duration-150 cursor-pointer;
+
+    &:hover {
+        @apply bg-slate-100 dark:bg-slate-700;
+    }
+}
+
+.sk-dt-menu__icon {
+    @apply text-slate-400 dark:text-slate-500;
+}
+
+.sk-dt-menu__label {
+    @apply font-medium;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ID POPOVER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt__id-trigger {
+    @apply inline-flex items-center justify-center size-8 rounded bg-slate-100 dark:bg-slate-700 cursor-pointer border-none text-slate-700 dark:text-slate-200 transition-colors duration-150;
+
+    &:hover {
+        @apply bg-slate-200;
+    }
+}
+
+.sk-dt-id-popover__content {
+    @apply flex items-center gap-2;
+}
+
+.sk-dt-id-popover__label {
+    @apply font-bold text-slate-700 dark:text-slate-400;
+}
+
+.sk-dt-id-popover__value {
+    @apply font-mono text-slate-700 dark:text-slate-200;
+}

@@ -1,0 +1,319 @@
+/**
+ * SkFormBuilder — Form Builder Styles
+ *
+ * Structural and cosmetic styles for the FormBuilder components:
+ *   1. Form root & grid
+ *   2. Actions bar (top / bottom)
+ *   3. Field labels & hints
+ *   4. Vertical & horizontal layout
+ *   5. Inline label fields (checkbox, toggle)
+ *   6. Radio & checkbox groups
+ *   7. File upload zone & file lists
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FORM ROOT & GRID
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb {
+    @apply flex flex-col;
+}
+
+.sk-fb__grid {
+    @apply grid gap-x-6 gap-y-5;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ACTIONS BAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__actions {
+    @apply flex items-center justify-end gap-3 sticky z-10 bg-transparent;
+    border-color: var(--p-surface-200);
+}
+
+:root.dark .sk-fb__actions {
+    border-color: var(--p-surface-700);
+}
+
+.sk-fb__actions--top {
+    @apply top-0 pb-5 mb-5 border-b;
+}
+
+.sk-fb__actions--bottom {
+    @apply bottom-0 pt-5 mt-5 border-t;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TITLE FIELD
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__title {
+    @apply text-base font-bold;
+    color: var(--p-surface-800);
+}
+
+:root.dark .sk-fb__title {
+    color: var(--p-surface-100);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LABELS, HINTS & ERRORS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__label {
+    @apply text-base font-bold;
+    color: var(--p-surface-700);
+}
+
+:root.dark .sk-fb__label {
+    color: var(--p-surface-200);
+}
+
+.sk-fb__label--inline {
+    @apply cursor-pointer select-none;
+}
+
+.sk-fb__label--horizontal {
+    @apply w-36 shrink-0 pt-2 text-right leading-tight;
+}
+
+.sk-fb__required {
+    @apply ml-0.5 text-red-500;
+}
+
+.sk-fb__error {
+    @apply text-red-500;
+}
+
+.sk-fb__hint {
+    color: var(--p-surface-400);
+}
+
+:root.dark .sk-fb__hint {
+    color: var(--p-surface-500);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VERTICAL LAYOUT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__field-vertical {
+    @apply flex flex-col gap-2;
+}
+
+.sk-fb__field-vertical--inline {
+    @apply gap-3;
+}
+
+.sk-fb__field-row {
+    @apply flex flex-wrap items-start gap-4;
+}
+
+.sk-fb__field-control {
+    @apply min-w-0 flex-1;
+}
+
+.sk-fb__inline-row {
+    @apply flex flex-wrap items-center gap-2 pt-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HORIZONTAL LAYOUT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__field-horizontal {
+    @apply flex items-start gap-4;
+}
+
+.sk-fb__field-content {
+    @apply flex flex-1 flex-col gap-1.5;
+}
+
+.sk-fb__inline-wrap {
+    @apply pt-2;
+}
+
+.sk-fb__label--field-inline {
+    @apply shrink-0 pt-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RADIO & CHECKBOX GROUPS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__group {
+    @apply flex pt-1;
+}
+
+.sk-fb__group--vertical {
+    @apply flex-col gap-2;
+}
+
+.sk-fb__group--horizontal {
+    @apply flex-row flex-wrap gap-x-6 gap-y-2;
+}
+
+.sk-fb__group-item {
+    @apply flex items-center gap-2;
+}
+
+.sk-fb__group-label {
+    @apply cursor-pointer text-base;
+    color: var(--p-surface-700);
+}
+
+:root.dark .sk-fb__group-label {
+    color: var(--p-surface-200);
+}
+
+.sk-fb__group-loading {
+    @apply flex items-center gap-2 text-base;
+    color: var(--p-surface-400);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FILE UPLOAD
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__upload-zone {
+    @apply flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors;
+    border-color: var(--p-surface-300);
+    background: var(--p-surface-50);
+
+    &:hover {
+        border-color: var(--p-primary-400);
+    }
+}
+
+:root.dark .sk-fb__upload-zone {
+    border-color: var(--p-surface-600);
+    background: color-mix(in srgb, var(--p-surface-800) 50%, transparent);
+
+    &:hover {
+        border-color: var(--p-primary-500);
+    }
+}
+
+.sk-fb__upload-zone--invalid {
+    border-color: var(--p-red-400) !important;
+    background: var(--p-red-50);
+}
+
+:root.dark .sk-fb__upload-zone--invalid {
+    background: color-mix(in srgb, var(--p-red-950) 20%, transparent);
+}
+
+.sk-fb__upload-zone--disabled {
+    @apply pointer-events-none opacity-50;
+}
+
+.sk-fb__upload-inner {
+    @apply flex flex-col items-center gap-2;
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-fb__upload-inner {
+    color: var(--p-surface-400);
+}
+
+.sk-fb__upload-icon {
+    @apply text-base;
+}
+
+.sk-fb__upload-text {
+    @apply text-base font-medium;
+}
+
+.sk-fb__upload-hint {
+    @apply text-base;
+    color: var(--p-surface-400);
+}
+
+/* File list */
+.sk-fb__file-list {
+    @apply mt-3 space-y-2;
+}
+
+.sk-fb__file-item {
+    @apply flex items-center gap-3 rounded-lg p-2;
+    background: var(--p-surface-100);
+}
+
+:root.dark .sk-fb__file-item {
+    background: var(--p-surface-800);
+}
+
+.sk-fb__file-item--new {
+    background: var(--p-primary-50);
+}
+
+:root.dark .sk-fb__file-item--new {
+    background: color-mix(in srgb, var(--p-primary-950) 20%, transparent);
+}
+
+.sk-fb__file-thumb {
+    @apply size-10 shrink-0 rounded object-cover;
+}
+
+.sk-fb__file-icon {
+    @apply flex size-10 shrink-0 items-center justify-center text-xl;
+    color: var(--p-surface-400);
+}
+
+.sk-fb__file-icon--new {
+    color: var(--p-primary-400);
+}
+
+.sk-fb__file-info {
+    @apply min-w-0 flex-1;
+}
+
+.sk-fb__file-preview-link {
+    @apply shrink-0;
+}
+
+.sk-fb__file-name {
+    @apply truncate text-base;
+    color: var(--p-surface-700);
+}
+
+.sk-fb__file-name--link {
+    @apply no-underline transition-colors;
+    color: var(--p-surface-700);
+
+    &:hover {
+        color: var(--p-primary-500);
+    }
+}
+
+:root.dark .sk-fb__file-name {
+    color: var(--p-surface-200);
+}
+
+:root.dark .sk-fb__file-name--link {
+    color: var(--p-surface-200);
+
+    &:hover {
+        color: var(--p-primary-400);
+    }
+}
+
+.sk-fb__file-size {
+    @apply text-base;
+    color: var(--p-surface-400);
+}
+
+.sk-fb__file-remove {
+    @apply shrink-0 rounded-full border-none bg-transparent p-1 transition-colors;
+    color: var(--p-surface-400);
+
+    &:hover {
+        background: var(--p-red-100);
+        color: var(--p-red-500);
+    }
+}
+
+:root.dark .sk-fb__file-remove:hover {
+    background: color-mix(in srgb, var(--p-red-900) 30%, transparent);
+}

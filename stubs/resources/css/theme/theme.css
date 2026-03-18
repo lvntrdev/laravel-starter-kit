@@ -1,0 +1,10 @@
+@import './fonts.css';
+@import './_base.scss';
+@import './_auth.scss';
+@import './_admin.scss';
+@import './_navigation.scss';
+@import './_datatable.scss';
+@import './_formbuilder.scss';
+@import './_tabs.scss';
+@import './_card.scss';
+@import './_primevue.scss';

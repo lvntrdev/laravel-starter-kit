@@ -1,0 +1,88 @@
+/**
+ * Tailwind Utility Mappings
+ *
+ * Maps CSS custom properties from _base.scss to Tailwind utility classes.
+ * @theme inline: produces only utility classes, no CSS variables.
+ *
+ * Usage examples:
+ *   bg-sidebar, text-sidebar-text, border-sidebar-border
+ *   w-sidebar, ml-sidebar, h-header, pb-footer
+ */
+
+@theme inline {
+    /* Typography — base 14px */
+    --text-xs: 0.75rem; /* 12px */
+    --text-xs--line-height: 1rem;
+    --text-sm: 0.8125rem; /* 13px */
+    --text-sm--line-height: 1.25rem;
+    --text-base: 0.875rem; /* 14px */
+    --text-base--line-height: 1.375rem;
+    --text-lg: 1rem; /* 16px */
+    --text-lg--line-height: 1.5rem;
+    --text-xl: 1.125rem; /* 18px */
+    --text-xl--line-height: 1.625rem;
+    --text-2xl: 1.25rem; /* 20px */
+    --text-2xl--line-height: 1.75rem;
+    --text-3xl: 1.5rem; /* 24px */
+    --text-3xl--line-height: 2rem;
+    --text-4xl: 1.875rem; /* 30px */
+    --text-4xl--line-height: 2.25rem;
+    --text-5xl: 2.25rem; /* 36px */
+    --text-5xl--line-height: 1;
+
+    /* Layout dimensions */
+    --spacing-sidebar: var(--sidebar-w);
+    --spacing-sidebar-collapsed: var(--sidebar-collapsed-w);
+    --spacing-header: var(--header-h);
+    --spacing-footer: var(--footer-h);
+
+    /* Sidebar */
+    --color-sidebar: var(--admin-sidebar-bg);
+    --color-sidebar-text: var(--admin-sidebar-text);
+    --color-sidebar-muted: var(--admin-sidebar-text-muted);
+    --color-sidebar-hover: var(--admin-sidebar-item-hover-bg);
+    --color-sidebar-active: var(--admin-sidebar-item-active-bg);
+    --color-sidebar-active-text: var(--admin-sidebar-item-active-text);
+    --color-sidebar-border: var(--admin-sidebar-border);
+    --color-sidebar-logo: var(--admin-sidebar-logo-bg);
+
+    /* Header */
+    --color-header: var(--admin-header-bg);
+    --color-header-text: var(--admin-header-text);
+    --color-header-border: var(--admin-header-border);
+
+    /* Footer */
+    --color-footer: var(--admin-footer-bg);
+    --color-footer-text: var(--admin-footer-text);
+    --color-footer-border: var(--admin-footer-border);
+
+    /* Content */
+    --color-content: var(--admin-content-bg);
+
+    /* PrimeVue Primary */
+    --color-primary-50: var(--p-primary-50);
+    --color-primary-100: var(--p-primary-100);
+    --color-primary-200: var(--p-primary-200);
+    --color-primary-300: var(--p-primary-300);
+    --color-primary-400: var(--p-primary-400);
+    --color-primary-500: var(--p-primary-500);
+    --color-primary-600: var(--p-primary-600);
+    --color-primary-700: var(--p-primary-700);
+    --color-primary-800: var(--p-primary-800);
+    --color-primary-900: var(--p-primary-900);
+    --color-primary-950: var(--p-primary-950);
+
+    /* PrimeVue Surface */
+    --color-surface-0: var(--p-surface-0);
+    --color-surface-50: var(--p-surface-50);
+    --color-surface-100: var(--p-surface-100);
+    --color-surface-200: var(--p-surface-200);
+    --color-surface-300: var(--p-surface-300);
+    --color-surface-400: var(--p-surface-400);
+    --color-surface-500: var(--p-surface-500);
+    --color-surface-600: var(--p-surface-600);
+    --color-surface-700: var(--p-surface-700);
+    --color-surface-800: var(--p-surface-800);
+    --color-surface-900: var(--p-surface-900);
+    --color-surface-950: var(--p-surface-950);
+}

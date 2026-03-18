@@ -1,0 +1,10 @@
+.card {
+    @apply rounded bg-red-500 dark:bg-gray-800 p-4 shadow dark:shadow-gray-900 text-slate-900 dark:text-gray-100 xl:p-8;
+}
+
+/* PrimeVue Card — caption/content spacing */
+.p-card .p-card-body {
+    .p-card-caption + .p-card-content {
+        @apply mt-6;
+    }
+}

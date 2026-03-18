@@ -1,0 +1,105 @@
+/**
+ * SkTabs — Tab Component Styles
+ *
+ * Styles for the SkTabs component:
+ *   1. Vertical layout (wrapper, sidebar, content)
+ *   2. Vertical tab navigation & items
+ *   3. Horizontal tab panel
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VERTICAL LAYOUT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-tabs-vertical {
+    @apply flex flex-col gap-4 md:flex-row md:gap-8;
+}
+
+.sk-tabs-vertical__sidebar {
+    @apply w-full shrink-0 md:w-72;
+}
+
+.sk-tabs-vertical__content {
+    @apply min-w-0 flex-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VERTICAL TAB NAVIGATION
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-vtab-nav {
+    @apply flex flex-row gap-1.5 overflow-x-auto rounded p-2.5 pb-2.5 md:flex-col md:pb-2.5;
+    background: var(--p-surface-0);
+    border: 1px solid var(--p-surface-200);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+}
+
+:root.dark .sk-vtab-nav {
+    background: var(--p-surface-900);
+    border-color: var(--p-surface-800);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+}
+
+.sk-vtab {
+    @apply flex w-full items-center gap-2.5 whitespace-nowrap rounded px-4 py-3 text-left font-medium transition-all duration-200;
+    color: var(--p-surface-500);
+    background: transparent;
+    border: none;
+
+    &:hover {
+        background: var(--p-surface-100);
+        color: var(--p-surface-700);
+    }
+}
+
+.sk-vtab--active {
+    background: var(--p-primary-color);
+    color: #ffffff;
+    box-shadow:
+        0 1px 3px 0 color-mix(in srgb, var(--p-primary-color) 30%, transparent),
+        0 1px 2px -1px color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+
+    &:hover {
+        background: var(--p-primary-color);
+        color: #ffffff;
+    }
+}
+
+:root.dark .sk-vtab {
+    color: var(--p-surface-400);
+
+    &:hover {
+        background: var(--p-surface-800);
+        color: var(--p-surface-200);
+    }
+}
+
+:root.dark .sk-vtab--active {
+    background: var(--p-primary-color);
+    color: #ffffff;
+
+    &:hover {
+        background: var(--p-primary-color);
+        color: #ffffff;
+    }
+}
+
+.sk-vtab__icon {
+    @apply text-base;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SIDEBAR FOOTER SLOT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-vtab-footer {
+    @apply mt-3;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HORIZONTAL TAB PANEL
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-tabs__panel {
+    @apply pt-4;
+}

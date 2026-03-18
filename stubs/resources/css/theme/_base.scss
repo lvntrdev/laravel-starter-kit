@@ -1,0 +1,87 @@
+/**
+ * Base Styles
+ *
+ * Global base layer styles, CSS custom properties (light/dark),
+ * and general element overrides are defined here.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CSS CUSTOM PROPERTIES — LIGHT MODE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+    /* Layout dimensions */
+    --sidebar-w: 280px;
+    --sidebar-collapsed-w: 80px;
+    --header-h: 64px;
+    --footer-h: 56px;
+
+    /* Sidebar */
+    --admin-sidebar-bg: var(--p-surface-900);
+    --admin-sidebar-text: var(--p-surface-200);
+    --admin-sidebar-text-muted: var(--p-surface-400);
+    --admin-sidebar-item-hover-bg: var(--p-surface-800);
+    --admin-sidebar-item-active-bg: var(--p-primary-color);
+    --admin-sidebar-item-active-text: #ffffff;
+    --admin-sidebar-border: var(--p-surface-700);
+    --admin-sidebar-logo-bg: var(--p-surface-950);
+
+    /* Header */
+    --admin-header-bg: var(--p-surface-0);
+    --admin-header-text: var(--p-surface-700);
+    --admin-header-border: var(--p-surface-200);
+
+    /* Footer */
+    --admin-footer-bg: var(--p-surface-0);
+    --admin-footer-text: var(--p-surface-500);
+    --admin-footer-border: var(--p-surface-200);
+
+    /* Content */
+    --admin-content-bg: var(--p-slate-100);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DARK MODE OVERRIDES
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.dark {
+    --admin-sidebar-bg: var(--p-surface-950);
+    --admin-sidebar-text-muted: var(--p-surface-500);
+    --admin-sidebar-border: var(--p-surface-800);
+    --admin-sidebar-logo-bg: var(--p-surface-900);
+
+    --admin-header-bg: var(--p-surface-900);
+    --admin-header-text: var(--p-surface-100);
+    --admin-header-border: var(--p-surface-800);
+
+    --admin-footer-bg: var(--p-surface-900);
+    --admin-footer-text: var(--p-surface-400);
+    --admin-footer-border: var(--p-surface-800);
+
+    --admin-content-bg: var(--p-surface-950);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE LAYER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* PrimeVue button padding override — Material theme ignores component token overrides */
+.p-button {
+    --p-button-padding-y: var(--p-form-field-padding-y);
+}
+
+@layer base {
+    html {
+        font-size: 0.875rem; /* 14px */
+        line-height: 1.375rem; /* 22px */
+    }
+
+    a,
+    button,
+    [role='button'],
+    [type='button'],
+    [type='submit'],
+    [type='reset'],
+    summary,
+    select,
+    label[for] {
+        cursor: pointer;
+    }
+}

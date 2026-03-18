@@ -1,0 +1,341 @@
+/**
+ * Admin Panel — Layout & Sidebar Styles
+ *
+ * Structural styles for the admin panel:
+ *   1. Layout (admin-layout, admin-main, admin-content)
+ *   2. Sidebar (admin-sidebar, admin-overlay)
+ *   3. Vue Transition animations
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ADMIN LAYOUT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-layout {
+    @apply flex h-screen overflow-hidden;
+    background: var(--admin-content-bg);
+}
+
+.admin-main {
+    @apply flex flex-1 flex-col overflow-hidden transition-[margin-left] duration-300 ease-in-out;
+}
+
+.admin-main--expanded {
+    @apply ml-sidebar;
+}
+
+.admin-main--collapsed {
+    @apply ml-sidebar-collapsed;
+}
+
+.admin-main--mobile {
+    @apply ml-0;
+}
+
+.admin-content {
+    @apply w-full flex-1 min-h-0 overflow-y-auto p-6;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PAGE HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-page-header {
+    @apply flex items-center justify-between mb-6;
+}
+
+.admin-page-header__title {
+    @apply min-w-0;
+}
+
+.admin-page-header__heading {
+    @apply text-2xl font-bold;
+    color: var(--p-surface-900);
+}
+
+:root.dark .admin-page-header__heading {
+    color: var(--p-surface-0);
+}
+
+.admin-page-header__subtitle {
+    @apply text-sm;
+    color: var(--p-surface-500);
+}
+
+:root.dark .admin-page-header__subtitle {
+    color: var(--p-surface-400);
+}
+
+.admin-page-header__actions {
+    @apply flex items-center gap-2 shrink-0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SIDEBAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Mobile overlay */
+.admin-overlay {
+    @apply fixed inset-0 z-39 bg-black/50 backdrop-blur-sm;
+}
+
+/* Sidebar container */
+.admin-sidebar {
+    @apply fixed inset-y-0 left-0 z-40 flex w-sidebar flex-col overflow-hidden border-r transition-[width,transform] duration-300 ease-in-out;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-bg);
+    color: var(--admin-sidebar-text);
+}
+
+.admin-sidebar--collapsed {
+    @apply w-sidebar-collapsed;
+
+    &:hover {
+        @apply w-sidebar;
+    }
+
+    .nav-group,
+    .nav-link {
+        @apply justify-center gap-0 px-0;
+    }
+
+    .nav-label {
+        @apply w-0 overflow-hidden;
+    }
+
+    .nav-section {
+        @apply py-3 px-0;
+    }
+
+    .nav-chevron,
+    .nav-external {
+        @apply hidden;
+    }
+
+    &:hover .nav-section {
+        @apply pb-1 pt-5 px-3;
+    }
+
+    &:hover .nav-group,
+    &:hover .nav-link {
+        @apply justify-start gap-3 px-3;
+    }
+
+    &:hover .nav-label {
+        @apply w-auto overflow-visible;
+    }
+
+    &:hover .nav-chevron,
+    &:hover .nav-external {
+        @apply flex;
+    }
+}
+
+.admin-sidebar--hidden {
+    @apply -translate-x-full;
+}
+
+/* Logo */
+.admin-sidebar__logo {
+    @apply flex h-header shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b px-4;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-logo-bg);
+}
+
+.admin-sidebar__logo-icon {
+    @apply flex size-8 shrink-0 items-center justify-center text-xl;
+}
+
+.admin-sidebar__logo-text {
+    @apply text-lg font-bold transition-opacity duration-300;
+}
+
+/* Navigation */
+.admin-sidebar__nav {
+    @apply flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-3;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--admin-sidebar-border);
+    border-radius: 2px;
+}
+
+/* Footer */
+.admin-sidebar__footer {
+    @apply flex shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-t px-4 py-3.5;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-logo-bg);
+}
+
+.admin-sidebar__footer-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
+    background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+    color: var(--p-primary-color);
+}
+
+.admin-sidebar__footer-info {
+    @apply flex flex-col gap-0.5 transition-opacity duration-300;
+}
+
+.admin-sidebar__footer-title {
+    @apply text-sm font-semibold leading-none;
+    color: var(--admin-sidebar-text);
+}
+
+.admin-sidebar__footer-version {
+    @apply text-xs leading-none;
+    color: var(--admin-sidebar-text-muted);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-header {
+    @apply sticky top-0 z-30 flex h-header shrink-0 items-center justify-between border-b px-5;
+    border-color: var(--admin-header-border);
+    background: var(--admin-header-bg);
+    color: var(--admin-header-text);
+}
+
+.admin-header__left {
+    @apply flex items-center gap-2;
+}
+
+.admin-header__right {
+    @apply flex items-center gap-3;
+}
+
+.admin-header__btn {
+    @apply flex size-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent text-base transition-colors duration-150;
+    color: var(--admin-header-text);
+
+    &:hover {
+        background: var(--p-surface-100);
+    }
+}
+
+:root.dark .admin-header__btn:hover {
+    background: var(--p-surface-800);
+}
+
+.admin-header__user {
+    @apply flex cursor-pointer items-center gap-2.5 rounded-lg border-none bg-transparent px-2 py-1.5 transition-colors duration-150;
+
+    &:hover {
+        background: var(--p-surface-100);
+    }
+}
+
+:root.dark .admin-header__user:hover {
+    background: var(--p-surface-800);
+}
+
+.admin-header__user-info {
+    @apply hidden flex-col items-end gap-0.5 sm:flex;
+}
+
+.admin-header__user-name {
+    @apply text-sm font-semibold leading-tight;
+    color: var(--admin-header-text);
+}
+
+.admin-header__user-role {
+    @apply text-xs leading-tight;
+    color: var(--p-surface-500);
+}
+
+.admin-header__avatar {
+    @apply size-9 rounded-full object-cover ring-2;
+    --tw-ring-color: var(--p-surface-200);
+}
+
+:root.dark .admin-header__avatar {
+    --tw-ring-color: var(--p-surface-700);
+}
+
+.admin-header__avatar-placeholder {
+    @apply flex size-9 items-center justify-center rounded-full text-sm ring-2;
+    background: var(--p-surface-200);
+    color: var(--p-surface-500);
+    --tw-ring-color: var(--p-surface-200);
+}
+
+:root.dark .admin-header__avatar-placeholder {
+    background: var(--p-surface-700);
+    --tw-ring-color: var(--p-surface-700);
+}
+
+.admin-header__tag {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold leading-tight select-none;
+}
+
+.admin-header__tag--dev {
+    background: color-mix(in srgb, var(--p-blue-500) 15%, transparent);
+    color: var(--p-blue-600);
+}
+
+:root.dark .admin-header__tag--dev {
+    background: color-mix(in srgb, var(--p-blue-400) 20%, transparent);
+    color: var(--p-blue-400);
+}
+
+.admin-header__tag--debug {
+    background: color-mix(in srgb, var(--p-orange-500) 15%, transparent);
+    color: var(--p-orange-600);
+}
+
+:root.dark .admin-header__tag--debug {
+    background: color-mix(in srgb, var(--p-orange-400) 20%, transparent);
+    color: var(--p-orange-400);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-footer {
+    @apply flex h-footer shrink-0 items-center justify-between border-t px-6 text-xs;
+    border-color: var(--admin-footer-border);
+    background: var(--admin-footer-bg);
+    color: var(--admin-footer-text);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VUE TRANSITIONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Overlay fade */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* Submenu open / close */
+.submenu-enter-active,
+.submenu-leave-active {
+    transition:
+        max-height 0.25s ease,
+        opacity 0.2s ease;
+    max-height: 400px;
+    opacity: 1;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+    max-height: 0;
+    opacity: 0;
+}
