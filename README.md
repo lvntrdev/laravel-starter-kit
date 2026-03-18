@@ -1,0 +1,300 @@
+# Lvntr Starter Kit
+
+A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
+
+## Features
+
+- **DDD Architecture** — Actions, DTOs, Queries, Events, Listeners
+- **Role & Permission Management** — Spatie Permission with dynamic resource-scoped permissions
+- **User Management** — CRUD with avatar upload, soft deletes, 2FA support
+- **Activity Logging** — Spatie Activity Log with a browsable admin interface
+- **Settings Panel** — General, Auth, Mail, Storage settings stored in database
+- **OAuth2 API** — Laravel Passport with personal access tokens and device authorization
+- **Domain Scaffolding** — `make:sk-domain` command generates full DDD stack interactively
+- **FormBuilder / DatatableBuilder / TabBuilder** — Reusable Vue component builders
+- **Multi-language Support** — Translation files included, easily extendable
+- **API Response Builder** — Fluent, consistent API responses with pagination support
+- **Security Headers Middleware** — X-Frame-Options, HSTS, CSP and more
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 12
+- Node.js 18+
+- MySQL / PostgreSQL / SQLite
+
+## Installation
+
+### 1. Require the package
+
+**From Packagist (when published):**
+
+```bash
+composer require lvntr/starter-kit
+```
+
+**From a local path (for development):**
+
+Add to your project's `composer.json`:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/lvntr/starter-kit"
+        }
+    ]
+}
+```
+
+Then:
+
+```bash
+composer require lvntr/starter-kit:@dev
+```
+
+**From a private Git repository:**
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/your-org/starter-kit.git"
+        }
+    ]
+}
+```
+
+Then:
+
+```bash
+composer require lvntr/starter-kit
+```
+
+### 2. Run the install command
+
+```bash
+php artisan sk:install
+```
+
+This interactive wizard will:
+
+1. Publish all application scaffolding (Controllers, Models, Routes, Vue pages, etc.)
+2. Publish the package config file
+3. Run database migrations
+4. Run seeders (Roles, Permissions, Definitions, Settings)
+5. Generate Passport encryption keys
+6. Create a default admin user
+7. Install npm dependencies and build frontend assets
+
+**Non-interactive mode (CI/CD):**
+
+```bash
+php artisan sk:install --no-interaction
+```
+
+**Overwrite existing files:**
+
+```bash
+php artisan sk:install --force
+```
+
+### 3. Configure your `.env`
+
+```env
+APP_NAME="My Application"
+APP_URL=https://my-app.test
+
+DB_CONNECTION=mysql
+DB_DATABASE=my_app
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 4. Access the admin panel
+
+Open your browser and navigate to your app URL. Log in with the admin credentials shown after installation (default: `admin@demo.com` / `password`).
+
+## Updating
+
+When a new version of the package is released:
+
+```bash
+composer update lvntr/starter-kit
+php artisan sk:update
+```
+
+The update command uses a **hash-based tracking system** to safely update files:
+
+- **Core files** (BaseAction, BaseDTO, Traits, Middleware, helpers) are always updated
+- **User-modifiable files** (Controllers, Pages, Routes) are only updated if you haven't changed them
+- **New files** from the package are automatically added
+- **New migrations** are detected and optionally run
+
+**Preview changes before applying:**
+
+```bash
+php artisan sk:update --dry-run
+```
+
+**Force update everything (overwrites your changes):**
+
+```bash
+php artisan sk:update --force
+```
+
+## Publishing Optional Assets
+
+The package keeps Vue components, language files, and config inside the package by default. If you need to customize them, publish them to your project:
+
+```bash
+# Interactive selection
+php artisan sk:publish
+
+# Publish Vue components (FormBuilder, DatatableBuilder, etc.)
+php artisan sk:publish --tag=components
+
+# Publish language files
+php artisan sk:publish --tag=lang
+
+# Publish config file
+php artisan sk:publish --tag=config
+```
+
+## Available Commands
+
+| Command | Description |
+|---|---|
+| `sk:install` | Full installation wizard |
+| `sk:update` | Update package files preserving user changes |
+| `sk:publish` | Publish optional assets for customization |
+| `make:sk-domain` | Scaffold a complete DDD domain interactively |
+| `remove:sk-domain` | Remove a domain and all its files |
+| `env:sync` | Sync .env keys to .env.example |
+
+### Domain Scaffolding
+
+Create a new domain with all DDD layers:
+
+```bash
+# Interactive mode
+php artisan make:sk-domain
+
+# With options
+php artisan make:sk-domain Product --fields="name:string,price:decimal" --admin --api --events --vue=full
+```
+
+This generates: Model, Migration, Factory, DTO, Actions, Events, Listeners, Controllers, FormRequests, Routes, and Vue pages.
+
+Remove a domain:
+
+```bash
+php artisan remove:sk-domain Product
+```
+
+## Architecture
+
+### Package Structure
+
+```
+lvntr/starter-kit/
+├── src/                          # Core package code (never published)
+│   ├── StarterKitServiceProvider.php
+│   ├── Console/Commands/         # sk:install, sk:update, make:sk-domain, etc.
+│   ├── Domain/Shared/            # BaseAction, BaseDTO, ActionPipeline
+│   ├── Enums/                    # PermissionEnum, HasDefinition, EnumRegistry
+│   ├── Http/Middleware/          # CheckResourcePermission, SecurityHeaders
+│   ├── Http/Responses/           # ApiResponse builder
+│   ├── Traits/                   # HasActivityLogging, HasEnumAccessors, HasMediaCollections
+│   └── helpers.php               # to_api(), format_date()
+├── resources/
+│   ├── js/components/            # Vue components (optionally publishable)
+│   └── lang/                     # Translation files (optionally publishable)
+├── stubs/                        # Published to app on install
+│   ├── app/                      # Controllers, Models, Domain, Providers, Enums
+│   ├── config/                   # permission-resources.php, settings.php
+│   ├── database/                 # Migrations, Seeders, Factories
+│   ├── routes/                   # Web & API routes
+│   ├── resources/js/             # Vue pages, Layouts, Composables, Theme
+│   └── bootstrap/                # app.php, providers.php
+└── config/
+    └── starter-kit.php           # Package configuration
+```
+
+### Application Structure (after install)
+
+```
+app/
+├── Domain/                       # DDD business logic
+│   ├── User/                     # Actions, DTOs, Queries, Events, Listeners
+│   ├── Role/
+│   ├── Auth/
+│   ├── Setting/
+│   ├── ActivityLog/
+│   └── Shared/                   # Base classes (updated by package)
+├── Http/
+│   ├── Controllers/Admin/        # Admin panel controllers
+│   ├── Controllers/Api/          # REST API controllers
+│   └── Middleware/
+├── Models/
+├── Enums/
+└── Providers/
+```
+
+### Update Strategy
+
+| File Category | Behavior on `sk:update` |
+|---|---|
+| `Domain/Shared/`, Traits, Middleware, helpers | Always updated |
+| Controllers, Models, Pages, Routes | Updated only if user hasn't modified them |
+| User's custom domains | Never touched |
+| New files from package | Automatically added |
+
+## Using Package Components
+
+### Vue Components (without publishing)
+
+Components are auto-resolved from the package. Use them in your Vue files:
+
+```vue
+<template>
+    <SkForm :form="form" :builder="formBuilder" />
+    <SkDatatable :builder="tableBuilder" />
+    <SkTabs :builder="tabBuilder" />
+</template>
+```
+
+### Translations
+
+```php
+// From package namespace
+__('starter-kit::admin.menu.dashboard')
+__('starter-kit::message.created')
+```
+
+### Base Classes
+
+```php
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Enums\PermissionEnum;
+use Lvntr\StarterKit\Traits\HasActivityLogging;
+```
+
+## npm Package (Optional)
+
+If you prefer importing Vue components as an npm package:
+
+```bash
+npm install ./packages/lvntr/starter-kit
+```
+
+```ts
+import { SkForm, SkDatatable, SkTabs } from '@lvntr/starter-kit'
+```
+
+## License
+
+MIT
