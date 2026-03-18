@@ -16,6 +16,45 @@ A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia
 - **API Response Builder** — Fluent, consistent API responses with pagination support
 - **Security Headers Middleware** — X-Frame-Options, HSTS, CSP and more
 
+## Tech Stack
+
+### Backend (PHP / Composer)
+
+| Package | Purpose |
+|---|---|
+| **Laravel 12** | Core framework |
+| **Inertia.js v2** | Server-driven SPA — no API layer needed between backend and frontend |
+| **Laravel Fortify** | Authentication backend (login, register, 2FA, password reset) |
+| **Laravel Passport** | OAuth2 API authentication (personal access tokens, device authorization) |
+| **Laravel Wayfinder** | Type-safe route generation for TypeScript |
+| **Spatie Permission** | Role & permission management with dynamic resource-scoped permissions |
+| **Spatie Activity Log** | Model activity logging with browsable admin interface |
+| **Spatie Media Library** | File uploads & media collections (avatars, attachments) |
+| **Spatie Query Builder** | Filter, sort, and include relationships via query string |
+| **Spatie Translatable** | Multi-language model attributes (JSON-based) |
+
+### Frontend (Node / npm)
+
+| Package | Purpose |
+|---|---|
+| **Vue 3** | Reactive UI framework |
+| **PrimeVue 4** | UI component library (DataTable, Dialog, Toast, Menu, etc.) |
+| **Tailwind CSS 4** | Utility-first CSS framework |
+| **Inertia.js Vue 3** | Client-side adapter for Inertia SPA |
+| **VueUse** | Collection of Vue composition utilities |
+| **laravel-vue-i18n** | Use Laravel translation files directly in Vue |
+
+### Dev Tools
+
+| Tool | Purpose |
+|---|---|
+| **Vite** | Frontend build tool with HMR |
+| **TypeScript** | Type safety for frontend code |
+| **ESLint + Prettier** | Code linting and formatting |
+| **Vitest** | Unit testing for Vue components |
+| **Husky + lint-staged** | Pre-commit hooks for code quality |
+| **Commitizen** | Conventional commit messages |
+
 ## Requirements
 
 - PHP 8.2+
@@ -61,7 +100,7 @@ composer require lvntr/starter-kit:@dev
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/your-org/starter-kit.git"
+            "url": "git@github.com:lvntrdev/starter-kit.git"
         }
     ]
 }
@@ -281,18 +320,6 @@ use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 use Lvntr\StarterKit\Enums\PermissionEnum;
 use Lvntr\StarterKit\Traits\HasActivityLogging;
-```
-
-## npm Package (Optional)
-
-If you prefer importing Vue components as an npm package:
-
-```bash
-npm install ./packages/lvntr/starter-kit
-```
-
-```ts
-import { SkForm, SkDatatable, SkTabs } from '@lvntr/starter-kit'
 ```
 
 ## License
