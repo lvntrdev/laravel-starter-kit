@@ -123,56 +123,34 @@ class InstallCommand extends Command
                 'mysql' => 'MySQL',
                 'mariadb' => 'MariaDB',
                 'pgsql' => 'PostgreSQL',
-                'sqlite' => 'SQLite',
             ],
             default: 'mysql',
         );
 
         $envValues = ['DB_CONNECTION' => $driver];
 
-        if ($driver === 'sqlite') {
-            $dbPath = text(
-                label: 'Database path',
-                default: 'database/database.sqlite',
-                required: true,
-            );
-            $envValues['DB_DATABASE'] = $dbPath;
+        $host = text(label: 'Database host', default: '127.0.0.1', required: true);
+        $port = text(label: 'Database port', default: $driver === 'pgsql' ? '5432' : '3306', required: true);
+        $database = text(label: 'Database name', default: 'starter_kit', required: true);
+        $username = text(label: 'Database username', default: 'root', required: true);
+        $password = text(label: 'Database password', default: '');
 
-            // Create SQLite file if it doesn't exist
-            $fullPath = base_path($dbPath);
-            if (! $this->files->exists($fullPath)) {
-                $this->files->ensureDirectoryExists(dirname($fullPath));
-                touch($fullPath);
-            }
-        } else {
-            $host = text(label: 'Database host', default: '127.0.0.1', required: true);
-            $port = text(label: 'Database port', default: $driver === 'pgsql' ? '5432' : '3306', required: true);
-            $database = text(label: 'Database name', default: 'starter_kit', required: true);
-            $username = text(label: 'Database username', default: 'root', required: true);
-            $password = text(label: 'Database password', default: '');
-
-            $envValues['DB_HOST'] = $host;
-            $envValues['DB_PORT'] = $port;
-            $envValues['DB_DATABASE'] = $database;
-            $envValues['DB_USERNAME'] = $username;
-            $envValues['DB_PASSWORD'] = $password;
-        }
+        $envValues['DB_HOST'] = $host;
+        $envValues['DB_PORT'] = $port;
+        $envValues['DB_DATABASE'] = $database;
+        $envValues['DB_USERNAME'] = $username;
+        $envValues['DB_PASSWORD'] = $password;
 
         // Write to .env
         $this->updateEnvFile($envValues);
 
         // Reload config so Laravel picks up the new values
         $this->laravel['config']->set('database.default', $driver);
-
-        if ($driver === 'sqlite') {
-            $this->laravel['config']->set('database.connections.sqlite.database', base_path($envValues['DB_DATABASE']));
-        } else {
-            $this->laravel['config']->set("database.connections.{$driver}.host", $envValues['DB_HOST']);
-            $this->laravel['config']->set("database.connections.{$driver}.port", $envValues['DB_PORT']);
-            $this->laravel['config']->set("database.connections.{$driver}.database", $envValues['DB_DATABASE']);
-            $this->laravel['config']->set("database.connections.{$driver}.username", $envValues['DB_USERNAME']);
-            $this->laravel['config']->set("database.connections.{$driver}.password", $envValues['DB_PASSWORD']);
-        }
+        $this->laravel['config']->set("database.connections.{$driver}.host", $envValues['DB_HOST']);
+        $this->laravel['config']->set("database.connections.{$driver}.port", $envValues['DB_PORT']);
+        $this->laravel['config']->set("database.connections.{$driver}.database", $envValues['DB_DATABASE']);
+        $this->laravel['config']->set("database.connections.{$driver}.username", $envValues['DB_USERNAME']);
+        $this->laravel['config']->set("database.connections.{$driver}.password", $envValues['DB_PASSWORD']);
 
         // Purge old connection so new config is used
         DB::purge();
