@@ -1,0 +1,36 @@
+{
+    "name": "@lvntr/starter-kit",
+    "version": "1.0.0",
+    "description": "Vue 3 components for Lvntr Starter Kit (FormBuilder, DatatableBuilder, TabBuilder, Skeleton)",
+    "type": "module",
+    "main": "resources/js/components/index.ts",
+    "exports": {
+        ".": "./resources/js/components/index.ts",
+        "./FormBuilder": "./resources/js/components/FormBuilder/SkForm.vue",
+        "./FormBuilder/*": "./resources/js/components/FormBuilder/*",
+        "./DatatableBuilder": "./resources/js/components/DatatableBuilder/SkDatatable.vue",
+        "./DatatableBuilder/*": "./resources/js/components/DatatableBuilder/*",
+        "./TabBuilder": "./resources/js/components/TabBuilder/SkTabs.vue",
+        "./TabBuilder/*": "./resources/js/components/TabBuilder/*",
+        "./Skeleton/*": "./resources/js/components/Skeleton/*",
+        "./ui/*": "./resources/js/components/ui/*",
+        "./*": "./resources/js/components/*"
+    },
+    "files": [
+        "resources/js/components"
+    ],
+    "keywords": [
+        "vue",
+        "primevue",
+        "form-builder",
+        "datatable",
+        "starter-kit",
+        "laravel"
+    ],
+    "license": "MIT",
+    "peerDependencies": {
+        "vue": "^3.5.0",
+        "primevue": "^4.0.0",
+        "@inertiajs/vue3": "^2.0.0"
+    }
+}

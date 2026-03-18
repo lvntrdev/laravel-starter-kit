@@ -1,0 +1,61 @@
+{
+    "name": "lvntr/starter-kit",
+    "description": "Laravel Starter Kit with DDD architecture, Inertia.js, Vue 3, PrimeVue, and role-based permissions.",
+    "keywords": [
+        "laravel",
+        "starter-kit",
+        "ddd",
+        "inertia",
+        "vue",
+        "primevue",
+        "admin-panel"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Levent",
+            "email": "levent@lvntr.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "inertiajs/inertia-laravel": "^2.0",
+        "laravel/fortify": "^1.35",
+        "laravel/passport": "^13.5",
+        "spatie/laravel-activitylog": "^4.9",
+        "spatie/laravel-medialibrary": "^11.12",
+        "spatie/laravel-permission": "^7.2",
+        "spatie/laravel-query-builder": "^6.3",
+        "spatie/laravel-translatable": "^6.11"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.4",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
+        "psr-4": {
+            "Lvntr\\StarterKit\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Lvntr\\StarterKit\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Lvntr\\StarterKit\\StarterKitServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

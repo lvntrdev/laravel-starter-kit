@@ -1,0 +1,15 @@
+@import 'tailwindcss' layer(tailwind-base);
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer tailwind-base, primevue, tailwind-utilities;
+
+@import 'tailwindcss/utilities' layer(tailwind-utilities);
+@import './theme/theme.css';
+@import './theme/utilities.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.vue';

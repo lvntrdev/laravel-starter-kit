@@ -1,0 +1,53 @@
+<script setup lang="ts">
+    import { TB } from '@/components/Lvntr-Starter-Kit/TabBuilder/core';
+    import AdminLayout from '@/layouts/AdminLayout.vue';
+    import { usePage } from '@inertiajs/vue3';
+    import PasswordTab from './PasswordTab.vue';
+    import ProfileInfoTab from './ProfileInfoTab.vue';
+    import SessionsTab from './SessionsTab.vue';
+    import TwoFactorTab from './TwoFactorTab.vue';
+
+    interface Props {
+        twoFactorEnabled: boolean;
+        twoFactorConfirmed: boolean;
+    }
+
+    const props = defineProps<Props>();
+
+    const page = usePage<{ features: { two_factor: boolean } }>();
+
+    const tabConfig = TB.tabs()
+        .vertical()
+        .addTabs(
+            TB.item().key('general').label('General').icon('pi pi-user'),
+            TB.item().key('password').label('Password').icon('pi pi-lock'),
+            TB.item().key('security').label('Security').icon('pi pi-shield').visible(page.props.features.two_factor),
+            TB.item().key('sessions').label('Sessions').icon('pi pi-desktop'),
+        )
+        .build();
+</script>
+
+<template>
+    <AdminLayout :title="$t('admin.profile.title')" :subtitle="$t('admin.profile.subtitle')">
+        <SkTabs :config="tabConfig">
+            <template #general>
+                <ProfileInfoTab />
+            </template>
+
+            <template #password>
+                <PasswordTab />
+            </template>
+
+            <template #security>
+                <TwoFactorTab
+                    :two-factor-enabled="props.twoFactorEnabled"
+                    :two-factor-confirmed="props.twoFactorConfirmed"
+                />
+            </template>
+
+            <template #sessions>
+                <SessionsTab />
+            </template>
+        </SkTabs>
+    </AdminLayout>
+</template>
