@@ -416,7 +416,7 @@ class InstallCommand extends Command
                 'last_name' => 'User',
                 'email' => $email,
                 'password' => Hash::make($password),
-                'status' => 1, // Active
+                'status' => 'active',
             ]);
 
             $user->forceFill(['email_verified_at' => now()])->save();
