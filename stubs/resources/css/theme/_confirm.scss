@@ -1,0 +1,73 @@
+.confirm-dialog-container {
+    @apply flex flex-col items-center rounded bg-white px-8 py-6 text-center dark:bg-slate-800;
+    min-width: 360px;
+    max-width: 420px;
+}
+
+.confirm-dialog-icon-wrapper {
+    @apply mb-4 flex h-16 w-16 items-center justify-center rounded-full;
+}
+
+.confirm-dialog-icon-wrapper i {
+    @apply text-4xl;
+}
+
+.confirm-dialog-header {
+    @apply mb-2 text-lg font-bold text-slate-800 dark:text-slate-100;
+}
+
+.confirm-dialog-message {
+    @apply mb-6  leading-relaxed text-slate-500 dark:text-slate-400;
+}
+
+.confirm-dialog-actions {
+    @apply flex w-full gap-3;
+}
+
+.confirm-dialog-btn {
+    @apply flex-1 cursor-pointer rounded px-5 py-2.5  font-semibold transition-all duration-200;
+}
+
+.confirm-dialog-btn.confirm-dialog-btn--cancel {
+    @apply border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600;
+}
+
+/* ── Danger ────────────────────────────────────────────────────────────────── */
+
+.confirm-dialog--danger .confirm-dialog-icon-wrapper {
+    @apply bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.confirm-dialog--danger .confirm-dialog-btn--accept {
+    @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+/* ── Warn ──────────────────────────────────────────────────────────────────── */
+
+.confirm-dialog--warn .confirm-dialog-icon-wrapper {
+    @apply bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400;
+}
+
+.confirm-dialog--warn .confirm-dialog-btn--accept {
+    @apply bg-orange-500 text-white hover:bg-orange-600;
+}
+
+/* ── Info ──────────────────────────────────────────────────────────────────── */
+
+.confirm-dialog--info .confirm-dialog-icon-wrapper {
+    @apply bg-blue-100 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+.confirm-dialog--info .confirm-dialog-btn--accept {
+    @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+
+/* ── Success ───────────────────────────────────────────────────────────────── */
+
+.confirm-dialog--success .confirm-dialog-icon-wrapper {
+    @apply bg-green-100 text-green-500 dark:bg-green-900/30 dark:text-green-400;
+}
+
+.confirm-dialog--success .confirm-dialog-btn--accept {
+    @apply bg-green-500 text-white hover:bg-green-600;
+}

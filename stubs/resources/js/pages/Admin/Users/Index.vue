@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { useCan } from '@/composables/useCan';
     import { useConfirm } from '@/composables/useConfirm';
     import { useDialog } from '@/composables/useDialog';
@@ -8,6 +7,7 @@
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import type { User } from '@/types';
     import { router } from '@inertiajs/vue3';
+    import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
 
     import UserForm from '@/pages/Admin/Users/components/UserForm.vue';

@@ -1,6 +1,6 @@
 // resources/js/composables/useDialog.ts
 
-import type { Component } from 'vue';
+import { markRaw, type Component } from 'vue';
 import { useRefreshBus } from './useRefreshBus';
 import { useApi } from './useApi';
 
@@ -87,7 +87,7 @@ export function useDialog() {
         header: string = '',
         options: OpenOptions = {},
     ): void {
-        state.component = component;
+        state.component = markRaw(component);
         state.props = { ...buildCallbacks(options.refreshKey), ...props };
         state.header = header;
         state.width = options.width ?? '640px';

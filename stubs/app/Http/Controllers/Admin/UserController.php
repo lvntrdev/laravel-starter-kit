@@ -112,9 +112,7 @@ class UserController extends Controller
             $uploadMedia->execute($user, $request, 'identity_document');
         }
 
-        return redirect()
-            ->route('users.edit', $user)
-            ->with('success', __('message.updated', ['entity' => __('admin.users.user')]));
+        return back()->with('success', __('message.updated', ['entity' => __('admin.users.user')]));
     }
 
     /**
@@ -125,13 +123,9 @@ class UserController extends Controller
         try {
             $action->execute($user, Auth::id());
 
-            return redirect()
-                ->route('users.index')
-                ->with('success', __('message.deleted', ['entity' => __('admin.users.user')]));
+            return back()->with('success', __('message.deleted', ['entity' => __('admin.users.user')]));
         } catch (\LogicException $e) {
-            return redirect()
-                ->route('users.index')
-                ->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 

@@ -34,6 +34,7 @@
             toast.add({
                 severity: 'success',
                 summary: trans('admin.api_routes.regenerate_docs_success'),
+                group: 'bc',
                 life: 3000,
             });
         } finally {

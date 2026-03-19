@@ -110,6 +110,7 @@ export function useApi(apiOptions: UseApiOptions = {}) {
                     severity: 'error',
                     summary: 'Hata',
                     detail: error.message,
+                    group: 'bc',
                     life: 5000,
                 });
             }

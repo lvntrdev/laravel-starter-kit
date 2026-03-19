@@ -8,3 +8,5 @@
 @import './_tabs.scss';
 @import './_card.scss';
 @import './_primevue.scss';
+@import './_toast.scss';
+@import './_confirm.scss';

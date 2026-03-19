@@ -10,6 +10,7 @@
     import AdminSidebar from '@/layouts/components/AdminSidebar.vue';
     import { Head, router } from '@inertiajs/vue3';
     import AppDialog from '@lvntr/components/ui/AppDialog.vue';
+    import ConfirmDialogComponent from '@/components/Lvntr-Starter-Kit/UI/ConfirmDialogComponent.vue';
     import { trans } from 'laravel-vue-i18n';
     import { useToast } from 'primevue/usetoast';
 
@@ -37,6 +38,7 @@
                 severity: 'success',
                 summary: trans('admin.layout.success'),
                 detail: flash.value.success,
+                group: 'bc',
                 life: 4000,
             });
         }
@@ -45,6 +47,7 @@
                 severity: 'error',
                 summary: trans('admin.layout.error'),
                 detail: flash.value.error,
+                group: 'bc',
                 life: 6000,
             });
         }
@@ -53,11 +56,18 @@
                 severity: 'warn',
                 summary: trans('admin.layout.warning'),
                 detail: flash.value.warning,
+                group: 'bc',
                 life: 5000,
             });
         }
         if (flash.value.info) {
-            toast.add({ severity: 'info', summary: trans('admin.layout.info'), detail: flash.value.info, life: 4000 });
+            toast.add({
+                severity: 'info',
+                summary: trans('admin.layout.info'),
+                detail: flash.value.info,
+                group: 'bc',
+                life: 4000,
+            });
         }
     });
 
@@ -114,8 +124,8 @@
         </div>
 
         <!-- Global Overlays -->
-        <ConfirmDialog />
-        <Toast position="top-right" />
+        <ConfirmDialogComponent />
+        <ToastComponent />
         <AppDialog />
     </div>
 </template>

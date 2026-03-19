@@ -1,0 +1,92 @@
+.toast-container {
+    @apply flex w-full items-center rounded-md p-4 shadow-2xl;
+
+    .toast-close {
+        @apply ml-auto flex cursor-pointer items-center text-2xl text-white/70 transition-all duration-200 hover:text-white;
+        span {
+            @apply mr-3 pl-3 text-4xl;
+        }
+    }
+
+    .toast-icon {
+        @apply mr-4 text-3xl;
+    }
+
+    &.error {
+        @apply bg-red-500 text-white;
+        .toast-close {
+            i {
+                @apply text-red-300 hover:text-red-200;
+            }
+
+            span {
+                @apply text-red-400;
+            }
+        }
+    }
+
+    &.success {
+        @apply bg-green-500 text-white;
+        .toast-close {
+            i {
+                @apply text-green-300 hover:text-green-200;
+            }
+
+            span {
+                @apply text-green-400;
+            }
+        }
+    }
+
+    &.info {
+        @apply bg-blue-500 text-white;
+        .toast-close {
+            i {
+                @apply text-blue-300 hover:text-blue-200;
+            }
+
+            span {
+                @apply text-blue-400;
+            }
+        }
+    }
+
+    &.warn {
+        @apply bg-orange-500 text-white;
+        .toast-close {
+            i {
+                @apply text-orange-300 hover:text-orange-200;
+            }
+
+            span {
+                @apply text-orange-400;
+            }
+        }
+    }
+
+    &.light {
+        @apply bg-slate-300 text-slate-600;
+        .toast-close {
+            i {
+                @apply text-slate-400 hover:text-slate-600;
+            }
+
+            span {
+                @apply text-slate-400;
+            }
+        }
+    }
+
+    &.dark {
+        @apply bg-slate-700 text-white;
+        .toast-close {
+            i {
+                @apply text-slate-300 hover:text-slate-200;
+            }
+
+            span {
+                @apply text-slate-400;
+            }
+        }
+    }
+}

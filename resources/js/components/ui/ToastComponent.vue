@@ -5,10 +5,10 @@
         <template #container="{ message, closeCallback }">
             <section class="toast-container" :class="message.severity">
                 <div v-if="message.severity !== 'light' || message.severity !== 'dark'" class="toast-icon">
-                    <i v-if="message.severity === 'error'" class="bi bi-x-square-fill" />
-                    <i v-if="message.severity === 'success'" class="bi bi-check-lg" />
-                    <i v-if="message.severity === 'info'" class="bi bi-info-square-fill" />
-                    <i v-if="message.severity === 'warn'" class="bi bi-exclamation-triangle-fill" />
+                    <i v-if="message.severity === 'error'" class="pi pi-exclamation-triangle" />
+                    <i v-if="message.severity === 'success'" class="pi pi-check" />
+                    <i v-if="message.severity === 'info'" class="pi pi-info-circle" />
+                    <i v-if="message.severity === 'warn'" class="pi pi-exclamation-circle" />
                 </div>
 
                 <div class="toast-message">
@@ -20,7 +20,7 @@
 
                 <div class="toast-close">
                     <span>|</span>
-                    <i class="bi bi-x-square" @click="closeCallback" />
+                    <i class="pi pi-times" @click="closeCallback" />
                 </div>
             </section>
         </template>
