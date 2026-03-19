@@ -26,7 +26,5 @@ export { default as SkeletonText } from './Skeleton/SkeletonText.vue'
 
 // UI
 export { default as ToastComponent } from './ui/ToastComponent.vue'
-
-// Dialog & Avatar
-export { default as AppDialog } from './AppDialog.vue'
-export { default as AvatarUpload } from './AvatarUpload.vue'
+export { default as AppDialog } from './ui/AppDialog.vue'
+export { default as AvatarUpload } from './ui/AvatarUpload.vue'
