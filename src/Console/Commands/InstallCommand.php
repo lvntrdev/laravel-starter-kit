@@ -834,9 +834,12 @@ PHP;
             $targetPath = base_path($relativePath);
 
             if ($this->files->exists($targetPath)) {
-                $hashes[$relativePath] = md5_file($targetPath);
+                // Store STUB hash — this is what we shipped, used to detect user modifications
+                $hashes[$relativePath] = md5_file($file->getPathname());
             }
         }
+
+        $hashes['_format'] = 'v2';
 
         $dir = dirname($hashFile);
         if (! $this->files->isDirectory($dir)) {

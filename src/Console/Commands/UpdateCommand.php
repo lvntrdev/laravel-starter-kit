@@ -333,6 +333,7 @@ class UpdateCommand extends Command
 
     /**
      * Load the hash registry from storage.
+     * Automatically migrates old format (target hashes) to new format (stub hashes).
      *
      * @return array<string, string>
      */
@@ -344,17 +345,76 @@ class UpdateCommand extends Command
             return [];
         }
 
-        return json_decode($this->files->get($hashFile), true) ?: [];
+        $data = json_decode($this->files->get($hashFile), true) ?: [];
+
+        // Already migrated to v2 format (stores stub hashes)
+        if (($data['_format'] ?? null) === 'v2') {
+            unset($data['_format']);
+
+            return $data;
+        }
+
+        // Migrate from old format: old registry stored TARGET hashes which is unreliable.
+        // Re-derive by comparing each target against its stub.
+        return $this->migrateHashRegistry($data);
     }
 
     /**
-     * Update the hash registry only for files that were actually updated or added.
-     * Skipped (user-modified) files keep their original hash so they stay protected.
+     * Migrate old hash registry (target hashes) to new format (stub hashes).
+     *
+     * For each stub file:
+     * - If target === stub → store stub hash (user hasn't modified)
+     * - If target !== stub → don't store (assume user modified, will be skipped)
+     *
+     * @param  array<string, string>  $oldHashes
+     * @return array<string, string>
+     */
+    private function migrateHashRegistry(array $oldHashes): array
+    {
+        $stubsPath = StarterKitServiceProvider::stubsPath();
+        $newHashes = [];
+
+        foreach ($this->files->allFiles($stubsPath, true) as $file) {
+            $relativePath = $file->getRelativePathname();
+            $targetPath = base_path($relativePath);
+
+            if (! $this->files->exists($targetPath)) {
+                // File was deleted by user or never installed.
+                // If it was in old registry, keep the entry so addNewFiles knows it existed.
+                if (isset($oldHashes[$relativePath])) {
+                    $newHashes[$relativePath] = '__deleted__';
+                }
+
+                continue;
+            }
+
+            $stubHash = md5_file($file->getPathname());
+            $targetHash = md5_file($targetPath);
+
+            if ($stubHash === $targetHash) {
+                // Target matches stub — user hasn't modified this file
+                $newHashes[$relativePath] = $stubHash;
+            }
+
+            // If target !== stub, DON'T store — this means user modified it.
+            // On next check, originalHash will be null → skip (safe).
+        }
+
+        // Save migrated registry immediately
+        $this->saveHashRegistry($newHashes);
+
+        $this->components->info('Migrated hash registry to v2 format.');
+
+        return $newHashes;
+    }
+
+    /**
+     * Update the hash registry with STUB hashes for files that were actually updated or added.
      */
     private function updateHashRegistry(): void
     {
-        $hashFile = config('starter-kit.published_hashes', storage_path('starter-kit/hashes.json'));
         $hashes = $this->loadHashRegistry();
+        $stubsPath = StarterKitServiceProvider::stubsPath();
 
         $changedFiles = array_merge($this->updated, $this->added);
 
@@ -364,16 +424,31 @@ class UpdateCommand extends Command
                 continue;
             }
 
-            $targetPath = base_path($relativePath);
-            if ($this->files->exists($targetPath)) {
-                $hashes[$relativePath] = md5_file($targetPath);
+            $stubPath = $stubsPath.DIRECTORY_SEPARATOR.$relativePath;
+            if ($this->files->exists($stubPath)) {
+                // Store the STUB hash, not the target hash
+                $hashes[$relativePath] = md5_file($stubPath);
             }
         }
+
+        $this->saveHashRegistry($hashes);
+    }
+
+    /**
+     * Persist the hash registry to disk.
+     *
+     * @param  array<string, string>  $hashes
+     */
+    private function saveHashRegistry(array $hashes): void
+    {
+        $hashFile = config('starter-kit.published_hashes', storage_path('starter-kit/hashes.json'));
 
         $dir = dirname($hashFile);
         if (! $this->files->isDirectory($dir)) {
             $this->files->makeDirectory($dir, 0755, true);
         }
+
+        $hashes['_format'] = 'v2';
 
         $this->files->put($hashFile, json_encode($hashes, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
