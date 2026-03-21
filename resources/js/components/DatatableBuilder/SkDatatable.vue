@@ -252,6 +252,17 @@
             }
         });
 
+        // Preserve non-datatable query params (e.g. ?type=systemManagers)
+        const managedKeys = new Set<string>();
+        params.forEach((_value, key) => managedKeys.add(key));
+
+        const currentParams = new URLSearchParams(window.location.search);
+        for (const [key, value] of currentParams) {
+            if (!managedKeys.has(key) && !key.startsWith('filter[')) {
+                params.set(key, value);
+            }
+        }
+
         const qs = params.toString();
         const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 
