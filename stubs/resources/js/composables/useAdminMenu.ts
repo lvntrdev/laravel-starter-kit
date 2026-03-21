@@ -8,7 +8,6 @@ import settings from '@/routes/settings';
 import users from '@/routes/users';
 import type { MenuItem } from '@/types';
 import { usePage } from '@inertiajs/vue3';
-import { wTrans } from 'laravel-vue-i18n';
 
 export function useAdminMenu() {
     const page = usePage();
@@ -17,79 +16,79 @@ export function useAdminMenu() {
 
     const allItems: MenuItem[] = [
         {
-            title: wTrans('admin.menu.dashboard'),
+            title: 'admin.menu.dashboard',
             icon: 'pi pi-home',
             href: dashboard.index.url(),
         },
         {
-            title: wTrans('admin.menu.user_management'),
+            title: 'admin.menu.user_management',
             section: true,
         },
         {
-            title: wTrans('admin.menu.users'),
+            title: 'admin.menu.users',
             icon: 'pi pi-users',
             href: users.index.url(),
             permission: 'users.read',
         },
         {
-            title: wTrans('admin.menu.roles_permissions'),
+            title: 'admin.menu.roles_permissions',
             icon: 'pi pi-shield',
             href: roles.index.url(),
             permission: 'roles.read',
         },
         {
-            title: wTrans('admin.menu.system'),
+            title: 'admin.menu.system',
             section: true,
         },
         {
-            title: wTrans('admin.menu.activity_logs'),
+            title: 'admin.menu.activity_logs',
             icon: 'pi pi-history',
             href: activityLogs.index.url(),
             permission: 'activity-logs.read',
         },
         {
-            title: wTrans('admin.menu.settings'),
+            title: 'admin.menu.settings',
             icon: 'pi pi-cog',
             permission: 'settings.read',
             children: [
                 {
-                    title: wTrans('admin.menu.settings'),
+                    title: 'admin.menu.settings',
                     href: settings.index.url(),
                 },
             ],
         },
         {
-            title: wTrans('admin.menu.developer'),
+            title: 'admin.menu.developer',
             section: true,
         },
         {
-            title: wTrans('admin.menu.api_routes'),
+            title: 'admin.menu.api_routes',
             icon: 'pi pi-code',
             href: apiRoutes.index.url(),
             permission: 'api-routes.read',
         },
         {
-            title: wTrans('admin.menu.api_docs'),
+            title: 'admin.menu.api_docs',
             icon: 'pi pi-book',
             href: '/docs/api',
             external: true,
             permission: 'api-docs.read',
         },
         {
-            title: wTrans('admin.menu.pulse'),
+            title: 'admin.menu.pulse',
             icon: 'pi pi-chart-bar',
             href: '/pulse',
             external: true,
             permission: 'pulse.read',
         },
         {
-            title: wTrans('admin.menu.laravel_docs'),
+            title: 'admin.menu.laravel_docs',
             icon: 'pi pi-external-link',
             href: 'https://laravel.com/docs',
             external: true,
         },
         {
-            title: wTrans('admin.menu.kits_docs'),
+            title: 'admin.menu.kits_docs',
             icon: 'pi pi-external-link',
             href: 'https://kit-docs.lvntr.dev',
             external: true,

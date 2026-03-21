@@ -1,6 +1,5 @@
 // resources/js/types/index.ts
 
-import type { ComputedRef } from 'vue';
 import type { User } from './user';
 
 export type { User, UserStatus } from './user';
@@ -35,7 +34,7 @@ export interface SharedPageProps {
 }
 
 export interface MenuItem {
-    title: string | ComputedRef<string>;
+    title: string;
     icon?: string;
     href?: string;
     external?: boolean;

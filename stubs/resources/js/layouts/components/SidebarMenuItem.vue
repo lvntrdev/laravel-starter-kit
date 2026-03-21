@@ -49,7 +49,7 @@
 <template>
     <!-- SECTION TITLE -->
     <div v-if="item.section" class="nav-section">
-        <span v-if="!collapsed" class="nav-section__title">{{ item.title }}</span>
+        <span v-if="!collapsed" class="nav-section__title">{{ $t(item.title) }}</span>
         <span v-else class="nav-section__divider" />
     </div>
 
@@ -60,7 +60,7 @@
                 <i v-if="item.icon" :class="item.icon" />
             </div>
             <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-                {{ item.title }}
+                {{ $t(item.title) }}
             </span>
             <i v-if="!collapsed" class="pi pi-chevron-right nav-chevron" :class="{ 'nav-chevron--open': isOpen }" />
         </button>
@@ -94,7 +94,7 @@
         </div>
         <div v-else-if="depth > 0" class="nav-dot" />
         <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-            {{ item.title }}
+            {{ $t(item.title) }}
         </span>
         <i v-if="!collapsed" class="pi pi-external-link nav-external" />
     </a>
@@ -116,7 +116,7 @@
         </div>
         <div v-else-if="depth > 0" class="nav-dot" :class="{ 'nav-dot--active': isActive }" />
         <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-            {{ item.title }}
+            {{ $t(item.title) }}
         </span>
     </Link>
 </template>

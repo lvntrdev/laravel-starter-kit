@@ -49,6 +49,16 @@ class UpdateCommand extends Command
         'app/Exceptions/ApiExceptionHandler.php',
     ];
 
+    /**
+     * Files that are NEVER updated — only installed once.
+     * These are user-customizable config/template files.
+     *
+     * @var list<string>
+     */
+    private const NEVER_UPDATE_PATHS = [
+        'config/permission-resources.php',
+    ];
+
     /** @var list<string> */
     private array $updated = [];
 
@@ -176,6 +186,11 @@ class UpdateCommand extends Command
                 continue;
             }
 
+            // Skip files that should never be updated
+            if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
             // Skip if target doesn't exist (handled in addNewFiles)
             if (! $this->files->exists($targetPath)) {
                 continue;
@@ -273,6 +288,24 @@ class UpdateCommand extends Command
                 if ($relativePath === $safePath) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a file should never be updated (user-customizable files).
+     */
+    private function isNeverUpdate(string $relativePath): bool
+    {
+        foreach (self::NEVER_UPDATE_PATHS as $path) {
+            if (str_ends_with($path, '/')) {
+                if (str_starts_with($relativePath, $path)) {
+                    return true;
+                }
+            } elseif ($relativePath === $path) {
+                return true;
             }
         }
 
