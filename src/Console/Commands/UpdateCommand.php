@@ -392,12 +392,16 @@ class UpdateCommand extends Command
             $targetHash = md5_file($targetPath);
 
             if ($stubHash === $targetHash) {
-                // Target matches stub — user hasn't modified this file
+                // Target matches current stub — user hasn't modified this file
                 $newHashes[$relativePath] = $stubHash;
+            } elseif (isset($oldHashes[$relativePath]) && $targetHash === $oldHashes[$relativePath]) {
+                // Target matches what was installed (old v1 hash) — user hasn't modified,
+                // but the STUB has changed since last install. Store target hash so update
+                // will detect it's safe to overwrite.
+                $newHashes[$relativePath] = $targetHash;
             }
 
-            // If target !== stub, DON'T store — this means user modified it.
-            // On next check, originalHash will be null → skip (safe).
+            // If neither match, user modified the file — don't store → skip (safe).
         }
 
         // Save migrated registry immediately
