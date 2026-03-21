@@ -365,9 +365,13 @@ class UpdateCommand extends Command
         ],
 PHP;
 
-        $pos = strrpos($content, '    ],');
-        if ($pos !== false) {
-            $content = substr_replace($content, $diskConfig."\n\n    ],", $pos, strlen('    ],'));
+        // Find the 'disks' array and insert before its closing ],
+        $disksPos = strpos($content, "'disks'");
+        if ($disksPos !== false) {
+            $closingPos = strpos($content, "\n    ],", $disksPos);
+            if ($closingPos !== false) {
+                $content = substr_replace($content, $diskConfig."\n\n    ],", $closingPos + 1, strlen('    ],'));
+            }
         }
 
         $this->files->put($configPath, $content);

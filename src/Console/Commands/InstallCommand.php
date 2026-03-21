@@ -721,11 +721,14 @@ PHP;
         ],
 PHP;
 
-        // Find the 'disks' array closing and insert before it
-        // Look for the pattern: newline + 4 spaces + ], (closing of 'disks' array)
-        $pos = strrpos($content, "    ],");
-        if ($pos !== false) {
-            $content = substr_replace($content, $diskConfig."\n\n    ],", $pos, strlen("    ],"));
+        // Find the 'disks' array and insert before its closing ],
+        $disksPos = strpos($content, "'disks'");
+        if ($disksPos !== false) {
+            // Find the closing ], of the 'disks' array (first 4-space-indented ], after 'disks')
+            $closingPos = strpos($content, "\n    ],", $disksPos);
+            if ($closingPos !== false) {
+                $content = substr_replace($content, $diskConfig."\n\n    ],", $closingPos + 1, strlen("    ],"));
+            }
         }
 
         $this->files->put($configPath, $content);
