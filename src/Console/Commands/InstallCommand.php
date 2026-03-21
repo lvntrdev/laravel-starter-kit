@@ -700,8 +700,19 @@ PHP;
 
         $content = $this->files->get($configPath);
 
-        // Check if already injected
-        if (str_contains($content, "'do'")) {
+        // Check if 'do' disk is already inside the 'disks' section
+        $disksPos = strpos($content, "'disks'");
+        if ($disksPos === false) {
+            return;
+        }
+
+        $disksClosingPos = strpos($content, "\n    ],", $disksPos);
+        if ($disksClosingPos === false) {
+            return;
+        }
+
+        $disksSection = substr($content, $disksPos, $disksClosingPos - $disksPos);
+        if (str_contains($disksSection, "'do'")) {
             return;
         }
 
@@ -721,15 +732,7 @@ PHP;
         ],
 PHP;
 
-        // Find the 'disks' array and insert before its closing ],
-        $disksPos = strpos($content, "'disks'");
-        if ($disksPos !== false) {
-            // Find the closing ], of the 'disks' array (first 4-space-indented ], after 'disks')
-            $closingPos = strpos($content, "\n    ],", $disksPos);
-            if ($closingPos !== false) {
-                $content = substr_replace($content, $diskConfig."\n\n    ],", $closingPos + 1, strlen("    ],"));
-            }
-        }
+        $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen("    ],"));
 
         $this->files->put($configPath, $content);
 
