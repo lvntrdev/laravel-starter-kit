@@ -88,6 +88,12 @@ export function useAdminMenu() {
             href: 'https://laravel.com/docs',
             external: true,
         },
+        {
+            title: wTrans('admin.menu.kits_docs'),
+            icon: 'pi pi-external-link',
+            href: 'https://kit-docs.lvntr.dev',
+            external: true,
+        },
     ];
 
     const items = computed(() => {

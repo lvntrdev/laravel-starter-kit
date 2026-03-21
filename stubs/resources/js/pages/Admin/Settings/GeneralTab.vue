@@ -206,7 +206,13 @@
                     <small class="text-surface-400">PNG, JPG, SVG, WebP - max 2MB</small>
                 </div>
             </div>
-            <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="hidden" @change="onFileSelected">
+            <input
+                ref="fileInput"
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                class="hidden"
+                @change="onFileSelected"
+            >
         </template>
     </Card>
 
