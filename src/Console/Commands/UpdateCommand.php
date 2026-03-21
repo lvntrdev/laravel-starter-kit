@@ -81,6 +81,7 @@ class UpdateCommand extends Command
         // 3b. Inject filesystem config if missing (added in later versions)
         if (! $dryRun) {
             $this->injectFilesystemsConfig();
+            $this->injectMediaLibraryConfig();
         }
 
         // 4. Run new migrations
@@ -382,6 +383,48 @@ PHP;
         $this->files->put($configPath, $content);
 
         $this->updated[] = 'config/filesystems.php (injected DO Spaces disk)';
+    }
+
+    /**
+     * Set the custom path generator in config/media-library.php if not already configured.
+     */
+    private function injectMediaLibraryConfig(): void
+    {
+        $configPath = config_path('media-library.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $content = $this->files->get($configPath);
+
+        if (str_contains($content, 'MediaPathGenerator')) {
+            return;
+        }
+
+        $content = str_replace(
+            'Spatie\\MediaLibrary\\Support\\PathGenerator\\DefaultPathGenerator::class',
+            'App\\Support\\MediaPathGenerator::class',
+            $content,
+        );
+
+        $content = str_replace(
+            'DefaultPathGenerator::class',
+            'MediaPathGenerator::class',
+            $content,
+        );
+
+        if (str_contains($content, 'MediaPathGenerator::class') && ! str_contains($content, 'use App\\Support\\MediaPathGenerator')) {
+            $content = str_replace(
+                "<?php\n",
+                "<?php\n\nuse App\\Support\\MediaPathGenerator;\n",
+                $content,
+            );
+        }
+
+        $this->files->put($configPath, $content);
+
+        $this->updated[] = 'config/media-library.php (set custom path generator)';
     }
 
     /**

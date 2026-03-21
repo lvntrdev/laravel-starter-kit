@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Console\Commands;
 
 use App\Models\User;
+use App\Support\MediaPathGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,11 @@ class InstallCommand extends Command
         // 4c. Inject DigitalOcean Spaces disk into config/filesystems.php
         $this->step('Configuring filesystem disks', function () {
             $this->injectFilesystemsConfig();
+        });
+
+        // 4d. Configure media library path generator
+        $this->step('Configuring media library', function () {
+            $this->injectMediaLibraryConfig();
         });
 
         // 5. Create hash registry directory
@@ -732,7 +738,7 @@ PHP;
         ],
 PHP;
 
-        $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen("    ],"));
+        $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen('    ],'));
 
         $this->files->put($configPath, $content);
 
@@ -751,6 +757,56 @@ PHP;
                 'report' => false,
             ],
         ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // MEDIA LIBRARY CONFIG INJECTION
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Set the custom path generator in config/media-library.php if not already configured.
+     */
+    private function injectMediaLibraryConfig(): void
+    {
+        $configPath = config_path('media-library.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $content = $this->files->get($configPath);
+
+        // Already using our custom path generator
+        if (str_contains($content, 'MediaPathGenerator')) {
+            return;
+        }
+
+        // Replace the default path generator with our custom one
+        $content = str_replace(
+            'Spatie\\MediaLibrary\\Support\\PathGenerator\\DefaultPathGenerator::class',
+            'App\\Support\\MediaPathGenerator::class',
+            $content,
+        );
+
+        // Also handle the case where the import is used
+        $content = str_replace(
+            'DefaultPathGenerator::class',
+            'MediaPathGenerator::class',
+            $content,
+        );
+
+        // Ensure the import exists
+        if (str_contains($content, 'MediaPathGenerator::class') && ! str_contains($content, 'use App\\Support\\MediaPathGenerator')) {
+            $content = str_replace(
+                "<?php\n",
+                "<?php\n\nuse App\\Support\\MediaPathGenerator;\n",
+                $content,
+            );
+        }
+
+        $this->files->put($configPath, $content);
+
+        config(['media-library.path_generator' => MediaPathGenerator::class]);
     }
 
     // ══════════════════════════════════════════════════════════════════════
