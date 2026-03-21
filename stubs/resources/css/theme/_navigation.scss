@@ -77,20 +77,22 @@
 }
 
 .nav-link--child {
-    @apply px-4 py-1.5 font-normal;
+    @apply rounded px-4 py-1.5 font-normal;
     color: var(--admin-sidebar-text-muted);
     background: transparent;
 
     &:hover {
-        background: transparent;
+        background: color-mix(in srgb, var(--admin-sidebar-text) 8%, var(--admin-sidebar-bg));
         color: var(--admin-sidebar-text);
     }
 }
 
 .nav-link--child-active {
+    background: color-mix(in srgb, var(--admin-sidebar-text) 12%, var(--admin-sidebar-bg));
     color: var(--admin-sidebar-item-active-text);
 
     &:hover {
+        background: color-mix(in srgb, var(--admin-sidebar-text) 12%, var(--admin-sidebar-bg));
         color: var(--admin-sidebar-item-active-text);
     }
 }
@@ -138,11 +140,6 @@
 
 /* Submenu container */
 .nav-submenu {
-    @apply mt-0.5 overflow-hidden rounded py-1.5 pl-2;
+    @apply mt-0.5 overflow-hidden py-1.5 pl-2;
 }
 
-/* Submenu bg: hover always, persistent bg only when URL matches */
-.nav-group-wrapper:hover .nav-submenu,
-.nav-group-wrapper:has(.nav-group--url-active) .nav-submenu {
-    background: color-mix(in srgb, var(--admin-sidebar-text) 8%, var(--admin-sidebar-bg));
-}
