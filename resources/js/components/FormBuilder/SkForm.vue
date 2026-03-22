@@ -86,6 +86,8 @@
             remoteData.value = props.config.dataKey
                 ? (response[props.config.dataKey] as Record<string, unknown>)
                 : response;
+        } catch (e) {
+            console.error('[SkForm] Failed to fetch remote data:', e);
         } finally {
             dataLoading.value = false;
         }
