@@ -3,6 +3,7 @@
 import type {
     CheckboxFieldConfig,
     ColorSelectorFieldConfig,
+    DatePickerFieldConfig,
     ExistingMedia,
     FieldConfig,
     FileUploadFieldConfig,
@@ -96,6 +97,18 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
         return this;
     }
 
+    /** Prefix addon text or icon class (wraps field with InputGroup). */
+    groupPrefix(text: string): this {
+        this.config.groupPrefix = text;
+        return this;
+    }
+
+    /** Suffix addon text or icon class (wraps field with InputGroup). */
+    groupSuffix(text: string): this {
+        this.config.groupSuffix = text;
+        return this;
+    }
+
     /** Pass additional props directly to the underlying PrimeVue component. */
     props(componentProps: Record<string, unknown>): this {
         this.config.componentProps = { ...(this.config.componentProps ?? {}), ...componentProps };
@@ -134,6 +147,18 @@ export class InputTextBuilder extends BaseFieldBuilder<InputTextFieldConfig> {
 
     inputType(inputType: string): this {
         this.config.inputType = inputType;
+        return this;
+    }
+
+    /** Icon class (e.g. 'pi pi-search'). Wraps with IconField + InputIcon. */
+    icon(icon: string): this {
+        this.config.icon = icon;
+        return this;
+    }
+
+    /** Icon position: 'left' (default) or 'right'. */
+    iconPosition(position: 'left' | 'right'): this {
+        this.config.iconPosition = position;
         return this;
     }
 }
@@ -238,6 +263,77 @@ export class InputMaskBuilder extends BaseFieldBuilder<InputMaskFieldConfig> {
 
     unmask(enabled = true): this {
         this.config.unmask = enabled;
+        return this;
+    }
+}
+
+export class DatePickerBuilder extends BaseFieldBuilder<DatePickerFieldConfig> {
+    constructor() {
+        super('date-picker');
+    }
+
+    placeholder(placeholder: string | boolean): this {
+        this.config.placeholder = placeholder as string;
+        return this;
+    }
+
+    dateFormat(format: string): this {
+        this.config.dateFormat = format;
+        return this;
+    }
+
+    selectionMode(mode: 'single' | 'range' | 'multiple'): this {
+        this.config.selectionMode = mode;
+        return this;
+    }
+
+    showTime(enabled = true): this {
+        this.config.showTime = enabled;
+        return this;
+    }
+
+    hourFormat(format: '12' | '24'): this {
+        this.config.hourFormat = format;
+        return this;
+    }
+
+    showIcon(enabled = true): this {
+        this.config.showIcon = enabled;
+        return this;
+    }
+
+    iconDisplay(display: 'input' | 'button'): this {
+        this.config.iconDisplay = display;
+        return this;
+    }
+
+    minDate(date: Date): this {
+        this.config.minDate = date;
+        return this;
+    }
+
+    maxDate(date: Date): this {
+        this.config.maxDate = date;
+        return this;
+    }
+
+    showButtonBar(enabled = true): this {
+        this.config.showButtonBar = enabled;
+        return this;
+    }
+
+    numberOfMonths(count: number): this {
+        this.config.numberOfMonths = count;
+        return this;
+    }
+
+    view(view: 'date' | 'month' | 'year'): this {
+        this.config.view = view;
+        return this;
+    }
+
+    inline(enabled = true): this {
+        this.config.inline = enabled;
         return this;
     }
 }

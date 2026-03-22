@@ -7,6 +7,7 @@
         InputNumberFieldConfig,
         InputOtpFieldConfig,
         InputMaskFieldConfig,
+        DatePickerFieldConfig,
         InputTextFieldConfig,
         PasswordFieldConfig,
         SelectFieldConfig,
@@ -15,6 +16,7 @@
         ToggleButtonFieldConfig,
     } from '@lvntr/components/FormBuilder/core';
     import ColorSelector from '@lvntr/components/FormBuilder/SkColorSelector.vue';
+    import { InputGroup } from 'primevue';
     import { useApi } from '@/composables/useApi';
     import { useConfirm } from '@/composables/useConfirm';
     import { trans } from 'laravel-vue-i18n';
@@ -45,6 +47,7 @@
     const asInputNumber = computed(() => props.field as InputNumberFieldConfig);
     const asInputOtp = computed(() => props.field as InputOtpFieldConfig);
     const asInputMask = computed(() => props.field as InputMaskFieldConfig);
+    const asDatePicker = computed(() => props.field as DatePickerFieldConfig);
     const asSelect = computed(() => props.field as SelectFieldConfig);
     const asPassword = computed(() => props.field as PasswordFieldConfig);
     const asTextarea = computed(() => props.field as TextareaFieldConfig);
@@ -58,6 +61,10 @@
     /** Translate option labels via trans() so consumers can pass translation keys. */
     const translatedOptions = computed(() => props.options.map((opt) => ({ ...opt, label: trans(opt.label) })));
     const controlPosition = computed(() => props.field.controlPosition ?? 'left');
+
+    /** InputGroup wrapper detection. */
+    const hasGroup = computed(() => !!(props.field.groupPrefix || props.field.groupSuffix));
+    const isIcon = (text: string) => text.startsWith('pi ');
 
     const stringVal = computed({
         get: () => (props.value as string) ?? '',
@@ -76,6 +83,11 @@
 
     const anyVal = computed({
         get: () => props.value ?? null,
+        set: (v) => emit('update', v),
+    });
+
+    const dateVal = computed({
+        get: () => (props.value as Date | Date[] | null) ?? null,
         set: (v) => emit('update', v),
     });
 
@@ -174,18 +186,37 @@
 </script>
 
 <template>
-    <!-- InputText -->
-    <InputText
-        v-if="field.type === 'input-text'"
-        :id="field.key"
-        v-model="stringVal"
-        :type="asInputText.inputType ?? 'text'"
-        :placeholder="asInputText.placeholder ? $t(asInputText.placeholder) : undefined"
-        :disabled="disabled"
-        :invalid="invalid"
-        class="w-full"
-        v-bind="extraProps"
-    />
+    <component :is="hasGroup ? InputGroup : 'div'" :class="{ contents: !hasGroup, 'w-full': hasGroup }">
+        <InputGroupAddon v-if="field.groupPrefix">
+            <i v-if="isIcon(field.groupPrefix)" :class="field.groupPrefix" />
+            <template v-else>{{ field.groupPrefix }}</template>
+        </InputGroupAddon>
+
+        <!-- InputText -->
+        <IconField v-if="field.type === 'input-text' && asInputText.icon" :icon-position="asInputText.iconPosition ?? 'left'" class="w-full">
+            <InputIcon :class="asInputText.icon" />
+            <InputText
+                :id="field.key"
+                v-model="stringVal"
+                :type="asInputText.inputType ?? 'text'"
+                :placeholder="asInputText.placeholder ? $t(asInputText.placeholder) : undefined"
+                :disabled="disabled"
+                :invalid="invalid"
+                class="w-full"
+                v-bind="extraProps"
+            />
+        </IconField>
+        <InputText
+            v-else-if="field.type === 'input-text'"
+            :id="field.key"
+            v-model="stringVal"
+            :type="asInputText.inputType ?? 'text'"
+            :placeholder="asInputText.placeholder ? $t(asInputText.placeholder) : undefined"
+            :disabled="disabled"
+            :invalid="invalid"
+            class="w-full"
+            v-bind="extraProps"
+        />
 
     <!-- InputNumber -->
     <InputNumber
@@ -231,6 +262,30 @@
         :slot-char="asInputMask.slotChar ?? '_'"
         :auto-clear="asInputMask.autoClear ?? false"
         :unmask="asInputMask.unmask ?? false"
+        :disabled="disabled"
+        :invalid="invalid"
+        class="w-full"
+        v-bind="extraProps"
+    />
+
+    <!-- DatePicker -->
+    <DatePicker
+        v-else-if="field.type === 'date-picker'"
+        :id="field.key"
+        v-model="dateVal"
+        :date-format="asDatePicker.dateFormat ?? 'dd/mm/yy'"
+        :selection-mode="asDatePicker.selectionMode ?? 'single'"
+        :show-time="asDatePicker.showTime ?? false"
+        :hour-format="asDatePicker.hourFormat ?? '24'"
+        :show-icon="asDatePicker.showIcon ?? true"
+        :icon-display="asDatePicker.iconDisplay ?? 'input'"
+        :min-date="asDatePicker.minDate"
+        :max-date="asDatePicker.maxDate"
+        :show-button-bar="asDatePicker.showButtonBar ?? false"
+        :number-of-months="asDatePicker.numberOfMonths ?? 1"
+        :view="asDatePicker.view ?? 'date'"
+        :inline="asDatePicker.inline ?? false"
+        :placeholder="asDatePicker.placeholder ? $t(asDatePicker.placeholder) : undefined"
         :disabled="disabled"
         :invalid="invalid"
         class="w-full"
@@ -519,4 +574,10 @@
         :invalid="invalid"
         v-bind="extraProps"
     />
+
+        <InputGroupAddon v-if="field.groupSuffix">
+            <i v-if="isIcon(field.groupSuffix)" :class="field.groupSuffix" />
+            <template v-else>{{ field.groupSuffix }}</template>
+        </InputGroupAddon>
+    </component>
 </template>

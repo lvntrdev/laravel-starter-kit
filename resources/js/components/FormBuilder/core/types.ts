@@ -7,6 +7,7 @@ export type FieldType =
     | 'input-number'
     | 'input-otp'
     | 'input-mask'
+    | 'date-picker'
     | 'select'
     | 'multiselect'
     | 'radio'
@@ -50,6 +51,10 @@ export interface BaseFieldConfig {
     componentProps?: Record<string, unknown>;
     /** Default/initial value for this field. FormBuilder auto-derives initialValues from this. */
     defaultValue?: unknown;
+    /** Prefix addon text or icon class (wraps field with InputGroup + InputGroupAddon). */
+    groupPrefix?: string;
+    /** Suffix addon text or icon class (wraps field with InputGroup + InputGroupAddon). */
+    groupSuffix?: string;
 }
 
 export interface InputTextFieldConfig extends BaseFieldConfig {
@@ -57,6 +62,10 @@ export interface InputTextFieldConfig extends BaseFieldConfig {
     placeholder?: string;
     /** HTML input type (text, email, url, tel, etc.) */
     inputType?: string;
+    /** Icon class (e.g. 'pi pi-search'). Wraps field with IconField + InputIcon. */
+    icon?: string;
+    /** Icon position (default: 'left'). */
+    iconPosition?: 'left' | 'right';
 }
 
 export interface InputNumberFieldConfig extends BaseFieldConfig {
@@ -92,6 +101,35 @@ export interface InputMaskFieldConfig extends BaseFieldConfig {
     autoClear?: boolean;
     /** When true, mask is removed from the model value (default: false). */
     unmask?: boolean;
+}
+
+export interface DatePickerFieldConfig extends BaseFieldConfig {
+    type: 'date-picker';
+    placeholder?: string;
+    /** Date format string (default: 'dd/mm/yy'). */
+    dateFormat?: string;
+    /** Selection mode: single date, date range, or multiple dates (default: 'single'). */
+    selectionMode?: 'single' | 'range' | 'multiple';
+    /** Show time picker alongside the calendar (default: false). */
+    showTime?: boolean;
+    /** Hour format: 12h or 24h (default: '24'). */
+    hourFormat?: '12' | '24';
+    /** Show a calendar icon (default: true). */
+    showIcon?: boolean;
+    /** Icon display mode (default: 'input'). */
+    iconDisplay?: 'input' | 'button';
+    /** Minimum selectable date. */
+    minDate?: Date;
+    /** Maximum selectable date. */
+    maxDate?: Date;
+    /** Show Today and Clear buttons (default: false). */
+    showButtonBar?: boolean;
+    /** Number of months to display side by side (default: 1). */
+    numberOfMonths?: number;
+    /** Calendar view mode (default: 'date'). */
+    view?: 'date' | 'month' | 'year';
+    /** Render the calendar inline instead of as a popup. */
+    inline?: boolean;
 }
 
 /** Filter to include or exclude specific values from enum/definition options. */
@@ -215,6 +253,7 @@ export type FieldConfig =
     | InputNumberFieldConfig
     | InputOtpFieldConfig
     | InputMaskFieldConfig
+    | DatePickerFieldConfig
     | SelectFieldConfig
     | CheckboxFieldConfig
     | PasswordFieldConfig

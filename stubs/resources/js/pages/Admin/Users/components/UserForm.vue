@@ -46,6 +46,16 @@
                 FB.inputText().key('first_name'),
                 FB.inputText().key('last_name'),
                 FB.inputText().key('email').inputType('email'),
+                FB.datePicker().key('birth_date'),
+                FB.inputMask()
+                    .key('phone')
+                    .label('Phone')
+                    .mask('0 (999) 999 99 99')
+                    .placeholder('0 (5__) ___ __ __')
+                    .slotChar('_')
+                    .unmask()
+                    .optional()
+                    .hint('Example InputMask field. Add backend validation to persist it.'),
                 FB.select().key('status').default('active').definitionOptions('userStatus'),
                 FB.select().key('gender').definitionOptions('gender').placeholder('common.placeholder.select_gender'),
                 FB.select()
