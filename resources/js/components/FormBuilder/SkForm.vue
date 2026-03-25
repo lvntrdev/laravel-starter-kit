@@ -75,6 +75,7 @@
     const { options: definitionOptions, load: loadDefinitions } = useDefinition();
 
     // ── Remote data loading ─────────────────────────────────────────────────────
+    const restoringDefaults = ref(false);
     const dataLoading = ref(false);
     const remoteData = ref<Record<string, unknown> | null>(null);
 
@@ -173,11 +174,15 @@
         if (!isInternalMode.value) {
             return;
         }
+        restoringDefaults.value = true;
         internalForm.defaults(newValues);
         for (const [key, value] of Object.entries(newValues)) {
             (internalForm as unknown as Record<string, unknown>)[key] = value;
         }
         internalForm.clearErrors();
+        nextTick(() => {
+            restoringDefaults.value = false;
+        });
     });
 
     // ── Unified value & error access ─────────────────────────────────────────────
@@ -282,7 +287,7 @@
                 continue;
             }
 
-            if (!isInitial && prev !== undefined) {
+            if (!isInitial && prev !== undefined && !restoringDefaults.value) {
                 setValue(field.key, null);
             }
 
