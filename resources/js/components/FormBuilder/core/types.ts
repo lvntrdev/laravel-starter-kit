@@ -47,6 +47,8 @@ export interface BaseFieldConfig {
     visible?: (values: Record<string, unknown>) => boolean;
     /** Disable the field based on current form values. */
     disabled?: (values: Record<string, unknown>) => boolean;
+    /** Render as a hidden input — the field participates in form data but is not visible. */
+    hidden?: boolean;
     /** Additional props passed directly to the underlying PrimeVue component. */
     componentProps?: Record<string, unknown>;
     /** Default/initial value for this field. FormBuilder auto-derives initialValues from this. */

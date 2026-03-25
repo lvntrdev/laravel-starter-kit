@@ -109,6 +109,12 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
         return this;
     }
 
+    /** Render as a hidden input — the field participates in form data but is not visible. */
+    hidden(hidden = true): this {
+        this.config.hidden = hidden;
+        return this;
+    }
+
     /** Pass additional props directly to the underlying PrimeVue component. */
     props(componentProps: Record<string, unknown>): this {
         this.config.componentProps = { ...(this.config.componentProps ?? {}), ...componentProps };

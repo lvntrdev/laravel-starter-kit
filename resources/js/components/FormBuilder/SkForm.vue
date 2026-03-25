@@ -423,7 +423,7 @@
             <div v-if="dataLoading" class="sk-fb__skeleton" :class="config.cssClass">
                 <div class="grid gap-5" :class="gridClass">
                     <div
-                        v-for="field in resolvedFields.filter((f) => !['title', 'slot'].includes(f.type))"
+                        v-for="field in resolvedFields.filter((f) => !['title', 'slot'].includes(f.type) && !f.hidden)"
                         :key="field.key"
                         class="flex flex-col gap-2"
                         :class="field.cssClass"
@@ -482,7 +482,15 @@
                 <!-- ── Fields grid ─────────────────────────────────────────────────────── -->
                 <div class="sk-fb__grid" :class="gridClass">
                     <template v-for="field in resolvedFields" :key="field.key">
-                        <div v-if="isVisible(field)" :class="field.cssClass">
+                        <!-- ── Hidden field ─────────────────────────────── -->
+                        <input
+                            v-if="field.hidden"
+                            type="hidden"
+                            :name="field.key"
+                            :value="String(getValue(field.key) ?? '')"
+                        >
+
+                        <div v-else-if="isVisible(field)" :class="field.cssClass">
                             <!-- ── Title ────────────────────────────────────── -->
                             <component
                                 :is="(field as TitleFieldConfig).tag ?? 'h3'"
