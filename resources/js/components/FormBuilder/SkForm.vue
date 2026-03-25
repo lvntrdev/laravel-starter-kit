@@ -273,6 +273,7 @@
     }
 
     async function syncDynamicOptions(optionUrls: Record<string, string | null>, isInitial = false): Promise<void> {
+        const skipReset = isInitial || restoringDefaults.value;
         for (const field of dynamicSelectFields.value) {
             const url = optionUrls[field.key] ?? null;
             const prev = lastOptionUrl.value[field.key] ?? undefined;
@@ -287,7 +288,7 @@
                 continue;
             }
 
-            if (!isInitial && prev !== undefined && !restoringDefaults.value) {
+            if (!skipReset && prev !== undefined) {
                 setValue(field.key, null);
             }
 
