@@ -81,8 +81,35 @@
         set: (v) => emit('update', v),
     });
 
+    const SELECT_TYPES = new Set(['select', 'multiselect', 'radio', 'select-button']);
+
+    /**
+     * Normalize the model value to match the option value type.
+     * PrimeVue uses strict === comparison, so "1" !== 1 causes selection mismatch.
+     */
     const anyVal = computed({
-        get: () => props.value ?? null,
+        get: () => {
+            const raw = props.value ?? null;
+            if (raw === null || !SELECT_TYPES.has(props.field.type) || !props.options.length) {
+                return raw;
+            }
+
+            const valueKey = (props.field as SelectFieldConfig).optionValue ?? 'value';
+            const sampleOption = props.options[0] as Record<string, unknown>;
+            const sampleType = typeof sampleOption[valueKey];
+
+            const cast = (v: unknown): unknown => {
+                if (v === null || v === undefined) return v;
+                if (sampleType === 'string') {
+                    if (typeof v === 'boolean') return v ? '1' : '0';
+                    return String(v);
+                }
+                if (sampleType === 'number') return Number(v);
+                return v;
+            };
+
+            return Array.isArray(raw) ? raw.map(cast) : cast(raw);
+        },
         set: (v) => emit('update', v),
     });
 
