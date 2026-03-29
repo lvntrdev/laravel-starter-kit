@@ -698,6 +698,7 @@
             <div
                 v-if="config.searchable || config.filters.length > 0 || config.createButton || $slots.toolbar"
                 class="sk-dt-toolbar"
+                :class="{ 'sk-dt-toolbar--no-card': !config.isCard }"
             >
                 <!-- Left: Search (hidden on mobile, shown on sm+) -->
                 <div v-if="config.searchable" class="sk-dt-toolbar__search">
@@ -784,7 +785,7 @@
                         <!-- Create: link button -->
                         <Link v-if="config.createButton?.url" :href="config.createButton.url">
                             <Button
-                                :label="config.createButton.label ?? 'Add'"
+                                :label="$t(config.createButton.label ?? 'Add')"
                                 :icon="config.createButton.icon ?? 'pi pi-plus'"
                                 :severity="config.createButton.severity ?? 'success'"
                                 :size="config.createButton.size"
@@ -799,7 +800,7 @@
                         <!-- Create: dialog/action button -->
                         <Button
                             v-else-if="config.createButton?.onClick"
-                            :label="config.createButton.label ?? 'Add'"
+                            :label="$t(config.createButton.label ?? 'Add')"
                             :icon="config.createButton.icon ?? 'pi pi-plus'"
                             :severity="config.createButton.severity ?? 'success'"
                             :size="config.createButton.size"
