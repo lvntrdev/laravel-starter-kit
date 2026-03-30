@@ -95,7 +95,11 @@ class StarterKitServiceProvider extends ServiceProvider
      */
     private function registerViews(): void
     {
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'starter-kit');
+        $viewPath = __DIR__.'/../resources/views';
+
+        if (is_dir($viewPath)) {
+            $this->loadViewsFrom($viewPath, 'starter-kit');
+        }
     }
 
     /**
