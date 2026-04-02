@@ -980,7 +980,7 @@
                                             :row="row"
                                             :value="getNestedValue(row, column.key)"
                                         />
-                                        <Tag
+                                        <SkTag
                                             v-else-if="column.tag === 'definition'"
                                             :value="
                                                 definition.find(
@@ -992,15 +992,25 @@
                                                 definition.find(
                                                     column.tagKey!,
                                                     getNestedValue(row, column.key) as string | number | boolean,
-                                                )?.severity ?? undefined
+                                                )?.severity as any
                                             "
+                                            :color="
+                                                column.colors?.[getNestedValue(row, column.tagKey ?? column.key) as string]
+                                            "
+                                            :soft="column.tagSoft"
+                                            :rounded="column.tagRounded"
                                         />
-                                        <Tag
+                                        <SkTag
                                             v-else-if="column.tag === 'custom'"
                                             :value="String(getNestedValue(row, column.key) ?? '-')"
                                             :severity="
                                                 column.severities?.[getNestedValue(row, column.tagKey!) as string]
                                             "
+                                            :color="
+                                                column.colors?.[getNestedValue(row, column.tagKey ?? column.key) as string]
+                                            "
+                                            :soft="column.tagSoft"
+                                            :rounded="column.tagRounded"
                                         />
                                         <span v-else-if="column.render" v-html="column.render(row, escapeHtml)" />
                                         <template v-else>

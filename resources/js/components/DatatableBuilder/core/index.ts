@@ -10,6 +10,7 @@ export type {
     FilterType,
     FilterPlacement,
     ActionSeverity,
+    TagColor,
     DataTableResponse,
 } from './types';
 export { TableBuilder, ColumnBuilder, FilterBuilder, ActionBuilder, MenuActionBuilder } from './builder';

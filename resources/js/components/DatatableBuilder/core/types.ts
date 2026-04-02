@@ -17,6 +17,30 @@ export type ButtonVariant = 'outlined' | 'text';
 
 export type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
 
+export type TagColor =
+    | 'red'
+    | 'orange'
+    | 'amber'
+    | 'yellow'
+    | 'lime'
+    | 'green'
+    | 'emerald'
+    | 'teal'
+    | 'cyan'
+    | 'sky'
+    | 'blue'
+    | 'indigo'
+    | 'violet'
+    | 'purple'
+    | 'fuchsia'
+    | 'pink'
+    | 'rose'
+    | 'slate'
+    | 'gray'
+    | 'zinc'
+    | 'neutral'
+    | 'stone';
+
 /** PrimeVue Button style options — shared by actions and create button. */
 export interface ButtonStyleOptions {
     severity?: ActionSeverity;
@@ -36,6 +60,12 @@ export interface ColumnConfig {
     tag?: 'definition' | 'custom';
     tagKey?: string;
     severities?: Record<string, TagSeverity>;
+    /** Tailwind color map for SkTag – keys are matched against the tagKey value. */
+    colors?: Record<string, TagColor>;
+    /** Use soft (lighter) tag style. */
+    tagSoft?: boolean;
+    /** Use rounded (pill) tag style. */
+    tagRounded?: boolean;
     /** Pin this column so it stays visible while scrolling horizontally. */
     sticky?: boolean;
 }

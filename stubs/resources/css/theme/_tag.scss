@@ -1,0 +1,338 @@
+/**
+ * SkTag — Tailwind-powered Tag Styles
+ *
+ * Color variants (solid & soft) for all Tailwind palette colors.
+ * Dark mode supported via :root.dark selector.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-tag {
+    @apply inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold leading-none whitespace-nowrap select-none transition-colors duration-150;
+}
+
+.sk-tag--rounded {
+    @apply rounded-full;
+}
+
+.sk-tag__icon {
+    @apply text-[0.65rem];
+}
+
+.sk-tag__value {
+    @apply leading-none;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COLOR MIXIN — Solid (default) & Soft
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* --- Red --- */
+.sk-tag--red {
+    @apply bg-red-500 text-white;
+}
+.sk-tag--red.sk-tag--soft {
+    @apply bg-red-100 text-red-700;
+}
+:root.dark .sk-tag--red {
+    @apply bg-red-600 text-white;
+}
+:root.dark .sk-tag--red.sk-tag--soft {
+    @apply bg-red-500/20 text-red-300;
+}
+
+/* --- Orange --- */
+.sk-tag--orange {
+    @apply bg-orange-500 text-white;
+}
+.sk-tag--orange.sk-tag--soft {
+    @apply bg-orange-100 text-orange-700;
+}
+:root.dark .sk-tag--orange {
+    @apply bg-orange-600 text-white;
+}
+:root.dark .sk-tag--orange.sk-tag--soft {
+    @apply bg-orange-500/20 text-orange-300;
+}
+
+/* --- Amber --- */
+.sk-tag--amber {
+    @apply bg-amber-500 text-white;
+}
+.sk-tag--amber.sk-tag--soft {
+    @apply bg-amber-100 text-amber-700;
+}
+:root.dark .sk-tag--amber {
+    @apply bg-amber-600 text-white;
+}
+:root.dark .sk-tag--amber.sk-tag--soft {
+    @apply bg-amber-500/20 text-amber-300;
+}
+
+/* --- Yellow --- */
+.sk-tag--yellow {
+    @apply bg-yellow-400 text-yellow-900;
+}
+.sk-tag--yellow.sk-tag--soft {
+    @apply bg-yellow-100 text-yellow-700;
+}
+:root.dark .sk-tag--yellow {
+    @apply bg-yellow-500 text-yellow-950;
+}
+:root.dark .sk-tag--yellow.sk-tag--soft {
+    @apply bg-yellow-500/20 text-yellow-300;
+}
+
+/* --- Lime --- */
+.sk-tag--lime {
+    @apply bg-lime-500 text-white;
+}
+.sk-tag--lime.sk-tag--soft {
+    @apply bg-lime-100 text-lime-700;
+}
+:root.dark .sk-tag--lime {
+    @apply bg-lime-600 text-white;
+}
+:root.dark .sk-tag--lime.sk-tag--soft {
+    @apply bg-lime-500/20 text-lime-300;
+}
+
+/* --- Green --- */
+.sk-tag--green {
+    @apply bg-green-500 text-white;
+}
+.sk-tag--green.sk-tag--soft {
+    @apply bg-green-100 text-green-700;
+}
+:root.dark .sk-tag--green {
+    @apply bg-green-600 text-white;
+}
+:root.dark .sk-tag--green.sk-tag--soft {
+    @apply bg-green-500/20 text-green-300;
+}
+
+/* --- Emerald --- */
+.sk-tag--emerald {
+    @apply bg-emerald-500 text-white;
+}
+.sk-tag--emerald.sk-tag--soft {
+    @apply bg-emerald-100 text-emerald-700;
+}
+:root.dark .sk-tag--emerald {
+    @apply bg-emerald-600 text-white;
+}
+:root.dark .sk-tag--emerald.sk-tag--soft {
+    @apply bg-emerald-500/20 text-emerald-300;
+}
+
+/* --- Teal --- */
+.sk-tag--teal {
+    @apply bg-teal-500 text-white;
+}
+.sk-tag--teal.sk-tag--soft {
+    @apply bg-teal-100 text-teal-700;
+}
+:root.dark .sk-tag--teal {
+    @apply bg-teal-600 text-white;
+}
+:root.dark .sk-tag--teal.sk-tag--soft {
+    @apply bg-teal-500/20 text-teal-300;
+}
+
+/* --- Cyan --- */
+.sk-tag--cyan {
+    @apply bg-cyan-500 text-white;
+}
+.sk-tag--cyan.sk-tag--soft {
+    @apply bg-cyan-100 text-cyan-700;
+}
+:root.dark .sk-tag--cyan {
+    @apply bg-cyan-600 text-white;
+}
+:root.dark .sk-tag--cyan.sk-tag--soft {
+    @apply bg-cyan-500/20 text-cyan-300;
+}
+
+/* --- Sky --- */
+.sk-tag--sky {
+    @apply bg-sky-500 text-white;
+}
+.sk-tag--sky.sk-tag--soft {
+    @apply bg-sky-100 text-sky-700;
+}
+:root.dark .sk-tag--sky {
+    @apply bg-sky-600 text-white;
+}
+:root.dark .sk-tag--sky.sk-tag--soft {
+    @apply bg-sky-500/20 text-sky-300;
+}
+
+/* --- Blue --- */
+.sk-tag--blue {
+    @apply bg-blue-500 text-white;
+}
+.sk-tag--blue.sk-tag--soft {
+    @apply bg-blue-100 text-blue-700;
+}
+:root.dark .sk-tag--blue {
+    @apply bg-blue-600 text-white;
+}
+:root.dark .sk-tag--blue.sk-tag--soft {
+    @apply bg-blue-500/20 text-blue-300;
+}
+
+/* --- Indigo --- */
+.sk-tag--indigo {
+    @apply bg-indigo-500 text-white;
+}
+.sk-tag--indigo.sk-tag--soft {
+    @apply bg-indigo-100 text-indigo-700;
+}
+:root.dark .sk-tag--indigo {
+    @apply bg-indigo-600 text-white;
+}
+:root.dark .sk-tag--indigo.sk-tag--soft {
+    @apply bg-indigo-500/20 text-indigo-300;
+}
+
+/* --- Violet --- */
+.sk-tag--violet {
+    @apply bg-violet-500 text-white;
+}
+.sk-tag--violet.sk-tag--soft {
+    @apply bg-violet-100 text-violet-700;
+}
+:root.dark .sk-tag--violet {
+    @apply bg-violet-600 text-white;
+}
+:root.dark .sk-tag--violet.sk-tag--soft {
+    @apply bg-violet-500/20 text-violet-300;
+}
+
+/* --- Purple --- */
+.sk-tag--purple {
+    @apply bg-purple-500 text-white;
+}
+.sk-tag--purple.sk-tag--soft {
+    @apply bg-purple-100 text-purple-700;
+}
+:root.dark .sk-tag--purple {
+    @apply bg-purple-600 text-white;
+}
+:root.dark .sk-tag--purple.sk-tag--soft {
+    @apply bg-purple-500/20 text-purple-300;
+}
+
+/* --- Fuchsia --- */
+.sk-tag--fuchsia {
+    @apply bg-fuchsia-500 text-white;
+}
+.sk-tag--fuchsia.sk-tag--soft {
+    @apply bg-fuchsia-100 text-fuchsia-700;
+}
+:root.dark .sk-tag--fuchsia {
+    @apply bg-fuchsia-600 text-white;
+}
+:root.dark .sk-tag--fuchsia.sk-tag--soft {
+    @apply bg-fuchsia-500/20 text-fuchsia-300;
+}
+
+/* --- Pink --- */
+.sk-tag--pink {
+    @apply bg-pink-500 text-white;
+}
+.sk-tag--pink.sk-tag--soft {
+    @apply bg-pink-100 text-pink-700;
+}
+:root.dark .sk-tag--pink {
+    @apply bg-pink-600 text-white;
+}
+:root.dark .sk-tag--pink.sk-tag--soft {
+    @apply bg-pink-500/20 text-pink-300;
+}
+
+/* --- Rose --- */
+.sk-tag--rose {
+    @apply bg-rose-500 text-white;
+}
+.sk-tag--rose.sk-tag--soft {
+    @apply bg-rose-100 text-rose-700;
+}
+:root.dark .sk-tag--rose {
+    @apply bg-rose-600 text-white;
+}
+:root.dark .sk-tag--rose.sk-tag--soft {
+    @apply bg-rose-500/20 text-rose-300;
+}
+
+/* --- Slate --- */
+.sk-tag--slate {
+    @apply bg-slate-500 text-white;
+}
+.sk-tag--slate.sk-tag--soft {
+    @apply bg-slate-100 text-slate-700;
+}
+:root.dark .sk-tag--slate {
+    @apply bg-slate-600 text-white;
+}
+:root.dark .sk-tag--slate.sk-tag--soft {
+    @apply bg-slate-500/20 text-slate-300;
+}
+
+/* --- Gray --- */
+.sk-tag--gray {
+    @apply bg-gray-500 text-white;
+}
+.sk-tag--gray.sk-tag--soft {
+    @apply bg-gray-100 text-gray-700;
+}
+:root.dark .sk-tag--gray {
+    @apply bg-gray-600 text-white;
+}
+:root.dark .sk-tag--gray.sk-tag--soft {
+    @apply bg-gray-500/20 text-gray-300;
+}
+
+/* --- Zinc --- */
+.sk-tag--zinc {
+    @apply bg-zinc-700 text-white;
+}
+.sk-tag--zinc.sk-tag--soft {
+    @apply bg-zinc-100 text-zinc-700;
+}
+:root.dark .sk-tag--zinc {
+    @apply bg-zinc-300 text-zinc-900;
+}
+:root.dark .sk-tag--zinc.sk-tag--soft {
+    @apply bg-zinc-500/20 text-zinc-300;
+}
+
+/* --- Neutral --- */
+.sk-tag--neutral {
+    @apply bg-neutral-500 text-white;
+}
+.sk-tag--neutral.sk-tag--soft {
+    @apply bg-neutral-100 text-neutral-700;
+}
+:root.dark .sk-tag--neutral {
+    @apply bg-neutral-600 text-white;
+}
+:root.dark .sk-tag--neutral.sk-tag--soft {
+    @apply bg-neutral-500/20 text-neutral-300;
+}
+
+/* --- Stone --- */
+.sk-tag--stone {
+    @apply bg-stone-500 text-white;
+}
+.sk-tag--stone.sk-tag--soft {
+    @apply bg-stone-100 text-stone-700;
+}
+:root.dark .sk-tag--stone {
+    @apply bg-stone-600 text-white;
+}
+:root.dark .sk-tag--stone.sk-tag--soft {
+    @apply bg-stone-500/20 text-stone-300;
+}

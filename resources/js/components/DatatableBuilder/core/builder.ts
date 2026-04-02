@@ -15,6 +15,7 @@ import type {
     IdColumnConfig,
     MenuActionConfig,
     MenuButtonConfig,
+    TagColor,
     TagSeverity,
 } from './types';
 
@@ -60,6 +61,24 @@ export class ColumnBuilder<_T = unknown> {
     /** Severity map for custom tags – keys are matched against the tagKey value. */
     severities(map: Record<string, TagSeverity>): this {
         this.config.severities = map;
+        return this;
+    }
+
+    /** Tailwind color map for SkTag – keys are matched against the tagKey value. */
+    colors(map: Record<string, TagColor>): this {
+        this.config.colors = map;
+        return this;
+    }
+
+    /** Use soft (lighter) tag style. */
+    tagSoft(enabled = true): this {
+        this.config.tagSoft = enabled;
+        return this;
+    }
+
+    /** Use rounded (pill) tag style. */
+    tagRounded(enabled = true): this {
+        this.config.tagRounded = enabled;
         return this;
     }
 
