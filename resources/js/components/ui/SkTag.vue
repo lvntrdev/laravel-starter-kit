@@ -30,9 +30,28 @@
     export type SkTagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
 
     const tailwindColors: Set<string> = new Set<string>([
-        'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
-        'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink',
-        'rose', 'slate', 'gray', 'zinc', 'neutral', 'stone',
+        'red',
+        'orange',
+        'amber',
+        'yellow',
+        'lime',
+        'green',
+        'emerald',
+        'teal',
+        'cyan',
+        'sky',
+        'blue',
+        'indigo',
+        'violet',
+        'purple',
+        'fuchsia',
+        'pink',
+        'rose',
+        'slate',
+        'gray',
+        'zinc',
+        'neutral',
+        'stone',
     ]);
 
     export interface SkTagProps {

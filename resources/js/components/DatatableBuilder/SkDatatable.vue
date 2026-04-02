@@ -995,14 +995,18 @@
                                                 )?.severity as any
                                             "
                                             :color="
-                                                column.colors?.[getNestedValue(row, column.tagKey ?? column.key) as string]
+                                                column.colors?.[
+                                                    getNestedValue(row, column.tagKey ?? column.key) as string
+                                                ]
                                             "
                                             :icon="
-                                                column.icons?.[getNestedValue(row, column.tagKey ?? column.key) as string]
-                                                ?? definition.find(
-                                                    column.tagKey!,
-                                                    getNestedValue(row, column.key) as string | number | boolean,
-                                                )?.icon
+                                                column.icons?.[
+                                                    getNestedValue(row, column.tagKey ?? column.key) as string
+                                                ] ??
+                                                    definition.find(
+                                                        column.tagKey!,
+                                                        getNestedValue(row, column.key) as string | number | boolean,
+                                                    )?.icon
                                             "
                                             :icon-pos="column.tagIconPos"
                                             :soft="column.tagSoft"
