@@ -38,16 +38,21 @@
     export interface SkTagProps {
         value?: string;
         icon?: string;
+        /** Icon position: 'left' (default) or 'right'. */
+        iconPos?: 'left' | 'right';
         color?: SkTagColor;
         /** PrimeVue severity veya doğrudan Tailwind renk adı (ör. 'emerald', 'purple'). */
         severity?: SkTagSeverity | SkTagColor | string;
         soft?: boolean;
         rounded?: boolean;
+        outlined?: boolean;
     }
 
     const props = withDefaults(defineProps<SkTagProps>(), {
+        iconPos: 'left',
         soft: false,
         rounded: false,
+        outlined: false,
     });
 
     /** Map PrimeVue severities to Tailwind color keys. */
@@ -75,14 +80,16 @@
         {
             'sk-tag--soft': props.soft,
             'sk-tag--rounded': props.rounded,
+            'sk-tag--outlined': props.outlined,
         },
     ]);
 </script>
 
 <template>
     <span :class="cssClass">
-        <i v-if="icon" :class="icon" class="sk-tag__icon" />
+        <i v-if="icon && iconPos === 'left'" :class="icon" class="sk-tag__icon" />
         <span v-if="value" class="sk-tag__value">{{ value }}</span>
         <slot />
+        <i v-if="icon && iconPos === 'right'" :class="icon" class="sk-tag__icon" />
     </span>
 </template>

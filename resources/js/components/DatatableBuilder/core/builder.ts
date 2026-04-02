@@ -16,7 +16,6 @@ import type {
     MenuActionConfig,
     MenuButtonConfig,
     TagColor,
-    TagSeverity,
 } from './types';
 
 export class ColumnBuilder<_T = unknown> {
@@ -43,8 +42,8 @@ export class ColumnBuilder<_T = unknown> {
         return this;
     }
 
-    /** Render cell as a PrimeVue Tag. Use 'definition' for enum/DB definitions, 'custom' for manual severity mapping. */
-    tag(type: 'definition' | 'custom', tagKey?: string): this {
+    /** Render cell as SkTag with severity/label from DB definitions. */
+    tag(type: 'definition', tagKey?: string): this {
         this.config.tag = type;
         if (tagKey) {
             this.config.tagKey = tagKey;
@@ -58,15 +57,21 @@ export class ColumnBuilder<_T = unknown> {
         return this;
     }
 
-    /** Severity map for custom tags – keys are matched against the tagKey value. */
-    severities(map: Record<string, TagSeverity>): this {
-        this.config.severities = map;
+    /** Tailwind color map for SkTag – overrides definition severity color. */
+    colors(map: Record<string, TagColor>): this {
+        this.config.colors = map;
         return this;
     }
 
-    /** Tailwind color map for SkTag – keys are matched against the tagKey value. */
-    colors(map: Record<string, TagColor>): this {
-        this.config.colors = map;
+    /** Icon map – keys are matched against the tagKey value. Uses definition icon when not provided. */
+    icons(map: Record<string, string>): this {
+        this.config.icons = map;
+        return this;
+    }
+
+    /** Icon position: 'left' (default) or 'right'. */
+    tagIconPos(pos: 'left' | 'right'): this {
+        this.config.tagIconPos = pos;
         return this;
     }
 
@@ -79,6 +84,12 @@ export class ColumnBuilder<_T = unknown> {
     /** Use rounded (pill) tag style. */
     tagRounded(enabled = true): this {
         this.config.tagRounded = enabled;
+        return this;
+    }
+
+    /** Use outlined (border only) tag style. */
+    tagOutlined(enabled = true): this {
+        this.config.tagOutlined = enabled;
         return this;
     }
 

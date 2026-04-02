@@ -57,15 +57,20 @@ export interface ColumnConfig {
     key: string;
     sortable: boolean;
     render?: (row: unknown, escape: (str: string) => string) => string;
-    tag?: 'definition' | 'custom';
+    tag?: 'definition';
     tagKey?: string;
-    severities?: Record<string, TagSeverity>;
     /** Tailwind color map for SkTag – keys are matched against the tagKey value. */
     colors?: Record<string, TagColor>;
+    /** Icon map – keys are matched against the tagKey value (e.g. { active: 'pi pi-check' }). */
+    icons?: Record<string, string>;
+    /** Icon position: 'left' (default) or 'right'. */
+    tagIconPos?: 'left' | 'right';
     /** Use soft (lighter) tag style. */
     tagSoft?: boolean;
     /** Use rounded (pill) tag style. */
     tagRounded?: boolean;
+    /** Use outlined (border only) tag style. */
+    tagOutlined?: boolean;
     /** Pin this column so it stays visible while scrolling horizontally. */
     sticky?: boolean;
 }

@@ -10,7 +10,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-tag {
-    @apply inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold leading-none whitespace-nowrap select-none transition-colors duration-150;
+    @apply inline-flex items-center gap-1.5 rounded px-2.5 py-2 font-semibold leading-none whitespace-nowrap select-none transition-colors duration-150;
 }
 
 .sk-tag--rounded {
@@ -36,11 +36,17 @@
 .sk-tag--red.sk-tag--soft {
     @apply bg-red-100 text-red-700;
 }
+.sk-tag--red.sk-tag--outlined {
+    @apply bg-transparent text-red-600 ring-1 ring-red-400 ring-inset;
+}
 :root.dark .sk-tag--red {
     @apply bg-red-600 text-white;
 }
 :root.dark .sk-tag--red.sk-tag--soft {
     @apply bg-red-500/20 text-red-300;
+}
+:root.dark .sk-tag--red.sk-tag--outlined {
+    @apply bg-transparent text-red-400 ring-red-500;
 }
 
 /* --- Orange --- */
@@ -50,11 +56,17 @@
 .sk-tag--orange.sk-tag--soft {
     @apply bg-orange-100 text-orange-700;
 }
+.sk-tag--orange.sk-tag--outlined {
+    @apply bg-transparent text-orange-600 ring-1 ring-orange-400 ring-inset;
+}
 :root.dark .sk-tag--orange {
     @apply bg-orange-600 text-white;
 }
 :root.dark .sk-tag--orange.sk-tag--soft {
     @apply bg-orange-500/20 text-orange-300;
+}
+:root.dark .sk-tag--orange.sk-tag--outlined {
+    @apply bg-transparent text-orange-400 ring-orange-500;
 }
 
 /* --- Amber --- */
@@ -64,11 +76,17 @@
 .sk-tag--amber.sk-tag--soft {
     @apply bg-amber-100 text-amber-700;
 }
+.sk-tag--amber.sk-tag--outlined {
+    @apply bg-transparent text-amber-600 ring-1 ring-amber-400 ring-inset;
+}
 :root.dark .sk-tag--amber {
     @apply bg-amber-600 text-white;
 }
 :root.dark .sk-tag--amber.sk-tag--soft {
     @apply bg-amber-500/20 text-amber-300;
+}
+:root.dark .sk-tag--amber.sk-tag--outlined {
+    @apply bg-transparent text-amber-400 ring-amber-500;
 }
 
 /* --- Yellow --- */
@@ -78,11 +96,17 @@
 .sk-tag--yellow.sk-tag--soft {
     @apply bg-yellow-100 text-yellow-700;
 }
+.sk-tag--yellow.sk-tag--outlined {
+    @apply bg-transparent text-yellow-600 ring-1 ring-yellow-400 ring-inset;
+}
 :root.dark .sk-tag--yellow {
     @apply bg-yellow-500 text-yellow-950;
 }
 :root.dark .sk-tag--yellow.sk-tag--soft {
     @apply bg-yellow-500/20 text-yellow-300;
+}
+:root.dark .sk-tag--yellow.sk-tag--outlined {
+    @apply bg-transparent text-yellow-400 ring-yellow-500;
 }
 
 /* --- Lime --- */
@@ -92,11 +116,17 @@
 .sk-tag--lime.sk-tag--soft {
     @apply bg-lime-100 text-lime-700;
 }
+.sk-tag--lime.sk-tag--outlined {
+    @apply bg-transparent text-lime-600 ring-1 ring-lime-400 ring-inset;
+}
 :root.dark .sk-tag--lime {
     @apply bg-lime-600 text-white;
 }
 :root.dark .sk-tag--lime.sk-tag--soft {
     @apply bg-lime-500/20 text-lime-300;
+}
+:root.dark .sk-tag--lime.sk-tag--outlined {
+    @apply bg-transparent text-lime-400 ring-lime-500;
 }
 
 /* --- Green --- */
@@ -106,11 +136,17 @@
 .sk-tag--green.sk-tag--soft {
     @apply bg-green-100 text-green-700;
 }
+.sk-tag--green.sk-tag--outlined {
+    @apply bg-transparent text-green-600 ring-1 ring-green-400 ring-inset;
+}
 :root.dark .sk-tag--green {
     @apply bg-green-600 text-white;
 }
 :root.dark .sk-tag--green.sk-tag--soft {
     @apply bg-green-500/20 text-green-300;
+}
+:root.dark .sk-tag--green.sk-tag--outlined {
+    @apply bg-transparent text-green-400 ring-green-500;
 }
 
 /* --- Emerald --- */
@@ -120,11 +156,17 @@
 .sk-tag--emerald.sk-tag--soft {
     @apply bg-emerald-100 text-emerald-700;
 }
+.sk-tag--emerald.sk-tag--outlined {
+    @apply bg-transparent text-emerald-600 ring-1 ring-emerald-400 ring-inset;
+}
 :root.dark .sk-tag--emerald {
     @apply bg-emerald-600 text-white;
 }
 :root.dark .sk-tag--emerald.sk-tag--soft {
     @apply bg-emerald-500/20 text-emerald-300;
+}
+:root.dark .sk-tag--emerald.sk-tag--outlined {
+    @apply bg-transparent text-emerald-400 ring-emerald-500;
 }
 
 /* --- Teal --- */
@@ -134,11 +176,17 @@
 .sk-tag--teal.sk-tag--soft {
     @apply bg-teal-100 text-teal-700;
 }
+.sk-tag--teal.sk-tag--outlined {
+    @apply bg-transparent text-teal-600 ring-1 ring-teal-400 ring-inset;
+}
 :root.dark .sk-tag--teal {
     @apply bg-teal-600 text-white;
 }
 :root.dark .sk-tag--teal.sk-tag--soft {
     @apply bg-teal-500/20 text-teal-300;
+}
+:root.dark .sk-tag--teal.sk-tag--outlined {
+    @apply bg-transparent text-teal-400 ring-teal-500;
 }
 
 /* --- Cyan --- */
@@ -148,11 +196,17 @@
 .sk-tag--cyan.sk-tag--soft {
     @apply bg-cyan-100 text-cyan-700;
 }
+.sk-tag--cyan.sk-tag--outlined {
+    @apply bg-transparent text-cyan-600 ring-1 ring-cyan-400 ring-inset;
+}
 :root.dark .sk-tag--cyan {
     @apply bg-cyan-600 text-white;
 }
 :root.dark .sk-tag--cyan.sk-tag--soft {
     @apply bg-cyan-500/20 text-cyan-300;
+}
+:root.dark .sk-tag--cyan.sk-tag--outlined {
+    @apply bg-transparent text-cyan-400 ring-cyan-500;
 }
 
 /* --- Sky --- */
@@ -162,11 +216,17 @@
 .sk-tag--sky.sk-tag--soft {
     @apply bg-sky-100 text-sky-700;
 }
+.sk-tag--sky.sk-tag--outlined {
+    @apply bg-transparent text-sky-600 ring-1 ring-sky-400 ring-inset;
+}
 :root.dark .sk-tag--sky {
     @apply bg-sky-600 text-white;
 }
 :root.dark .sk-tag--sky.sk-tag--soft {
     @apply bg-sky-500/20 text-sky-300;
+}
+:root.dark .sk-tag--sky.sk-tag--outlined {
+    @apply bg-transparent text-sky-400 ring-sky-500;
 }
 
 /* --- Blue --- */
@@ -176,11 +236,17 @@
 .sk-tag--blue.sk-tag--soft {
     @apply bg-blue-100 text-blue-700;
 }
+.sk-tag--blue.sk-tag--outlined {
+    @apply bg-transparent text-blue-600 ring-1 ring-blue-400 ring-inset;
+}
 :root.dark .sk-tag--blue {
     @apply bg-blue-600 text-white;
 }
 :root.dark .sk-tag--blue.sk-tag--soft {
     @apply bg-blue-500/20 text-blue-300;
+}
+:root.dark .sk-tag--blue.sk-tag--outlined {
+    @apply bg-transparent text-blue-400 ring-blue-500;
 }
 
 /* --- Indigo --- */
@@ -190,11 +256,17 @@
 .sk-tag--indigo.sk-tag--soft {
     @apply bg-indigo-100 text-indigo-700;
 }
+.sk-tag--indigo.sk-tag--outlined {
+    @apply bg-transparent text-indigo-600 ring-1 ring-indigo-400 ring-inset;
+}
 :root.dark .sk-tag--indigo {
     @apply bg-indigo-600 text-white;
 }
 :root.dark .sk-tag--indigo.sk-tag--soft {
     @apply bg-indigo-500/20 text-indigo-300;
+}
+:root.dark .sk-tag--indigo.sk-tag--outlined {
+    @apply bg-transparent text-indigo-400 ring-indigo-500;
 }
 
 /* --- Violet --- */
@@ -204,11 +276,17 @@
 .sk-tag--violet.sk-tag--soft {
     @apply bg-violet-100 text-violet-700;
 }
+.sk-tag--violet.sk-tag--outlined {
+    @apply bg-transparent text-violet-600 ring-1 ring-violet-400 ring-inset;
+}
 :root.dark .sk-tag--violet {
     @apply bg-violet-600 text-white;
 }
 :root.dark .sk-tag--violet.sk-tag--soft {
     @apply bg-violet-500/20 text-violet-300;
+}
+:root.dark .sk-tag--violet.sk-tag--outlined {
+    @apply bg-transparent text-violet-400 ring-violet-500;
 }
 
 /* --- Purple --- */
@@ -218,11 +296,17 @@
 .sk-tag--purple.sk-tag--soft {
     @apply bg-purple-100 text-purple-700;
 }
+.sk-tag--purple.sk-tag--outlined {
+    @apply bg-transparent text-purple-600 ring-1 ring-purple-400 ring-inset;
+}
 :root.dark .sk-tag--purple {
     @apply bg-purple-600 text-white;
 }
 :root.dark .sk-tag--purple.sk-tag--soft {
     @apply bg-purple-500/20 text-purple-300;
+}
+:root.dark .sk-tag--purple.sk-tag--outlined {
+    @apply bg-transparent text-purple-400 ring-purple-500;
 }
 
 /* --- Fuchsia --- */
@@ -232,11 +316,17 @@
 .sk-tag--fuchsia.sk-tag--soft {
     @apply bg-fuchsia-100 text-fuchsia-700;
 }
+.sk-tag--fuchsia.sk-tag--outlined {
+    @apply bg-transparent text-fuchsia-600 ring-1 ring-fuchsia-400 ring-inset;
+}
 :root.dark .sk-tag--fuchsia {
     @apply bg-fuchsia-600 text-white;
 }
 :root.dark .sk-tag--fuchsia.sk-tag--soft {
     @apply bg-fuchsia-500/20 text-fuchsia-300;
+}
+:root.dark .sk-tag--fuchsia.sk-tag--outlined {
+    @apply bg-transparent text-fuchsia-400 ring-fuchsia-500;
 }
 
 /* --- Pink --- */
@@ -246,11 +336,17 @@
 .sk-tag--pink.sk-tag--soft {
     @apply bg-pink-100 text-pink-700;
 }
+.sk-tag--pink.sk-tag--outlined {
+    @apply bg-transparent text-pink-600 ring-1 ring-pink-400 ring-inset;
+}
 :root.dark .sk-tag--pink {
     @apply bg-pink-600 text-white;
 }
 :root.dark .sk-tag--pink.sk-tag--soft {
     @apply bg-pink-500/20 text-pink-300;
+}
+:root.dark .sk-tag--pink.sk-tag--outlined {
+    @apply bg-transparent text-pink-400 ring-pink-500;
 }
 
 /* --- Rose --- */
@@ -260,11 +356,17 @@
 .sk-tag--rose.sk-tag--soft {
     @apply bg-rose-100 text-rose-700;
 }
+.sk-tag--rose.sk-tag--outlined {
+    @apply bg-transparent text-rose-600 ring-1 ring-rose-400 ring-inset;
+}
 :root.dark .sk-tag--rose {
     @apply bg-rose-600 text-white;
 }
 :root.dark .sk-tag--rose.sk-tag--soft {
     @apply bg-rose-500/20 text-rose-300;
+}
+:root.dark .sk-tag--rose.sk-tag--outlined {
+    @apply bg-transparent text-rose-400 ring-rose-500;
 }
 
 /* --- Slate --- */
@@ -274,11 +376,17 @@
 .sk-tag--slate.sk-tag--soft {
     @apply bg-slate-100 text-slate-700;
 }
+.sk-tag--slate.sk-tag--outlined {
+    @apply bg-transparent text-slate-600 ring-1 ring-slate-400 ring-inset;
+}
 :root.dark .sk-tag--slate {
     @apply bg-slate-600 text-white;
 }
 :root.dark .sk-tag--slate.sk-tag--soft {
     @apply bg-slate-500/20 text-slate-300;
+}
+:root.dark .sk-tag--slate.sk-tag--outlined {
+    @apply bg-transparent text-slate-400 ring-slate-500;
 }
 
 /* --- Gray --- */
@@ -288,11 +396,17 @@
 .sk-tag--gray.sk-tag--soft {
     @apply bg-gray-100 text-gray-700;
 }
+.sk-tag--gray.sk-tag--outlined {
+    @apply bg-transparent text-gray-600 ring-1 ring-gray-400 ring-inset;
+}
 :root.dark .sk-tag--gray {
     @apply bg-gray-600 text-white;
 }
 :root.dark .sk-tag--gray.sk-tag--soft {
     @apply bg-gray-500/20 text-gray-300;
+}
+:root.dark .sk-tag--gray.sk-tag--outlined {
+    @apply bg-transparent text-gray-400 ring-gray-500;
 }
 
 /* --- Zinc --- */
@@ -302,11 +416,17 @@
 .sk-tag--zinc.sk-tag--soft {
     @apply bg-zinc-100 text-zinc-700;
 }
+.sk-tag--zinc.sk-tag--outlined {
+    @apply bg-transparent text-zinc-600 ring-1 ring-zinc-400 ring-inset;
+}
 :root.dark .sk-tag--zinc {
     @apply bg-zinc-300 text-zinc-900;
 }
 :root.dark .sk-tag--zinc.sk-tag--soft {
     @apply bg-zinc-500/20 text-zinc-300;
+}
+:root.dark .sk-tag--zinc.sk-tag--outlined {
+    @apply bg-transparent text-zinc-400 ring-zinc-500;
 }
 
 /* --- Neutral --- */
@@ -316,11 +436,17 @@
 .sk-tag--neutral.sk-tag--soft {
     @apply bg-neutral-100 text-neutral-700;
 }
+.sk-tag--neutral.sk-tag--outlined {
+    @apply bg-transparent text-neutral-600 ring-1 ring-neutral-400 ring-inset;
+}
 :root.dark .sk-tag--neutral {
     @apply bg-neutral-600 text-white;
 }
 :root.dark .sk-tag--neutral.sk-tag--soft {
     @apply bg-neutral-500/20 text-neutral-300;
+}
+:root.dark .sk-tag--neutral.sk-tag--outlined {
+    @apply bg-transparent text-neutral-400 ring-neutral-500;
 }
 
 /* --- Stone --- */
@@ -330,9 +456,15 @@
 .sk-tag--stone.sk-tag--soft {
     @apply bg-stone-100 text-stone-700;
 }
+.sk-tag--stone.sk-tag--outlined {
+    @apply bg-transparent text-stone-600 ring-1 ring-stone-400 ring-inset;
+}
 :root.dark .sk-tag--stone {
     @apply bg-stone-600 text-white;
 }
 :root.dark .sk-tag--stone.sk-tag--soft {
     @apply bg-stone-500/20 text-stone-300;
+}
+:root.dark .sk-tag--stone.sk-tag--outlined {
+    @apply bg-transparent text-stone-400 ring-stone-500;
 }

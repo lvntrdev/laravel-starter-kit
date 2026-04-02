@@ -997,20 +997,17 @@
                                             :color="
                                                 column.colors?.[getNestedValue(row, column.tagKey ?? column.key) as string]
                                             "
+                                            :icon="
+                                                column.icons?.[getNestedValue(row, column.tagKey ?? column.key) as string]
+                                                ?? definition.find(
+                                                    column.tagKey!,
+                                                    getNestedValue(row, column.key) as string | number | boolean,
+                                                )?.icon
+                                            "
+                                            :icon-pos="column.tagIconPos"
                                             :soft="column.tagSoft"
                                             :rounded="column.tagRounded"
-                                        />
-                                        <SkTag
-                                            v-else-if="column.tag === 'custom'"
-                                            :value="String(getNestedValue(row, column.key) ?? '-')"
-                                            :severity="
-                                                column.severities?.[getNestedValue(row, column.tagKey!) as string]
-                                            "
-                                            :color="
-                                                column.colors?.[getNestedValue(row, column.tagKey ?? column.key) as string]
-                                            "
-                                            :soft="column.tagSoft"
-                                            :rounded="column.tagRounded"
+                                            :outlined="column.tagOutlined"
                                         />
                                         <span v-else-if="column.render" v-html="column.render(row, escapeHtml)" />
                                         <template v-else>
