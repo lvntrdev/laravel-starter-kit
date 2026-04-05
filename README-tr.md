@@ -157,6 +157,53 @@ php artisan sk:update --dry-run
 php artisan sk:update --force
 ```
 
+## Laravel 12'den 13'e Yukseltme
+
+Bu paketin `main` branch'i hem Laravel 12'yi hem de Laravel 13'u destekler. Mevcut bir Laravel 12 uygulamasini Laravel 13 hattina tasirken yukseltme iki asamaya ayrilir:
+
+### 1. Laravel'i kendin yukselt
+
+Paket `composer.json`'a **dokunmaz** ve framework'u senin yerine yukseltmez — bu adim sende kalir. `composer.json`'u guncelle:
+
+```json
+{
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.0",
+        "lvntr/starter-kit": "^13.0"
+    }
+}
+```
+
+Ardindan `composer update` calistir.
+
+### 2. Paket tarafindaki isi `sk:upgrade` ile tamamla
+
+Laravel 13'e gectikten sonra sunu calistir:
+
+```bash
+php artisan sk:upgrade
+```
+
+Komut on kontrolleri yapar (Laravel ≥ 13, Starter Kit ≥ v13, PHP ≥ 8.3) ve herhangi biri uygun degilse calismayi reddeder — bu durumda tek bir dosyaya bile dokunmaz. Basarili olursa:
+
+1. Starter Kit stub'larini senkronlar (`sk:update`), degisikliklerini korur
+2. Framework cache'lerini ve eski `bootstrap/cache/*.php` dosyalarini temizler
+3. Composer autoload'unu yeniden olusturur
+4. Yeni migration'lari calistirir
+5. Rol ve yetkileri yeniden seed eder
+6. npm bagimliliklarini yeniden kurar ve frontend asset'lerini build eder
+
+**Secenekler:**
+
+| Secenek            | Aciklama                                                 |
+| ------------------ | -------------------------------------------------------- |
+| `--force`          | Tum onay sorularini atlar                                |
+| `--no-interaction` | CI uyumlu etkilesimsiz mod                               |
+| `--skip-build`     | `npm install` / `npm run build` adimlarini atlar         |
+
+Tam yukseltme kontrol listesi, geri donus plani ve sorun giderme ipuclari icin [Yukseltme Rehberi](../../../docs/upgrade.tr.md) dokumanina bakin.
+
 ## Istege Bagli Varliklari Yayinlama
 
 Paket, Vue bilesenlerini, dil dosyalarini ve yapilandirmayi varsayilan olarak paketin icinde tutar. Ozellestirmeniz gerekiyorsa projenize yayinlayin:
@@ -181,6 +228,7 @@ php artisan sk:publish --tag=config
 | ------------------ | --------------------------------------------------------------- |
 | `sk:install`       | Tam kurulum sihirbazi                                           |
 | `sk:update`        | Kullanici degisikliklerini koruyarak paket dosyalarini guncelle |
+| `sk:upgrade`       | Laravel 12 → 13 paket tarafi yukseltmesini tamamlar             |
 | `sk:publish`       | Ozellestirme icin istege bagli varliklari yayinla               |
 | `make:sk-domain`   | Interaktif olarak eksiksiz bir DDD domain'i olustur             |
 | `remove:sk-domain` | Bir domain'i ve tum dosyalarini kaldir                          |

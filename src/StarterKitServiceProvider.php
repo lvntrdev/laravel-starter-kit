@@ -119,6 +119,7 @@ class StarterKitServiceProvider extends ServiceProvider
             $this->commands([
                 Console\Commands\InstallCommand::class,
                 Console\Commands\UpdateCommand::class,
+                Console\Commands\UpgradeCommand::class,
                 Console\Commands\PublishCommand::class,
                 Console\Commands\MakeDomainCommand::class,
                 Console\Commands\RemoveDomainCommand::class,

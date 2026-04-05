@@ -157,6 +157,53 @@ php artisan sk:update --dry-run
 php artisan sk:update --force
 ```
 
+## Upgrading from Laravel 12 to 13
+
+The `main` branch of this package supports both Laravel 12 and Laravel 13. When you move an existing Laravel 12 application to the Laravel 13 line, the upgrade is split into two stages:
+
+### 1. Bump Laravel yourself
+
+The package does **not** touch `composer.json` or upgrade the framework for you — that stays under your control. Update your `composer.json`:
+
+```json
+{
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.0",
+        "lvntr/starter-kit": "^13.0"
+    }
+}
+```
+
+Then run `composer update`.
+
+### 2. Finish the package-side work with `sk:upgrade`
+
+Once Laravel itself is on 13, run:
+
+```bash
+php artisan sk:upgrade
+```
+
+The command performs preflight checks (Laravel ≥ 13, Starter Kit ≥ v13, PHP ≥ 8.3) and refuses to run if any of them fails — it will not modify a single file in that case. On success it:
+
+1. Syncs Starter Kit stubs (`sk:update`), preserving your edits
+2. Clears framework caches and stale `bootstrap/cache/*.php` files
+3. Regenerates the Composer autoload
+4. Runs new migrations
+5. Re-seeds roles and permissions
+6. Reinstalls npm dependencies and rebuilds frontend assets
+
+**Options:**
+
+| Option             | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `--force`          | Skip all confirmation prompts                              |
+| `--no-interaction` | CI-friendly non-interactive mode                           |
+| `--skip-build`     | Skip `npm install` / `npm run build`                       |
+
+For the full upgrade checklist, rollback plan, and troubleshooting tips, see the [Upgrade Guide](../../../docs/upgrade.md).
+
 ## Publishing Optional Assets
 
 The package keeps Vue components, language files, and config inside the package by default. If you need to customize them, publish them to your project:
@@ -181,6 +228,7 @@ php artisan sk:publish --tag=config
 | ------------------ | -------------------------------------------- |
 | `sk:install`       | Full installation wizard                     |
 | `sk:update`        | Update package files preserving user changes |
+| `sk:upgrade`       | Finish Laravel 12 → 13 package-side upgrade  |
 | `sk:publish`       | Publish optional assets for customization    |
 | `make:sk-domain`   | Scaffold a complete DDD domain interactively |
 | `remove:sk-domain` | Remove a domain and all its files            |
