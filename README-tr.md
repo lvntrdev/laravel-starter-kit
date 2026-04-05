@@ -9,7 +9,9 @@ Lvntr Starter Kit aktif olarak gelistiriliyor; her yeni surum onu daha olgun, da
 
 Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
-**Laravel 12**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4** ve **Tailwind CSS 4** ile olusturulmus, tam donanimli bir Laravel admin panel paketi. DDD (Domain-Driven Design) mimarisi ile rol tabanli yetkilendirme, aktivite kaydi, ayarlar yonetimi ve daha fazlasini icerir.
+**Laravel 12 ve 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4** ve **Tailwind CSS 4** ile olusturulmus, tam donanimli bir Laravel admin panel paketi. DDD (Domain-Driven Design) mimarisi ile rol tabanli yetkilendirme, aktivite kaydi, ayarlar yonetimi ve daha fazlasini icerir.
+
+> **Surum destegi:** `main` branch Laravel 13 icin gelistiriliyor (`v13.x` tagleri). Laravel 12 kullanimi icin `1.x` branch'ini (`v12.x` tagleri) tercih edin.
 
 ## Ozellikler
 
@@ -31,7 +33,7 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 | Paket                    | Amac                                                                          |
 | ------------------------ | ----------------------------------------------------------------------------- |
-| **Laravel 12**           | Cekirdek framework                                                            |
+| **Laravel 12 / 13**      | Cekirdek framework (constraint: `^12.0 \|\| ^13.0`)                           |
 | **Inertia.js v2**        | Sunucu tabanli SPA — backend ile frontend arasinda API katmanina gerek yok    |
 | **Laravel Fortify**      | Kimlik dogrulama altyapisi (giris, kayit, 2FA, sifre sifirlama)               |
 | **Laravel Passport**     | OAuth2 API kimlik dogrulamasi (kisisel erisim tokenlari, cihaz yetkilendirme) |
@@ -66,8 +68,8 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 ## Gereksinimler
 
-- PHP 8.2+
-- Laravel 12
+- PHP 8.2+ (Laravel 13 icin 8.3+ onerilir)
+- Laravel 12 veya 13
 - Node.js 18+
 - MySQL / PostgreSQL / SQLite
 
@@ -76,7 +78,11 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 ### 1. Paketi ekleyin
 
 ```bash
-composer require lvntr/starter-kit
+# Laravel 13 (en guncel)
+composer require lvntr/starter-kit:^13.0
+
+# Laravel 12 (bakim hatti)
+composer require lvntr/starter-kit:^12.0
 ```
 
 ### 2. Kurulum komutunu calistirin

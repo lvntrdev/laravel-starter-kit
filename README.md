@@ -9,7 +9,9 @@ Lvntr Starter Kit is under active development, and each release is shaping it in
 
 Detailed usage docs: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
-A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
+A full-featured Laravel admin panel package built with **Laravel 12 & 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
+
+> **Version support:** the `main` branch targets Laravel 13 (`v13.x` tags). For Laravel 12 use the `1.x` branch (`v12.x` tags).
 
 ## Features
 
@@ -31,7 +33,7 @@ A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia
 
 | Package                  | Purpose                                                                  |
 | ------------------------ | ------------------------------------------------------------------------ |
-| **Laravel 12**           | Core framework                                                           |
+| **Laravel 12 / 13**      | Core framework (constraint: `^12.0 \|\| ^13.0`)                          |
 | **Inertia.js v2**        | Server-driven SPA — no API layer needed between backend and frontend     |
 | **Laravel Fortify**      | Authentication backend (login, register, 2FA, password reset)            |
 | **Laravel Passport**     | OAuth2 API authentication (personal access tokens, device authorization) |
@@ -66,8 +68,8 @@ A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 12
+- PHP 8.2+ (8.3+ recommended for Laravel 13)
+- Laravel 12 or 13
 - Node.js 18+
 - MySQL / PostgreSQL / SQLite
 
@@ -76,7 +78,11 @@ A full-featured Laravel admin panel package built with **Laravel 12**, **Inertia
 ### 1. Require the package
 
 ```bash
-composer require lvntr/starter-kit
+# Laravel 13 (latest)
+composer require lvntr/starter-kit:^13.0
+
+# Laravel 12 (maintenance)
+composer require lvntr/starter-kit:^12.0
 ```
 
 ### 2. Run the install command
