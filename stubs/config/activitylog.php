@@ -1,5 +1,7 @@
 <?php
 
+use Spatie\Activitylog\Actions\CleanActivityLogAction;
+use Spatie\Activitylog\Actions\LogActivityAction;
 use Spatie\Activitylog\Models\Activity;
 
 return [
@@ -14,7 +16,7 @@ return [
      | This makes spatie/laravel-activitylog an optional feature.
      |
      */
-    'enabled' => env('ACTIVITY_LOG_ENABLED', true),
+    'enabled' => env('ACTIVITYLOG_ENABLED', true),
 
     /*
      |--------------------------------------------------------------------------
@@ -25,7 +27,7 @@ return [
      | the number of days specified here will be deleted.
      |
      */
-    'delete_records_older_than_days' => 365,
+    'clean_after_days' => 365,
 
     /*
      |--------------------------------------------------------------------------
@@ -54,10 +56,11 @@ return [
      | Soft Deleted Models
      |--------------------------------------------------------------------------
      |
-     | If set to true, the subject returns soft deleted models.
+     | If set to true, the subject relationship on activities
+     | will include soft deleted models.
      |
      */
-    'subject_returns_soft_deleted_models' => true,
+    'include_soft_deleted_subjects' => true,
 
     /*
      |--------------------------------------------------------------------------
@@ -73,24 +76,41 @@ return [
 
     /*
      |--------------------------------------------------------------------------
-     | Table Name
+     | Default Excluded Attributes
      |--------------------------------------------------------------------------
      |
-     | This is the name of the table that will be created by the migration and
-     | used by the Activity model shipped with this package.
+     | These attributes will be excluded from logging for all models.
+     | Model-specific exclusions via logExcept() are merged with these.
      |
      */
-    'table_name' => env('ACTIVITY_LOG_TABLE_NAME', 'activity_log'),
+    'default_except_attributes' => [],
 
     /*
      |--------------------------------------------------------------------------
-     | Database Connection
+     | Buffered Logging
      |--------------------------------------------------------------------------
      |
-     | This is the database connection that will be used by the migration and
-     | the Activity model shipped with this package. In case it's not set
-     | Laravel's database.default will be used instead.
+     | When enabled, activities are buffered in memory and inserted in a
+     | single bulk query after the response has been sent to the client.
+     | Only enable this if your application logs a high volume of activities
+     | per request.
      |
      */
-    'database_connection' => env('ACTIVITY_LOG_DB_CONNECTION'),
+    'buffer' => [
+        'enabled' => env('ACTIVITYLOG_BUFFER_ENABLED', false),
+    ],
+
+    /*
+     |--------------------------------------------------------------------------
+     | Action Classes
+     |--------------------------------------------------------------------------
+     |
+     | These action classes can be overridden to customize how activities
+     | are logged and cleaned. Your custom classes must extend the originals.
+     |
+     */
+    'actions' => [
+        'log_activity' => LogActivityAction::class,
+        'clean_log' => CleanActivityLogAction::class,
+    ],
 ];

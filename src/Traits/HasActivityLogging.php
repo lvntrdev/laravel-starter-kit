@@ -2,8 +2,8 @@
 
 namespace Lvntr\StarterKit\Traits;
 
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * Enables Spatie activity logging on Eloquent models.
@@ -30,7 +30,7 @@ trait HasActivityLogging
     {
         $options = LogOptions::defaults()
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
+            ->dontLogEmptyChanges();
 
         if (! empty($this->getFillable())) {
             return $options->logFillable();

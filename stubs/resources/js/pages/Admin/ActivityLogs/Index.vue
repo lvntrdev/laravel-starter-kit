@@ -24,10 +24,11 @@
         causer_type: string | null;
         causer_id: string | null;
         event: string | null;
-        properties: {
+        attribute_changes: {
             old?: Record<string, unknown>;
             attributes?: Record<string, unknown>;
-        };
+        } | null;
+        properties: Record<string, unknown> | null;
         created_at: string;
         causer?: { id: string; name?: string; email?: string } | null;
         subject?: Record<string, unknown> | null;

@@ -125,7 +125,6 @@ return [
         'old' => 'Old',
         'new' => 'New',
         'properties' => 'Properties',
-        'batch' => 'Batch: :uuid',
         'event_created' => 'Created',
         'event_updated' => 'Updated',
         'event_deleted' => 'Deleted',

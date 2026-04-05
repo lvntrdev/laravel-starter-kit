@@ -8,11 +8,11 @@
         causer_type: string | null;
         causer_id: string | null;
         event: string | null;
-        properties: {
+        attribute_changes: {
             old?: Record<string, unknown>;
             attributes?: Record<string, unknown>;
-        };
-        batch_uuid: string | null;
+        } | null;
+        properties: Record<string, unknown> | null;
         created_at: string;
         updated_at: string;
         causer?: { id: string; name?: string; email?: string } | null;
@@ -48,7 +48,7 @@
     );
 
     const changedKeys = computed(() => {
-        const attrs = props.data.properties?.attributes ?? {};
+        const attrs = props.data.attribute_changes?.attributes ?? {};
         return Object.keys(attrs);
     });
 
@@ -157,10 +157,10 @@
                                 {{ key }}
                             </td>
                             <td class="px-3 py-2 text-red-600 dark:text-red-400">
-                                {{ formatValue(data.properties?.old?.[key]) }}
+                                {{ formatValue(data.attribute_changes?.old?.[key]) }}
                             </td>
                             <td class="px-3 py-2 text-green-600 dark:text-green-400">
-                                {{ formatValue(data.properties?.attributes?.[key]) }}
+                                {{ formatValue(data.attribute_changes?.attributes?.[key]) }}
                             </td>
                         </tr>
                     </tbody>
@@ -168,19 +168,14 @@
             </div>
         </div>
 
-        <!-- Raw properties (for created/deleted where there's no old/new diff) -->
-        <div v-else-if="data.properties && Object.keys(data.properties).length > 0">
+        <!-- Custom properties (withProperties user data) -->
+        <div v-if="data.properties && Object.keys(data.properties).length > 0">
             <h3 class="mb-2 text-sm font-semibold text-surface-700 dark:text-surface-300">
                 {{ $t('admin.activity_logs.properties') }}
             </h3>
             <pre
-                class="overflow-auto rounded-lg bg-surface-50 p-3 text-xs text-surface-700 dark:bg-surface-800 dark:text-surface-300"
+                class="overflow-auto rounded bg-surface-50 p-3 text-xs text-surface-700 dark:bg-surface-800 dark:text-surface-300"
             >{{ JSON.stringify(data.properties, null, 2) }}</pre>
-        </div>
-
-        <!-- Batch UUID -->
-        <div v-if="data.batch_uuid" class="text-xs text-surface-400">
-            {{ $t('admin.activity_logs.batch', { uuid: data.batch_uuid }) }}
         </div>
 
         <!-- Close button -->
