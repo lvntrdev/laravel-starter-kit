@@ -91,6 +91,15 @@ class InstallCommand extends Command
             ]);
         });
 
+        // 4a. Publish Pulse migrations
+        $this->step('Publishing Pulse migrations', function () {
+            $this->callSilently('vendor:publish', [
+                '--provider' => 'Laravel\\Pulse\\PulseServiceProvider',
+                '--tag' => 'pulse-migrations',
+                '--force' => $this->option('force'),
+            ]);
+        });
+
         // 4b. Inject required config keys into config/app.php
         $this->step('Configuring application settings', function () {
             $this->injectAppConfig();
