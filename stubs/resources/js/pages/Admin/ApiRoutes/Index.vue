@@ -75,14 +75,6 @@
                 <a href="/docs/api" target="_blank">
                     <Button :label="$t('admin.api_routes.open_api_docs')" icon="pi pi-book" outlined />
                 </a>
-                <a href="/pulse" target="_blank">
-                    <Button
-                        :label="$t('admin.api_routes.open_pulse')"
-                        icon="pi pi-chart-bar"
-                        outlined
-                        severity="secondary"
-                    />
-                </a>
             </div>
         </template>
 

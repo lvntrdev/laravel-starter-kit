@@ -21,7 +21,6 @@ return [
         'developer' => 'Developer',
         'api_routes' => 'API Routes',
         'api_docs' => 'API Docs',
-        'pulse' => 'Pulse',
         'laravel_docs' => 'Laravel Docs',
         'kits_docs' => 'Starter Kit Docs',
     ],
@@ -89,7 +88,6 @@ return [
             'activity-logs' => 'Activity Logs',
             'settings' => 'Settings',
             'api-routes' => 'API Routes',
-            'pulse' => 'Pulse',
             'api-docs' => 'API Docs',
         ],
 
@@ -278,7 +276,6 @@ return [
         'middleware' => 'Middleware',
         'no_routes' => 'No routes found.',
         'open_api_docs' => 'Open API Docs',
-        'open_pulse' => 'Open Pulse',
         'regenerate_docs' => 'Regenerate Docs',
         'regenerate_docs_success' => 'API documentation regenerated successfully.',
     ],

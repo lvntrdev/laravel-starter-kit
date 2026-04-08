@@ -70,13 +70,6 @@ export function useAdminMenu() {
             permission: 'api-docs.read',
         },
         {
-            title: 'admin.menu.pulse',
-            icon: 'pi pi-chart-bar',
-            href: '/pulse',
-            external: true,
-            permission: 'pulse.read',
-        },
-        {
             title: 'admin.menu.laravel_docs',
             icon: 'pi pi-external-link',
             href: 'https://laravel.com/docs',

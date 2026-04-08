@@ -79,7 +79,6 @@ return [
     */
 
     'custom_permissions' => [
-        'pulse.read',
         'api-docs.read',
     ],
 
@@ -99,7 +98,7 @@ return [
         'users' => ['users'],
         // 'users' => ['users', 'users:student', 'users:guardian', 'users:personal'],
         'system' => ['roles', 'settings'],
-        'developer' => ['activity-logs', 'api-routes', 'pulse', 'api-docs'],
+        'developer' => ['activity-logs', 'api-routes', 'api-docs'],
     ],
 
     /*
@@ -179,7 +178,6 @@ return [
             'activity-logs' => ['en' => 'Activity Logs', 'tr' => 'İşlem Kayıtları'],
             'settings' => ['en' => 'Settings', 'tr' => 'Ayarlar'],
             'api-routes' => ['en' => 'API Routes', 'tr' => 'API Rotaları'],
-            'pulse' => ['en' => 'Pulse', 'tr' => 'Pulse'],
             'api-docs' => ['en' => 'API Docs', 'tr' => 'API Dökümanları'],
             'dashboard' => ['en' => 'Dashboard', 'tr' => 'Dashboard'],
             // 'users:student' => ['en' => 'Users → Student', 'tr' => 'Kullanıcılar → Öğrenci'],

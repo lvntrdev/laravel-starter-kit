@@ -84,13 +84,6 @@ class UpgradeCommand extends Command
             $process->run();
         });
 
-        // 7a. Publish Pulse migrations (in case they were not published before).
-        $this->step('Publishing Pulse migrations', function () {
-            $this->callSilently('vendor:publish', [
-                '--provider' => 'Laravel\\Pulse\\PulseServiceProvider',
-                '--tag' => 'pulse-migrations',
-            ]);
-        });
 
         // 7. Run any new migrations shipped with the v13 package line.
         if ($this->confirmStep('Run database migrations?')) {
