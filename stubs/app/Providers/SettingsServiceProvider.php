@@ -31,8 +31,10 @@ class SettingsServiceProvider extends ServiceProvider
                 config(['app.name' => $general['app_name']]);
             }
             if ($general['app_url'] ?? null) {
-                config(['app.url' => $general['app_url']]);
-                URL::forceRootUrl($general['app_url']);
+                $appUrl = $general['app_url'];
+                config(['app.url' => $appUrl]);
+                config(['filesystems.disks.public.url' => rtrim($appUrl, '/').'/storage']);
+                URL::forceRootUrl($appUrl);
             }
             if ($general['timezone'] ?? null) {
                 config(['app.display_timezone' => $general['timezone']]);
