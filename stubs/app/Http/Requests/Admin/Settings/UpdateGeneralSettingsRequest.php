@@ -19,7 +19,6 @@ class UpdateGeneralSettingsRequest extends FormRequest
     {
         return [
             'app_name' => ['required', 'string', 'max:255'],
-            'app_url' => ['required', 'url', 'max:255'],
             'timezone' => ['required', 'string', 'max:100'],
             'languages' => ['required', 'array', 'min:1'],
             'languages.*' => ['required', 'string', 'max:10'],

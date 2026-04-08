@@ -37,7 +37,6 @@ class SettingsDefaultsQuery
 
         return [
             'app_name' => $stored['app_name'] ?? config('app.name'),
-            'app_url' => $stored['app_url'] ?? config('app.url'),
             'timezone' => $stored['timezone'] ?? config('app.display_timezone'),
             'languages' => explode(',', $stored['languages'] ?? $defaultLanguages),
             'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,

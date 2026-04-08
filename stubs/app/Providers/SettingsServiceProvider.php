@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Features;
 
@@ -29,12 +28,6 @@ class SettingsServiceProvider extends ServiceProvider
         if ($general = $settings['general'] ?? null) {
             if ($general['app_name'] ?? null) {
                 config(['app.name' => $general['app_name']]);
-            }
-            if ($general['app_url'] ?? null) {
-                $appUrl = $general['app_url'];
-                config(['app.url' => $appUrl]);
-                config(['filesystems.disks.public.url' => rtrim($appUrl, '/').'/storage']);
-                URL::forceRootUrl($appUrl);
             }
             if ($general['timezone'] ?? null) {
                 config(['app.display_timezone' => $general['timezone']]);

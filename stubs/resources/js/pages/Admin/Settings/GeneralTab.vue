@@ -10,7 +10,6 @@
     interface Props {
         settings: {
             app_name: string;
-            app_url: string;
             timezone: string;
             languages: string[];
             logo_url: string | null;
@@ -140,7 +139,6 @@
             })
             .addFields(
                 FB.inputText().key('app_name'),
-                FB.inputText().key('app_url'),
                 FB.select().key('timezone').options(timezoneOptions.value).filter(true).class('col-span-full'),
                 FB.checkboxGroup()
                     .key('languages')

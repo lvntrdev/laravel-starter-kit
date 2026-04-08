@@ -10,7 +10,6 @@
         settings: {
             general: {
                 app_name: string;
-                app_url: string;
                 timezone: string;
                 languages: string[];
             };

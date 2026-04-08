@@ -11,7 +11,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
 {
     public function __construct(
         public string $appName,
-        public string $appUrl,
         public string $timezone,
         public string $languages,
     ) {}
@@ -23,7 +22,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
     {
         return new static(
             appName: $data['app_name'],
-            appUrl: $data['app_url'],
             timezone: $data['timezone'],
             languages: implode(',', $data['languages']),
         );
@@ -36,7 +34,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
     {
         return [
             'app_name' => $this->appName,
-            'app_url' => $this->appUrl,
             'timezone' => $this->timezone,
             'languages' => $this->languages,
         ];
