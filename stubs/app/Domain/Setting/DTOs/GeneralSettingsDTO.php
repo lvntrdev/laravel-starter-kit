@@ -14,7 +14,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
         public string $appUrl,
         public string $timezone,
         public string $languages,
-        public string $debug,
     ) {}
 
     /**
@@ -27,7 +26,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
             appUrl: $data['app_url'],
             timezone: $data['timezone'],
             languages: implode(',', $data['languages']),
-            debug: $data['debug'] ? '1' : '0',
         );
     }
 
@@ -41,7 +39,6 @@ readonly class GeneralSettingsDTO extends BaseDTO
             'app_url' => $this->appUrl,
             'timezone' => $this->timezone,
             'languages' => $this->languages,
-            'debug' => $this->debug,
         ];
     }
 }

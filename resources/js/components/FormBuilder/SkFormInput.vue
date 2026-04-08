@@ -140,6 +140,15 @@
         return mime.startsWith('image/');
     }
 
+    function fileIcon(mime: string): string {
+        if (mime === 'application/pdf') return 'pi pi-file-pdf';
+        if (mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('.sheet'))
+            return 'pi pi-file-excel';
+        if (mime.includes('wordprocessing') || mime.includes('msword') || mime.includes('.document'))
+            return 'pi pi-file-word';
+        return 'pi pi-file';
+    }
+
     function handleFileSelect(event: Event): void {
         const input = event.target as HTMLInputElement;
         if (!input.files?.length) return;
@@ -207,7 +216,8 @@
     const newFilePreviews = computed(() =>
         newFiles.value.map((file) => ({
             file,
-            url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+            url: URL.createObjectURL(file),
+            isImage: file.type.startsWith('image/'),
         })),
     );
 </script>
@@ -544,7 +554,7 @@
                             :alt="media.name"
                             class="sk-fb__file-thumb"
                         >
-                        <i v-else class="pi pi-file sk-fb__file-icon" />
+                        <i v-else :class="[fileIcon(media.mime_type), 'sk-fb__file-icon']" />
                     </a>
                     <div class="sk-fb__file-info">
                         <a
@@ -577,20 +587,19 @@
                     :key="`new-${index}`"
                     class="sk-fb__file-item sk-fb__file-item--new"
                 >
-                    <a
-                        v-if="item.url"
-                        :href="item.url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="sk-fb__file-preview-link"
-                    >
-                        <img :src="item.url" :alt="item.file.name" class="sk-fb__file-thumb">
+                    <a :href="item.url" target="_blank" rel="noopener noreferrer" class="sk-fb__file-preview-link">
+                        <img v-if="item.isImage" :src="item.url" :alt="item.file.name" class="sk-fb__file-thumb">
+                        <i v-else :class="[fileIcon(item.file.type), 'sk-fb__file-icon']" />
                     </a>
-                    <i v-else class="pi pi-file sk-fb__file-icon sk-fb__file-icon--new" />
                     <div class="sk-fb__file-info">
-                        <p class="sk-fb__file-name">
+                        <a
+                            :href="item.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="sk-fb__file-name sk-fb__file-name--link"
+                        >
                             {{ item.file.name }}
-                        </p>
+                        </a>
                         <p class="sk-fb__file-size">
                             {{ formatFileSize(item.file.size) }}
                         </p>

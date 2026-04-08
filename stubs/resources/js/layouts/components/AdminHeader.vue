@@ -22,7 +22,6 @@
     const user = computed(() => page.props.auth?.user as User | undefined);
     const role = computed(() => (page.props.auth?.role as string) ?? '');
     const isLocal = computed(() => page.props.appEnv === 'local');
-    const isDebug = computed(() => page.props.appDebug === true);
 
     const initials = computed(() => {
         if (!user.value) return '';
@@ -70,7 +69,6 @@
             </button>
 
             <span v-if="isLocal" class="admin-header__tag admin-header__tag--dev"> Dev Mode </span>
-            <span v-if="isDebug" class="admin-header__tag admin-header__tag--debug"> Debug Mode </span>
         </div>
 
         <div class="admin-header__right">

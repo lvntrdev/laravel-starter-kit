@@ -46,9 +46,6 @@ class SettingsServiceProvider extends ServiceProvider
                     app()->setLocale(array_key_first($activeLanguages));
                 }
             }
-            if (array_key_exists('debug', $general)) {
-                config(['app.debug' => $general['debug'] === '1']);
-            }
         }
 
         // Auth — always rebuild Fortify features array from DB settings

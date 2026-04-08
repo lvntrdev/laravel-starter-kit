@@ -21,48 +21,48 @@ class ApiException extends HttpException
         parent::__construct($statusCode, $message, $previous);
     }
 
-    public static function badRequest(string $message = 'Bad request.'): static
+    public static function badRequest(string $message = 'Bad request.'): self
     {
-        return new static(400, $message);
+        return new self(400, $message);
     }
 
-    public static function unauthorized(string $message = 'Authentication required.'): static
+    public static function unauthorized(string $message = 'Authentication required.'): self
     {
-        return new static(401, $message);
+        return new self(401, $message);
     }
 
-    public static function forbidden(string $message = 'You are not authorized for this action.'): static
+    public static function forbidden(string $message = 'You are not authorized for this action.'): self
     {
-        return new static(403, $message);
+        return new self(403, $message);
     }
 
-    public static function notFound(string $message = 'Record not found.'): static
+    public static function notFound(string $message = 'Record not found.'): self
     {
-        return new static(404, $message);
+        return new self(404, $message);
     }
 
-    public static function methodNotAllowed(string $message = 'HTTP method not allowed.'): static
+    public static function methodNotAllowed(string $message = 'HTTP method not allowed.'): self
     {
-        return new static(405, $message);
+        return new self(405, $message);
     }
 
-    public static function conflict(string $message = 'Record already exists.'): static
+    public static function conflict(string $message = 'Record already exists.'): self
     {
-        return new static(409, $message);
+        return new self(409, $message);
     }
 
-    public static function unprocessable(string $message = 'Unprocessable entity.'): static
+    public static function unprocessable(string $message = 'Unprocessable entity.'): self
     {
-        return new static(422, $message);
+        return new self(422, $message);
     }
 
-    public static function tooManyRequests(string $message = 'Too many requests. Please wait.'): static
+    public static function tooManyRequests(string $message = 'Too many requests. Please wait.'): self
     {
-        return new static(429, $message);
+        return new self(429, $message);
     }
 
-    public static function serverError(string $message = 'A server error occurred.'): static
+    public static function serverError(string $message = 'A server error occurred.'): self
     {
-        return new static(500, $message);
+        return new self(500, $message);
     }
 }

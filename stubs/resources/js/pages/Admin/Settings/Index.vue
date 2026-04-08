@@ -13,7 +13,6 @@
                 app_url: string;
                 timezone: string;
                 languages: string[];
-                debug: boolean;
             };
             auth: {
                 registration: boolean;

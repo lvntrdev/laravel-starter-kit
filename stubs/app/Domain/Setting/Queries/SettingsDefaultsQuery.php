@@ -40,7 +40,6 @@ class SettingsDefaultsQuery
             'app_url' => $stored['app_url'] ?? config('app.url'),
             'timezone' => $stored['timezone'] ?? config('app.display_timezone'),
             'languages' => explode(',', $stored['languages'] ?? $defaultLanguages),
-            'debug' => ($stored['debug'] ?? (config('app.debug') ? '1' : '0')) === '1',
             'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
         ];
     }

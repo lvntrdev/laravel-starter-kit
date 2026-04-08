@@ -57,7 +57,6 @@ class HandleInertiaRequests extends Middleware
             'appLogo' => fn () => ($logo = Setting::getValue('general.logo')) ? Storage::disk('public')->url($logo) : null,
             'appVersion' => InstalledVersions::getPrettyVersion('lvntr/starter-kit'),
             'appEnv' => config('app.env'),
-            'appDebug' => config('app.debug'),
             'auth' => [
                 'user' => $request->user()?->loadMissing('media'),
                 'role' => $request->user()?->roles->first()?->display_name[app()->getLocale()] ?? $request->user()?->roles->first()?->name,

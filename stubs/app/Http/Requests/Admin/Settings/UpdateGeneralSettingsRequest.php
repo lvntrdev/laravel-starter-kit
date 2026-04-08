@@ -23,7 +23,6 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'timezone' => ['required', 'string', 'max:100'],
             'languages' => ['required', 'array', 'min:1'],
             'languages.*' => ['required', 'string', 'max:10'],
-            'debug' => ['required', 'boolean'],
         ];
     }
 }

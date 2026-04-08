@@ -15,6 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Laravel\Passport\Token;
 use Spatie\MediaLibrary\HasMedia;
@@ -23,7 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @method Token|null token()
  */
-class User extends Authenticatable implements HasMedia, MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail, OAuthenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasActivityLogging, HasApiTokens, HasFactory, HasMediaCollections, HasRoles, HasUuids, Notifiable, SoftDeletes, TwoFactorAuthenticatable;

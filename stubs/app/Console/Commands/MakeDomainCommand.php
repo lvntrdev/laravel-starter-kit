@@ -768,7 +768,7 @@ readonly class {$this->dn}DTO extends BaseDTO
      */
     public static function fromArray(array \$data): static
     {
-        return new static(
+        return new self(
 {$from}
         );
     }

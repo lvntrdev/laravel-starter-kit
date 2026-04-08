@@ -13,7 +13,6 @@
             app_url: string;
             timezone: string;
             languages: string[];
-            debug: boolean;
             logo_url: string | null;
         };
         timezones: string[];
@@ -150,7 +149,6 @@
                     .controlPosition('left')
                     .options(languageOptions.value)
                     .class('col-span-full'),
-                FB.toggleSwitch().key('debug').class('col-span-full'),
             )
             .build(),
     );

@@ -37,7 +37,7 @@ class UpdateUserRequest extends FormRequest
             'role' => ['nullable', 'string', 'exists:roles,name'],
             'gender' => ['required', 'string', 'max:50'],
             'theme_color' => ['nullable', 'string', 'max:50'],
-            'identity_document' => ['nullable', 'image', 'max:5120'],
+            'identity_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx', 'max:5120'],
         ];
     }
 }

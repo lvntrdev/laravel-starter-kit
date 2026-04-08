@@ -65,7 +65,9 @@
                 FB.title(trans('admin.users.security')).class('col-span-full'),
                 FB.fileUpload()
                     .key('identity_document')
-                    .accept('image/*')
+                    .accept(
+                        'image/*,application/pdf,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    )
                     .maxFileSize(5 * 1024 * 1024)
                     .optional()
                     .class('col-span-full')

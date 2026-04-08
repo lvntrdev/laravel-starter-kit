@@ -51,25 +51,25 @@ class ApiResponse implements Responsable
     /**
      * Success response.
      */
-    public static function success(mixed $data = null, string $message = 'Operation successful.'): static
+    public static function success(mixed $data = null, string $message = 'Operation successful.'): self
     {
-        return new static(true, 200, $message, $data);
+        return new self(true, 200, $message, $data);
     }
 
     /**
      * Resource created response (201).
      */
-    public static function created(mixed $data = null, string $message = 'Record created.'): static
+    public static function created(mixed $data = null, string $message = 'Record created.'): self
     {
-        return new static(true, 201, $message, $data);
+        return new self(true, 201, $message, $data);
     }
 
     /**
      * Error response.
      */
-    public static function error(string $message = 'An error occurred.', int $status = 400): static
+    public static function error(string $message = 'An error occurred.', int $status = 400): self
     {
-        return new static(false, $status, $message);
+        return new self(false, $status, $message);
     }
 
     /**
@@ -83,7 +83,7 @@ class ApiResponse implements Responsable
     /**
      * Paginated response — supports LengthAwarePaginator or CursorPaginator.
      */
-    public static function paginated(LengthAwarePaginator|CursorPaginator $paginator, string $message = 'Operation successful.'): static
+    public static function paginated(LengthAwarePaginator|CursorPaginator $paginator, string $message = 'Operation successful.'): self
     {
         $meta = match (true) {
             $paginator instanceof LengthAwarePaginator => [
@@ -104,7 +104,7 @@ class ApiResponse implements Responsable
             ],
         };
 
-        $instance = new static(true, 200, $message, $paginator->items());
+        $instance = new self(true, 200, $message, $paginator->items());
         $instance->meta = array_merge($instance->meta, $meta);
 
         return $instance;

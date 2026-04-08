@@ -37,7 +37,7 @@ class StoreUserRequest extends FormRequest
             'role' => ['nullable', 'string', 'exists:roles,name'],
             'theme_color' => ['nullable', 'string', 'max:50'],
             'gender' => ['required', 'string', 'max:50'],
-            'identity_document' => ['nullable', 'image', 'max:5120'],
+            'identity_document' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx', 'max:5120'],
         ];
     }
 }

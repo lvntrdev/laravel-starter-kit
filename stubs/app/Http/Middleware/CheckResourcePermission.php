@@ -68,7 +68,7 @@ class CheckResourcePermission
             // e.g. /admin/users?type=student → "users:student.read"
             if ($permission) {
                 $type = $request->query('type');
-                if ($type && is_string($type)) {
+                if ($type && is_string($type) && preg_match('/^[a-z0-9_]+$/i', $type)) {
                     $parts = explode('.', $permission, 2);
                     $subPermission = "{$parts[0]}:{$type}.{$parts[1]}";
 

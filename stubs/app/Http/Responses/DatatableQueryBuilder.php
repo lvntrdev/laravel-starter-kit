@@ -55,9 +55,9 @@ class DatatableQueryBuilder
     /**
      * @param  class-string<Model>|Builder<Model>  $subject
      */
-    public static function for(string|Builder $subject): static
+    public static function for(string|Builder $subject): self
     {
-        return new static($subject);
+        return new self($subject);
     }
 
     /**
