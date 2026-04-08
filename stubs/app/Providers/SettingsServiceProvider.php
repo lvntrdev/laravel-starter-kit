@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Features;
 
@@ -31,6 +32,7 @@ class SettingsServiceProvider extends ServiceProvider
             }
             if ($general['app_url'] ?? null) {
                 config(['app.url' => $general['app_url']]);
+                URL::forceRootUrl($general['app_url']);
             }
             if ($general['timezone'] ?? null) {
                 config(['app.display_timezone' => $general['timezone']]);

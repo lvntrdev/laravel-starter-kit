@@ -18,7 +18,6 @@ class _03_SettingSeeder extends Seeder
                 'app_url' => config('app.url'),
                 'timezone' => config('app.display_timezone', 'UTC'),
                 'languages' => implode(',', array_keys(config('app.languages', ['en' => 'English']))),
-                'debug' => config('app.debug') ? '1' : '0',
             ],
             'auth' => [
                 'registration' => '1',
