@@ -9,9 +9,11 @@ Lvntr Starter Kit is under active development, and each release is shaping it in
 
 Detailed usage docs: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
-A full-featured Laravel admin panel package built with **Laravel 12 & 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
+A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
 
-> **Version support:** the `main` branch targets Laravel 13 (`v13.x` tags). For Laravel 12 use the `1.x` branch (`v12.x` tags).
+> **Version support:** the `main` branch targets Laravel 13 (`v13.x` tags). Starting from `v13.1.0`, only Laravel 13+ is supported.
+>
+> ⚠️ **Laravel 12 End-of-Life:** The `1.x` branch (`v12.x` tags) is in maintenance mode as of `v12.0.63`. No new features or fixes will be released for Laravel 12. Existing installations using `^12.0` continue to work, but please upgrade to Laravel 13 for future updates.
 
 ## Features
 

@@ -9,9 +9,11 @@ Lvntr Starter Kit aktif olarak gelistiriliyor; her yeni surum onu daha olgun, da
 
 Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
-**Laravel 12 ve 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4** ve **Tailwind CSS 4** ile olusturulmus, tam donanimli bir Laravel admin panel paketi. DDD (Domain-Driven Design) mimarisi ile rol tabanli yetkilendirme, aktivite kaydi, ayarlar yonetimi ve daha fazlasini icerir.
+**Laravel 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4** ve **Tailwind CSS 4** ile olusturulmus, tam donanimli bir Laravel admin panel paketi. DDD (Domain-Driven Design) mimarisi ile rol tabanli yetkilendirme, aktivite kaydi, ayarlar yonetimi ve daha fazlasini icerir.
 
-> **Surum destegi:** `main` branch Laravel 13 icin gelistiriliyor (`v13.x` tagleri). Laravel 12 kullanimi icin `1.x` branch'ini (`v12.x` tagleri) tercih edin.
+> **Surum destegi:** `main` branch Laravel 13 icin gelistiriliyor (`v13.x` tagleri). `v13.1.0` surumunden itibaren yalnizca Laravel 13+ destekleniyor.
+>
+> ⚠️ **Laravel 12 End-of-Life:** `1.x` branch (`v12.x` tagleri) `v12.0.63` itibariyla bakim moduna alindi. Laravel 12 icin yeni ozellik veya hata duzeltmesi yayinlanmayacak. `^12.0` constraint'i ile kurulmus mevcut projeler calismaya devam eder; gelecek guncellemeler icin Laravel 13'e yukseltme tavsiye edilir.
 
 ## Ozellikler
 
