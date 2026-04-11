@@ -2,8 +2,8 @@
 
 ![Tests](https://img.shields.io/badge/tests-passing-22c55e?style=flat-square)
 ![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
-![Packagist Surum](https://img.shields.io/packagist/v/lvntr/starter-kit?style=flat-square&label=packagist)
-![Downloads](https://img.shields.io/packagist/dt/lvntr/starter-kit?style=flat-square&label=downloads)
+![Packagist Surum](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
+![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
 Lvntr Starter Kit aktif olarak gelistiriliyor; her yeni surum onu daha olgun, daha kapsamli ve admin odakli bir Laravel platformuna donusturuyor.
 
@@ -76,7 +76,7 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 ### 1. Paketi ekleyin
 
 ```bash
-composer require lvntr/starter-kit
+composer require lvntr/laravel-starter-kit
 ```
 
 ### 2. Kurulum komutunu calistirin
@@ -128,7 +128,7 @@ Tarayicinizi acip uygulama URL'nize gidin. Kurulum sonrasi gosterilen admin bilg
 Paketin yeni bir surumu yayinlandiginda:
 
 ```bash
-composer update lvntr/starter-kit
+composer update lvntr/laravel-starter-kit
 php artisan sk:update
 ```
 
@@ -205,7 +205,7 @@ php artisan remove:sk-domain Product
 ### Paket Yapisi
 
 ```
-lvntr/starter-kit/
+lvntr/laravel-starter-kit/
 ├── src/                          # Cekirdek paket kodu (asla yayinlanmaz)
 │   ├── StarterKitServiceProvider.php
 │   ├── Console/Commands/         # sk:install, sk:update, make:sk-domain, vb.
