@@ -11,10 +11,6 @@ Detailed usage docs: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4**, and **Tailwind CSS 4**. Follows DDD (Domain-Driven Design) architecture with built-in role-based permissions, activity logging, settings management, and more.
 
-> **Version support:** the `main` branch targets Laravel 13 (`v13.x` tags). Starting from `v13.1.0`, only Laravel 13+ is supported.
->
-> ⚠️ **Laravel 12 End-of-Life:** The `1.x` branch (`v12.x` tags) is in maintenance mode as of `v12.0.63`. No new features or fixes will be released for Laravel 12. Existing installations using `^12.0` continue to work, but please upgrade to Laravel 13 for future updates.
-
 ## Features
 
 - **DDD Architecture** — Actions, DTOs, Queries, Events, Listeners
@@ -35,7 +31,7 @@ A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia
 
 | Package                  | Purpose                                                                  |
 | ------------------------ | ------------------------------------------------------------------------ |
-| **Laravel 12 / 13**      | Core framework (constraint: `^12.0 \|\| ^13.0`)                          |
+| **Laravel 13**           | Core framework (constraint: `^13.0`)                                     |
 | **Inertia.js v2**        | Server-driven SPA — no API layer needed between backend and frontend     |
 | **Laravel Fortify**      | Authentication backend (login, register, 2FA, password reset)            |
 | **Laravel Passport**     | OAuth2 API authentication (personal access tokens, device authorization) |
@@ -70,8 +66,8 @@ A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia
 
 ## Requirements
 
-- PHP 8.2+ (8.3+ recommended for Laravel 13)
-- Laravel 12 or 13
+- PHP 8.3+
+- Laravel 13
 - Node.js 18+
 - MySQL / PostgreSQL / SQLite
 
@@ -80,11 +76,7 @@ A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia
 ### 1. Require the package
 
 ```bash
-# Laravel 13 (latest)
 composer require lvntr/laravel-starter-kit:^13.0
-
-# Laravel 12 (maintenance)
-composer require lvntr/laravel-starter-kit:^12.0
 ```
 
 ### 2. Run the install command
@@ -159,53 +151,6 @@ php artisan sk:update --dry-run
 php artisan sk:update --force
 ```
 
-## Upgrading from Laravel 12 to 13
-
-The `main` branch of this package supports both Laravel 12 and Laravel 13. When you move an existing Laravel 12 application to the Laravel 13 line, the upgrade is split into two stages:
-
-### 1. Bump Laravel yourself
-
-The package does **not** touch `composer.json` or upgrade the framework for you — that stays under your control. Update your `composer.json`:
-
-```json
-{
-    "require": {
-        "php": "^8.3",
-        "laravel/framework": "^13.0",
-        "lvntr/laravel-starter-kit": "^13.0"
-    }
-}
-```
-
-Then run `composer update`.
-
-### 2. Finish the package-side work with `sk:upgrade`
-
-Once Laravel itself is on 13, run:
-
-```bash
-php artisan sk:upgrade
-```
-
-The command performs preflight checks (Laravel ≥ 13, Starter Kit ≥ v13, PHP ≥ 8.3) and refuses to run if any of them fails — it will not modify a single file in that case. On success it:
-
-1. Syncs Starter Kit stubs (`sk:update`), preserving your edits
-2. Clears framework caches and stale `bootstrap/cache/*.php` files
-3. Regenerates the Composer autoload
-4. Runs new migrations
-5. Re-seeds roles and permissions
-6. Reinstalls npm dependencies and rebuilds frontend assets
-
-**Options:**
-
-| Option             | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| `--force`          | Skip all confirmation prompts                              |
-| `--no-interaction` | CI-friendly non-interactive mode                           |
-| `--skip-build`     | Skip `npm install` / `npm run build`                       |
-
-For the full upgrade checklist, rollback plan, and troubleshooting tips, see the [Upgrade Guide](../../../docs/upgrade.md).
-
 ## Publishing Optional Assets
 
 The package keeps Vue components, language files, and config inside the package by default. If you need to customize them, publish them to your project:
@@ -230,7 +175,6 @@ php artisan sk:publish --tag=config
 | ------------------ | -------------------------------------------- |
 | `sk:install`       | Full installation wizard                     |
 | `sk:update`        | Update package files preserving user changes |
-| `sk:upgrade`       | Finish Laravel 12 → 13 package-side upgrade  |
 | `sk:publish`       | Publish optional assets for customization    |
 | `make:sk-domain`   | Scaffold a complete DDD domain interactively |
 | `remove:sk-domain` | Remove a domain and all its files            |

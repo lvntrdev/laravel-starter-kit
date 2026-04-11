@@ -11,10 +11,6 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 **Laravel 13**, **Inertia.js v2**, **Vue 3**, **PrimeVue 4** ve **Tailwind CSS 4** ile olusturulmus, tam donanimli bir Laravel admin panel paketi. DDD (Domain-Driven Design) mimarisi ile rol tabanli yetkilendirme, aktivite kaydi, ayarlar yonetimi ve daha fazlasini icerir.
 
-> **Surum destegi:** `main` branch Laravel 13 icin gelistiriliyor (`v13.x` tagleri). `v13.1.0` surumunden itibaren yalnizca Laravel 13+ destekleniyor.
->
-> ⚠️ **Laravel 12 End-of-Life:** `1.x` branch (`v12.x` tagleri) `v12.0.63` itibariyla bakim moduna alindi. Laravel 12 icin yeni ozellik veya hata duzeltmesi yayinlanmayacak. `^12.0` constraint'i ile kurulmus mevcut projeler calismaya devam eder; gelecek guncellemeler icin Laravel 13'e yukseltme tavsiye edilir.
-
 ## Ozellikler
 
 - **DDD Mimarisi** — Action'lar, DTO'lar, Query'ler, Event'ler, Listener'lar
@@ -35,7 +31,7 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 | Paket                    | Amac                                                                          |
 | ------------------------ | ----------------------------------------------------------------------------- |
-| **Laravel 12 / 13**      | Cekirdek framework (constraint: `^12.0 \|\| ^13.0`)                           |
+| **Laravel 13**           | Cekirdek framework (constraint: `^13.0`)                                      |
 | **Inertia.js v2**        | Sunucu tabanli SPA — backend ile frontend arasinda API katmanina gerek yok    |
 | **Laravel Fortify**      | Kimlik dogrulama altyapisi (giris, kayit, 2FA, sifre sifirlama)               |
 | **Laravel Passport**     | OAuth2 API kimlik dogrulamasi (kisisel erisim tokenlari, cihaz yetkilendirme) |
@@ -70,8 +66,8 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 
 ## Gereksinimler
 
-- PHP 8.2+ (Laravel 13 icin 8.3+ onerilir)
-- Laravel 12 veya 13
+- PHP 8.3+
+- Laravel 13
 - Node.js 18+
 - MySQL / PostgreSQL / SQLite
 
@@ -80,11 +76,7 @@ Detayli kullanim dokumanlari: [kit-docs.lvntr.dev](https://kit-docs.lvntr.dev/)
 ### 1. Paketi ekleyin
 
 ```bash
-# Laravel 13 (en guncel)
 composer require lvntr/laravel-starter-kit:^13.0
-
-# Laravel 12 (bakim hatti)
-composer require lvntr/laravel-starter-kit:^12.0
 ```
 
 ### 2. Kurulum komutunu calistirin
@@ -159,53 +151,6 @@ php artisan sk:update --dry-run
 php artisan sk:update --force
 ```
 
-## Laravel 12'den 13'e Yukseltme
-
-Bu paketin `main` branch'i hem Laravel 12'yi hem de Laravel 13'u destekler. Mevcut bir Laravel 12 uygulamasini Laravel 13 hattina tasirken yukseltme iki asamaya ayrilir:
-
-### 1. Laravel'i kendin yukselt
-
-Paket `composer.json`'a **dokunmaz** ve framework'u senin yerine yukseltmez — bu adim sende kalir. `composer.json`'u guncelle:
-
-```json
-{
-    "require": {
-        "php": "^8.3",
-        "laravel/framework": "^13.0",
-        "lvntr/laravel-starter-kit": "^13.0"
-    }
-}
-```
-
-Ardindan `composer update` calistir.
-
-### 2. Paket tarafindaki isi `sk:upgrade` ile tamamla
-
-Laravel 13'e gectikten sonra sunu calistir:
-
-```bash
-php artisan sk:upgrade
-```
-
-Komut on kontrolleri yapar (Laravel ≥ 13, Starter Kit ≥ v13, PHP ≥ 8.3) ve herhangi biri uygun degilse calismayi reddeder — bu durumda tek bir dosyaya bile dokunmaz. Basarili olursa:
-
-1. Starter Kit stub'larini senkronlar (`sk:update`), degisikliklerini korur
-2. Framework cache'lerini ve eski `bootstrap/cache/*.php` dosyalarini temizler
-3. Composer autoload'unu yeniden olusturur
-4. Yeni migration'lari calistirir
-5. Rol ve yetkileri yeniden seed eder
-6. npm bagimliliklarini yeniden kurar ve frontend asset'lerini build eder
-
-**Secenekler:**
-
-| Secenek            | Aciklama                                                 |
-| ------------------ | -------------------------------------------------------- |
-| `--force`          | Tum onay sorularini atlar                                |
-| `--no-interaction` | CI uyumlu etkilesimsiz mod                               |
-| `--skip-build`     | `npm install` / `npm run build` adimlarini atlar         |
-
-Tam yukseltme kontrol listesi, geri donus plani ve sorun giderme ipuclari icin [Yukseltme Rehberi](../../../docs/upgrade.tr.md) dokumanina bakin.
-
 ## Istege Bagli Varliklari Yayinlama
 
 Paket, Vue bilesenlerini, dil dosyalarini ve yapilandirmayi varsayilan olarak paketin icinde tutar. Ozellestirmeniz gerekiyorsa projenize yayinlayin:
@@ -230,7 +175,6 @@ php artisan sk:publish --tag=config
 | ------------------ | --------------------------------------------------------------- |
 | `sk:install`       | Tam kurulum sihirbazi                                           |
 | `sk:update`        | Kullanici degisikliklerini koruyarak paket dosyalarini guncelle |
-| `sk:upgrade`       | Laravel 12 → 13 paket tarafi yukseltmesini tamamlar             |
 | `sk:publish`       | Ozellestirme icin istege bagli varliklari yayinla               |
 | `make:sk-domain`   | Interaktif olarak eksiksiz bir DDD domain'i olustur             |
 | `remove:sk-domain` | Bir domain'i ve tum dosyalarini kaldir                          |
