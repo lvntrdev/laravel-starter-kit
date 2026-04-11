@@ -2,8 +2,8 @@
 
 ![Tests](https://img.shields.io/badge/tests-passing-22c55e?style=flat-square)
 ![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
-![Packagist Version](https://img.shields.io/packagist/v/lvntr/starter-kit?style=flat-square&label=packagist)
-![Downloads](https://img.shields.io/packagist/dt/lvntr/starter-kit?style=flat-square&label=downloads)
+![Packagist Version](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
+![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
 Lvntr Starter Kit is under active development, and each release is shaping it into a more complete admin-first Laravel platform.
 
@@ -79,10 +79,10 @@ A full-featured Laravel admin panel package built with **Laravel 12 & 13**, **In
 
 ```bash
 # Laravel 13 (latest)
-composer require lvntr/starter-kit:^13.0
+composer require lvntr/laravel-starter-kit:^13.0
 
 # Laravel 12 (maintenance)
-composer require lvntr/starter-kit:^12.0
+composer require lvntr/laravel-starter-kit:^12.0
 ```
 
 ### 2. Run the install command
@@ -134,7 +134,7 @@ Open your browser and navigate to your app URL. Log in with the admin credential
 When a new version of the package is released:
 
 ```bash
-composer update lvntr/starter-kit
+composer update lvntr/laravel-starter-kit
 php artisan sk:update
 ```
 
@@ -170,7 +170,7 @@ The package does **not** touch `composer.json` or upgrade the framework for you 
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.0",
-        "lvntr/starter-kit": "^13.0"
+        "lvntr/laravel-starter-kit": "^13.0"
     }
 }
 ```
@@ -259,7 +259,7 @@ php artisan remove:sk-domain Product
 ### Package Structure
 
 ```
-lvntr/starter-kit/
+lvntr/laravel-starter-kit/
 ├── src/                          # Core package code (never published)
 │   ├── StarterKitServiceProvider.php
 │   ├── Console/Commands/         # sk:install, sk:update, make:sk-domain, etc.

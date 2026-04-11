@@ -1,5 +1,5 @@
 {
-    "name": "lvntr/starter-kit",
+    "name": "lvntr/laravel-starter-kit",
     "description": "Laravel Starter Kit with DDD architecture, Inertia.js, Vue 3, PrimeVue, and role-based permissions.",
     "keywords": [
         "laravel",
@@ -17,6 +17,10 @@
             "email": "info@lvntr.dev"
         }
     ],
+    "support": {
+        "source": "https://github.com/lvntrdev/laravel-starter-kit",
+        "issues": "https://github.com/lvntrdev/laravel-starter-kit/issues"
+    },
     "require": {
         "php": "^8.2",
         "illuminate/support": "^12.0 || ^13.0",
