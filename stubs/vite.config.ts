@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
 import laravel from 'laravel-vite-plugin';
+import inertia from '@inertiajs/vite';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
@@ -22,9 +23,9 @@ export default defineConfig({
         wayfinder(),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
-            ssr: 'resources/js/ssr.ts',
             refresh: true,
         }),
+        inertia(),
 
         vue(),
         tailwindcss(),
@@ -50,15 +51,16 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks(id) {
-                    if (id.includes('node_modules')) {
-                        if (id.includes('primevue') || id.includes('@primevue') || id.includes('primeicons')) {
-                            return 'vendor-primevue';
-                        }
-                        if (id.includes('vue') || id.includes('@vue')) {
-                            return 'vendor-vue';
-                        }
-                        return 'vendor';
+                    if (!id.includes('node_modules')) {
+                        return;
                     }
+                    if (/[\\/]node_modules[\\/](primevue|@primevue|primeicons)[\\/]/.test(id)) {
+                        return 'vendor-primevue';
+                    }
+                    if (/[\\/]node_modules[\\/](vue|@vue)[\\/]/.test(id)) {
+                        return 'vendor-vue';
+                    }
+                    return 'vendor';
                 },
             },
         },
