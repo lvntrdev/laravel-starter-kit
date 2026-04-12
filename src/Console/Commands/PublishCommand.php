@@ -6,22 +6,53 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 
+use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
 
 class PublishCommand extends Command
 {
     protected $signature = 'sk:publish
-        {--tag= : Specific tag to publish (components, lang, config)}
+        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, lang, config)}
         {--force : Overwrite existing files}';
 
     protected $description = 'Publish optional Starter Kit assets for customization';
 
-    /** @var array<string, array{source: string, destination: string, label: string}> */
+    /** @var array<string, array{source: string, destination: string, label: string, group?: string}> */
     private const PUBLISHABLE_TAGS = [
         'components' => [
             'source' => 'resources/js/components',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit',
-            'label' => 'Vue Components (FormBuilder, DatatableBuilder, TabBuilder, Skeleton, UI)',
+            'label' => 'All Vue Components',
+        ],
+        'datatable' => [
+            'source' => 'resources/js/components/DatatableBuilder',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/DatatableBuilder',
+            'label' => 'DatatableBuilder (SkDatatable)',
+            'group' => 'components',
+        ],
+        'form' => [
+            'source' => 'resources/js/components/FormBuilder',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/FormBuilder',
+            'label' => 'FormBuilder (SkForm, SkFormInput, SkColorSelector)',
+            'group' => 'components',
+        ],
+        'tabs' => [
+            'source' => 'resources/js/components/TabBuilder',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/TabBuilder',
+            'label' => 'TabBuilder (SkTabs)',
+            'group' => 'components',
+        ],
+        'skeleton' => [
+            'source' => 'resources/js/components/Skeleton',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/Skeleton',
+            'label' => 'Skeleton (PageLoading, SkeletonBox, SkeletonCard, SkeletonTable, SkeletonText)',
+            'group' => 'components',
+        ],
+        'ui' => [
+            'source' => 'resources/js/components/ui',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/ui',
+            'label' => 'UI (AppDialog, AvatarUpload, ConfirmDialogComponent, SkTag, ToastComponent)',
+            'group' => 'components',
         ],
         'lang' => [
             'source' => 'resources/lang',
@@ -37,36 +68,99 @@ class PublishCommand extends Command
 
     public function handle(): int
     {
-        $files = new Filesystem;
-        $tag = $this->option('tag');
+        $tags = $this->option('tag');
         $force = (bool) $this->option('force');
 
-        if (! $tag) {
-            $tag = select(
-                label: 'What would you like to publish?',
-                options: collect(self::PUBLISHABLE_TAGS)->mapWithKeys(
-                    fn (array $config, string $key) => [$key => $config['label']]
-                )->all(),
-            );
+        if (empty($tags)) {
+            $tags = $this->promptForTags();
         }
 
+        $totalCount = 0;
+
+        foreach ($tags as $tag) {
+            $result = $this->publishTag($tag, $force);
+
+            if ($result === null) {
+                return self::FAILURE;
+            }
+
+            $totalCount += $result;
+        }
+
+        $this->newLine();
+
+        if ($totalCount > 0) {
+            $this->components->info("Published {$totalCount} file(s) in total.");
+        } else {
+            $this->components->warn('No files published. Files already exist (use --force to overwrite).');
+        }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Prompt the user to select tag(s) interactively.
+     *
+     * @return list<string>
+     */
+    private function promptForTags(): array
+    {
+        $category = select(
+            label: 'What would you like to publish?',
+            options: [
+                'components' => 'Vue Components (all or pick individual)',
+                'lang' => 'Language Files (translations)',
+                'config' => 'Configuration File',
+            ],
+        );
+
+        if ($category !== 'components') {
+            return [$category];
+        }
+
+        $componentTags = collect(self::PUBLISHABLE_TAGS)
+            ->filter(fn (array $config) => isset($config['group']) && $config['group'] === 'components')
+            ->mapWithKeys(fn (array $config, string $key) => [$key => $config['label']])
+            ->prepend('All Components', 'components')
+            ->all();
+
+        $selected = multiselect(
+            label: 'Which component(s) would you like to publish?',
+            options: $componentTags,
+            required: true,
+        );
+
+        // If "components" (all) is selected, just publish all
+        if (in_array('components', $selected)) {
+            return ['components'];
+        }
+
+        return $selected;
+    }
+
+    /**
+     * Publish a single tag. Returns file count or null on failure.
+     */
+    private function publishTag(string $tag, bool $force): ?int
+    {
         if (! isset(self::PUBLISHABLE_TAGS[$tag])) {
             $this->components->error("Unknown tag: {$tag}");
             $this->line('Available tags: '.implode(', ', array_keys(self::PUBLISHABLE_TAGS)));
 
-            return self::FAILURE;
+            return null;
         }
 
         $config = self::PUBLISHABLE_TAGS[$tag];
         $source = StarterKitServiceProvider::basePath($config['source']);
         $destination = base_path($config['destination']);
 
-        if (! $files->exists($source)) {
+        if (! file_exists($source)) {
             $this->components->error("Source not found: {$source}");
 
-            return self::FAILURE;
+            return null;
         }
 
+        $files = new Filesystem;
         $count = 0;
 
         $this->components->task("Publishing {$config['label']}", function () use ($files, $source, $destination, $force, &$count) {
@@ -84,15 +178,11 @@ class PublishCommand extends Command
             }
         });
 
-        $this->newLine();
-
         if ($count > 0) {
-            $this->components->info("Published {$count} file(s) to: {$config['destination']}");
-        } else {
-            $this->components->warn('No files published. Files already exist (use --force to overwrite).');
+            $this->line("  → {$count} file(s) → {$config['destination']}");
         }
 
-        return self::SUCCESS;
+        return $count;
     }
 
     /**
