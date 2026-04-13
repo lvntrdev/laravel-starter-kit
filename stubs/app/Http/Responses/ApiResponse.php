@@ -4,6 +4,7 @@ namespace App\Http\Responses;
 
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -73,6 +74,14 @@ class ApiResponse implements Responsable
     }
 
     /**
+     * No content response (204).
+     */
+    public static function noContent(): JsonResponse
+    {
+        return new JsonResponse(null, 204);
+    }
+
+    /**
      * Paginated response for a Laravel API ResourceCollection.
      *
      * Use this when you want to transform paginated items through an
@@ -113,14 +122,6 @@ class ApiResponse implements Responsable
         $instance->meta = array_merge($instance->meta, $meta);
 
         return $instance;
-    }
-
-    /**
-     * No content response (204).
-     */
-    public static function noContent(): JsonResponse
-    {
-        return new JsonResponse(null, 204);
     }
 
     /**
