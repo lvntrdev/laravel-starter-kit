@@ -176,11 +176,45 @@
     const isEditMode = computed(() => ['put', 'patch'].includes(props.config.submit?.method ?? ''));
 
     /**
+     * Shallow equality for plain value records — Date instances compared by time.
+     * Used to skip redundant resets when derivedDefaults recomputes with identical data.
+     */
+    function shallowRecordEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+        const aKeys = Object.keys(a);
+        const bKeys = Object.keys(b);
+        if (aKeys.length !== bKeys.length) {
+            return false;
+        }
+        for (const key of aKeys) {
+            const av = a[key];
+            const bv = b[key];
+            if (av instanceof Date && bv instanceof Date) {
+                if (av.getTime() !== bv.getTime()) {
+                    return false;
+                }
+                continue;
+            }
+            if (av !== bv) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * When field defaults change (e.g. a different record is loaded into a dialog),
      * re-populate the internal form and clear validation errors.
+     *
+     * Guard: page.props refresh (e.g. Inertia back()) can rebuild formConfig and
+     * produce a new derivedDefaults object with identical values. Skip the reset
+     * in that case so the user's in-progress edits are not clobbered by stale
+     * remoteData captured at the initial mount.
      */
-    watch(derivedDefaults, (newValues) => {
+    watch(derivedDefaults, (newValues, oldValues) => {
         if (!isInternalMode.value) {
+            return;
+        }
+        if (oldValues && shallowRecordEqual(newValues, oldValues)) {
             return;
         }
         restoringDefaults.value = true;
