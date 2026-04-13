@@ -22,6 +22,30 @@ class SettingsDefaultsQuery
             'auth' => $this->auth(),
             'mail' => $this->mail(),
             'storage' => $this->storage(),
+            'file_manager' => $this->fileManager(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function fileManager(): array
+    {
+        $stored = Setting::getGroup('file_manager');
+
+        $mimesRaw = $stored['accepted_mimes'] ?? null;
+        if (is_string($mimesRaw)) {
+            $decoded = json_decode($mimesRaw, true);
+            $mimes = is_array($decoded) ? $decoded : [];
+        } else {
+            $mimes = is_array($mimesRaw) ? $mimesRaw : [];
+        }
+
+        return [
+            'max_size_kb' => (int) ($stored['max_size_kb'] ?? 10240),
+            'accepted_mimes' => array_values(array_map('strval', $mimes)),
+            'allow_video' => ($stored['allow_video'] ?? '0') === '1',
+            'allow_audio' => ($stored['allow_audio'] ?? '0') === '1',
         ];
     }
 

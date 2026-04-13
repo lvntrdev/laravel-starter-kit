@@ -33,7 +33,7 @@
 }
 
 .admin-content {
-    @apply w-full flex-1 min-h-0 overflow-y-auto p-6;
+    @apply w-full flex-1 min-h-0 overflow-y-auto p-6 flex flex-col;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -41,7 +41,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .admin-page-header {
-    @apply flex items-center justify-between mb-6;
+    @apply flex items-center justify-between mb-6 shrink-0;
 }
 
 .admin-page-header__title {

@@ -6,6 +6,7 @@ use App\Domain\Setting\Actions\SendTestMailAction;
 use App\Domain\Setting\Actions\UpdateAuthSettingsAction;
 use App\Domain\Setting\Actions\UpdateSettingsAction;
 use App\Domain\Setting\DTOs\AuthSettingsDTO;
+use App\Domain\Setting\DTOs\FileManagerSettingsDTO;
 use App\Domain\Setting\DTOs\GeneralSettingsDTO;
 use App\Domain\Setting\DTOs\MailSettingsDTO;
 use App\Domain\Setting\DTOs\StorageSettingsDTO;
@@ -13,6 +14,7 @@ use App\Domain\Setting\Queries\SettingsDefaultsQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Settings\SendTestMailRequest;
 use App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
+use App\Http\Requests\Admin\Settings\UpdateFileManagerSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateMailSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest;
@@ -85,6 +87,16 @@ class SettingsController extends Controller
         $action->execute('storage', StorageSettingsDTO::fromArray($request->validated()));
 
         return back()->with('success', 'Storage settings updated.');
+    }
+
+    /**
+     * Update FileManager settings.
+     */
+    public function updateFileManager(UpdateFileManagerSettingsRequest $request, UpdateSettingsAction $action): RedirectResponse
+    {
+        $action->execute('file_manager', FileManagerSettingsDTO::fromArray($request->validated()));
+
+        return back()->with('success', 'File manager settings updated.');
     }
 
     /**

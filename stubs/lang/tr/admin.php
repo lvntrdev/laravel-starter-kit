@@ -13,6 +13,7 @@ return [
         'user_management' => 'Kullanıcı Yönetimi',
         'users' => 'Kullanıcılar',
         'roles_permissions' => 'Roller ve İzinler',
+        'files' => 'Dosyalar',
         'system' => 'Sistem',
         'activity_logs' => 'Etkinlik Kayıtları',
         'settings' => 'Ayarlar',
@@ -50,6 +51,11 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    'files' => [
+        'title' => 'Dosyalar',
+        'subtitle' => 'Global dosya yöneticisi.',
+    ],
+
     'users' => [
         'title' => 'Kullanıcılar',
         'user' => 'Kullanıcı',
@@ -58,6 +64,10 @@ return [
         'edit' => 'Kullanıcıyı Düzenle',
         'delete' => 'Kullanıcıyı Sil',
         'delete_confirm' => '":name" kullanıcısını silmek istediğinizden emin misiniz?',
+        'tabs' => [
+            'general' => 'Genel',
+            'files' => 'Dosyalar',
+        ],
     ],
 
     /*
@@ -147,6 +157,7 @@ return [
             'auth' => 'Kimlik Doğrulama',
             'mail' => 'E-posta',
             'storage' => 'Depolama',
+            'file_manager' => 'Dosya Yöneticisi',
         ],
 
         'general' => [
@@ -189,6 +200,11 @@ return [
             's3_title' => 'Amazon S3',
             's3_subtitle' => 'AWS S3 kimlik bilgilerini ve ayarlarını yapılandırın.',
 
+        ],
+
+        'file_manager' => [
+            'title' => 'Dosya Yöneticisi Ayarları',
+            'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
         ],
     ],
 

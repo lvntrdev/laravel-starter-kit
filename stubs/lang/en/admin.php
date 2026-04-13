@@ -13,6 +13,7 @@ return [
         'user_management' => 'User Management',
         'users' => 'Users',
         'roles_permissions' => 'Roles & Permissions',
+        'files' => 'Files',
         'system' => 'System',
         'activity_logs' => 'Activity Logs',
         'settings' => 'Settings',
@@ -50,6 +51,11 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    'files' => [
+        'title' => 'Files',
+        'subtitle' => 'Global file manager.',
+    ],
+
     'users' => [
         'title' => 'Users',
         'user' => 'User',
@@ -58,6 +64,10 @@ return [
         'edit' => 'Edit User',
         'delete' => 'Delete User',
         'delete_confirm' => 'Are you sure you want to delete the user ":name"?',
+        'tabs' => [
+            'general' => 'General',
+            'files' => 'Files',
+        ],
     ],
 
     /*
@@ -147,6 +157,7 @@ return [
             'auth' => 'Authentication',
             'mail' => 'Mail',
             'storage' => 'Storage',
+            'file_manager' => 'File Manager',
         ],
 
         'general' => [
@@ -189,6 +200,11 @@ return [
             's3_title' => 'Amazon S3',
             's3_subtitle' => 'Configure AWS S3 credentials and settings.',
 
+        ],
+
+        'file_manager' => [
+            'title' => 'File Manager Settings',
+            'subtitle' => 'Configure upload size and accepted file types.',
         ],
     ],
 

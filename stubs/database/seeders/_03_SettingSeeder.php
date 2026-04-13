@@ -49,6 +49,25 @@ class _03_SettingSeeder extends Seeder
                 'aws_url' => config('filesystems.disks.s3.url'),
                 'aws_endpoint' => config('filesystems.disks.s3.endpoint'),
             ],
+            'file_manager' => [
+                'max_size_kb' => '10240',
+                'accepted_mimes' => json_encode([
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'image/webp',
+                    'image/svg+xml',
+                    'application/pdf',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'text/plain',
+                    'text/csv',
+                ]),
+                'allow_video' => '0',
+                'allow_audio' => '0',
+            ],
         ];
 
         foreach ($defaults as $group => $settings) {

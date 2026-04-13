@@ -29,3 +29,7 @@ export { default as ToastComponent } from './ui/ToastComponent.vue'
 export { default as AppDialog } from './ui/AppDialog.vue'
 export { default as AvatarUpload } from './ui/AvatarUpload.vue'
 export { default as ConfirmDialogComponent } from './ui/ConfirmDialogComponent.vue'
+
+// FileManager
+export { default as FileManager } from './FileManager/FileManager.vue'
+export * from './FileManager'

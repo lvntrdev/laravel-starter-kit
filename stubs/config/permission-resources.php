@@ -36,6 +36,7 @@ return [
         'activity-logs' => ['read'],
         'settings' => ['read', 'update'],
         'api-routes' => ['read'],
+        'files' => ['create', 'read', 'update', 'delete'],
     ],
 
     /*
@@ -97,7 +98,7 @@ return [
     'permission_groups' => [
         'users' => ['users'],
         // 'users' => ['users', 'users:student', 'users:guardian', 'users:personal'],
-        'system' => ['roles', 'settings'],
+        'system' => ['roles', 'settings', 'files'],
         'developer' => ['activity-logs', 'api-routes', 'api-docs'],
     ],
 
@@ -135,6 +136,7 @@ return [
             'users.create', 'users.read', 'users.update', 'users.delete',
             'roles.read',
             'dashboard.read',
+            'files.create', 'files.read', 'files.update', 'files.delete',
             // 'users:student.create', 'users:student.read', 'users:student.update', 'users:student.delete',
             // 'users:guardian.create', 'users:guardian.read', 'users:guardian.update', 'users:guardian.delete',
         ],
@@ -178,6 +180,7 @@ return [
             'activity-logs' => ['en' => 'Activity Logs', 'tr' => 'İşlem Kayıtları'],
             'settings' => ['en' => 'Settings', 'tr' => 'Ayarlar'],
             'api-routes' => ['en' => 'API Routes', 'tr' => 'API Rotaları'],
+            'files' => ['en' => 'Files', 'tr' => 'Dosyalar'],
             'api-docs' => ['en' => 'API Docs', 'tr' => 'API Dökümanları'],
             'dashboard' => ['en' => 'Dashboard', 'tr' => 'Dashboard'],
             // 'users:student' => ['en' => 'Users → Student', 'tr' => 'Kullanıcılar → Öğrenci'],

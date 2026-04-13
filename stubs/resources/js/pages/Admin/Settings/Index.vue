@@ -2,6 +2,7 @@
     import { TB } from '@lvntr/components/TabBuilder/core';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import AuthTab from './AuthTab.vue';
+    import FileManagerTab from './FileManagerTab.vue';
     import GeneralTab from './GeneralTab.vue';
     import MailTab from './MailTab.vue';
     import StorageTab from './StorageTab.vue';
@@ -44,6 +45,12 @@
                 aws_url: string | null;
                 aws_endpoint: string | null;
             };
+            file_manager: {
+                max_size_kb: number;
+                accepted_mimes: string[];
+                allow_video: boolean;
+                allow_audio: boolean;
+            };
         };
         timezones: string[];
         availableLanguages: Record<string, string>;
@@ -58,6 +65,7 @@
             TB.item().key('auth').label('admin.settings.tabs.auth').icon('pi pi-shield'),
             TB.item().key('mail').label('admin.settings.tabs.mail').icon('pi pi-envelope'),
             TB.item().key('storage').label('admin.settings.tabs.storage').icon('pi pi-cloud'),
+            TB.item().key('file_manager').label('admin.settings.tabs.file_manager').icon('pi pi-sliders-h'),
         )
         .build();
 </script>
@@ -83,6 +91,10 @@
 
             <template #storage>
                 <StorageTab :settings="props.settings.storage" />
+            </template>
+
+            <template #file_manager>
+                <FileManagerTab :settings="props.settings.file_manager" />
             </template>
         </SkTabs>
     </AdminLayout>

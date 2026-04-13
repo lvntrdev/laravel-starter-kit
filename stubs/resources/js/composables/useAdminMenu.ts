@@ -3,6 +3,7 @@ import { useMenuBuilder } from '@/composables/useMenuBuilder';
 import activityLogs from '@/routes/activity-logs';
 import apiRoutes from '@/routes/api-routes';
 import dashboard from '@/routes/dashboard';
+import files from '@/routes/files';
 import roles from '@/routes/roles';
 import settings from '@/routes/settings';
 import users from '@/routes/users';
@@ -30,6 +31,12 @@ export function useAdminMenu() {
             icon: 'pi pi-shield',
             href: roles.index.url(),
             permission: 'roles.read',
+        },
+        {
+            title: 'admin.menu.files',
+            icon: 'pi pi-folder',
+            href: files.index.url(),
+            permission: 'files.read',
         },
         {
             title: 'admin.menu.system',
