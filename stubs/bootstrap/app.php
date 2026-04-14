@@ -1,15 +1,9 @@
 <?php
 
-use App\Exceptions\ApiExceptionHandler;
-use App\Http\Middleware\CheckResourcePermission;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\SecurityHeaders;
-use App\Http\Middleware\SetLocale;
-use Illuminate\Auth\Middleware\Authenticate;
-use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Lvntr\StarterKit\Bootstrap;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,20 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [
-            SetLocale::class,
-            HandleInertiaRequests::class,
-            SecurityHeaders::class,
-        ]);
-
-        $middleware->alias([
-            'auth' => Authenticate::class,
-            'guest' => RedirectIfAuthenticated::class,
-            'check.permission' => CheckResourcePermission::class,
-        ]);
-
-        $middleware->redirectTo(guests: '/login', users: '/dashboard');
+        Bootstrap::middleware($middleware);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        ApiExceptionHandler::register($exceptions);
+        Bootstrap::exceptions($exceptions);
     })->create();

@@ -76,6 +76,17 @@ A full-featured Laravel admin panel package built with **Laravel 13**, **Inertia
 
 ## Installation
 
+> **Start from a bare Laravel install.** Do **not** run `php artisan install:inertia`, `install:api`, Breeze, Jetstream, or any other starter preset before installing this package. Presets scaffold controllers, routes, pages, and layouts that this starter kit also ships — the installer cannot detect them, so they remain as orphaned dead code next to the kit's own files.
+>
+> Recommended flow:
+>
+> ```bash
+> composer create-project laravel/laravel my-app
+> cd my-app
+> composer require lvntr/laravel-starter-kit:^13.0
+> php artisan sk:install
+> ```
+
 ### 1. Require the package
 
 ```bash

@@ -74,6 +74,8 @@ class UpdateCommand extends Command
         'app/Enums/Attributes/InertiaShared.php',
         'app/Enums/Contracts/',
         'app/Enums/Attributes/',
+        'app/Enums/IdentityType.php',
+        'app/Enums/YesNo.php',
         'app/Traits/HasEnumAccessors.php',
         'resources/js/composables/useEnum.ts',
     ];

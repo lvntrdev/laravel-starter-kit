@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Lvntr\StarterKit\StarterKitServiceProvider;
+use PhpParser\Node;
+use PhpParser\NodeFinder;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter;
 use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
@@ -67,10 +73,22 @@ class InstallCommand extends Command
         // 1. Database configuration
         $this->configureDatabaseStep();
 
-        // 2. Publish stubs
-        $this->step('Publishing application scaffolding', function () {
+        // 2. Publish stubs — on first install (no hash registry), force-copy
+        // so preservable paths like lang/ are populated from stubs.
+        $isFirstInstall = $this->isFirstInstall();
+
+        $this->step('Publishing application scaffolding', function () use ($isFirstInstall) {
             $stubsPath = StarterKitServiceProvider::stubsPath();
-            $this->publishDirectory($stubsPath, base_path(), $this->option('force'));
+            $this->publishDirectory(
+                $stubsPath,
+                base_path(),
+                $this->option('force') || $isFirstInstall,
+            );
+        });
+
+        // 2b. Merge package.json (stub wins for shared deps, user extras preserved)
+        $this->step('Merging package.json', function () {
+            $this->mergePackageJson();
         });
 
         // 3. Remove conflicting default Laravel files
@@ -105,6 +123,16 @@ class InstallCommand extends Command
         // 4d. Configure media library path generator
         $this->step('Configuring media library', function () {
             $this->injectMediaLibraryConfig();
+        });
+
+        // 4e. Wire starter kit bootstrap hooks into bootstrap/app.php
+        $this->step('Configuring bootstrap/app.php', function () {
+            $this->injectBootstrapApp();
+        });
+
+        // 4f. Register starter kit service providers in bootstrap/providers.php
+        $this->step('Registering service providers', function () {
+            $this->injectBootstrapProviders();
         });
 
         // 5. Create hash registry directory
@@ -324,6 +352,13 @@ class InstallCommand extends Command
 
         foreach ($this->files->allFiles($source, true) as $file) {
             $relativePath = $file->getRelativePathname();
+            $normalizedPath = str_replace('\\', '/', $relativePath);
+
+            // package.json is merged separately to preserve user-added dependencies.
+            if ($normalizedPath === 'package.json') {
+                continue;
+            }
+
             $targetPath = $destination.DIRECTORY_SEPARATOR.$relativePath;
             $targetDir = dirname($targetPath);
 
@@ -340,6 +375,74 @@ class InstallCommand extends Command
             $this->files->copy($file->getPathname(), $targetPath);
             $this->published[] = $relativePath;
         }
+    }
+
+    /**
+     * Detect if this is the first install by checking for the hash registry file.
+     * The registry is written at the end of install, so its absence means no prior install.
+     */
+    private function isFirstInstall(): bool
+    {
+        $hashFile = config('starter-kit.published_hashes', storage_path('starter-kit/hashes.json'));
+
+        return ! $this->files->exists($hashFile);
+    }
+
+    /**
+     * Merge the stub package.json into the application's package.json.
+     *
+     * Strategy: stub version wins for shared dependency versions. User-added
+     * dependencies (and any extra root-level keys) are preserved.
+     */
+    private function mergePackageJson(): void
+    {
+        $stubPath = StarterKitServiceProvider::stubsPath('package.json');
+        $targetPath = base_path('package.json');
+
+        if (! $this->files->exists($stubPath)) {
+            return;
+        }
+
+        if (! $this->files->exists($targetPath)) {
+            $this->files->copy($stubPath, $targetPath);
+
+            return;
+        }
+
+        /** @var array<string, mixed>|null $stub */
+        $stub = json_decode($this->files->get($stubPath), true);
+        /** @var array<string, mixed>|null $current */
+        $current = json_decode($this->files->get($targetPath), true);
+
+        if (! is_array($stub) || ! is_array($current)) {
+            // Malformed JSON — fall back to stub to guarantee a working build.
+            $this->files->copy($stubPath, $targetPath);
+
+            return;
+        }
+
+        // Stub keys win at the root level; user-added extra keys are preserved.
+        $merged = array_merge($current, $stub);
+
+        // For dependency sections, union the two maps so user extras survive
+        // while stub versions override any shared dependency versions.
+        foreach (['dependencies', 'devDependencies'] as $section) {
+            $stubSection = $stub[$section] ?? [];
+            $currentSection = $current[$section] ?? [];
+
+            if (! is_array($stubSection) || ! is_array($currentSection)) {
+                continue;
+            }
+
+            $mergedSection = array_merge($currentSection, $stubSection);
+            ksort($mergedSection);
+            $merged[$section] = $mergedSection;
+        }
+
+        $this->files->put(
+            $targetPath,
+            json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n",
+        );
     }
 
     /**
@@ -682,64 +785,42 @@ class InstallCommand extends Command
             return;
         }
 
-        $content = $this->files->get($configPath);
+        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+            $array = $this->findConfigRootArray($stmts);
 
-        // Check if already injected
-        if (str_contains($content, "'available_languages'")) {
-            return;
-        }
+            if ($array === null) {
+                return false;
+            }
 
-        $configBlock = <<<'PHP'
+            // Idempotent — skip if already injected.
+            if ($this->configArrayHasKey($array, 'available_languages')) {
+                return false;
+            }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Display Timezone
-    |--------------------------------------------------------------------------
-    |
-    | The timezone used for displaying dates/times in the UI.
-    | Overridden from database settings at runtime by SettingsServiceProvider.
-    |
-    */
+            $array->items[] = new Node\ArrayItem(
+                $this->envCallNode('APP_TIMEZONE', 'UTC'),
+                new Node\Scalar\String_('display_timezone'),
+            );
 
-    'display_timezone' => env('APP_TIMEZONE', 'UTC'),
+            $array->items[] = new Node\ArrayItem(
+                new Node\Expr\Array_([
+                    new Node\ArrayItem(new Node\Scalar\String_('English'), new Node\Scalar\String_('en')),
+                    new Node\ArrayItem(new Node\Scalar\String_('Türkçe'), new Node\Scalar\String_('tr')),
+                ]),
+                new Node\Scalar\String_('available_languages'),
+            );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Available Languages
-    |--------------------------------------------------------------------------
-    |
-    | All languages the application can support. The admin settings page
-    | allows selecting which of these are active via checkboxes.
-    |
-    */
+            $array->items[] = new Node\ArrayItem(
+                new Node\Expr\Array_([
+                    new Node\ArrayItem(new Node\Scalar\String_('English'), new Node\Scalar\String_('en')),
+                ]),
+                new Node\Scalar\String_('languages'),
+            );
 
-    'available_languages' => [
-        'en' => 'English',
-        'tr' => 'Türkçe',
-    ],
+            return true;
+        });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Active Languages
-    |--------------------------------------------------------------------------
-    |
-    | The currently active languages. Overridden from database settings
-    | at runtime by SettingsServiceProvider. Defaults to all available.
-    |
-    */
-
-    'languages' => [
-        'en' => 'English',
-    ],
-
-PHP;
-
-        // Insert before the final ];
-        $content = preg_replace('/\n\];\s*$/', $configBlock."\n];\n", $content);
-
-        $this->files->put($configPath, $content);
-
-        // Also set in runtime config so seeders can use it immediately
+        // Also set in runtime config so seeders can use it immediately.
         config([
             'app.display_timezone' => 'UTC',
             'app.available_languages' => ['en' => 'English', 'tr' => 'Türkçe'],
@@ -762,45 +843,44 @@ PHP;
             return;
         }
 
-        $content = $this->files->get($configPath);
+        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+            $root = $this->findConfigRootArray($stmts);
 
-        // Check if 'do' disk is already inside the 'disks' section
-        $disksPos = strpos($content, "'disks'");
-        if ($disksPos === false) {
-            return;
-        }
+            if ($root === null) {
+                return false;
+            }
 
-        $disksClosingPos = strpos($content, "\n    ],", $disksPos);
-        if ($disksClosingPos === false) {
-            return;
-        }
+            $disksItem = $this->findArrayItem($root, 'disks');
 
-        $disksSection = substr($content, $disksPos, $disksClosingPos - $disksPos);
-        if (str_contains($disksSection, "'do'")) {
-            return;
-        }
+            if ($disksItem === null || ! $disksItem->value instanceof Node\Expr\Array_) {
+                return false;
+            }
 
-        $diskConfig = <<<'PHP'
+            // Idempotent — skip if the 'do' disk is already present.
+            if ($this->configArrayHasKey($disksItem->value, 'do')) {
+                return false;
+            }
 
-        'do' => [
-            'driver' => 's3',
-            'key' => env('DO_SPACES_KEY'),
-            'secret' => env('DO_SPACES_SECRET'),
-            'region' => env('DO_SPACES_REGION'),
-            'bucket' => env('DO_SPACES_BUCKET'),
-            'endpoint' => env('DO_SPACES_ENDPOINT'),
-            'url' => env('DO_SPACES_URL'),
-            'visibility' => 'private',
-            'throw' => false,
-            'report' => false,
-        ],
-PHP;
+            $disksItem->value->items[] = new Node\ArrayItem(
+                new Node\Expr\Array_([
+                    new Node\ArrayItem(new Node\Scalar\String_('s3'), new Node\Scalar\String_('driver')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_KEY'), new Node\Scalar\String_('key')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_SECRET'), new Node\Scalar\String_('secret')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_REGION'), new Node\Scalar\String_('region')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_BUCKET'), new Node\Scalar\String_('bucket')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_ENDPOINT'), new Node\Scalar\String_('endpoint')),
+                    new Node\ArrayItem($this->envCallNode('DO_SPACES_URL'), new Node\Scalar\String_('url')),
+                    new Node\ArrayItem(new Node\Scalar\String_('private'), new Node\Scalar\String_('visibility')),
+                    new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('throw')),
+                    new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('report')),
+                ]),
+                new Node\Scalar\String_('do'),
+            );
 
-        $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen('    ],'));
+            return true;
+        });
 
-        $this->files->put($configPath, $content);
-
-        // Also set in runtime config so it's available immediately
+        // Also set in runtime config so it's available immediately.
         config([
             'filesystems.disks.do' => [
                 'driver' => 's3',
@@ -828,7 +908,7 @@ PHP;
     {
         $configPath = config_path('media-library.php');
 
-        // Publish the config if it doesn't exist yet
+        // Publish the config if it doesn't exist yet.
         if (! $this->files->exists($configPath)) {
             $vendorConfig = base_path('vendor/spatie/laravel-medialibrary/config/media-library.php');
             if ($this->files->exists($vendorConfig)) {
@@ -838,39 +918,251 @@ PHP;
             }
         }
 
-        $content = $this->files->get($configPath);
+        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+            // Idempotent — skip if MediaPathGenerator is already referenced anywhere
+            // in the file (as a class constant, qualified name, or use alias).
+            $finder = new NodeFinder;
+            $existing = $finder->find($stmts, static function (Node $node): bool {
+                if ($node instanceof Node\Name) {
+                    $name = $node->toString();
 
-        // Already using our custom path generator
-        if (str_contains($content, 'MediaPathGenerator')) {
+                    return str_ends_with($name, 'MediaPathGenerator');
+                }
+
+                return false;
+            });
+
+            if (! empty($existing)) {
+                return false;
+            }
+
+            $root = $this->findConfigRootArray($stmts);
+
+            if ($root === null) {
+                return false;
+            }
+
+            $pathGenerator = $this->findArrayItem($root, 'path_generator');
+
+            if ($pathGenerator === null) {
+                return false;
+            }
+
+            $pathGenerator->value = new Node\Expr\ClassConstFetch(
+                new Node\Name\FullyQualified('App\\Support\\MediaPathGenerator'),
+                'class',
+            );
+
+            return true;
+        });
+
+        config(['media-library.path_generator' => MediaPathGenerator::class]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // BOOTSTRAP INJECTION (format-preserving)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Wire the starter kit into bootstrap/app.php without overwriting the
+     * Laravel defaults. Adds:
+     *   - `api: __DIR__ . '/../routes/api.php'` to `withRouting()`
+     *   - `\Lvntr\StarterKit\Bootstrap::middleware($middleware);` call inside
+     *     the `withMiddleware()` closure
+     *   - `\Lvntr\StarterKit\Bootstrap::exceptions($exceptions);` call inside
+     *     the `withExceptions()` closure
+     */
+    private function injectBootstrapApp(): void
+    {
+        $path = base_path('bootstrap/app.php');
+
+        if (! $this->files->exists($path)) {
             return;
         }
 
-        // Replace the default path generator with our custom one
-        $content = str_replace(
-            'Spatie\\MediaLibrary\\Support\\PathGenerator\\DefaultPathGenerator::class',
-            'App\\Support\\MediaPathGenerator::class',
-            $content,
-        );
-
-        // Also handle the case where the import is used
-        $content = str_replace(
-            'DefaultPathGenerator::class',
-            'MediaPathGenerator::class',
-            $content,
-        );
-
-        // Ensure the import exists
-        if (str_contains($content, 'MediaPathGenerator::class') && ! str_contains($content, 'use App\\Support\\MediaPathGenerator')) {
-            $content = str_replace(
-                "<?php\n",
-                "<?php\n\nuse App\\Support\\MediaPathGenerator;\n",
-                $content,
-            );
+        // Idempotent — the helper reference is the strongest marker.
+        if (str_contains($this->files->get($path), 'Lvntr\\StarterKit\\Bootstrap')) {
+            return;
         }
 
-        $this->files->put($configPath, $content);
+        $this->modifyPhpFileAst($path, function (array $stmts): bool {
+            $return = null;
+            foreach ($stmts as $stmt) {
+                if ($stmt instanceof Node\Stmt\Return_) {
+                    $return = $stmt;
+                    break;
+                }
+            }
 
-        config(['media-library.path_generator' => MediaPathGenerator::class]);
+            if ($return === null || ! $return->expr instanceof Node\Expr\MethodCall) {
+                return false;
+            }
+
+            $changed = false;
+
+            $this->walkMethodChain($return->expr, function (Node\Expr\MethodCall $call) use (&$changed): void {
+                if (! $call->name instanceof Node\Identifier) {
+                    return;
+                }
+
+                match ($call->name->name) {
+                    'withRouting' => $this->addApiRouteArg($call, $changed),
+                    'withMiddleware' => $this->addBootstrapCall($call, 'middleware', '$middleware', $changed),
+                    'withExceptions' => $this->addBootstrapCall($call, 'exceptions', '$exceptions', $changed),
+                    default => null,
+                };
+            });
+
+            return $changed;
+        });
+    }
+
+    /**
+     * Register starter kit providers in bootstrap/providers.php without
+     * dropping the user's existing entries.
+     */
+    private function injectBootstrapProviders(): void
+    {
+        $path = base_path('bootstrap/providers.php');
+
+        if (! $this->files->exists($path)) {
+            return;
+        }
+
+        $providers = [
+            'App\\Providers\\DomainServiceProvider',
+            'App\\Providers\\FortifyServiceProvider',
+            'App\\Providers\\SettingsServiceProvider',
+        ];
+
+        $this->modifyPhpFileAst($path, function (array $stmts) use ($providers): bool {
+            $return = null;
+            foreach ($stmts as $stmt) {
+                if ($stmt instanceof Node\Stmt\Return_) {
+                    $return = $stmt;
+                    break;
+                }
+            }
+
+            if ($return === null || ! $return->expr instanceof Node\Expr\Array_) {
+                return false;
+            }
+
+            $array = $return->expr;
+            $existing = $this->collectProviderClassNames($array);
+            $changed = false;
+
+            foreach ($providers as $fqcn) {
+                if (in_array($fqcn, $existing, true) || in_array('\\'.$fqcn, $existing, true)) {
+                    continue;
+                }
+
+                $array->items[] = new Node\ArrayItem(
+                    new Node\Expr\ClassConstFetch(new Node\Name\FullyQualified($fqcn), 'class'),
+                );
+                $changed = true;
+            }
+
+            return $changed;
+        });
+    }
+
+    /**
+     * Walk a left-associative method chain (`foo()->bar()->baz()`) from the
+     * outermost call inward, invoking the callback on each MethodCall node.
+     */
+    private function walkMethodChain(Node\Expr\MethodCall $call, callable $callback): void
+    {
+        $callback($call);
+
+        if ($call->var instanceof Node\Expr\MethodCall) {
+            $this->walkMethodChain($call->var, $callback);
+        }
+    }
+
+    /**
+     * Add `api: __DIR__ . '/../routes/api.php'` to a `withRouting()` call if
+     * no `api` named argument exists yet.
+     */
+    private function addApiRouteArg(Node\Expr\MethodCall $call, bool &$changed): void
+    {
+        foreach ($call->args as $arg) {
+            if ($arg instanceof Node\Arg && $arg->name instanceof Node\Identifier && $arg->name->name === 'api') {
+                return;
+            }
+        }
+
+        $apiValue = new Node\Expr\BinaryOp\Concat(
+            new Node\Scalar\MagicConst\Dir,
+            new Node\Scalar\String_('/../routes/api.php'),
+        );
+
+        $newArg = new Node\Arg($apiValue, name: new Node\Identifier('api'));
+
+        // Keep ordering stable: append after the existing `web:` arg when present,
+        // otherwise insert at the front of the argument list.
+        $insertAt = count($call->args);
+        foreach ($call->args as $index => $arg) {
+            if ($arg instanceof Node\Arg && $arg->name instanceof Node\Identifier && $arg->name->name === 'web') {
+                $insertAt = $index + 1;
+                break;
+            }
+        }
+
+        array_splice($call->args, $insertAt, 0, [$newArg]);
+        $changed = true;
+    }
+
+    /**
+     * Append `\Lvntr\StarterKit\Bootstrap::{$method}(${$paramName})` as the
+     * first statement of the closure passed to `withMiddleware()` / `withExceptions()`.
+     */
+    private function addBootstrapCall(Node\Expr\MethodCall $call, string $method, string $paramName, bool &$changed): void
+    {
+        $closure = $call->args[0] ?? null;
+
+        if (! $closure instanceof Node\Arg || ! $closure->value instanceof Node\Expr\Closure) {
+            return;
+        }
+
+        $paramIdent = ltrim($paramName, '$');
+
+        $bootstrapCall = new Node\Stmt\Expression(
+            new Node\Expr\StaticCall(
+                new Node\Name\FullyQualified('Lvntr\\StarterKit\\Bootstrap'),
+                $method,
+                [new Node\Arg(new Node\Expr\Variable($paramIdent))],
+            ),
+        );
+
+        // Prepend to preserve any user-added statements below it.
+        array_unshift($closure->value->stmts, $bootstrapCall);
+        $changed = true;
+    }
+
+    /**
+     * Collect all class names currently listed in a providers array so we can
+     * skip providers that are already registered (with or without a leading slash).
+     *
+     * @return list<string>
+     */
+    private function collectProviderClassNames(Node\Expr\Array_ $array): array
+    {
+        $names = [];
+
+        foreach ($array->items as $item) {
+            if (! $item instanceof Node\ArrayItem) {
+                continue;
+            }
+
+            if ($item->value instanceof Node\Expr\ClassConstFetch
+                && $item->value->class instanceof Node\Name
+            ) {
+                $names[] = $item->value->class->toString();
+            }
+        }
+
+        return $names;
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -917,5 +1209,109 @@ PHP;
         }
 
         return confirm($question, default: true);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // AST HELPERS (format-preserving config editing)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Parse a PHP file, invoke the mutator with the clone-traversed statement
+     * list, and write the file back with format-preserving pretty printing
+     * only when the mutator reports a change.
+     *
+     * @param  callable(array<\PhpParser\Node\Stmt>): bool  $mutator
+     */
+    private function modifyPhpFileAst(string $path, callable $mutator): bool
+    {
+        if (! $this->files->exists($path)) {
+            return false;
+        }
+
+        $code = $this->files->get($path);
+
+        $parser = (new ParserFactory)->createForHostVersion();
+
+        try {
+            $oldStmts = $parser->parse($code);
+        } catch (\PhpParser\Error) {
+            return false;
+        }
+
+        if ($oldStmts === null) {
+            return false;
+        }
+
+        $oldTokens = $parser->getTokens();
+
+        $traverser = new NodeTraverser(new CloningVisitor);
+        /** @var array<\PhpParser\Node\Stmt> $newStmts */
+        $newStmts = $traverser->traverse($oldStmts);
+
+        if (! $mutator($newStmts)) {
+            return false;
+        }
+
+        $printer = new PrettyPrinter\Standard;
+        $newCode = $printer->printFormatPreserving($newStmts, $oldStmts, $oldTokens);
+
+        $this->files->put($path, $newCode);
+
+        return true;
+    }
+
+    /**
+     * Locate the top-level `return [...]` array used by Laravel config files.
+     *
+     * @param  array<\PhpParser\Node\Stmt>  $stmts
+     */
+    private function findConfigRootArray(array $stmts): ?Node\Expr\Array_
+    {
+        foreach ($stmts as $stmt) {
+            if ($stmt instanceof Node\Stmt\Return_ && $stmt->expr instanceof Node\Expr\Array_) {
+                return $stmt->expr;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if an Array_ node already contains the given string key.
+     */
+    private function configArrayHasKey(Node\Expr\Array_ $array, string $key): bool
+    {
+        return $this->findArrayItem($array, $key) !== null;
+    }
+
+    /**
+     * Find an ArrayItem by its string key, or null when absent.
+     */
+    private function findArrayItem(Node\Expr\Array_ $array, string $key): ?Node\ArrayItem
+    {
+        foreach ($array->items as $item) {
+            if ($item instanceof Node\ArrayItem
+                && $item->key instanceof Node\Scalar\String_
+                && $item->key->value === $key
+            ) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Build an `env('KEY')` or `env('KEY', 'default')` call expression.
+     */
+    private function envCallNode(string $key, ?string $default = null): Node\Expr\FuncCall
+    {
+        $args = [new Node\Arg(new Node\Scalar\String_($key))];
+
+        if ($default !== null) {
+            $args[] = new Node\Arg(new Node\Scalar\String_($default));
+        }
+
+        return new Node\Expr\FuncCall(new Node\Name('env'), $args);
     }
 }

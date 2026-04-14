@@ -13,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        if ($this->app->isLocal() && class_exists(IdeHelperServiceProvider::class)) {
+        // Only available in main project (dev tooling) — never required by consumers.
+        if ($this->app->environment('local') && class_exists(IdeHelperServiceProvider::class)) {
             $this->app->register(IdeHelperServiceProvider::class);
         }
 

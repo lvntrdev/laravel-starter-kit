@@ -74,6 +74,17 @@ Lvntr Starter Kit aktif olarak geliştiriliyor; her yeni sürüm onu daha olgun,
 
 ## Kurulum
 
+> **Boş bir Laravel kurulumundan başlayın.** Bu paketi kurmadan önce `php artisan install:inertia`, `install:api`, Breeze, Jetstream veya başka bir starter preset **çalıştırmayın**. Preset'ler bu starter kit'in de yayınladığı controller, route, sayfa ve layout'ları oluşturur — installer bunları tespit edemediği için kit'in kendi dosyalarının yanında yetim "ölü kod" olarak kalırlar.
+>
+> Önerilen akış:
+>
+> ```bash
+> composer create-project laravel/laravel my-app
+> cd my-app
+> composer require lvntr/laravel-starter-kit:^13.0
+> php artisan sk:install
+> ```
+
 ### 1. Paketi ekleyin
 
 ```bash
