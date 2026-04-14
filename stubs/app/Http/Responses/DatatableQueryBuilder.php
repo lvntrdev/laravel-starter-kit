@@ -50,7 +50,7 @@ class DatatableQueryBuilder
     private function __construct(string|Builder $subject)
     {
         $this->subject = $subject;
-        $this->defaultPerPage = (int) config('starter-kit.datatable.default_per_page', 10);
+        $this->defaultPerPage = (int) (config('starter-kit.datatable.default_per_page') ?? 10);
     }
 
     /**
