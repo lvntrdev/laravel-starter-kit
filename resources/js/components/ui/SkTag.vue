@@ -68,7 +68,11 @@
     }
 
     const props = withDefaults(defineProps<SkTagProps>(), {
+        value: undefined,
+        icon: undefined,
         iconPos: 'left',
+        color: undefined,
+        severity: undefined,
         soft: false,
         rounded: false,
         outlined: false,

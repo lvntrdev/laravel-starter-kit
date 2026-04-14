@@ -76,7 +76,7 @@
             if (response.ok) {
                 const json = await response.json();
                 logoUrl.value = json.data?.logo_url ?? logoUrl.value;
-                router.reload({ preserveScroll: true });
+                router.reload();
             } else {
                 logoUrl.value = props.settings.logo_url;
             }
@@ -106,7 +106,7 @@
 
                 if (response.ok || response.status === 204) {
                     logoUrl.value = null;
-                    router.reload({ preserveScroll: true });
+                    router.reload();
                 }
             } catch {
                 // silently fail

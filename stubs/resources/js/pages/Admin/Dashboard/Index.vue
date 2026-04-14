@@ -322,7 +322,7 @@
             <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-0">
-                        Welcome, {{ user?.name?.split(' ')[0] || 'Admin' }}
+                        Welcome, {{ user?.first_name || 'Admin' }}
                     </h1>
                     <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
                         {{ currentDate }} — here's today's summary.

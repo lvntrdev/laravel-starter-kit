@@ -7,7 +7,7 @@
         maxChars?: number;
     }
 
-    const props = withDefaults(defineProps<Props>(), { maxChars: 18 });
+    const props = withDefaults(defineProps<Props>(), { maxChars: 18, rootLabel: 'Root' });
     const emit = defineEmits<{
         (e: 'navigate', folderId: string | null): void;
     }>();

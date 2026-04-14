@@ -136,7 +136,9 @@
     const sortOrder = ref<'asc' | 'desc'>('asc');
     const currentPage = ref(1);
 
-    const activeFilters = ref<Record<string, string | number | null>>(
+    type FilterValue = string | number | Date | (Date | null)[] | null;
+
+    const activeFilters = ref<Record<string, FilterValue>>(
         Object.fromEntries(props.config.filters.map((f) => [f.key, null])),
     );
 
@@ -188,9 +190,9 @@
                             if (daterangeKeys.has(key) && Array.isArray(val)) {
                                 activeFilters.value[key] = val.map((d: unknown) =>
                                     typeof d === 'string' ? new Date(d) : null,
-                                ) as unknown as string | number | null;
+                                );
                             } else {
-                                activeFilters.value[key] = val as string | number | null;
+                                activeFilters.value[key] = val as FilterValue;
                             }
                         }
                     }
@@ -751,20 +753,22 @@
                         />
                         <DatePicker
                             v-else-if="filter.type === 'date'"
-                            v-model="activeFilters[filter.key]"
+                            :model-value="(activeFilters[filter.key] as Date | null)"
                             :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
                             date-format="dd.mm.yy"
                             show-button-bar
                             class="min-w-48"
+                            @update:model-value="(val) => (activeFilters[filter.key] = (val as Date | null))"
                         />
                         <DatePicker
                             v-else-if="filter.type === 'daterange'"
-                            v-model="activeFilters[filter.key]"
+                            :model-value="(activeFilters[filter.key] as (Date | null)[] | null)"
                             :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
                             date-format="dd.mm.yy"
                             selection-mode="range"
                             show-button-bar
                             class="min-w-56"
+                            @update:model-value="(val) => (activeFilters[filter.key] = (val as (Date | null)[] | null))"
                         />
                     </div>
                     <!-- END FILTERS GROUP -->
@@ -850,20 +854,22 @@
                         />
                         <DatePicker
                             v-else-if="filter.type === 'date'"
-                            v-model="activeFilters[filter.key]"
+                            :model-value="(activeFilters[filter.key] as Date | null)"
                             :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
                             date-format="dd.mm.yy"
                             show-button-bar
                             class="w-full"
+                            @update:model-value="(val) => (activeFilters[filter.key] = (val as Date | null))"
                         />
                         <DatePicker
                             v-else-if="filter.type === 'daterange'"
-                            v-model="activeFilters[filter.key]"
+                            :model-value="(activeFilters[filter.key] as (Date | null)[] | null)"
                             :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
                             date-format="dd.mm.yy"
                             selection-mode="range"
                             show-button-bar
                             class="w-full"
+                            @update:model-value="(val) => (activeFilters[filter.key] = (val as (Date | null)[] | null))"
                         />
                     </div>
                 </div>
@@ -1000,19 +1006,20 @@
                                                 ]
                                             "
                                             :icon="
-                                                column.icons?.[
+                                                (column.icons?.[
                                                     getNestedValue(row, column.tagKey ?? column.key) as string
                                                 ] ??
                                                     definition.find(
                                                         column.tagKey!,
                                                         getNestedValue(row, column.key) as string | number | boolean,
-                                                    )?.icon
+                                                    )?.icon) ?? undefined
                                             "
                                             :icon-pos="column.tagIconPos"
                                             :soft="column.tagSoft"
                                             :rounded="column.tagRounded"
                                             :outlined="column.tagOutlined"
                                         />
+                                        <!-- eslint-disable-next-line vue/no-v-html -- column.render is author-defined in the datatable config, not user input; the escapeHtml helper must be used by the author for any untrusted values -->
                                         <span v-else-if="column.render" v-html="column.render(row, escapeHtml)" />
                                         <template v-else>
                                             {{ getNestedValue(row, column.key) ?? '-' }}
@@ -1080,7 +1087,11 @@
                     <!-- Left: record info + per-page selector -->
                     <div class="sk-dt-pagination__info">
                         <span>{{
-                            $t('datatable.records_info', { from: meta.from, to: meta.to, total: meta.total })
+                            $t('datatable.records_info', {
+                                from: String(meta.from ?? 0),
+                                to: String(meta.to ?? 0),
+                                total: String(meta.total),
+                            })
                         }}</span>
                         <Select
                             :model-value="meta.per_page"

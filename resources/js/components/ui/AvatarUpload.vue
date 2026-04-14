@@ -77,7 +77,7 @@
             if (response.ok) {
                 const json = await response.json();
                 currentUrl.value = json.data?.avatar_url ?? currentUrl.value;
-                router.reload({ preserveScroll: true });
+                router.reload();
             } else {
                 currentUrl.value = props.avatarUrl ?? null;
             }
@@ -119,7 +119,7 @@
 
                 if (response.ok || response.status === 204) {
                     currentUrl.value = null;
-                    router.reload({ preserveScroll: true });
+                    router.reload();
                 }
             } catch {
                 // silently fail

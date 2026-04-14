@@ -84,7 +84,7 @@
 
     function submit() {
         if (isEdit.value) {
-            form.put(adminRoles.update.url(props.role!), {
+            form.put(adminRoles.update.url({ id: props.role!.id! }), {
                 onSuccess: () => emit('success'),
             });
         } else {

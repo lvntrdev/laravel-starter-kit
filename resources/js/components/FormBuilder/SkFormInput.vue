@@ -95,7 +95,7 @@
             }
 
             const valueKey = (props.field as SelectFieldConfig).optionValue ?? 'value';
-            const sampleOption = props.options[0] as Record<string, unknown>;
+            const sampleOption = props.options[0] as unknown as Record<string, unknown>;
             const sampleType = typeof sampleOption[valueKey];
 
             const cast = (v: unknown): unknown => {

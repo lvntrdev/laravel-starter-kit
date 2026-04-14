@@ -12,7 +12,7 @@
         isSelected: (type: 'folder' | 'file', id: string | number) => boolean;
     }
 
-    const props = withDefaults(defineProps<Props>(), { pending: () => [] });
+    const props = withDefaults(defineProps<Props>(), { pending: () => [], emptyLabel: '' });
     const emit = defineEmits<{
         (e: 'open-folder', folderId: string): void;
         (e: 'open-file', file: FileItem): void;
