@@ -140,5 +140,39 @@ export function useDefinition() {
         loaded.value = false;
     }
 
-    return { list, options, find, load, loadAll, clearCache, loaded };
+    /**
+     * Invalidate one or more cached keys so the next `load()` re-fetches them.
+     *
+     * Pair with `useRefreshBus()` to wire cache invalidation into domain
+     * mutations without clearing the entire cache:
+     *
+     *   const { invalidate } = useDefinition();
+     *   const bus = useRefreshBus();
+     *   bus.on('user-roles-updated', () => invalidate('userRoles'));
+     *
+     * No-op if the key is not cached. Called with no argument, behaves like
+     * `clearCache()` for convenience.
+     */
+    function invalidate(keyOrKeys?: DefinitionKey | DefinitionKey[]): void {
+        if (keyOrKeys === undefined) {
+            clearCache();
+            return;
+        }
+
+        const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];
+
+        for (const key of keys) {
+            if (key in cache) {
+                delete cache[key];
+            }
+        }
+
+        // If every cached key was dropped, reset loaded flag so the next
+        // call() explicitly re-fetches.
+        if (Object.keys(cache).length === 0) {
+            loaded.value = false;
+        }
+    }
+
+    return { list, options, find, load, loadAll, clearCache, invalidate, loaded };
 }

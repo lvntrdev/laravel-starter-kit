@@ -18,6 +18,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *   return ApiResponse::error('An error occurred.', 400);
  *   return ApiResponse::paginated(User::paginate());
  *   return ApiResponse::success($data)->meta(['extra' => 'info'])->header('X-Custom', 'value');
+ *
+ * @template TData
  */
 class ApiResponse implements Responsable
 {
@@ -27,6 +29,7 @@ class ApiResponse implements Responsable
 
     private string $message;
 
+    /** @var TData */
     private mixed $data;
 
     private ?array $errors = null;
@@ -51,6 +54,11 @@ class ApiResponse implements Responsable
 
     /**
      * Success response.
+     *
+     * @template T
+     *
+     * @param  T  $data
+     * @return self<T>
      */
     public static function success(mixed $data = null, string $message = 'Operation successful.'): self
     {
@@ -59,6 +67,11 @@ class ApiResponse implements Responsable
 
     /**
      * Resource created response (201).
+     *
+     * @template T
+     *
+     * @param  T  $data
+     * @return self<T>
      */
     public static function created(mixed $data = null, string $message = 'Record created.'): self
     {
@@ -67,6 +80,8 @@ class ApiResponse implements Responsable
 
     /**
      * Error response.
+     *
+     * @return self<null>
      */
     public static function error(string $message = 'An error occurred.', int $status = 400): self
     {
@@ -87,6 +102,8 @@ class ApiResponse implements Responsable
      * Use this when you want to transform paginated items through an
      * `JsonResource::collection($paginator)` before returning. It preserves
      * the resource transformation and exposes pagination metadata.
+     *
+     * @return self<array<int, array<string, mixed>>>
      */
     public static function paginatedCollection(ResourceCollection $collection, string $message = 'Operation successful.'): self
     {
@@ -126,6 +143,8 @@ class ApiResponse implements Responsable
 
     /**
      * Paginated response — supports LengthAwarePaginator or CursorPaginator.
+     *
+     * @return self<array<int, mixed>>
      */
     public static function paginated(LengthAwarePaginator|CursorPaginator $paginator, string $message = 'Operation successful.'): self
     {
