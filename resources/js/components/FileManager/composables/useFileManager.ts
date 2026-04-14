@@ -250,6 +250,19 @@ export function useFileManager(options: Options) {
         );
     }
 
+    function extractValidationMessage(envelope: unknown): string | null {
+        if (!envelope || typeof envelope !== 'object') return null;
+        const errors = (envelope as { errors?: Record<string, unknown> }).errors;
+        if (!errors || typeof errors !== 'object') return null;
+        for (const value of Object.values(errors)) {
+            if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
+                return value[0];
+            }
+            if (typeof value === 'string') return value;
+        }
+        return null;
+    }
+
     function uploadSingle(file: File, folderId: string | null, tempId: string): Promise<FileItem[]> {
         return new Promise((resolve, reject) => {
             const formData = new FormData();
@@ -277,7 +290,7 @@ export function useFileManager(options: Options) {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         resolve((envelope.data as UploadResponse).files);
                     } else {
-                        reject(new Error(envelope?.message ?? 'Upload failed'));
+                        reject(new Error(extractValidationMessage(envelope) ?? envelope?.message ?? 'Upload failed'));
                     }
                 } catch {
                     reject(new Error('Upload failed'));
@@ -318,7 +331,7 @@ export function useFileManager(options: Options) {
             } catch (err) {
                 const message = (err as Error).message ?? 'Upload failed';
                 updatePending(tempId, { error: message });
-                errors.push(`${file.name}: ${message}`);
+                errors.push(message);
             }
         });
         await Promise.allSettled(tasks);

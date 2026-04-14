@@ -49,6 +49,87 @@ class UploadFileRequest extends FileManagerRequest
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        $files = $this->file('files');
+        if (! is_array($files)) {
+            return [];
+        }
+
+        $attributes = [];
+        foreach ($files as $index => $file) {
+            if ($file === null) {
+                continue;
+            }
+            $attributes["files.{$index}"] = $file->getClientOriginalName();
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        $extList = $this->mimeExtensionList();
+
+        return [
+            'files.*.mimetypes' => trans('file-manager.errors.upload_invalid_type', ['types' => $extList]),
+            'files.*.max' => trans('file-manager.errors.upload_too_large', [
+                'max' => $this->humanMaxSize(),
+            ]),
+            'files.*.file' => trans('file-manager.errors.upload_invalid_file'),
+            'files.*.required' => trans('file-manager.errors.upload_invalid_file'),
+        ];
+    }
+
+    private function humanMaxSize(): string
+    {
+        $kb = (int) Setting::getValue('file_manager.max_size_kb', 10240);
+        if ($kb >= 1024) {
+            return number_format($kb / 1024, $kb % 1024 === 0 ? 0 : 1).' MB';
+        }
+
+        return $kb.' KB';
+    }
+
+    private function mimeExtensionList(): string
+    {
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
+            'application/pdf' => 'pdf',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'text/plain' => 'txt',
+            'text/csv' => 'csv',
+            'video/mp4' => 'mp4',
+            'video/webm' => 'webm',
+            'video/quicktime' => 'mov',
+            'video/x-matroska' => 'mkv',
+            'audio/mpeg' => 'mp3',
+            'audio/wav' => 'wav',
+            'audio/ogg' => 'ogg',
+            'audio/webm' => 'weba',
+        ];
+
+        $exts = [];
+        foreach ($this->acceptedMimes() as $mime) {
+            $exts[] = $map[$mime] ?? explode('/', $mime)[1] ?? $mime;
+        }
+
+        return strtoupper(implode(', ', array_unique($exts)));
+    }
+
+    /**
      * @return array<int, string>
      */
     private function acceptedMimes(): array

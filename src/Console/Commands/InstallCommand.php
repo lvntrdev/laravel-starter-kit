@@ -4,6 +4,7 @@ namespace Lvntr\StarterKit\Console\Commands;
 
 use App\Models\User;
 use App\Support\MediaPathGenerator;
+use Composer\Autoload\ClassLoader;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Lvntr\StarterKit\StarterKitServiceProvider;
+use PhpParser\Error;
 use PhpParser\Node;
+use PhpParser\Node\Stmt;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\CloningVisitor;
@@ -109,7 +112,6 @@ class InstallCommand extends Command
             ]);
         });
 
-
         // 4b. Inject required config keys into config/app.php
         $this->step('Configuring application settings', function () {
             $this->injectAppConfig();
@@ -133,6 +135,11 @@ class InstallCommand extends Command
         // 4f. Register starter kit service providers in bootstrap/providers.php
         $this->step('Registering service providers', function () {
             $this->injectBootstrapProviders();
+        });
+
+        // 4g. Register custom helpers autoload entry in composer.json
+        $this->step('Registering custom helpers autoload', function () {
+            $this->injectHelpersAutoload();
         });
 
         // 5. Create hash registry directory
@@ -485,7 +492,7 @@ class InstallCommand extends Command
 
         // Re-include the freshly generated classmap/psr4 maps into the active ClassLoader
         // instance so newly published files become discoverable immediately.
-        $loaders = \Composer\Autoload\ClassLoader::getRegisteredLoaders();
+        $loaders = ClassLoader::getRegisteredLoaders();
         foreach ($loaders as $vendorDir => $loader) {
             $classMap = $vendorDir.'/composer/autoload_classmap.php';
             if (file_exists($classMap)) {
@@ -972,6 +979,47 @@ class InstallCommand extends Command
      *   - `\Lvntr\StarterKit\Bootstrap::exceptions($exceptions);` call inside
      *     the `withExceptions()` closure
      */
+    /**
+     * Add `app/Helpers/custom.php` to composer.json `autoload.files` so users
+     * can register their own global helpers. Idempotent — skips if already
+     * present, also rewrites the legacy `app/helpers.php` entry.
+     */
+    private function injectHelpersAutoload(): void
+    {
+        $path = base_path('composer.json');
+
+        if (! $this->files->exists($path)) {
+            return;
+        }
+
+        $data = json_decode($this->files->get($path), true);
+
+        if (! is_array($data)) {
+            return;
+        }
+
+        $files = $data['autoload']['files'] ?? [];
+        $hasLegacy = in_array('app/helpers.php', $files, true);
+        $hasCustom = in_array('app/Helpers/custom.php', $files, true);
+
+        if (! $hasLegacy && $hasCustom) {
+            return;
+        }
+
+        $files = array_values(array_filter($files, fn ($entry) => $entry !== 'app/helpers.php'));
+
+        if (! $hasCustom) {
+            $files[] = 'app/Helpers/custom.php';
+        }
+
+        $data['autoload']['files'] = array_values(array_unique($files));
+
+        $this->files->put(
+            $path,
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n",
+        );
+    }
+
     private function injectBootstrapApp(): void
     {
         $path = base_path('bootstrap/app.php');
@@ -988,7 +1036,7 @@ class InstallCommand extends Command
         $this->modifyPhpFileAst($path, function (array $stmts): bool {
             $return = null;
             foreach ($stmts as $stmt) {
-                if ($stmt instanceof Node\Stmt\Return_) {
+                if ($stmt instanceof Stmt\Return_) {
                     $return = $stmt;
                     break;
                 }
@@ -1038,7 +1086,7 @@ class InstallCommand extends Command
         $this->modifyPhpFileAst($path, function (array $stmts) use ($providers): bool {
             $return = null;
             foreach ($stmts as $stmt) {
-                if ($stmt instanceof Node\Stmt\Return_) {
+                if ($stmt instanceof Stmt\Return_) {
                     $return = $stmt;
                     break;
                 }
@@ -1127,7 +1175,7 @@ class InstallCommand extends Command
 
         $paramIdent = ltrim($paramName, '$');
 
-        $bootstrapCall = new Node\Stmt\Expression(
+        $bootstrapCall = new Stmt\Expression(
             new Node\Expr\StaticCall(
                 new Node\Name\FullyQualified('Lvntr\\StarterKit\\Bootstrap'),
                 $method,
@@ -1220,7 +1268,7 @@ class InstallCommand extends Command
      * list, and write the file back with format-preserving pretty printing
      * only when the mutator reports a change.
      *
-     * @param  callable(array<\PhpParser\Node\Stmt>): bool  $mutator
+     * @param  callable(array<Stmt>): bool  $mutator
      */
     private function modifyPhpFileAst(string $path, callable $mutator): bool
     {
@@ -1234,7 +1282,7 @@ class InstallCommand extends Command
 
         try {
             $oldStmts = $parser->parse($code);
-        } catch (\PhpParser\Error) {
+        } catch (Error) {
             return false;
         }
 
@@ -1245,7 +1293,7 @@ class InstallCommand extends Command
         $oldTokens = $parser->getTokens();
 
         $traverser = new NodeTraverser(new CloningVisitor);
-        /** @var array<\PhpParser\Node\Stmt> $newStmts */
+        /** @var array<Stmt> $newStmts */
         $newStmts = $traverser->traverse($oldStmts);
 
         if (! $mutator($newStmts)) {
@@ -1263,12 +1311,12 @@ class InstallCommand extends Command
     /**
      * Locate the top-level `return [...]` array used by Laravel config files.
      *
-     * @param  array<\PhpParser\Node\Stmt>  $stmts
+     * @param  array<Stmt>  $stmts
      */
     private function findConfigRootArray(array $stmts): ?Node\Expr\Array_
     {
         foreach ($stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Return_ && $stmt->expr instanceof Node\Expr\Array_) {
+            if ($stmt instanceof Stmt\Return_ && $stmt->expr instanceof Node\Expr\Array_) {
                 return $stmt->expr;
             }
         }

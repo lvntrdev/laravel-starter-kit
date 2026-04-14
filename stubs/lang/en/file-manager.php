@@ -58,5 +58,10 @@ return [
         'move_cycle' => 'A folder cannot be moved into itself.',
         'target_missing' => 'Target folder not found.',
         'no_files' => 'No files were uploaded.',
+        'invalid_type' => ':name: this file type is not allowed.',
+        'file_too_large' => ':name: file is too large (max :max).',
+        'upload_invalid_type' => ':attribute could not be uploaded: this file type is not allowed. Allowed types: :types.',
+        'upload_too_large' => ':attribute could not be uploaded: file is too large (max :max).',
+        'upload_invalid_file' => ':attribute could not be uploaded: invalid file.',
     ],
 ];

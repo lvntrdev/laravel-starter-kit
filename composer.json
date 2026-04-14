@@ -43,7 +43,7 @@
     },
     "autoload": {
         "files": [
-            "src/helpers.php"
+            "src/sk-helpers.php"
         ],
         "psr-4": {
             "Lvntr\\StarterKit\\": "src/"

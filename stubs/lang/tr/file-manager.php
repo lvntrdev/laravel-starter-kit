@@ -58,5 +58,10 @@ return [
         'move_cycle' => 'Bir klasör kendi içine taşınamaz.',
         'target_missing' => 'Hedef klasör bulunamadı.',
         'no_files' => 'Hiç dosya yüklenmedi.',
+        'invalid_type' => ':name: bu dosya türüne izin verilmiyor.',
+        'file_too_large' => ':name: dosya boyutu çok büyük (en fazla :max).',
+        'upload_invalid_type' => ':attribute yüklenemedi: bu dosya tipine izin verilmiyor. İzinli tipler: :types.',
+        'upload_too_large' => ':attribute yüklenemedi: dosya çok büyük (en fazla :max).',
+        'upload_invalid_file' => ':attribute yüklenemedi: geçersiz dosya.',
     ],
 ];

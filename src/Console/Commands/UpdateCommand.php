@@ -45,9 +45,6 @@ class UpdateCommand extends Command
         // Traits from package
         'app/Traits/',
 
-        // Helpers
-        'app/helpers.php',
-
         // Exception handler
         'app/Exceptions/ApiExceptionHandler.php',
     ];
@@ -127,6 +124,8 @@ class UpdateCommand extends Command
         if (! $dryRun) {
             $this->injectFilesystemsConfig();
             $this->injectMediaLibraryConfig();
+            $this->migrateLegacyHelpersFile();
+            $this->rewriteHelpersAutoload();
         }
 
         // 5. Run new migrations
@@ -663,6 +662,100 @@ PHP;
         $this->files->put($configPath, $content);
 
         $this->updated[] = 'config/media-library.php (set custom path generator)';
+    }
+
+    /**
+     * Rewrite composer.json autoload `files` entry: legacy `app/helpers.php`
+     * becomes `app/Helpers/custom.php`. The package now ships `to_api()` and
+     * `format_date()` from vendor — the app file is purely user-owned.
+     */
+    /**
+     * Known historical md5 hashes of stock `app/helpers.php` shipped by the
+     * package. If the user's file matches any of these, we know they have not
+     * customized it and it is safe to delete during the migration to
+     * `app/Helpers/custom.php`.
+     *
+     * @var list<string>
+     */
+    private const LEGACY_HELPERS_STOCK_HASHES = [
+        '34375d826bb4ea188ab738cc12bcb096', // initial package release
+    ];
+
+    /**
+     * One-time migration: when the legacy `app/helpers.php` exists, decide
+     * whether it is safe to remove (matches a known stock hash) or whether
+     * the user has customized it (warn and leave the file in place so their
+     * code is not destroyed).
+     */
+    private function migrateLegacyHelpersFile(): void
+    {
+        $legacyPath = base_path('app/helpers.php');
+
+        if (! $this->files->exists($legacyPath)) {
+            return;
+        }
+
+        $hash = md5_file($legacyPath);
+
+        if (in_array($hash, self::LEGACY_HELPERS_STOCK_HASHES, true)) {
+            $this->files->delete($legacyPath);
+            $this->removed[] = 'app/helpers.php';
+
+            return;
+        }
+
+        $this->newLine();
+        $this->components->warn('app/helpers.php contains custom code — left in place.');
+        $this->line('  <fg=gray>Move your helpers to app/Helpers/custom.php and delete app/helpers.php manually.</>');
+        $this->line('  <fg=gray>to_api() and format_date() are now provided by the package — drop them from your file.</>');
+        $this->newLine();
+    }
+
+    private function rewriteHelpersAutoload(): void
+    {
+        $composerPath = base_path('composer.json');
+
+        if (! $this->files->exists($composerPath)) {
+            return;
+        }
+
+        $data = json_decode($this->files->get($composerPath), true);
+
+        if (! is_array($data)) {
+            return;
+        }
+
+        $files = $data['autoload']['files'] ?? [];
+        $hasLegacyEntry = in_array('app/helpers.php', $files, true);
+        $hasCustomEntry = in_array('app/Helpers/custom.php', $files, true);
+        $legacyFileStillPresent = $this->files->exists(base_path('app/helpers.php'));
+
+        // Only drop the legacy autoload entry when the file is gone too —
+        // otherwise the user's custom code in app/helpers.php would silently
+        // stop loading. migrateLegacyHelpersFile() handles deletion.
+        $shouldDropLegacy = $hasLegacyEntry && ! $legacyFileStillPresent;
+        $shouldAddCustom = ! $hasCustomEntry;
+
+        if (! $shouldDropLegacy && ! $shouldAddCustom) {
+            return;
+        }
+
+        if ($shouldDropLegacy) {
+            $files = array_values(array_filter($files, fn ($entry) => $entry !== 'app/helpers.php'));
+        }
+
+        if ($shouldAddCustom) {
+            $files[] = 'app/Helpers/custom.php';
+        }
+
+        $data['autoload']['files'] = array_values(array_unique($files));
+
+        $this->files->put(
+            $composerPath,
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n",
+        );
+
+        $this->updated[] = 'composer.json (rewrote helpers autoload entry)';
     }
 
     /**

@@ -121,7 +121,7 @@
         try {
             await fm.createFolder(name);
             showNewFolder.value = false;
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.folder_created'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_created'), life: 2500 });
         } catch {
             /* handled by useApi */
         }
@@ -228,7 +228,7 @@
             await runCancellableBulk(trans('file-manager.labels.moving'), sources, target, (source) =>
                 fm.moveItem(source.type, source.id, target),
             );
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.item_moved'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.item_moved'), life: 2500 });
             fm.clearSelection();
         } catch {
             /* handled */
@@ -242,7 +242,7 @@
             await runCancellableBulk(trans('file-manager.labels.moving'), items, targetFolderId, (item) =>
                 fm.moveItem(item.type, item.id, targetFolderId),
             );
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.item_moved'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.item_moved'), life: 2500 });
             fm.clearSelection();
         } catch {
             /* handled */
@@ -300,7 +300,7 @@
         try {
             showRename.value = false;
             await runBusy(trans('file-manager.labels.renaming'), () => fm.renameFolder(renameTarget.value!.id, name));
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.folder_renamed'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_renamed'), life: 2500 });
         } catch {
             /* handled */
         }
@@ -443,14 +443,14 @@
     function confirmDeleteFolder(folder: FolderSummary): void {
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.deleteFolder(folder.id));
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.folder_deleted'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_deleted'), life: 2500 });
         });
     }
 
     function confirmDeleteFile(file: FileItem): void {
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.deleteFile(file.id));
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.file_deleted'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.file_deleted'), life: 2500 });
         });
     }
 
@@ -458,7 +458,7 @@
         if (fm.selectionCount.value === 0) return;
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.bulkDelete());
-            toast.add({ severity: 'success', summary: '', detail: trans('file-manager.bulk_deleted'), life: 2500 });
+            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.bulk_deleted'), life: 2500 });
         });
     }
 
@@ -510,21 +510,64 @@
         fileInput.value?.click();
     }
 
+    function isMimeAllowed(file: File): boolean {
+        if (!props.acceptedMimes || props.acceptedMimes.length === 0) return true;
+        const name = file.name.toLowerCase();
+        return props.acceptedMimes.some((rule) => {
+            const r = rule.trim().toLowerCase();
+            if (!r) return false;
+            if (r.startsWith('.')) return name.endsWith(r);
+            if (r.endsWith('/*')) return file.type.startsWith(r.slice(0, -1));
+            return file.type === r;
+        });
+    }
+
+    function partitionFiles(list: File[]): { accepted: File[]; rejections: string[] } {
+        const accepted: File[] = [];
+        const rejections: string[] = [];
+        const maxBytes = props.maxSizeKb ? props.maxSizeKb * 1024 : null;
+        for (const file of list) {
+            if (!isMimeAllowed(file)) {
+                rejections.push(trans('file-manager.errors.invalid_type', { name: file.name }));
+                continue;
+            }
+            if (maxBytes !== null && file.size > maxBytes) {
+                rejections.push(
+                    trans('file-manager.errors.file_too_large', {
+                        name: file.name,
+                        max: humanSize(maxBytes),
+                    }),
+                );
+                continue;
+            }
+            accepted.push(file);
+        }
+        return { accepted, rejections };
+    }
+
     async function handleFiles(fileList: FileList | File[] | null): Promise<void> {
         if (!fileList || (fileList as FileList).length === 0) return;
+        const { accepted, rejections } = partitionFiles(Array.from(fileList as ArrayLike<File>));
+        for (const message of rejections) {
+            toast.add({ severity: 'warn', summary: '', group: 'bc', detail: message, life: 4000 });
+        }
+        if (accepted.length === 0) {
+            if (fileInput.value) fileInput.value.value = '';
+            return;
+        }
         uploading.value = true;
         try {
-            const result = await fm.uploadFiles(fileList);
+            const result = await fm.uploadFiles(accepted);
             if (result.uploaded.length > 0) {
                 toast.add({
                     severity: 'success',
-                    summary: '',
+                    summary: '', group: 'bc',
                     detail: trans('file-manager.files_uploaded'),
                     life: 2500,
                 });
             }
             for (const message of result.errors) {
-                toast.add({ severity: 'error', summary: '', detail: message, life: 4000 });
+                toast.add({ severity: 'error', summary: '', group: 'bc', detail: message, life: 4000 });
             }
         } finally {
             uploading.value = false;

@@ -12,7 +12,7 @@ use function Laravel\Prompts\select;
 class PublishCommand extends Command
 {
     protected $signature = 'sk:publish
-        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, lang, config)}
+        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, lang, config, helpers)}
         {--force : Overwrite existing files}
         {--destination= : Override destination base path (for testing or custom layouts)}';
 
@@ -65,6 +65,11 @@ class PublishCommand extends Command
             'destination' => 'config/starter-kit.php',
             'label' => 'Configuration File',
         ],
+        'helpers' => [
+            'source' => 'src/sk-helpers.php',
+            'destination' => 'app/Helpers/sk-helpers.php',
+            'label' => 'Global Helpers (to_api, format_date, definition, definitionLabel)',
+        ],
     ];
 
     public function handle(): int
@@ -112,6 +117,7 @@ class PublishCommand extends Command
                 'components' => 'Vue Components (all or pick individual)',
                 'lang' => 'Language Files (translations)',
                 'config' => 'Configuration File',
+                'helpers' => 'Global Helpers (sk-helpers.php)',
             ],
         );
 
