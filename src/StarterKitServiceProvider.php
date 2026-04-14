@@ -2,12 +2,18 @@
 
 namespace Lvntr\StarterKit;
 
+use App\Enums\RoleEnum;
+use App\Models\User;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 
 class StarterKitServiceProvider extends ServiceProvider
 {
@@ -45,7 +51,7 @@ class StarterKitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure Passport token lifetimes.
+     * Configure Passport token lifetimes + optional scopes.
      */
     private function configurePassport(): void
     {
@@ -53,9 +59,25 @@ class StarterKitServiceProvider extends ServiceProvider
             return;
         }
 
-        \Laravel\Passport\Passport::tokensExpireIn(now()->addDays(15));
-        \Laravel\Passport\Passport::refreshTokensExpireIn(now()->addDays(30));
-        \Laravel\Passport\Passport::personalAccessTokensExpireIn(now()->addMonths(6));
+        $accessDays = (int) config('starter-kit.passport.access_token_days', 15);
+        $refreshDays = (int) config('starter-kit.passport.refresh_token_days', 30);
+        $personalMonths = (int) config('starter-kit.passport.personal_token_months', 6);
+
+        Passport::tokensExpireIn(now()->addDays($accessDays));
+        Passport::refreshTokensExpireIn(now()->addDays($refreshDays));
+        Passport::personalAccessTokensExpireIn(now()->addMonths($personalMonths));
+
+        $scopes = config('starter-kit.passport.scopes', []);
+
+        if (is_array($scopes) && $scopes !== []) {
+            Passport::tokensCan($scopes);
+
+            $defaultScopes = config('starter-kit.passport.default_scopes', []);
+
+            if (is_array($defaultScopes) && $defaultScopes !== []) {
+                Passport::setDefaultScope($defaultScopes);
+            }
+        }
     }
 
     /**
@@ -67,13 +89,13 @@ class StarterKitServiceProvider extends ServiceProvider
             return;
         }
 
-        $systemAdminRole = \App\Enums\RoleEnum::SystemAdmin;
+        $systemAdminRole = RoleEnum::SystemAdmin;
 
-        Gate::before(function (\App\Models\User $user) use ($systemAdminRole): ?bool {
+        Gate::before(function (User $user) use ($systemAdminRole): ?bool {
             return $user->hasRole($systemAdminRole) ? true : null;
         });
 
-        Gate::define('viewPulse', function (\App\Models\User $user) use ($systemAdminRole) {
+        Gate::define('viewPulse', function (User $user) use ($systemAdminRole) {
             return $user->hasRole($systemAdminRole);
         });
     }
@@ -93,14 +115,14 @@ class StarterKitServiceProvider extends ServiceProvider
      */
     private function configureScramble(): void
     {
-        \Dedoc\Scramble\Scramble::configure()
-            ->withDocumentTransformers(function (\Dedoc\Scramble\Support\Generator\OpenApi $openApi) {
+        Scramble::configure()
+            ->withDocumentTransformers(function (OpenApi $openApi) {
                 $openApi->secure(
-                    \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer')
+                    SecurityScheme::http('bearer')
                 );
             });
 
-        Gate::define('viewApiDocs', function (\App\Models\User $user) {
+        Gate::define('viewApiDocs', function (User $user) {
             return $user->hasPermissionTo('api-docs.read');
         });
     }

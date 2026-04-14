@@ -173,7 +173,7 @@ class PublishCommand extends Command
                     if (! $files->isDirectory($dir)) {
                         $files->makeDirectory($dir, 0755, true);
                     }
-                    $files->copy($source, $destination);
+                    $this->copyFile($files, $source, $destination);
                     $count = 1;
                 }
             }
@@ -231,10 +231,46 @@ class PublishCommand extends Command
                 continue;
             }
 
-            $files->copy($file->getPathname(), $targetPath);
+            $this->copyFile($files, $file->getPathname(), $targetPath);
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * Copy a file, rewriting the `App\…` namespace to the configured one for
+     * PHP files when the consumer uses a non-default namespace. Non-PHP files
+     * are copied verbatim.
+     */
+    private function copyFile(Filesystem $files, string $source, string $destination): void
+    {
+        $namespace = (string) config('starter-kit.app_namespace', 'App');
+
+        if ($namespace === 'App' || ! str_ends_with($source, '.php')) {
+            $files->copy($source, $destination);
+
+            return;
+        }
+
+        $contents = $files->get($source);
+        $rewritten = $this->rewriteNamespace($contents, $namespace);
+        $files->put($destination, $rewritten);
+    }
+
+    /**
+     * Replace `namespace App\…` / `use App\…` / `App\…::` occurrences with the
+     * target namespace. Deliberately conservative — matches only leading `App`
+     * at word boundaries so unrelated identifiers (e.g. `$happy`) are untouched.
+     */
+    private function rewriteNamespace(string $contents, string $namespace): string
+    {
+        $patterns = [
+            '/\bnamespace\s+App(\\\\|;)/' => 'namespace '.$namespace.'$1',
+            '/\buse\s+App(\\\\|;)/' => 'use '.$namespace.'$1',
+            '/(?<![\w\\\\])App\\\\/' => $namespace.'\\',
+        ];
+
+        return (string) preg_replace(array_keys($patterns), array_values($patterns), $contents);
     }
 }
