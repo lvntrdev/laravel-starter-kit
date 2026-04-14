@@ -2,9 +2,8 @@
 
 namespace App\Domain\FileManager\DTOs;
 
+use App\Domain\FileManager\Support\ContextRegistry;
 use App\Domain\Shared\DTOs\BaseDTO;
-use App\Models\GlobalFileBucket;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
@@ -30,37 +29,40 @@ readonly class FileManagerContextDTO extends BaseDTO
         $context = $data['context'] ?? null;
         $contextId = $data['context_id'] ?? null;
 
-        return match ($context) {
-            'user' => self::forUser((string) $contextId),
-            'global' => self::forGlobal(),
-            default => throw new InvalidArgumentException("Unsupported FileManager context: {$context}"),
-        };
+        if (! is_string($context) || $context === '') {
+            throw new InvalidArgumentException('FileManager context key is required.');
+        }
+
+        /** @var ContextRegistry $registry */
+        $registry = app(ContextRegistry::class);
+        $definition = $registry->get($context);
+
+        if ($definition->requiresId() && ! is_string($contextId)) {
+            throw new InvalidArgumentException("FileManager context '{$context}' requires a context_id.");
+        }
+
+        $owner = $definition->resolveOwner($contextId);
+
+        return new self(
+            context: $context,
+            contextId: $contextId,
+            owner: $owner,
+            // Matches what Spatie MediaLibrary (and any morph-aware query)
+            // stores as `model_type`: the morph alias when the model is in
+            // Laravel's morph map, otherwise the fully-qualified class name.
+            ownerType: $owner->getMorphClass(),
+            ownerId: (string) $owner->getKey(),
+        );
     }
 
     public static function forUser(string $userId): self
     {
-        $user = User::query()->findOrFail($userId);
-
-        return new self(
-            context: 'user',
-            contextId: $user->id,
-            owner: $user,
-            ownerType: User::class,
-            ownerId: (string) $user->id,
-        );
+        return self::fromArray(['context' => 'user', 'context_id' => $userId]);
     }
 
     public static function forGlobal(): self
     {
-        $bucket = GlobalFileBucket::singleton();
-
-        return new self(
-            context: 'global',
-            contextId: null,
-            owner: $bucket,
-            ownerType: GlobalFileBucket::class,
-            ownerId: (string) $bucket->id,
-        );
+        return self::fromArray(['context' => 'global']);
     }
 
     /**

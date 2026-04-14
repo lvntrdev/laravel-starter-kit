@@ -11,12 +11,7 @@
         <span>&copy; {{ year }} {{ appName }}</span>
         <span class="admin-footer-credit">
             Crafted with
-            <a
-                href="https://lvntr.dev"
-                target="_blank"
-                rel="noopener"
-                class="admin-footer-link"
-            >
+            <a href="https://lvntr.dev" target="_blank" rel="noopener" class="admin-footer-link">
                 Lvntr Starter Kit
                 <i class="pi pi-arrow-up-right" style="font-size: 0.65rem" />
             </a>

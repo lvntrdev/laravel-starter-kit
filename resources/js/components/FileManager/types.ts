@@ -1,4 +1,12 @@
-export type FileManagerContext = 'user' | 'global';
+/**
+ * Context key that matches a backend `ContextRegistry` entry.
+ *
+ * Built-in: `'user'` and `'global'`. Any other key that the backend can
+ * auto-resolve — morph-map alias or `App\Models\{Studly}` convention — or any
+ * explicit `ContextRegistry::register()` entry works too (e.g. `'vehicle'`,
+ * `'school'`). Contexts whose backend path contains `{id}` require `contextId`.
+ */
+export type FileManagerContext = 'user' | 'global' | (string & {});
 
 export type SortKey = 'name' | 'size' | 'date';
 export type SortDirection = 'asc' | 'desc';

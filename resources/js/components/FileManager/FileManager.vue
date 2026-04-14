@@ -299,9 +299,7 @@
         }
         try {
             showRename.value = false;
-            await runBusy(trans('file-manager.labels.renaming'), () =>
-                fm.renameFolder(renameTarget.value!.id, name),
-            );
+            await runBusy(trans('file-manager.labels.renaming'), () => fm.renameFolder(renameTarget.value!.id, name));
             toast.add({ severity: 'success', summary: '', detail: trans('file-manager.folder_renamed'), life: 2500 });
         } catch {
             /* handled */
@@ -361,9 +359,7 @@
     });
 
     const fileMenuItems = computed(() => {
-        const multi = Boolean(
-            bulkActive.value && contextFile.value && fm.isSelected('file', contextFile.value.id),
-        );
+        const multi = Boolean(bulkActive.value && contextFile.value && fm.isSelected('file', contextFile.value.id));
         return [
             {
                 label: trans('file-manager.labels.open'),
@@ -700,7 +696,9 @@
                 </div>
             </div>
 
-            <div class="border-b border-surface-200 bg-surface-50 px-3 py-2 dark:border-surface-700 dark:bg-surface-950">
+            <div
+                class="border-b border-surface-200 bg-surface-50 px-3 py-2 dark:border-surface-700 dark:bg-surface-950"
+            >
                 <Breadcrumb
                     :trail="fm.breadcrumb.value"
                     :root-label="trans('file-manager.labels.root')"
@@ -762,10 +760,7 @@
                 class="flex w-88 max-w-[90%] flex-col gap-3 rounded-2xl bg-surface-0 p-6 shadow-2xl dark:bg-surface-900"
             >
                 <div class="flex items-center gap-3">
-                    <i
-                        class="pi pi-spin pi-spinner shrink-0 text-primary-500"
-                        style="font-size: 1.4rem"
-                    />
+                    <i class="pi pi-spin pi-spinner shrink-0 text-primary-500" style="font-size: 1.4rem" />
                     <h3 class="text-lg font-semibold leading-tight text-surface-900 dark:text-surface-100">
                         {{ busy.title }}
                     </h3>
@@ -859,12 +854,7 @@
                     autoplay
                     class="max-h-[75vh] w-full"
                 />
-                <audio
-                    v-else-if="isAudio(previewFile.mime_type)"
-                    :src="previewFile.url"
-                    controls
-                    class="w-full"
-                />
+                <audio v-else-if="isAudio(previewFile.mime_type)" :src="previewFile.url" controls class="w-full" />
                 <iframe
                     v-else-if="isPdf(previewFile.mime_type) || isText(previewFile.mime_type)"
                     :src="previewFile.url"

@@ -489,7 +489,6 @@
                         >
                             <i v-if="isSelected('file', file.id)" class="pi pi-check" style="font-size: 0.8rem" />
                         </button>
-
                     </div>
 
                     <!-- Info bar -->
@@ -545,10 +544,7 @@
                             :class="[paletteFor(item.mimeType).icon, paletteFor(item.mimeType).iconColor]"
                             style="font-size: 2.75rem"
                         />
-                        <div
-                            v-if="!item.error"
-                            class="absolute inset-x-0 bottom-0 h-1.5 bg-white/30 dark:bg-black/30"
-                        >
+                        <div v-if="!item.error" class="absolute inset-x-0 bottom-0 h-1.5 bg-white/30 dark:bg-black/30">
                             <div
                                 class="h-full bg-primary-500 transition-all duration-200"
                                 :style="{ width: `${item.progress}%` }"
@@ -569,14 +565,10 @@
                             <div class="truncate font-medium" :title="item.name">
                                 {{ item.name }}
                             </div>
-                            <div
-                                :class="
-                                    item.error
-                                        ? 'text-rose-500'
-                                        : 'text-surface-500 dark:text-surface-400'
-                                "
-                            >
-                                <template v-if="item.error">{{ item.error }}</template>
+                            <div :class="item.error ? 'text-rose-500' : 'text-surface-500 dark:text-surface-400'">
+                                <template v-if="item.error">
+                                    {{ item.error }}
+                                </template>
                                 <template v-else>
                                     {{ trans('file-manager.labels.uploading') }} · {{ item.progress }}%
                                 </template>
