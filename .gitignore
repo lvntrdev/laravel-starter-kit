@@ -1,5 +1,7 @@
 /vendor/
 /node_modules/
+/stubs/.claude/
+/stubs/.cursor/
 composer.lock
 .phpunit.result.cache
 .phpunit.cache/
