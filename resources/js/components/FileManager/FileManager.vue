@@ -121,7 +121,13 @@
         try {
             await fm.createFolder(name);
             showNewFolder.value = false;
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_created'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.folder_created'),
+                life: 2500,
+            });
         } catch {
             /* handled by useApi */
         }
@@ -228,7 +234,13 @@
             await runCancellableBulk(trans('file-manager.labels.moving'), sources, target, (source) =>
                 fm.moveItem(source.type, source.id, target),
             );
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.item_moved'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.item_moved'),
+                life: 2500,
+            });
             fm.clearSelection();
         } catch {
             /* handled */
@@ -242,7 +254,13 @@
             await runCancellableBulk(trans('file-manager.labels.moving'), items, targetFolderId, (item) =>
                 fm.moveItem(item.type, item.id, targetFolderId),
             );
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.item_moved'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.item_moved'),
+                life: 2500,
+            });
             fm.clearSelection();
         } catch {
             /* handled */
@@ -300,7 +318,13 @@
         try {
             showRename.value = false;
             await runBusy(trans('file-manager.labels.renaming'), () => fm.renameFolder(renameTarget.value!.id, name));
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_renamed'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.folder_renamed'),
+                life: 2500,
+            });
         } catch {
             /* handled */
         }
@@ -443,14 +467,26 @@
     function confirmDeleteFolder(folder: FolderSummary): void {
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.deleteFolder(folder.id));
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.folder_deleted'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.folder_deleted'),
+                life: 2500,
+            });
         });
     }
 
     function confirmDeleteFile(file: FileItem): void {
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.deleteFile(file.id));
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.file_deleted'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.file_deleted'),
+                life: 2500,
+            });
         });
     }
 
@@ -458,7 +494,13 @@
         if (fm.selectionCount.value === 0) return;
         confirmDelete(async () => {
             await runBusy(trans('file-manager.labels.deleting'), () => fm.bulkDelete());
-            toast.add({ severity: 'success', summary: '', group: 'bc', detail: trans('file-manager.bulk_deleted'), life: 2500 });
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('file-manager.bulk_deleted'),
+                life: 2500,
+            });
         });
     }
 
@@ -561,7 +603,8 @@
             if (result.uploaded.length > 0) {
                 toast.add({
                     severity: 'success',
-                    summary: '', group: 'bc',
+                    summary: '',
+                    group: 'bc',
                     detail: trans('file-manager.files_uploaded'),
                     life: 2500,
                 });
