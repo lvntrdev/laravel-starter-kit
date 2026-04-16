@@ -31,6 +31,7 @@ class Bootstrap
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
             'check.permission' => \App\Http\Middleware\CheckResourcePermission::class,
+            'turnstile' => \App\Http\Middleware\ValidateTurnstile::class,
         ]);
 
         $middleware->redirectTo(guests: '/login', users: '/dashboard');
