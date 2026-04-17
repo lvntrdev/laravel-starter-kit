@@ -2,7 +2,7 @@
 
 ### Admin-first Laravel starter kit.
 
-![Tests](https://img.shields.io/badge/tests-passing-22c55e?style=flat-square)
+![CI](https://img.shields.io/github/actions/workflow/status/lvntrdev/laravel-starter-kit/ci.yml?branch=master&style=flat-square&label=CI)
 ![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
 ![Packagist Version](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
@@ -82,6 +82,8 @@ Full step-by-step guide: [starter-kit.lvntr.dev/docs/install](https://starter-ki
 Everything — installation, update flow, domain scaffolding, FormBuilder / DatatableBuilder / TabBuilder APIs, composables, file manager, roles & permissions, OAuth2 API, activity logs, settings — lives on the official site:
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
+
+For package-internal architecture notes (what ships via Composer, what is published as stubs, how to wire the Vue components into Vite), see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## License
 
