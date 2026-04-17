@@ -19,10 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`SkAttributeTranslationLoader`** — resolves `sk-attribute.{field}` keys for validation error messages (with sensible fallbacks), wired globally via `AppServiceProvider`.
 
-- **CI workflow** — `.github/workflows/ci.yml` runs `composer validate --strict` and PHP syntax lint on `src/` and `stubs/` across a PHP 8.3 / 8.4 matrix.
-
-- **`docs/ARCHITECTURE.md`** — package architecture reference: src vs stubs ownership, Vue component consumption paths (vendor-direct alias / `sk:publish` / mixed), and a forward notice of the upcoming base-class namespace move.
-
 ### Changed
 
 - **Shipped translations now carry an `sk-*` filename prefix** — every `stubs/lang/{locale}/*.php` has a `sk-` counterpart (`sk-admin.php`, `sk-auth.php`, `sk-button.php`, `sk-datatable.php`, `sk-menu.php`, `sk-setting.php`, `sk-user.php`, …). All shipped Vue pages and PHP code now reference the new keys (`__('sk-button.save')` instead of `__('button.save')`), so consumer apps can freely own the unprefixed namespace.
