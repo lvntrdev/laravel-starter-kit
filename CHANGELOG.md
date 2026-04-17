@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.3.2] - 2026-04-17
+
+### Removed
+
+- **Legacy unprefixed translation stubs** — `stubs/lang/{en,tr}/{admin,auth,button,common,datatable,enums,file-manager,message,pagination,passwords,validation}.php` (21 files) were carried over from the pre-13.3 layout and shipped alongside the new `sk-*` files. In a fresh install they showed up next to the `sk-*.php` files and caused confusion, and no code path in the kit references them any more — the application-side code (Vue pages, FormRequests, `SkAttributeTranslationLoader`) has fully moved to the `sk-*` keys. Removing them makes fresh installs match the actual layout of the development project one-for-one.
+- **Note for upgrading consumers:** `sk:update` does **not** touch `lang/` files, so if an earlier 13.x `sk:install` already copied these legacy files into your `lang/` directory they will stay there. If you do not use `__('admin.x')` / `__('validation.x')` / … from your own code, you can delete them manually — they are now orphaned. If you do, keep them; they will keep working until you migrate the calls to `sk-*`.
+- **Legacy package-level `starter-kit::` translation namespace is unaffected.** `resources/lang/` inside the package is still present and loaded under the `starter-kit::` namespace; `__('starter-kit::admin.menu')` calls keep working. Only the `stubs/` copies (which would land in the consumer's `lang/` directory on a fresh install) were removed.
+
+---
+
 ## [13.3.1] - 2026-04-17
 
 ### Fixed
