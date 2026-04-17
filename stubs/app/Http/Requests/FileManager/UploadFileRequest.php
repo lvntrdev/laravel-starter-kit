@@ -115,6 +115,9 @@ class UploadFileRequest extends FileManagerRequest
             'video/webm' => 'webm',
             'video/quicktime' => 'mov',
             'video/x-matroska' => 'mkv',
+            'video/ogg' => 'ogv',
+            'video/x-msvideo' => 'avi',
+            'video/avi' => 'avi',
             'audio/mpeg' => 'mp3',
             'audio/wav' => 'wav',
             'audio/ogg' => 'ogg',
@@ -146,7 +149,16 @@ class UploadFileRequest extends FileManagerRequest
         }
 
         if ((bool) Setting::getValue('file_manager.allow_video', false)) {
-            $mimes = [...$mimes, 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
+            $mimes = [
+                ...$mimes,
+                'video/mp4',
+                'video/webm',
+                'video/quicktime',
+                'video/x-matroska',
+                'video/ogg',
+                'video/x-msvideo',
+                'video/avi',
+            ];
         }
 
         if ((bool) Setting::getValue('file_manager.allow_audio', false)) {

@@ -93,7 +93,7 @@
                 <label
                     v-for="opt in cat.options"
                     :key="opt.value"
-                    class="flex cursor-pointer items-center gap-2.5 rounded-xl border bg-surface-0 px-3 py-2.5 transition-colors dark:bg-surface-900"
+                    class="flex cursor-pointer items-center gap-2.5 border rounded bg-surface-0 p-4 transition-colors dark:bg-surface-900"
                     :class="
                         isChecked(opt.value)
                             ? 'border-primary-500 bg-primary-500/8 dark:bg-primary-500/15'
@@ -110,12 +110,12 @@
                             'pi',
                             opt.icon,
                             'shrink-0 text-lg',
-                            isChecked(opt.value)
-                                ? 'text-primary-500'
-                                : 'text-surface-500 dark:text-surface-400',
+                            isChecked(opt.value) ? 'text-primary-500' : 'text-surface-500 dark:text-surface-400',
                         ]"
                     />
-                    <span class="font-medium leading-tight text-surface-800 dark:text-surface-100">{{ opt.label }}</span>
+                    <span class="font-medium leading-tight text-surface-800 dark:text-surface-100">{{
+                        opt.label
+                    }}</span>
                 </label>
             </div>
         </section>

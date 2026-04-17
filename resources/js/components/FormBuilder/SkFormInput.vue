@@ -576,7 +576,14 @@
                     <button
                         type="button"
                         class="sk-fb__file-preview-link"
-                        @click="openFilePreview({ url: media.url, name: media.name, mimeType: media.mime_type, size: media.size })"
+                        @click="
+                            openFilePreview({
+                                url: media.url,
+                                name: media.name,
+                                mimeType: media.mime_type,
+                                size: media.size,
+                            })
+                        "
                     >
                         <img
                             v-if="isImageMime(media.mime_type)"
@@ -590,7 +597,14 @@
                         <button
                             type="button"
                             class="sk-fb__file-name sk-fb__file-name--link"
-                            @click="openFilePreview({ url: media.url, name: media.name, mimeType: media.mime_type, size: media.size })"
+                            @click="
+                                openFilePreview({
+                                    url: media.url,
+                                    name: media.name,
+                                    mimeType: media.mime_type,
+                                    size: media.size,
+                                })
+                            "
                         >
                             {{ media.name }}
                         </button>
@@ -619,7 +633,14 @@
                     <button
                         type="button"
                         class="sk-fb__file-preview-link"
-                        @click="openFilePreview({ url: item.url, name: item.file.name, mimeType: item.file.type, size: item.file.size })"
+                        @click="
+                            openFilePreview({
+                                url: item.url,
+                                name: item.file.name,
+                                mimeType: item.file.type,
+                                size: item.file.size,
+                            })
+                        "
                     >
                         <img v-if="item.isImage" :src="item.url" :alt="item.file.name" class="sk-fb__file-thumb">
                         <i v-else :class="[fileIcon(item.file.type), 'sk-fb__file-icon']" />
@@ -628,7 +649,14 @@
                         <button
                             type="button"
                             class="sk-fb__file-name sk-fb__file-name--link"
-                            @click="openFilePreview({ url: item.url, name: item.file.name, mimeType: item.file.type, size: item.file.size })"
+                            @click="
+                                openFilePreview({
+                                    url: item.url,
+                                    name: item.file.name,
+                                    mimeType: item.file.type,
+                                    size: item.file.size,
+                                })
+                            "
                         >
                             {{ item.file.name }}
                         </button>

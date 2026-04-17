@@ -10,6 +10,7 @@
     import { Head, router } from '@inertiajs/vue3';
     import AppDialog from '@lvntr/components/ui/AppDialog.vue';
     import ConfirmDialogComponent from '@lvntr/components/ui/ConfirmDialogComponent.vue';
+    import ImageLightbox from '@lvntr/components/ui/ImageLightbox.vue';
     import { trans } from 'laravel-vue-i18n';
     import { useToast } from 'primevue/usetoast';
 
@@ -122,5 +123,6 @@
         <ConfirmDialogComponent />
         <ToastComponent />
         <AppDialog />
+        <ImageLightbox />
     </div>
 </template>

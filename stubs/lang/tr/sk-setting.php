@@ -58,6 +58,21 @@ return [
     'file_manager' => [
         'title' => 'Dosya Yöneticisi Ayarları',
         'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
+        'mime_categories' => [
+            'images' => 'Görseller',
+            'documents' => 'Dokümanlar',
+            'archive' => 'Arşiv',
+        ],
+        'media_cards' => [
+            'video' => [
+                'label' => 'Video yükleme',
+                'description' => 'MP4, WebM, MOV, MKV, AVI ve OGG video formatlarına izin ver.',
+            ],
+            'audio' => [
+                'label' => 'Ses yükleme',
+                'description' => 'MP3, WAV, OGG ve WebM ses formatlarına izin ver.',
+            ],
+        ],
     ],
 
     'turnstile' => [

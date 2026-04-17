@@ -16,4 +16,5 @@ return [
     'api_docs' => 'API Dokümanları',
     'laravel_docs' => 'Laravel Dokümanları',
     'kits_docs' => 'Starter Kit Dokümanları',
+    'developer_docs' => 'Geliştirici Dokümanları',
 ];

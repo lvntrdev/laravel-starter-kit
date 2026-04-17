@@ -2,10 +2,10 @@
     import { TB } from '@lvntr/components/TabBuilder/core';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { usePage } from '@inertiajs/vue3';
-    import PasswordTab from './PasswordTab.vue';
-    import ProfileInfoTab from './ProfileInfoTab.vue';
-    import SessionsTab from './SessionsTab.vue';
-    import TwoFactorTab from './TwoFactorTab.vue';
+    import PasswordTab from './components/PasswordTab.vue';
+    import ProfileInfoTab from './components/ProfileInfoTab.vue';
+    import SessionsTab from './components/SessionsTab.vue';
+    import TwoFactorTab from './components/TwoFactorTab.vue';
 
     interface Props {
         twoFactorEnabled: boolean;

@@ -270,7 +270,10 @@
 }
 
 .sk-fb__file-preview-link {
-    @apply shrink-0;
+    @apply shrink-0 cursor-pointer bg-transparent p-0;
+    border: 0;
+    font: inherit;
+    color: inherit;
 }
 
 .sk-fb__file-name {
@@ -279,7 +282,9 @@
 }
 
 .sk-fb__file-name--link {
-    @apply no-underline transition-colors;
+    @apply no-underline transition-colors cursor-pointer bg-transparent p-0 text-left;
+    border: 0;
+    font: inherit;
     color: var(--p-surface-700);
 
     &:hover {

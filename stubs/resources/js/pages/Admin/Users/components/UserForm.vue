@@ -42,7 +42,7 @@
         return builder
             .addFields(
                 FB.inputText().key('first_name'),
-                FB.inputText().key('last_name'),
+                FB.inputText().key('last_name').trans(false),
                 FB.inputText().key('email').inputType('email').class('col-span-full'),
                 FB.select().key('status').default('active').definitionOptions('userStatus').class('col-span-full'),
                 FB.password()
@@ -69,7 +69,6 @@
             :is-card="!inDialog"
             class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
         />
-
         <SkForm ref="formRef" :config="formConfig" @success="emit('success')" @cancel="emit('cancel')" />
     </div>
 </template>

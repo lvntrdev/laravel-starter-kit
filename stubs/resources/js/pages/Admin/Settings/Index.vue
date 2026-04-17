@@ -1,12 +1,12 @@
 <script setup lang="ts">
-    import { TB } from '@lvntr/components/TabBuilder/core';
     import AdminLayout from '@/layouts/AdminLayout.vue';
-    import AuthTab from './AuthTab.vue';
-    import FileManagerTab from './FileManagerTab.vue';
-    import GeneralTab from './GeneralTab.vue';
-    import MailTab from './MailTab.vue';
-    import StorageTab from './StorageTab.vue';
-    import TurnstileTab from './TurnstileTab.vue';
+    import { TB } from '@lvntr/components/TabBuilder/core';
+    import AuthTab from './components/AuthTab.vue';
+    import FileManagerTab from './components/FileManagerTab.vue';
+    import GeneralTab from './components/GeneralTab.vue';
+    import MailTab from './components/MailTab.vue';
+    import StorageTab from './components/StorageTab.vue';
+    import TurnstileTab from './components/TurnstileTab.vue';
 
     interface Props {
         settings: {

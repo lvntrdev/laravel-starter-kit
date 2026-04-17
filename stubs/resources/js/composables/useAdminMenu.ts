@@ -51,35 +51,34 @@ export function useAdminMenu() {
         {
             title: 'sk-menu.settings',
             icon: 'pi pi-cog',
+            href: settings.index.url(),
             permission: 'settings.read',
-            children: [
-                {
-                    title: 'sk-menu.settings',
-                    href: settings.index.url(),
-                },
-            ],
         },
         {
             title: 'sk-menu.developer',
             section: true,
         },
         {
-            title: 'sk-menu.api_routes',
+            title: 'sk-menu.developer_docs',
             icon: 'pi pi-code',
-            href: apiRoutes.index.url(),
-            permission: 'api-routes.read',
-        },
-        {
-            title: 'sk-menu.laravel_docs',
-            icon: 'pi pi-external-link',
-            href: 'https://laravel.com/docs',
-            external: true,
-        },
-        {
-            title: 'sk-menu.kits_docs',
-            icon: 'pi pi-external-link',
-            href: 'https://starter-kit.lvntr.dev',
-            external: true,
+            permission: 'developer.read',
+            children: [
+                {
+                    title: 'sk-menu.api_routes',
+                    href: apiRoutes.index.url(),
+                    permission: 'api-routes.read',
+                },
+                {
+                    title: 'sk-menu.laravel_docs',
+                    href: 'https://laravel.com/docs',
+                    external: true,
+                },
+                {
+                    title: 'sk-menu.kits_docs',
+                    href: 'https://starter-kit.lvntr.dev',
+                    external: true,
+                },
+            ],
         },
     ];
 

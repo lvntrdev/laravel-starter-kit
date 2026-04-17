@@ -58,6 +58,21 @@ return [
     'file_manager' => [
         'title' => 'File Manager Settings',
         'subtitle' => 'Configure upload size and accepted file types.',
+        'mime_categories' => [
+            'images' => 'Images',
+            'documents' => 'Documents',
+            'archive' => 'Archive',
+        ],
+        'media_cards' => [
+            'video' => [
+                'label' => 'Video uploads',
+                'description' => 'Allow MP4, WebM, MOV, MKV, AVI and OGG videos.',
+            ],
+            'audio' => [
+                'label' => 'Audio uploads',
+                'description' => 'Allow MP3, WAV, OGG and WebM audio files.',
+            ],
+        ],
     ],
 
     'turnstile' => [

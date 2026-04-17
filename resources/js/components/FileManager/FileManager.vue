@@ -923,7 +923,6 @@
                 <Button icon="pi pi-check" :label="trans('sk-file-manager.labels.move')" @click="submitMove" />
             </template>
         </Dialog>
-
     </div>
 </template>
 

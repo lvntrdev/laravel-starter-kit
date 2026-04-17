@@ -77,13 +77,7 @@
                 :alt="file.name"
                 class="mx-auto max-h-[85vh] w-auto object-contain"
             >
-            <video
-                v-else-if="isVideo(file.mimeType)"
-                :src="file.url"
-                controls
-                autoplay
-                class="max-h-[75vh] w-full"
-            />
+            <video v-else-if="isVideo(file.mimeType)" :src="file.url" controls autoplay class="max-h-[75vh] w-full" />
             <audio v-else-if="isAudio(file.mimeType)" :src="file.url" controls class="w-full" />
             <iframe
                 v-else-if="isPdf(file.mimeType) || isText(file.mimeType)"

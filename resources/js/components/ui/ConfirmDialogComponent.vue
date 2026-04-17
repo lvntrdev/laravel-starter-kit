@@ -35,16 +35,10 @@
                 </p>
 
                 <div class="confirm-dialog-actions">
-                    <button
-                        class="confirm-dialog-btn confirm-dialog-btn--cancel"
-                        @click="rejectCallback"
-                    >
+                    <button class="confirm-dialog-btn confirm-dialog-btn--cancel" @click="rejectCallback">
                         {{ message.rejectLabel || 'Cancel' }}
                     </button>
-                    <button
-                        class="confirm-dialog-btn confirm-dialog-btn--accept"
-                        @click="acceptCallback"
-                    >
+                    <button class="confirm-dialog-btn confirm-dialog-btn--accept" @click="acceptCallback">
                         {{ message.acceptLabel || 'Confirm' }}
                     </button>
                 </div>

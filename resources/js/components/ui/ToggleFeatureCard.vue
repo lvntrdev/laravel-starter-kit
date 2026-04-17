@@ -41,10 +41,7 @@
         </div>
         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
             <div class="font-semibold leading-tight text-surface-800 dark:text-surface-100">{{ label }}</div>
-            <div
-                v-if="description"
-                class="text-xs leading-snug text-surface-500 dark:text-surface-400"
-            >
+            <div v-if="description" class="text-xs leading-snug text-surface-500 dark:text-surface-400">
                 {{ description }}
             </div>
         </div>

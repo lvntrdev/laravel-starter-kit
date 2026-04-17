@@ -16,4 +16,5 @@ return [
     'api_docs' => 'API Docs',
     'laravel_docs' => 'Laravel Docs',
     'kits_docs' => 'Starter Kit Docs',
+    'developer_docs' => 'Developer Docs',
 ];
