@@ -72,7 +72,7 @@ Full step-by-step guide: [starter-kit.lvntr.dev/docs/install](https://starter-ki
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - Node.js 18+
 - MySQL or MariaDB

@@ -72,7 +72,7 @@ Detaylı adım adım rehber: [starter-kit.lvntr.dev/docs/install](https://starte
 
 ## Gereksinimler
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - Node.js 18+
 - MySQL veya MariaDB
