@@ -1,70 +1,70 @@
 {
-    "name": "lvntr/laravel-starter-kit",
-    "version": "13.2.99",
-    "description": "Laravel Starter Kit with DDD architecture, Inertia.js, Vue 3, PrimeVue, and role-based permissions.",
-    "keywords": [
-        "laravel",
-        "starter-kit",
-        "ddd",
-        "inertia",
-        "vue",
-        "primevue",
-        "admin-panel"
+  "name": "lvntr/laravel-starter-kit",
+  "version": "13.3.0",
+  "description": "Laravel Starter Kit with DDD architecture, Inertia.js, Vue 3, PrimeVue, and role-based permissions.",
+  "keywords": [
+    "laravel",
+    "starter-kit",
+    "ddd",
+    "inertia",
+    "vue",
+    "primevue",
+    "admin-panel"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "authors": [
+    {
+      "name": "LVNTR",
+      "email": "info@lvntr.dev"
+    }
+  ],
+  "support": {
+    "source": "https://github.com/lvntrdev/laravel-starter-kit",
+    "issues": "https://github.com/lvntrdev/laravel-starter-kit/issues"
+  },
+  "require": {
+    "php": "^8.2",
+    "illuminate/support": "^13.0",
+    "dedoc/scramble": "*",
+    "inertiajs/inertia-laravel": "^3.0",
+    "laravel/fortify": "^1.35",
+    "laravel/passport": "^13.5",
+    "laravel/wayfinder": "^0.1",
+    "nikic/php-parser": "^5.0",
+    "spatie/laravel-activitylog": "^5.0",
+    "spatie/laravel-medialibrary": "^11.12",
+    "spatie/laravel-permission": "^7.2",
+    "spatie/laravel-query-builder": "^6.3",
+    "league/flysystem-aws-s3-v3": "^3.0",
+    "spatie/laravel-translatable": "^6.11"
+  },
+  "require-dev": {
+    "pestphp/pest": "^4.4",
+    "orchestra/testbench": "^10.0"
+  },
+  "autoload": {
+    "files": [
+      "src/sk-helpers.php"
     ],
-    "license": "PolyForm-Noncommercial-1.0.0",
-    "authors": [
-        {
-            "name": "LVNTR",
-            "email": "info@lvntr.dev"
-        }
-    ],
-    "support": {
-        "source": "https://github.com/lvntrdev/laravel-starter-kit",
-        "issues": "https://github.com/lvntrdev/laravel-starter-kit/issues"
-    },
-    "require": {
-        "php": "^8.2",
-        "illuminate/support": "^13.0",
-        "dedoc/scramble": "*",
-        "inertiajs/inertia-laravel": "^3.0",
-        "laravel/fortify": "^1.35",
-        "laravel/passport": "^13.5",
-        "laravel/wayfinder": "^0.1",
-        "nikic/php-parser": "^5.0",
-        "spatie/laravel-activitylog": "^5.0",
-        "spatie/laravel-medialibrary": "^11.12",
-        "spatie/laravel-permission": "^7.2",
-        "spatie/laravel-query-builder": "^6.3",
-        "league/flysystem-aws-s3-v3": "^3.0",
-        "spatie/laravel-translatable": "^6.11"
-    },
-    "require-dev": {
-        "pestphp/pest": "^4.4",
-        "orchestra/testbench": "^10.0"
-    },
-    "autoload": {
-        "files": [
-            "src/sk-helpers.php"
-        ],
-        "psr-4": {
-            "Lvntr\\StarterKit\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Lvntr\\StarterKit\\Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Lvntr\\StarterKit\\StarterKitServiceProvider"
-            ]
-        }
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+    "psr-4": {
+      "Lvntr\\StarterKit\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Lvntr\\StarterKit\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Lvntr\\StarterKit\\StarterKitServiceProvider"
+      ]
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
