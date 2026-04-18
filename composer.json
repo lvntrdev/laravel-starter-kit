@@ -22,7 +22,7 @@
     "issues": "https://github.com/lvntrdev/laravel-starter-kit/issues"
   },
   "require": {
-    "php": "^8.2",
+    "php": "^8.4",
     "illuminate/support": "^13.0",
     "dedoc/scramble": "^0.13",
     "inertiajs/inertia-laravel": "^3.0",
