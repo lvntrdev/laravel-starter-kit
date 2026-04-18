@@ -12,6 +12,14 @@
     } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
+    import Ripple from 'primevue/ripple';
+    import Tooltip from 'primevue/tooltip';
+
+    // Explicit binding so the template's `v-tooltip` / `v-ripple` compile to a
+    // direct reference rather than a dynamic `resolveDirective(...)` call —
+    // avoids the "resolveDirective imported but never used" warning in consumer builds.
+    const vTooltip = Tooltip;
+    const vRipple = Ripple;
 
     interface Props {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -64,7 +64,28 @@ class HandleInertiaRequests extends Middleware
             'availableLocales' => config('app.languages', []),
             'auth' => [
                 'user' => $request->user()?->loadMissing('media'),
-                'role' => $request->user()?->roles->first()?->display_name[app()->getLocale()] ?? $request->user()?->roles->first()?->name,
+                'role' => (function () use ($request) {
+                    $role = $request->user()?->roles->first();
+                    if (! $role) {
+                        return null;
+                    }
+
+                    $locale = app()->getLocale();
+
+                    // 1. DB-stored display_name for the current locale
+                    if (is_array($role->display_name) && ! empty($role->display_name[$locale])) {
+                        return $role->display_name[$locale];
+                    }
+
+                    // 2. Config-driven localized name (no DB dependency)
+                    $fromConfig = config("permission-resources.display_names.roles.{$role->name}.{$locale}");
+                    if (is_string($fromConfig) && $fromConfig !== '') {
+                        return $fromConfig;
+                    }
+
+                    // 3. Prettify the slug (e.g. "system_admin" → "System Admin")
+                    return \Illuminate\Support\Str::headline((string) $role->name);
+                })(),
                 'role_names' => $request->user()?->roles->pluck('name')->values() ?? [],
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values() ?? [],
             ],

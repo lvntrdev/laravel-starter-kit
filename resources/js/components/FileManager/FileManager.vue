@@ -9,7 +9,13 @@
     import InputText from 'primevue/inputtext';
     import ProgressSpinner from 'primevue/progressspinner';
     import Select from 'primevue/select';
+    import Tooltip from 'primevue/tooltip';
     import { useToast } from 'primevue/usetoast';
+
+    // Explicit binding so the template's `v-tooltip` compiles to a direct
+    // reference instead of a dynamic `resolveDirective('tooltip')` call —
+    // avoids the "resolveDirective imported but never used" warning in consumer builds.
+    const vTooltip = Tooltip;
     import { computed, onMounted, ref } from 'vue';
     import FilePreviewModal, { suggestedPreviewWidth } from '@lvntr/components/ui/FilePreviewModal.vue';
     import Breadcrumb from './components/Breadcrumb.vue';

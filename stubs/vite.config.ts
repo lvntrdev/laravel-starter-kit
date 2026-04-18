@@ -49,6 +49,20 @@ export default defineConfig({
 
     build: {
         rollupOptions: {
+            // Silence the "Sourcemap is likely to be incorrect" warnings coming
+            // from @tailwindcss/vite and @inertiajs/vite — both plugins are known
+            // to skip sourcemap regeneration after their transform; build output
+            // and production runtime are unaffected. Other warnings still pass through.
+            onwarn(warning, warn) {
+                const msg = warning.message ?? '';
+                if (
+                    msg.includes('Sourcemap is likely to be incorrect') &&
+                    (msg.includes('tailwindcss') || msg.includes('inertiajs'))
+                ) {
+                    return;
+                }
+                warn(warning);
+            },
             output: {
                 manualChunks(id) {
                     if (!id.includes('node_modules')) {
