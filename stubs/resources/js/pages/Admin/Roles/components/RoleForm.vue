@@ -250,7 +250,7 @@
                 <!-- Role Name -->
                 <div>
                     <label for="role-name" class="block font-bold text-surface-700 dark:text-surface-300 mb-2">
-                        {{ trans('sk-attribute.attributes.role_name') }}
+                        {{ trans('validation.attributes.role_name') }}
                     </label>
                     <InputText
                         id="role-name"
@@ -265,7 +265,7 @@
                 <!-- Display Names per Locale -->
                 <div v-if="Object.keys(availableLocales).length > 0" class="mt-6">
                     <label class="block font-bold text-surface-700 dark:text-surface-300 mb-2">
-                        {{ trans('sk-attribute.attributes.display_name') }}
+                        {{ trans('validation.attributes.display_name') }}
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div v-for="(label, locale) in availableLocales" :key="locale">

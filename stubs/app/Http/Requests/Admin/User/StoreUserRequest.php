@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin\User;
 
-use App\Http\Requests\BaseFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -10,9 +10,8 @@ use Illuminate\Validation\Rules\Password;
 /**
  * Validation rules for creating a new user in admin panel.
  */
-class StoreUserRequest extends BaseFormRequest
+class StoreUserRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-user';
 
     /**
      * Determine if the user is authorized to make this request.

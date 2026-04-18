@@ -56,7 +56,7 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
      * so the form template skips `$t()` on it.
      *
      * @example
-     *   FB.inputText().key('last_name')                                  // default → $t('sk-attribute.attributes.last_name')
+     *   FB.inputText().key('last_name')                                  // default → $t('validation.attributes.last_name')
      *   FB.inputText().key('x').label($t('admin.example')).trans(false)  // raw render
      */
     trans(shouldTranslate = true): this {
@@ -141,7 +141,7 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
             throw new Error('Field must have a key');
         }
         if (!this.config.label) {
-            this.config.label = `sk-attribute.attributes.${this.config.key}`;
+            this.config.label = `validation.attributes.${this.config.key}`;
         }
         if (this.config.translateLabel === undefined) {
             this.config.translateLabel = true;

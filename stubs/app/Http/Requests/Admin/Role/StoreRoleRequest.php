@@ -3,15 +3,14 @@
 namespace App\Http\Requests\Admin\Role;
 
 use App\Enums\RoleEnum;
-use App\Http\Requests\BaseFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validation rules for creating a new role in admin panel.
  */
-class StoreRoleRequest extends BaseFormRequest
+class StoreRoleRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-role';
 
     /**
      * Determine if the user is authorized to make this request.

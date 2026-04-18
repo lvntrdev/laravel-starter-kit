@@ -2,15 +2,14 @@
 
 namespace App\Http\Requests\Admin\Settings;
 
-use App\Http\Requests\BaseFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validation rules for sending a test email.
  */
-class SendTestMailRequest extends BaseFormRequest
+class SendTestMailRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-setting';
 
     /**
      * Determine if the user is authorized to make this request.

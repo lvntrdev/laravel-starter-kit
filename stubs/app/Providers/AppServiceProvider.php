@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Domain\FileManager\Support\ContextRegistry;
 use App\Listeners\UpdateLastLogin;
-use App\Support\Translation\SkAttributeTranslationLoader;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -23,8 +22,6 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(ContextRegistry::class);
-
-        $this->app->extend('translation.loader', fn ($loader) => new SkAttributeTranslationLoader($loader));
     }
 
     /**

@@ -553,7 +553,7 @@
     // ── Filter Panel ──────────────────────────────────────────────────────────────
 
     function resolveFilterLabel(filter: { key: string; label?: string }): string {
-        return filter.label ? trans(filter.label) : trans('sk-attribute.attributes.' + filter.key);
+        return filter.label ? trans(filter.label) : trans('validation.attributes.' + filter.key);
     }
 
     const inlineFilters = computed(() => props.config.filters.filter((f) => f.placement === 'inline'));
@@ -939,7 +939,7 @@
                                         {{
                                             column.label
                                                 ? $t(column.label)
-                                                : $t('sk-attribute.attributes.' + column.key)
+                                                : $t('validation.attributes.' + column.key)
                                         }}
 
                                         <i

@@ -2,15 +2,14 @@
 
 namespace App\Http\Requests\Api\Auth;
 
-use App\Http\Requests\BaseFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Validation rules for user login via API.
  */
-class LoginRequest extends BaseFormRequest
+class LoginRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-auth';
 
     /**
      * Determine if the user is authorized to make this request.

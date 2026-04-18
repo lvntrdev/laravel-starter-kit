@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\Admin\Settings;
 
-use App\Http\Requests\BaseFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateFileManagerSettingsRequest extends BaseFormRequest
+class UpdateFileManagerSettingsRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-setting';
 
     public function authorize(): bool
     {

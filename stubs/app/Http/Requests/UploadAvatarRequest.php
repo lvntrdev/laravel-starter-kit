@@ -3,14 +3,14 @@
 namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validation rules for avatar upload.
  * Used by both ProfileController and Admin UserController.
  */
-class UploadAvatarRequest extends BaseFormRequest
+class UploadAvatarRequest extends FormRequest
 {
-    protected string $attributeNamespace = 'sk-avatar';
 
     /**
      * Determine if the user is authorized to make this request.
