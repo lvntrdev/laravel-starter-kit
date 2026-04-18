@@ -24,7 +24,7 @@
   "require": {
     "php": "^8.2",
     "illuminate/support": "^13.0",
-    "dedoc/scramble": "*",
+    "dedoc/scramble": "^0.13",
     "inertiajs/inertia-laravel": "^3.0",
     "laravel/fortify": "^1.35",
     "laravel/passport": "^13.5",
