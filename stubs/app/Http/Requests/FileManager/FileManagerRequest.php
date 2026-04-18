@@ -16,7 +16,6 @@ use Throwable;
  */
 abstract class FileManagerRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
         return true;

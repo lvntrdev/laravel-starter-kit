@@ -2,15 +2,14 @@
 
 namespace App\Http\Requests\Admin\Settings;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validation rules for sending a test email.
  */
 class SendTestMailRequest extends FormRequest
 {
-
     /**
      * Determine if the user is authorized to make this request.
      */

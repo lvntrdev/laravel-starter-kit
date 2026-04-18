@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests\Admin\Settings;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAuthSettingsRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
         return true;

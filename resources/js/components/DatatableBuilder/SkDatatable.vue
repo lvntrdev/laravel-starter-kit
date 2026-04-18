@@ -945,9 +945,7 @@
                                 >
                                     <span class="sk-dt__sort-label">
                                         {{
-                                            column.label
-                                                ? $t(column.label)
-                                                : $t('validation.attributes.' + column.key)
+                                            column.label ? $t(column.label) : $t('validation.attributes.' + column.key)
                                         }}
 
                                         <i

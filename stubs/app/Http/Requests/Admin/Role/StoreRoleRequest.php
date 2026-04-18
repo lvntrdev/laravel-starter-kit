@@ -3,15 +3,14 @@
 namespace App\Http\Requests\Admin\Role;
 
 use App\Enums\RoleEnum;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validation rules for creating a new role in admin panel.
  */
 class StoreRoleRequest extends FormRequest
 {
-
     /**
      * Determine if the user is authorized to make this request.
      */

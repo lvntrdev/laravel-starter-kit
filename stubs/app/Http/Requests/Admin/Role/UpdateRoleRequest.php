@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Admin\Role;
 
 use App\Enums\RoleEnum;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
@@ -12,7 +12,6 @@ use Illuminate\Validation\Rule;
  */
 class UpdateRoleRequest extends FormRequest
 {
-
     /**
      * Users can only update roles below their own hierarchy level (higher sort_order).
      * system_admin bypasses this check via Gate::before.

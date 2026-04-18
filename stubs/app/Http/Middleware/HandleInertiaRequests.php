@@ -6,6 +6,7 @@ use App\Models\Setting;
 use Composer\InstalledVersions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 use Laravel\Fortify\Features;
 
@@ -84,7 +85,7 @@ class HandleInertiaRequests extends Middleware
                     }
 
                     // 3. Prettify the slug (e.g. "system_admin" → "System Admin")
-                    return \Illuminate\Support\Str::headline((string) $role->name);
+                    return Str::headline((string) $role->name);
                 })(),
                 'role_names' => $request->user()?->roles->pluck('name')->values() ?? [],
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values() ?? [],
