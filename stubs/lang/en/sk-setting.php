@@ -30,6 +30,8 @@ return [
         'registration_hint' => 'Allow new users to register an account.',
         'email_verification_hint' => 'Require users to verify their email address after registration.',
         'two_factor_hint' => 'Allow users to enable two-factor authentication for added security.',
+        'two_factor_disable_title' => 'Disable two-factor authentication?',
+        'two_factor_disable_warning' => 'Turning this off removes the extra login check for everyone. Existing 2FA secrets will be cleared and affected users will have to re-enroll if you enable it again later.',
         'password_reset_hint' => 'Allow users to reset their password via email link.',
     ],
 

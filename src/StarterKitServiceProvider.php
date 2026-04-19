@@ -59,13 +59,27 @@ class StarterKitServiceProvider extends ServiceProvider
             return;
         }
 
-        $accessDays = (int) config('starter-kit.passport.access_token_days', 15);
-        $refreshDays = (int) config('starter-kit.passport.refresh_token_days', 30);
-        $personalMonths = (int) config('starter-kit.passport.personal_token_months', 6);
+        // Access token TTL: prefer minutes-based config, fall back to the
+        // legacy `access_token_days` key when explicitly set.
+        $accessMinutes = (int) config('starter-kit.passport.access_token_minutes', 60);
+        $legacyAccessDays = config('starter-kit.passport.access_token_days');
+        if ($legacyAccessDays !== null && $legacyAccessDays !== '') {
+            $accessMinutes = (int) $legacyAccessDays * 24 * 60;
+        }
 
-        Passport::tokensExpireIn(now()->addDays($accessDays));
+        $refreshDays = (int) config('starter-kit.passport.refresh_token_days', 14);
+
+        // Personal access tokens: prefer days-based config, fall back to
+        // the legacy `personal_token_months` key when explicitly set.
+        $personalDays = (int) config('starter-kit.passport.personal_token_days', 30);
+        $legacyPersonalMonths = config('starter-kit.passport.personal_token_months');
+        if ($legacyPersonalMonths !== null && $legacyPersonalMonths !== '') {
+            $personalDays = (int) $legacyPersonalMonths * 30;
+        }
+
+        Passport::tokensExpireIn(now()->addMinutes($accessMinutes));
         Passport::refreshTokensExpireIn(now()->addDays($refreshDays));
-        Passport::personalAccessTokensExpireIn(now()->addMonths($personalMonths));
+        Passport::personalAccessTokensExpireIn(now()->addDays($personalDays));
 
         $scopes = config('starter-kit.passport.scopes', []);
 

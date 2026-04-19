@@ -80,14 +80,30 @@ return [
     */
 
     'passport' => [
-        'access_token_days' => (int) env('PASSPORT_TOKEN_DAYS', 15),
-        'refresh_token_days' => (int) env('PASSPORT_REFRESH_TOKEN_DAYS', 30),
-        'personal_token_months' => (int) env('PASSPORT_PERSONAL_TOKEN_MONTHS', 6),
+        // Access tokens are short-lived by default — leaked bearer tokens
+        // should expire before they are abused. Prefer refresh tokens for
+        // session longevity, not long access-token TTLs.
+        'access_token_minutes' => (int) env('PASSPORT_TOKEN_MINUTES', 60),
+        'refresh_token_days' => (int) env('PASSPORT_REFRESH_TOKEN_DAYS', 14),
+        'personal_token_days' => (int) env('PASSPORT_PERSONAL_TOKEN_DAYS', 30),
 
-        // ['read' => 'Read access to user data', 'write' => 'Modify user data']
-        'scopes' => [],
+        // Legacy keys kept for backward compatibility. If `access_token_days`
+        // is set (non-null) it overrides `access_token_minutes`.
+        'access_token_days' => env('PASSPORT_TOKEN_DAYS'),
+        'personal_token_months' => env('PASSPORT_PERSONAL_TOKEN_MONTHS'),
 
-        // ['read'] — requested scopes when the client sends none
+        // Default catalog of scopes. Enforcement is opt-in: attach
+        // `middleware('scope:users.read')` (or similar) to API routes you
+        // want to restrict. Leaving `default_scopes` empty preserves
+        // Passport's implicit `*` scope so existing clients keep working.
+        'scopes' => [
+            'users.read' => 'Read user data',
+            'users.write' => 'Create and modify users',
+            'files.read' => 'Read files and folders',
+            'files.write' => 'Create, move, and delete files',
+            'admin' => 'Full administrative access',
+        ],
+
         'default_scopes' => [],
     ],
 

@@ -51,7 +51,6 @@
                 { label: 'PNG', value: 'image/png', icon: 'pi-image' },
                 { label: 'GIF', value: 'image/gif', icon: 'pi-image' },
                 { label: 'WebP', value: 'image/webp', icon: 'pi-image' },
-                { label: 'SVG', value: 'image/svg+xml', icon: 'pi-image' },
             ],
         },
         {

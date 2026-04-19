@@ -20,7 +20,6 @@
         { label: 'PNG Image', value: 'image/png' },
         { label: 'GIF Image', value: 'image/gif' },
         { label: 'WebP Image', value: 'image/webp' },
-        { label: 'SVG Image', value: 'image/svg+xml' },
         { label: 'PDF Document', value: 'application/pdf' },
         { label: 'Word (DOC)', value: 'application/msword' },
         {

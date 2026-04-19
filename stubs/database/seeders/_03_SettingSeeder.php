@@ -56,7 +56,6 @@ class _03_SettingSeeder extends Seeder
                     'image/png',
                     'image/gif',
                     'image/webp',
-                    'image/svg+xml',
                     'application/pdf',
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

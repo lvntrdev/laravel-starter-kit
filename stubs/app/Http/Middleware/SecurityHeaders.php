@@ -22,10 +22,43 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
 
+        // CSP is only applied in non-local environments. Vite HMR in local
+        // dev loads scripts/styles/websockets from the dev server (the URL
+        // varies per developer and per protocol), so enforcing a tight CSP
+        // there just blocks normal work without adding security value on a
+        // machine the developer already controls.
+        if (! app()->environment('local') && ! $response->headers->has('Content-Security-Policy')) {
+            $response->headers->set('Content-Security-Policy', $this->csp());
+        }
+
         if ($request->secure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
         return $response;
+    }
+
+    /**
+     * Baseline CSP for non-local environments. Inertia/Vue ships inline
+     * styles and occasional inline handlers so `'unsafe-inline'` stays on
+     * `style-src` and `script-src`; Cloudflare Turnstile needs its own
+     * script + frame origin. Override by setting the header earlier in the
+     * middleware stack or by replacing this middleware.
+     */
+    private function csp(): string
+    {
+        return implode('; ', [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "frame-ancestors 'self'",
+            "object-src 'none'",
+            "form-action 'self'",
+            "img-src 'self' data: blob:",
+            "font-src 'self' data:",
+            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+            "connect-src 'self' https://challenges.cloudflare.com",
+            'frame-src https://challenges.cloudflare.com',
+        ]);
     }
 }

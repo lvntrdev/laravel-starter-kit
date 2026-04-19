@@ -30,6 +30,8 @@ return [
         'registration_hint' => 'Yeni kullanıcıların hesap açmasına izin verin.',
         'email_verification_hint' => 'Kullanıcıların kayıt sonrası e-posta adreslerini doğrulamasını zorunlu kılın.',
         'two_factor_hint' => 'Kullanıcıların ek güvenlik için iki adımlı doğrulamayı etkinleştirmesine izin verin.',
+        'two_factor_disable_title' => 'İki adımlı doğrulama kapatılsın mı?',
+        'two_factor_disable_warning' => 'Bu ayar kapatıldığında tüm kullanıcılar için ek giriş kontrolü kaldırılır. Mevcut 2FA sırları temizlenir; özelliği tekrar açarsan ilgili kullanıcıların yeniden kurulum yapması gerekir.',
         'password_reset_hint' => 'Kullanıcıların e-posta bağlantısı ile parolalarını sıfırlamasına izin verin.',
     ],
 
