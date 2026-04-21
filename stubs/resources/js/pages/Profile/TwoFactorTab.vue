@@ -15,6 +15,21 @@
     const recoveryCodes = ref<string[]>([]);
     const showRecoveryCodes = ref(false);
 
+    /**
+     * Render the Fortify QR SVG through an <img src="data:..."> element
+     * rather than v-html. An <img> sandbox neutralises any inline <script>
+     * or event handlers that a compromised intermediary could smuggle in.
+     */
+    const qrCodeDataUrl = computed<string>(() => {
+        if (!qrCodeSvg.value) return '';
+        try {
+            const encoded = window.btoa(unescape(encodeURIComponent(qrCodeSvg.value)));
+            return `data:image/svg+xml;base64,${encoded}`;
+        } catch {
+            return '';
+        }
+    });
+
     const confirmForm = useForm({
         code: '',
     });
@@ -69,7 +84,15 @@
 
         if (!props.twoFactorEnabled) {
             await axios.post('/user/two-factor-authentication');
-            router.reload({ only: ['twoFactorEnabled', 'twoFactorConfirmed'] });
+            // Wait for the new props to land before hitting the QR endpoint
+            // — otherwise Fortify may still report "not enabled" when we ask
+            // for the QR / secret key.
+            await new Promise<void>((resolve) => {
+                router.reload({
+                    only: ['twoFactorEnabled', 'twoFactorConfirmed'],
+                    onFinish: () => resolve(),
+                });
+            });
         }
 
         await loadQrAndSetupKey();
@@ -177,9 +200,14 @@
                                 {{ $t('sk-profile.two_factor_scan') }}
                             </p>
 
-                            <!-- eslint-disable vue/no-v-html -- QR SVG from trusted server -->
-                            <div class="inline-block rounded-lg bg-white p-4" v-html="qrCodeSvg" />
-                            <!-- eslint-enable vue/no-v-html -->
+                            <div class="inline-block rounded-lg bg-white p-4">
+                                <img
+                                    v-if="qrCodeDataUrl"
+                                    :src="qrCodeDataUrl"
+                                    :alt="$t('sk-profile.two_factor_scan')"
+                                    class="h-48 w-48"
+                                />
+                            </div>
 
                             <div v-if="setupKey" class="text-sm text-surface-600 dark:text-surface-400">
                                 <p class="font-medium">

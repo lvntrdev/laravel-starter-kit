@@ -46,6 +46,9 @@ class TwoFactorChallengeAction extends BaseAction
             return null;
         }
 
+        // Challenge is single-use — any failed attempt (wrong TOTP, wrong
+        // recovery code, or missing input) consumes it so the remaining
+        // 5-minute TTL cannot be used to brute-force the 6-digit code.
         if ($code !== null && $code !== '') {
             $valid = $this->provider->verify(
                 Fortify::currentEncrypter()->decrypt($user->two_factor_secret),
@@ -53,6 +56,8 @@ class TwoFactorChallengeAction extends BaseAction
             );
 
             if (! $valid) {
+                Cache::forget($cacheKey);
+
                 return null;
             }
         } elseif ($recoveryCode !== null && $recoveryCode !== '') {
@@ -61,11 +66,15 @@ class TwoFactorChallengeAction extends BaseAction
             );
 
             if ($match === null) {
+                Cache::forget($cacheKey);
+
                 return null;
             }
 
             $user->replaceRecoveryCode($match);
         } else {
+            Cache::forget($cacheKey);
+
             return null;
         }
 

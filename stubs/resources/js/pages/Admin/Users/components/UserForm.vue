@@ -66,7 +66,7 @@
     <div>
         <AvatarUpload
             v-if="isEdit && formRef?.remoteData"
-            :avatar-url="(formRef.remoteData as any)?.avatar_url"
+            :avatar-url="(formRef.remoteData as { avatar_url?: string | null } | null)?.avatar_url"
             :upload-url="adminUsers.uploadAvatar.url(userId!)"
             :delete-url="adminUsers.deleteAvatar.url(userId!)"
             :is-card="!inDialog"

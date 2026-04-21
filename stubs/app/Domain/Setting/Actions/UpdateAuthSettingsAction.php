@@ -6,6 +6,7 @@ use App\Domain\Setting\DTOs\AuthSettingsDTO;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Action: Update authentication settings.
@@ -17,14 +18,16 @@ class UpdateAuthSettingsAction extends BaseAction
 {
     public function execute(AuthSettingsDTO $dto): void
     {
-        $wasTwoFactorEnabled = Setting::getValue('auth.two_factor', '1') === '1';
-        $isTwoFactorDisabled = $dto->twoFactor === '0';
+        DB::transaction(function () use ($dto): void {
+            $wasTwoFactorEnabled = Setting::getValue('auth.two_factor', '1') === '1';
+            $isTwoFactorDisabled = $dto->twoFactor === '0';
 
-        Setting::setGroup('auth', $dto->toArray());
+            Setting::setGroup('auth', $dto->toArray());
 
-        if ($wasTwoFactorEnabled && $isTwoFactorDisabled) {
-            $this->revokeAllTwoFactorAuth();
-        }
+            if ($wasTwoFactorEnabled && $isTwoFactorDisabled) {
+                $this->revokeAllTwoFactorAuth();
+            }
+        });
     }
 
     /**

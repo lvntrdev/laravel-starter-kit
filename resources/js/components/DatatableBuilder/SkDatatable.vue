@@ -53,14 +53,18 @@
     const urlFilters = props.config.filters.filter((f) => f.optionsUrl);
     if (urlFilters.length) {
         onMounted(async () => {
-            await Promise.all(
+            await Promise.allSettled(
                 urlFilters.map(async (f) => {
-                    const res = await fetch(f.optionsUrl!, {
-                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin',
-                    });
-                    const json = await res.json();
-                    urlOptions[f.key] = json.data ?? json;
+                    try {
+                        // Use the shared api wrapper so XSRF + envelope unwrap
+                        // match the rest of the datatable's traffic. A failed
+                        // fetch falls back to an empty list; the toast handler
+                        // in useApi already surfaces the error.
+                        const data = await api.get<FilterOption[]>(f.optionsUrl!);
+                        urlOptions[f.key] = data ?? [];
+                    } catch {
+                        urlOptions[f.key] = [];
+                    }
                 }),
             );
         });
@@ -656,7 +660,7 @@
         return items;
     }
 
-    let activeMenuItems = ref<MenuItem[]>([]);
+    const activeMenuItems = ref<MenuItem[]>([]);
 
     function toggleMenu(event: Event, row: unknown): void {
         activeMenuItems.value = buildMenuItems(row);

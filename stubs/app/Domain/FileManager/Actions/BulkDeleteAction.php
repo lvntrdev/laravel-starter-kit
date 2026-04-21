@@ -57,8 +57,10 @@ class BulkDeleteAction extends BaseAction
                     ->whereIn('id', $folderIds)
                     ->get();
 
+                $childrenByParent = $this->buildChildrenMap($context);
+
                 foreach ($rootFolders as $folder) {
-                    $descendants = $this->collectDescendantIds($folder);
+                    $descendants = $this->collectDescendantIds($folder, $childrenByParent);
                     $allIds = [...$descendants, (string) $folder->id];
 
                     $media = Media::query()
@@ -87,20 +89,43 @@ class BulkDeleteAction extends BaseAction
     }
 
     /**
+     * Build an in-memory parent_id => [childId, ...] map for the owner scope,
+     * so descendant walks do not issue a query per level.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function buildChildrenMap(FileManagerContextDTO $context): array
+    {
+        $rows = FileFolder::query()
+            ->where('owner_type', $context->ownerType)
+            ->where('owner_id', $context->ownerId)
+            ->get(['id', 'parent_id']);
+
+        $map = [];
+        foreach ($rows as $row) {
+            $parentId = $row->parent_id === null ? '' : (string) $row->parent_id;
+            $map[$parentId][] = (string) $row->id;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, array<int, string>>  $childrenByParent
      * @return array<int, string>
      */
-    private function collectDescendantIds(FileFolder $folder): array
+    private function collectDescendantIds(FileFolder $folder, array $childrenByParent): array
     {
         $ids = [];
         $stack = [(string) $folder->id];
 
         while ($stack !== []) {
             $parentId = array_shift($stack);
-            $children = FileFolder::query()->where('parent_id', $parentId)->pluck('id')->all();
+            $children = $childrenByParent[$parentId] ?? [];
 
             foreach ($children as $childId) {
-                $ids[] = (string) $childId;
-                $stack[] = (string) $childId;
+                $ids[] = $childId;
+                $stack[] = $childId;
             }
         }
 

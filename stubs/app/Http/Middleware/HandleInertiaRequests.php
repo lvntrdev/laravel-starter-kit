@@ -59,8 +59,11 @@ class HandleInertiaRequests extends Middleware
             'appName' => config('app.name'),
             'appLogo' => fn () => ($logo = Setting::getValue('general.logo')) ? Storage::disk('public')->url($logo) : null,
             'appVersion' => InstalledVersions::getPrettyVersion('lvntr/laravel-starter-kit'),
-            'appEnv' => config('app.env'),
-            'appDebug' => config('app.debug'),
+            // Only share env/debug signals in non-production environments —
+            // exposing them to every authenticated user in prod leaks useful
+            // fingerprinting info (and advertises that APP_DEBUG is on).
+            'appEnv' => fn () => app()->environment('production') ? null : config('app.env'),
+            'appDebug' => fn () => app()->environment('production') ? false : (bool) config('app.debug'),
             'locale' => app()->getLocale(),
             'availableLocales' => config('app.languages', []),
             'auth' => [

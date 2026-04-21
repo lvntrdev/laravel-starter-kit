@@ -91,7 +91,9 @@ class SettingsServiceProvider extends ServiceProvider
                 config(['mail.mailers.smtp.password' => $mail['password']]);
             }
             if (array_key_exists('encryption', $mail)) {
-                config(['mail.mailers.smtp.encryption' => $mail['encryption']]);
+                // Laravel's SMTP mailer expects null (not the string "none") to send without TLS.
+                $encryption = $mail['encryption'] === 'none' ? null : $mail['encryption'];
+                config(['mail.mailers.smtp.encryption' => $encryption]);
             }
             if ($mail['from_address'] ?? null) {
                 config(['mail.from.address' => $mail['from_address']]);

@@ -54,6 +54,13 @@ const state = reactive<DialogState>({
     loading: false,
 });
 
+/**
+ * Pending teardown timer shared across all useDialog() calls. A rapid
+ * open → close → open sequence could otherwise let an earlier close()'s
+ * 300 ms timer wipe the state of a dialog that has just been re-opened.
+ */
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function useDialog() {
     const bus = useRefreshBus();
     const api = useApi();
@@ -87,6 +94,13 @@ export function useDialog() {
         header: string = '',
         options: OpenOptions = {},
     ): void {
+        // Cancel any pending teardown from a previous close() — otherwise
+        // that timer would fire mid-use and blank the newly-opened dialog.
+        if (closeTimer !== null) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
+        }
+
         state.component = markRaw(component);
         state.props = { ...buildCallbacks(options.refreshKey), ...props };
         state.header = header;
@@ -133,11 +147,17 @@ export function useDialog() {
      */
     function close(): void {
         state.visible = false;
-        setTimeout(() => {
+
+        if (closeTimer !== null) {
+            clearTimeout(closeTimer);
+        }
+
+        closeTimer = setTimeout(() => {
             state.component = null;
             state.props = {};
             state.header = '';
             state.loading = false;
+            closeTimer = null;
         }, 300);
     }
 

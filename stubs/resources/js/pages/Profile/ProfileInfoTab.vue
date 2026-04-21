@@ -41,7 +41,7 @@
 <template>
     <!-- Avatar -->
     <AvatarUpload
-        :avatar-url="(user as any)?.avatar_url"
+        :avatar-url="user?.avatar_url"
         upload-url="/user/avatar"
         delete-url="/user/avatar"
         :title="$t('sk-avatar.title')"

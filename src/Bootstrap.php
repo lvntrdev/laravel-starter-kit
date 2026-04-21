@@ -2,6 +2,14 @@
 
 namespace Lvntr\StarterKit;
 
+use App\Exceptions\ApiExceptionHandler;
+use App\Http\Middleware\CheckResourcePermission;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ValidateTurnstile;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -22,16 +30,16 @@ class Bootstrap
     public static function middleware(Middleware $middleware): void
     {
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \App\Http\Middleware\SecurityHeaders::class,
+            SetLocale::class,
+            HandleInertiaRequests::class,
+            SecurityHeaders::class,
         ]);
 
         $middleware->alias([
-            'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
-            'guest' => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
-            'check.permission' => \App\Http\Middleware\CheckResourcePermission::class,
-            'turnstile' => \App\Http\Middleware\ValidateTurnstile::class,
+            'auth' => Authenticate::class,
+            'guest' => RedirectIfAuthenticated::class,
+            'check.permission' => CheckResourcePermission::class,
+            'turnstile' => ValidateTurnstile::class,
         ]);
 
         $middleware->redirectTo(guests: '/login', users: '/dashboard');
@@ -42,6 +50,6 @@ class Bootstrap
      */
     public static function exceptions(Exceptions $exceptions): void
     {
-        \App\Exceptions\ApiExceptionHandler::register($exceptions);
+        ApiExceptionHandler::register($exceptions);
     }
 }

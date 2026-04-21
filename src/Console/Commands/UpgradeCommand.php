@@ -84,7 +84,6 @@ class UpgradeCommand extends Command
             $process->run();
         });
 
-
         // 7. Run any new migrations shipped with the v13 package line.
         if ($this->confirmStep('Run database migrations?')) {
             $this->step('Running migrations', function () {

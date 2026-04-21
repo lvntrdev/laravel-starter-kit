@@ -24,8 +24,18 @@ const state = reactive<LightboxState>({
     name: '',
 });
 
+/**
+ * Pending teardown timer — a rapid close → open sequence would otherwise
+ * let the previous close()'s 200 ms timer wipe the newly-opened image.
+ */
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function useImageLightbox() {
     function open(url: string, name: string = ''): void {
+        if (closeTimer !== null) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
+        }
         state.url = url;
         state.name = name;
         state.visible = true;
@@ -33,10 +43,16 @@ export function useImageLightbox() {
 
     function close(): void {
         state.visible = false;
+
+        if (closeTimer !== null) {
+            clearTimeout(closeTimer);
+        }
+
         // Clear after the fade-out so the image does not stay in memory
-        setTimeout(() => {
+        closeTimer = setTimeout(() => {
             state.url = '';
             state.name = '';
+            closeTimer = null;
         }, 200);
     }
 

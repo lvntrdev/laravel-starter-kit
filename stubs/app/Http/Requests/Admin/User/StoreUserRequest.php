@@ -15,10 +15,14 @@ class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Defense in depth — CheckResourcePermission middleware also gates this
+     * route, but the FormRequest enforces the permission directly so the
+     * route stays safe if the middleware binding is ever misconfigured.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('users.create') ?? false;
     }
 
     /**

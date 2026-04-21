@@ -226,6 +226,14 @@
         if (oldValues && shallowRecordEqual(newValues, oldValues)) {
             return;
         }
+        // Protect user input: once the form is dirty, treat derivedDefaults
+        // changes as "new baseline" rather than an overwrite. This prevents
+        // a late-arriving async payload or a parent re-render from wiping
+        // the values the user is actively typing.
+        if (internalForm.isDirty) {
+            internalForm.defaults(newValues);
+            return;
+        }
         restoringDefaults.value = true;
         internalForm.defaults(newValues);
         for (const [key, value] of Object.entries(newValues)) {

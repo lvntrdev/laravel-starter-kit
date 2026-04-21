@@ -5,6 +5,7 @@ namespace App\Domain\Setting;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Service: Centralized read/write operations for application settings.
@@ -31,21 +32,17 @@ class SettingService
 
     /**
      * Get a setting value by "group.key" notation.
+     *
+     * Reads through the cached allGrouped() snapshot so hot paths (e.g.
+     * upload validation) do not issue a query per lookup.
      */
     public function getValue(string $path, mixed $default = null): mixed
     {
         [$group, $key] = $this->parsePath($path);
 
-        $setting = Setting::query()
-            ->where('group', $group)
-            ->where('key', $key)
-            ->first();
+        $grouped = $this->allGrouped();
 
-        if (! $setting) {
-            return $default;
-        }
-
-        return $this->decryptIfNeeded($setting);
+        return $grouped[$group][$key] ?? $default;
     }
 
     /**
@@ -71,41 +68,41 @@ class SettingService
     /**
      * Get all settings for a group as a key-value array.
      *
+     * Reads through the cached allGrouped() snapshot (see getValue()).
+     *
      * @return array<string, mixed>
      */
     public function getGroup(string $group): array
     {
-        $settings = Setting::query()->group($group)->get();
-
-        $result = [];
-        foreach ($settings as $setting) {
-            $result[$setting->key] = $this->decryptIfNeeded($setting);
-        }
-
-        return $result;
+        return $this->allGrouped()[$group] ?? [];
     }
 
     /**
      * Bulk-set settings for a group with a single cache clear.
      *
+     * All upserts run inside one DB transaction so a mid-loop failure cannot
+     * leave the group half-written.
+     *
      * @param  array<string, mixed>  $values
      */
     public function setGroup(string $group, array $values): void
     {
-        foreach ($values as $key => $value) {
-            $path = "{$group}.{$key}";
-            [$g, $k] = $this->parsePath($path);
+        DB::transaction(function () use ($group, $values): void {
+            foreach ($values as $key => $value) {
+                $path = "{$group}.{$key}";
+                [$g, $k] = $this->parsePath($path);
 
-            $isSensitive = in_array($path, $this->sensitiveKeys, true);
+                $isSensitive = in_array($path, $this->sensitiveKeys, true);
 
-            Setting::query()->updateOrCreate(
-                ['group' => $g, 'key' => $k],
-                [
-                    'value' => $isSensitive && $value !== null ? Crypt::encryptString((string) $value) : $value,
-                    'encrypted' => $isSensitive,
-                ],
-            );
-        }
+                Setting::query()->updateOrCreate(
+                    ['group' => $g, 'key' => $k],
+                    [
+                        'value' => $isSensitive && $value !== null ? Crypt::encryptString((string) $value) : $value,
+                        'encrypted' => $isSensitive,
+                    ],
+                );
+            }
+        });
 
         Cache::forget('settings');
     }

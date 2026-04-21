@@ -79,6 +79,9 @@ export function useDefinition() {
     /**
      * Load specific definition keys from the API.
      * Results are merged into the shared reactive cache.
+     *
+     * On network / non-2xx / JSON parse failure the error is logged and
+     * `loaded` is left untouched so callers can decide whether to retry.
      */
     async function load(keys: DefinitionKey[]): Promise<void> {
         const missing = keys.filter((k) => !(k in cache));
@@ -89,15 +92,23 @@ export function useDefinition() {
         }
 
         const url = `/definitions?keys=${encodeURIComponent(missing.join(','))}`;
-        const res = await fetch(url, {
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-        });
-        const json = await res.json();
-        const data: DefinitionStore = json.data ?? {};
 
-        Object.assign(cache, data);
-        loaded.value = true;
+        try {
+            const res = await fetch(url, {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) {
+                throw new Error(`Definitions request failed with status ${res.status}`);
+            }
+            const json = await res.json();
+            const data: DefinitionStore = json.data ?? {};
+
+            Object.assign(cache, data);
+            loaded.value = true;
+        } catch (err) {
+            console.error('[useDefinition] load failed:', err);
+        }
     }
 
     /**
@@ -107,26 +118,30 @@ export function useDefinition() {
     async function loadAll(): Promise<void> {
         if (fetchPromise) {
             await fetchPromise;
-            loaded.value = true;
             return;
         }
 
-        fetchPromise = fetch('/definitions', {
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-        })
-            .then((res) => res.json())
-            .then((json) => {
+        fetchPromise = (async () => {
+            try {
+                const res = await fetch('/definitions', {
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) {
+                    throw new Error(`Definitions request failed with status ${res.status}`);
+                }
+                const json = await res.json();
                 const data: DefinitionStore = json.data ?? {};
                 Object.assign(cache, data);
+                loaded.value = true;
+            } catch (err) {
+                console.error('[useDefinition] loadAll failed:', err);
+            } finally {
                 fetchPromise = null;
-            })
-            .catch(() => {
-                fetchPromise = null;
-            });
+            }
+        })();
 
         await fetchPromise;
-        loaded.value = true;
     }
 
     /**

@@ -15,6 +15,7 @@ use App\Domain\FileManager\Queries\FolderContentsQuery;
 use App\Domain\FileManager\Queries\FolderTreeQuery;
 use App\Domain\FileManager\Services\FileManagerAuthorizer;
 use App\Http\Requests\FileManager\BulkDeleteRequest;
+use App\Http\Requests\FileManager\DeleteFolderRequest;
 use App\Http\Requests\FileManager\MoveItemRequest;
 use App\Http\Requests\FileManager\StoreFolderRequest;
 use App\Http\Requests\FileManager\UpdateFolderRequest;
@@ -134,9 +135,9 @@ class FileManagerController extends Controller
         return to_api(message: __('sk-file-manager.item_moved'));
     }
 
-    public function deleteFolder(Request $request, FileFolder $folder, DeleteFolderAction $action): ApiResponse
+    public function deleteFolder(DeleteFolderRequest $request, FileFolder $folder, DeleteFolderAction $action): ApiResponse
     {
-        $context = $this->contextFromRequest($request);
+        $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
         try {

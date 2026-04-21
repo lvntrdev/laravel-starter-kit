@@ -107,8 +107,13 @@ class UserController extends Controller
     {
         Gate::authorize('delete', $user);
 
+        $performedById = $request->user()?->id;
+        if ($performedById === null) {
+            return to_api(null, 'Unauthenticated.', 401);
+        }
+
         try {
-            $action->execute($user, (string) $request->user()?->id);
+            $action->execute($user, (string) $performedById);
 
             return to_api(status: 204);
         } catch (\LogicException $e) {

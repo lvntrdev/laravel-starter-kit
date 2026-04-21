@@ -49,11 +49,14 @@ class UserPolicy
 
     /**
      * Deleting a user or their owned media.
+     *
+     * Self-deletion is always forbidden — an account must be removed by
+     * another actor with the users.delete permission.
      */
     public function delete(User $actor, User $user): bool
     {
         if ($actor->is($user)) {
-            return true;
+            return false;
         }
 
         if (! $this->canManage($actor, $user)) {

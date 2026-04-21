@@ -23,7 +23,7 @@ class DeleteFolderAction extends BaseAction
         }
 
         DB::transaction(function () use ($context, $folder) {
-            $descendantIds = $this->collectDescendantIds($folder);
+            $descendantIds = $this->collectDescendantIds($context, $folder);
             $folderIds = [...$descendantIds, (string) $folder->id];
 
             Media::query()
@@ -43,20 +43,32 @@ class DeleteFolderAction extends BaseAction
     }
 
     /**
+     * Walk the folder subtree in PHP using a single pre-loaded parent_id map,
+     * so depth does not translate into an extra query per level.
+     *
      * @return array<int, string>
      */
-    private function collectDescendantIds(FileFolder $folder): array
+    private function collectDescendantIds(FileManagerContextDTO $context, FileFolder $folder): array
     {
+        $rows = FileFolder::query()
+            ->where('owner_type', $context->ownerType)
+            ->where('owner_id', $context->ownerId)
+            ->get(['id', 'parent_id']);
+
+        $childrenByParent = [];
+        foreach ($rows as $row) {
+            $parentId = $row->parent_id === null ? '' : (string) $row->parent_id;
+            $childrenByParent[$parentId][] = (string) $row->id;
+        }
+
         $ids = [];
         $stack = [(string) $folder->id];
 
         while ($stack !== []) {
             $parentId = array_shift($stack);
-            $children = FileFolder::query()->where('parent_id', $parentId)->pluck('id')->all();
-
-            foreach ($children as $childId) {
-                $ids[] = (string) $childId;
-                $stack[] = (string) $childId;
+            foreach ($childrenByParent[$parentId] ?? [] as $childId) {
+                $ids[] = $childId;
+                $stack[] = $childId;
             }
         }
 

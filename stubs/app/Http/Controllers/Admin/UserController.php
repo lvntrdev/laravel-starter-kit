@@ -134,6 +134,8 @@ class UserController extends Controller
      */
     public function uploadAvatar(UploadAvatarRequest $request, User $user, UploadMediaAction $action): ApiResponse
     {
+        Gate::authorize('update', $user);
+
         $action->execute($user, $request, 'avatar');
 
         return to_api(['avatar_url' => $user->refresh()->avatar_url], __('sk-message.avatar_uploaded'));

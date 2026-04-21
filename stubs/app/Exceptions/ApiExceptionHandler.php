@@ -54,8 +54,11 @@ class ApiExceptionHandler
      */
     private static function handle(Throwable $e, Request $request): JsonResponse
     {
-        // 1. Trace ID — use client-provided value or generate a new one
-        $traceId = $request->header('X-Request-ID', (string) Str::uuid());
+        // 1. Trace ID — always server-generated to prevent log / header injection.
+        //    Any client-supplied X-Request-ID is accepted as correlation metadata
+        //    only after being sanitised and length-capped.
+        $traceId = (string) Str::uuid();
+        $clientRequestId = self::sanitizeClientRequestId($request->header('X-Request-ID'));
 
         // 2. Status + Message mapping
         [$status, $message] = self::resolve($e);
@@ -64,6 +67,7 @@ class ApiExceptionHandler
         if ($status >= 500 && ! ($e instanceof ValidationException)) {
             Log::error("[API {$status}] {$message}", [
                 'trace_id' => $traceId,
+                'client_request_id' => $clientRequestId,
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
                 'url' => $request->fullUrl(),
@@ -166,12 +170,30 @@ class ApiExceptionHandler
                 $e->getMessage() ?: self::defaultMessageForStatus($e->getStatusCode()),
             ],
 
-            // Unexpected errors
+            // Unexpected errors — never leak the raw exception message into
+            // the API response; detailed info goes into the debug block when
+            // APP_DEBUG is on.
             default => [
                 500,
-                config('app.debug') ? $e->getMessage() : 'A server error occurred.',
+                'A server error occurred.',
             ],
         };
+    }
+
+    /**
+     * Accept a client-provided X-Request-ID only if it matches a safe charset
+     * (letters, digits, dash, underscore, dot) and is ≤ 128 chars long.
+     * Anything else is discarded to avoid log / header injection.
+     */
+    private static function sanitizeClientRequestId(mixed $value): ?string
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        $trimmed = substr($value, 0, 128);
+
+        return preg_match('/^[A-Za-z0-9._-]+$/', $trimmed) === 1 ? $trimmed : null;
     }
 
     /**

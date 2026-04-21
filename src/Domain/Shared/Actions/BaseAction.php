@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Domain\Shared\Actions;
 
 use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
+use Lvntr\StarterKit\Domain\Shared\Pipelines\ActionPipeline;
 
 /**
  * Base Action class.
@@ -21,7 +22,7 @@ use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
  *       Action dispatches Events → Listeners handle side effects
  *
  * @see PipeableAction
- * @see \Lvntr\StarterKit\Domain\Shared\Pipelines\ActionPipeline
+ * @see ActionPipeline
  */
 abstract class BaseAction
 {

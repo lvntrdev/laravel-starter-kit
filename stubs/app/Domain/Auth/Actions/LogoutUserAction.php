@@ -12,6 +12,6 @@ class LogoutUserAction extends BaseAction
 {
     public function execute(User $user): void
     {
-        $user->token()->revoke();
+        $user->token()?->revoke();
     }
 }

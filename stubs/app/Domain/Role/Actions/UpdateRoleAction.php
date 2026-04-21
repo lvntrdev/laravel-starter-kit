@@ -7,6 +7,7 @@ use App\Domain\Role\Events\RoleUpdated;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Action: Update an existing role.
@@ -30,10 +31,13 @@ class UpdateRoleAction extends BaseAction
 
         $oldPermissions = $role->permissions->pluck('name')->sort()->values()->all();
 
-        $role->update($data);
-        $role->refresh();
+        $role = DB::transaction(function () use ($role, $data, $dto): Role {
+            $role->update($data);
+            $role->refresh();
+            $role->syncPermissions($dto->permissions);
 
-        $role->syncPermissions($dto->permissions);
+            return $role;
+        });
 
         $newPermissions = collect($dto->permissions)->sort()->values()->all();
         if ($oldPermissions !== $newPermissions) {
