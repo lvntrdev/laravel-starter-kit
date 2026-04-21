@@ -83,8 +83,6 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
 
-For package-internal architecture notes (what ships via Composer, what is published as stubs, how to wire the Vue components into Vite), see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
-
 ## License
 
 [PolyForm Noncommercial 1.0.0](./LICENSE)
