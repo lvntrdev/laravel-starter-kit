@@ -94,7 +94,7 @@ return [
         'workspace_id_label' => 'Workspace ID',
         'workspace_id_hint' => "Workspace URL'indeki UUID kısmı.",
         'collection_id_label' => 'Mevcut Postman Koleksiyon UID',
-        'collection_id_hint' => "Her Postman senkronizasyonundan sonra otomatik güncellenir. Manuel düzenlemeye gerek yok.",
+        'collection_id_hint' => 'Her Postman senkronizasyonundan sonra otomatik güncellenir. Manuel düzenlemeye gerek yok.',
     ],
 
     'apidog' => [

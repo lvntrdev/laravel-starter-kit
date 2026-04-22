@@ -5,6 +5,60 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.1] - 2026-04-22
+
+Bundles the API response envelope hardening (trace-id pipeline, centralised exception handler, leak-closing controller patches) with two new API client integrations (Postman + Apidog sync), an OAuth migration compatibility fix, and an install-time Passport personal access client provisioning step. Most changes are additive. Three behavioural breaks live in the response envelope — detailed with diffs in the consumer [UPGRADE guide](https://github.com/lvntrdev/laravel-starter-kit/blob/main/docs/UPGRADE.md). Existing installs must apply the guide; new installs pick everything up automatically.
+
+### Security
+
+- **Shipped controllers — `$e->getMessage()` leaks closed (11 sites).** `FileManagerController` (bulkDelete / createFolder / renameFolder / moveItem / deleteFolder / upload / deleteFile), `Api\UserController::destroy`, and `Api\Auth\AuthController::login` + `twoFactorChallenge` now throw `ApiException::*` instead of returning `to_api(null, $e->getMessage(), 4xx)`. The customer-facing message is unchanged, but the response now routes through the central handler so `trace_id` is aligned, 500+ failures are logged, and `X-Correlation-ID` is echoed. Moving away from raw `LogicException::getMessage()` closes the door on accidental internal-message leaks during future refactors.
+
+- **Package `ApiExceptionHandler` — `abort($code, 'msg')` no longer leaks the raw message.** The `HttpExceptionInterface` branch now uses the fixed `defaultMessageForStatus()` table instead of `$e->getMessage()`. `abort(400, 'SQL error: …')` returns `"Bad request."` in the body; the internal detail only surfaces in `debug.message` while `APP_DEBUG=true`. Consumers should use `throw ApiException::badRequest('…')` for controlled messaging.
+
+- **Shipped `Api\Auth\AuthController` returns `UserResource` instead of a raw User.** `register`, `login` (default kind), `twoFactorChallenge` and `me` now produce `data.user` via `UserResource::toArray()`. Raw Eloquent serialisation relied on `$hidden`; a future sensitive column could leak if forgotten. The resource makes the wire contract explicit.
+
+### Added
+
+- **Shipped API Routes page — "Sync to Postman" and "Sync to Apidog" buttons.** Admin-only buttons on the `api-routes.index` page push the current Scramble OpenAPI spec to either target via a thin controller endpoint (`POST /api-routes/postman-sync` / `.../apidog-sync`). If credentials are missing, the button redirects to the settings page. Available as `php artisan postman:sync` / `apidog:sync` on the CLI.
+
+- **Shipped Settings → API Clients tab.** One tab, two cards (Postman + Apidog). Stores `postman.api_key`, `postman.workspace_id`, `apidog.access_token`, `apidog.project_id` in the settings table; the two secrets are encrypted at rest via the shipped `config/settings.php` `sensitive_keys` list. The previously proposed `POSTMAN_*` `.env` keys are no longer used.
+
+- **Package `Lvntr\StarterKit\Bootstrap` — registers `AssignTraceId` on the API group.** A single `prepend([AssignTraceId::class])` against the `api` middleware group so success (`ApiResponse::toResponse`) and error (`ApiExceptionHandler`) paths share one trace id. Picked up automatically by `composer update lvntr/laravel-starter-kit`.
+
+- **Shipped `SyncPostmanAction` + `SyncApidogAction` + shared `OpenApiExporter`.** Both actions share a single `scramble:export → application/json → multipart/form-data rewrite` pipeline. Postman sync does `DELETE previous + POST /import/openapi` (no duplicate collections in the workspace); Apidog sync does inline `POST /v1/projects/{id}/import-openapi` with `OVERWRITE_EXISTING`. Both surfaces are UI + CLI.
+
+- **Shipped `AssignTraceId` middleware, `ApiResponseTest` feature suite, expanded `sk:update` coverage.** `AssignTraceId.php` and `Helpers/sk-helpers.php` joined the safe-update list; `sk:update` now syncs both automatically. A 16-test / 57-assertion regression suite lives in `tests/Feature/Api/ApiResponseTest.php` covering the envelope, exception mapping, trace id agreement, 204 body, `Retry-After` propagation, `debug` gating and the sanitised `X-Correlation-ID` echo.
+
+### Improved
+
+- **Shipped `ApiResponse` + `sk-helpers.php` — paginator / simplePaginate fixes.** `to_api(Model::simplePaginate(15))` no longer raises a type error; `to_api(paginator, 'msg', 201)` now carries pagination meta (paginator detection moved before the 201/202 branches — silent bug in the previous release). `ApiResponse` is now `final` with a shared private `buildPaginationMeta()` helper.
+
+- **Package `ApiExceptionHandler` — trace id unified, rate-limit headers propagated.** The handler reads `$request->attributes->get('trace_id')` set by `AssignTraceId` (falls back to `Str::uuid()` on early failures). All headers from `ThrottleRequestsException::getHeaders()` (`Retry-After`, `X-RateLimit-*`) are copied to the response so throttled clients can read the standard header instead of parsing the message string. `ModelNotFoundException` message now embeds the model name (`"User not found."` via `class_basename($e->getModel())`).
+
+- **Package `Support\Scramble\ApiResponseExtension` — enriched schema metadata.** Each envelope field now has a definition + example + validation rule description, so the generated OpenAPI doc at `/docs/api` is more self-documenting.
+
+- **Shipped `make:sk-domain` scaffold — template emits `throw ApiException::badRequest(...)` instead of `to_api(null, $e->getMessage(), 400)`.** Freshly generated `destroy()` controllers match the v13.4.1 pattern automatically; a shipped Pest test anchors the template output.
+
+### Fixed
+
+- **Shipped OAuth migrations made UUID-compatible.** `oauth_access_tokens.user_id` and `oauth_auth_codes.user_id` are now `foreignUuid`; `oauth_clients.owner_*` is now `nullableUuidMorphs`. Previously the Passport defaults (`foreignId` / `nullableMorphs` = `bigint unsigned`) clashed with the UUID `users.id` primary key shipped by the kit, surfacing as `SQLSTATE 1265: Data truncated for column 'user_id'` on the first API login.
+
+- **Shipped `SiteInstallCommand` provisions the Passport personal access client automatically.** A `passport:client --personal --provider=users` step was added between `passport:keys` and the admin-user seed. `php artisan site:install` on a fresh clone now produces a working API token path out of the box — previously the operator had to run the passport command manually.
+
+- **Package `ApiResponse::toResponse()` honours the `$request` parameter.** The previous implementation accepted the `Responsable::toResponse($request)` signature but ignored the argument — `AssignTraceId` integration depends on this parameter, which is now actually consumed.
+
+- **Package `ApiExceptionHandler` — `match` ordering pinned.** `ApiException extends HttpException`, so it must be matched before `HttpExceptionInterface` — otherwise custom API exceptions would fall through to the generic abort() handling. Fragile ordering is now pinned by a comment + the shipped regression suite.
+
+- **Package `ApiResponse` — 202 Accepted dead code removed.** The `'Operation queued.'` fallback for `to_api($data, '', 202)` never fired (the default `$message` was truthy). Helper simplified to a single logical flow.
+
+### Breaking
+
+Migration steps in the consumer [UPGRADE guide](https://github.com/lvntrdev/laravel-starter-kit/blob/main/docs/UPGRADE.md). Summary:
+
+- `abort($code, 'custom message')` no longer surfaces the message — use `throw ApiException::*` instead.
+- `ModelNotFoundException` message now includes the model name (`"User not found."`). Frontend regex matches may need to loosen.
+- `Api\Auth\AuthController` `data.user` is limited to `UserResource::toArray()` output. If consumers depended on a raw-model field, they must extend the resource.
+
 ## [13.4.0] - 2026-04-21
 
 Security hardening sprint — a parallel code-review sweep surfaced ~37 findings across HIGH / MEDIUM / LOW severities. 36 are closed in this release; 1 HIGH (Passport private-key rotation in git history) is a manual operator step documented in the consumer [UPGRADE guide](https://github.com/lvntrdev/laravel-starter-kit/blob/main/docs/UPGRADE.md). Most patches touch **shipped** files (the files `sk:install` copies into the consumer app), so existing consumer apps must follow the UPGRADE guide to apply the diffs; new installs pick everything up automatically. Package-tier changes (HSTS `preload`, stub refresh) arrive via `composer update lvntr/laravel-starter-kit`.
