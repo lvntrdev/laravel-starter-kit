@@ -48,10 +48,15 @@ return [
     | value via perPage() or ?per_page=. Existing callers are unaffected —
     | the builder falls back to 10 when this key is absent.
     |
+    | `max_per_page` caps the value accepted from the `?per_page=` query
+    | parameter to protect against expensive queries / large payloads. The
+    | builder falls back to 100 when this key is absent.
+    |
     */
 
     'datatable' => [
         'default_per_page' => (int) env('STARTER_KIT_DATATABLE_PER_PAGE', 10),
+        'max_per_page' => (int) env('STARTER_KIT_DATATABLE_MAX_PER_PAGE', 100),
     ],
 
     /*

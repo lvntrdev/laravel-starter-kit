@@ -156,7 +156,8 @@ class DatatableQueryBuilder
     {
         $query = $this->buildQuery();
 
-        $perPage = max(1, (int) request()->input('per_page', $this->defaultPerPage));
+        $maxPerPage = (int) (config('starter-kit.datatable.max_per_page') ?? 100);
+        $perPage = min($maxPerPage, max(1, (int) request()->input('per_page', $this->defaultPerPage)));
         $paginator = $query->paginate($perPage)->withQueryString();
 
         $items = $this->resourceClass
