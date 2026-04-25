@@ -84,14 +84,50 @@
 
     const tabConfig = TB.tabs()
         .vertical()
+        .isCard(true)
         .addTabs(
-            TB.item().key('general').label('sk-setting.tabs.general').icon('pi pi-cog'),
-            TB.item().key('auth').label('sk-setting.tabs.auth').icon('pi pi-shield'),
-            TB.item().key('mail').label('sk-setting.tabs.mail').icon('pi pi-envelope'),
-            TB.item().key('storage').label('sk-setting.tabs.storage').icon('pi pi-cloud'),
-            TB.item().key('file_manager').label('sk-setting.tabs.file_manager').icon('pi pi-sliders-h'),
-            TB.item().key('turnstile').label('sk-setting.tabs.turnstile').icon('pi pi-shield'),
-            TB.item().key('api_clients').label('sk-setting.tabs.api_clients').icon('pi pi-send'),
+            TB.item()
+                .key('general')
+                .label('sk-setting.tabs.general')
+                .description('sk-setting.tab_descriptions.general')
+                .icon('pi pi-cog')
+                .iconColor('blue'),
+            TB.item()
+                .key('auth')
+                .label('sk-setting.tabs.auth')
+                .description('sk-setting.tab_descriptions.auth')
+                .icon('pi pi-id-card')
+                .iconColor('amber'),
+            TB.item()
+                .key('mail')
+                .label('sk-setting.tabs.mail')
+                .description('sk-setting.tab_descriptions.mail')
+                .icon('pi pi-envelope')
+                .iconColor('emerald'),
+            TB.item()
+                .key('storage')
+                .label('sk-setting.tabs.storage')
+                .description('sk-setting.tab_descriptions.storage')
+                .icon('pi pi-database')
+                .iconColor('purple'),
+            TB.item()
+                .key('file_manager')
+                .label('sk-setting.tabs.file_manager')
+                .description('sk-setting.tab_descriptions.file_manager')
+                .icon('pi pi-folder')
+                .iconColor('teal'),
+            TB.item()
+                .key('turnstile')
+                .label('sk-setting.tabs.turnstile')
+                .description('sk-setting.tab_descriptions.turnstile')
+                .icon('pi pi-shield')
+                .iconColor('red'),
+            TB.item()
+                .key('api_clients')
+                .label('sk-setting.tabs.api_clients')
+                .description('sk-setting.tab_descriptions.api_clients')
+                .icon('pi pi-code')
+                .iconColor('indigo'),
         )
         .build();
 </script>

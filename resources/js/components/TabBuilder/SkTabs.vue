@@ -68,19 +68,49 @@
                 <slot name="sidebar-header" />
             </div>
 
-            <nav class="sk-vtab-nav">
-                <button
-                    v-for="tab in visibleTabs"
-                    :key="tab.key"
-                    class="sk-vtab"
-                    :class="{ 'sk-vtab--active': isActive(tab.key), 'sk-vtab--disabled': isDisabled(tab) }"
-                    :disabled="isDisabled(tab)"
-                    @click="activeTab = tab.key"
-                >
-                    <i v-if="tab.icon" :class="tab.icon" class="sk-vtab__icon" />
-                    {{ $t(tab.label) }}
-                </button>
-            </nav>
+            <Card class="sk-vtab-card">
+                <template #content>
+                    <nav class="sk-vtab-nav">
+                        <button
+                            v-for="tab in visibleTabs"
+                            :key="tab.key"
+                            class="sk-vtab"
+                            :class="[
+                                { 'sk-vtab--active': isActive(tab.key), 'sk-vtab--disabled': isDisabled(tab) },
+                                tab.description ? 'sk-vtab--rich' : null,
+                            ]"
+                            :disabled="isDisabled(tab)"
+                            @click="activeTab = tab.key"
+                        >
+                            <span
+                                v-if="tab.icon"
+                                class="sk-vtab__icon-tile"
+                                :class="`sk-vtab__icon-tile--${tab.iconColor ?? 'slate'}`"
+                            >
+                                <i :class="tab.icon" class="sk-vtab__icon" />
+                            </span>
+
+                            <span class="sk-vtab__body">
+                                <span class="sk-vtab__label">{{ $t(tab.label) }}</span>
+                                <span v-if="tab.description" class="sk-vtab__description">
+                                    {{ $t(tab.description) }}
+                                </span>
+                            </span>
+
+                            <span v-if="tab.checked || tab.badge != null" class="sk-vtab__trailing">
+                                <i v-if="tab.checked" class="pi pi-check-circle sk-vtab__check" />
+                                <span
+                                    v-else-if="tab.badge != null"
+                                    class="sk-vtab__badge"
+                                    :class="`sk-vtab__badge--${tab.badgeSeverity ?? 'secondary'}`"
+                                >
+                                    {{ tab.badge }}
+                                </span>
+                            </span>
+                        </button>
+                    </nav>
+                </template>
+            </Card>
 
             <!-- Sidebar footer slot: extra content below tabs -->
             <div v-if="$slots['sidebar-footer']" class="sk-vtab-footer">

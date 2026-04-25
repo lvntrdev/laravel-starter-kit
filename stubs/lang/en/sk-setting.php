@@ -14,6 +14,16 @@ return [
         'api_clients' => 'API Clients',
     ],
 
+    'tab_descriptions' => [
+        'general' => 'App name, language and logo',
+        'auth' => 'Registration, 2FA and verification',
+        'mail' => 'SMTP and sender settings',
+        'storage' => 'S3, Spaces and local disk',
+        'file_manager' => 'Upload sizes and file types',
+        'turnstile' => 'Cloudflare Turnstile CAPTCHA',
+        'api_clients' => 'Postman and Apidog integration',
+    ],
+
     'general' => [
         'title' => 'General Settings',
         'subtitle' => 'Configure basic application settings.',

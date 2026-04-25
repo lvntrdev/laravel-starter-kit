@@ -14,6 +14,16 @@ return [
         'api_clients' => 'API İstemcileri',
     ],
 
+    'tab_descriptions' => [
+        'general' => 'Uygulama adı, dil ve logo',
+        'auth' => 'Kayıt, 2FA ve e-posta doğrulama',
+        'mail' => 'SMTP ve gönderen ayarları',
+        'storage' => 'S3, Spaces ve yerel disk',
+        'file_manager' => 'Yükleme boyutu ve dosya türleri',
+        'turnstile' => 'Cloudflare Turnstile CAPTCHA',
+        'api_clients' => 'Postman ve Apidog entegrasyonu',
+    ],
+
     'general' => [
         'title' => 'Genel Ayarlar',
         'subtitle' => 'Temel uygulama ayarlarını yapılandırın.',

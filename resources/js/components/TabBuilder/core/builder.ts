@@ -1,6 +1,6 @@
 // resources/js/tab-builder/builder.ts
 
-import type { TabBuilderConfig, TabItemConfig, TabLayout } from './types';
+import type { TabBadgeSeverity, TabBuilderConfig, TabIconColor, TabItemConfig, TabLayout } from './types';
 
 export class TabItemBuilder {
     private config: Partial<TabItemConfig> = {};
@@ -17,6 +17,27 @@ export class TabItemBuilder {
 
     icon(icon: string): this {
         this.config.icon = icon;
+        return this;
+    }
+
+    description(text: string): this {
+        this.config.description = text;
+        return this;
+    }
+
+    iconColor(color: TabIconColor): this {
+        this.config.iconColor = color;
+        return this;
+    }
+
+    badge(value: string | number, severity?: TabBadgeSeverity): this {
+        this.config.badge = value;
+        if (severity) this.config.badgeSeverity = severity;
+        return this;
+    }
+
+    checked(value: boolean = true): this {
+        this.config.checked = value;
         return this;
     }
 

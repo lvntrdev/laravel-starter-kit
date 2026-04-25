@@ -4,7 +4,9 @@
  * Styles for the SkTabs component:
  *   1. Vertical layout (wrapper, sidebar, content)
  *   2. Vertical tab navigation & items
- *   3. Horizontal tab panel
+ *   3. Icon tile color presets
+ *   4. Trailing badges / check marks
+ *   5. Horizontal tab panel
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -12,11 +14,11 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-tabs-vertical {
-    @apply flex flex-col gap-4 md:flex-row md:gap-8;
+    @apply flex flex-col gap-4 md:flex-row md:gap-6;
 }
 
 .sk-tabs-vertical__sidebar {
-    @apply w-full shrink-0 md:w-72;
+    @apply w-full shrink-0 md:w-80;
 }
 
 .sk-tabs-vertical__content {
@@ -24,68 +26,279 @@
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CARD WRAPPER PADDING OVERRIDE (PrimeVue defaults are too large)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-vtab-card.p-card .p-card-body {
+    @apply p-2;
+}
+
+.sk-vtab-card.p-card .p-card-content {
+    @apply p-0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    VERTICAL TAB NAVIGATION
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-vtab-nav {
-    @apply flex flex-row gap-1.5 overflow-x-auto rounded p-2.5 pb-2.5 md:flex-col md:pb-2.5;
-    background: var(--p-surface-0);
-    border: 1px solid var(--p-surface-200);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-}
-
-:root.dark .sk-vtab-nav {
-    background: var(--p-surface-900);
-    border-color: var(--p-surface-800);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+    @apply flex flex-col gap-1;
 }
 
 .sk-vtab {
-    @apply flex w-full items-center gap-2.5 whitespace-nowrap rounded px-4 py-3 text-left font-medium transition-all duration-200;
-    color: var(--p-surface-500);
-    background: transparent;
-    border: none;
+    @apply relative flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-surface-700 transition-colors duration-150 dark:text-surface-200;
 
     &:hover {
-        background: var(--p-surface-100);
-        color: var(--p-surface-700);
+        background: color-mix(in srgb, var(--p-surface-500) 8%, transparent);
     }
+}
+
+.sk-vtab--rich {
+    @apply px-2.5 py-2.5;
+}
+
+:root.dark .sk-vtab:hover {
+    background: color-mix(in srgb, var(--p-surface-400) 12%, transparent);
 }
 
 .sk-vtab--active {
-    background: var(--p-primary-color);
-    color: #ffffff;
-    box-shadow:
-        0 1px 3px 0 color-mix(in srgb, var(--p-primary-color) 30%, transparent),
-        0 1px 2px -1px color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+    background: color-mix(in srgb, var(--p-surface-500) 14%, transparent);
 
     &:hover {
-        background: var(--p-primary-color);
-        color: #ffffff;
-    }
-}
-
-:root.dark .sk-vtab {
-    color: var(--p-surface-400);
-
-    &:hover {
-        background: var(--p-surface-800);
-        color: var(--p-surface-200);
+        background: color-mix(in srgb, var(--p-surface-500) 18%, transparent);
     }
 }
 
 :root.dark .sk-vtab--active {
-    background: var(--p-primary-color);
-    color: #ffffff;
+    background: color-mix(in srgb, var(--p-surface-400) 18%, transparent);
 
     &:hover {
-        background: var(--p-primary-color);
-        color: #ffffff;
+        background: color-mix(in srgb, var(--p-surface-400) 22%, transparent);
     }
+}
+
+.sk-vtab--disabled {
+    @apply cursor-not-allowed opacity-50;
+
+    &:hover {
+        @apply bg-transparent;
+    }
+}
+
+.sk-vtab__body {
+    @apply flex min-w-0 flex-1 flex-col;
+}
+
+.sk-vtab__label {
+    @apply truncate text-sm font-semibold;
+}
+
+.sk-vtab--rich .sk-vtab__label {
+    @apply text-[0.9375rem];
+}
+
+.sk-vtab__description {
+    @apply mt-0.5 truncate text-xs text-surface-500 dark:text-surface-400;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ICON TILE + COLOR PRESETS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-vtab__icon-tile {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg;
+}
+
+.sk-vtab--rich .sk-vtab__icon-tile {
+    @apply size-11 rounded-xl;
 }
 
 .sk-vtab__icon {
     @apply text-base;
+}
+
+.sk-vtab--rich .sk-vtab__icon {
+    @apply text-[1.125rem];
+}
+
+/* PrimeVue color tokens (blue/amber/emerald/...) are not mapped to Tailwind
+   utilities, so backgrounds use color-mix and text uses raw var() — falls in
+   the "raw CSS for special cases" exception. */
+.sk-vtab__icon-tile--blue {
+    background: color-mix(in srgb, var(--p-blue-500) 14%, transparent);
+    color: var(--p-blue-600);
+}
+:root.dark .sk-vtab__icon-tile--blue {
+    background: color-mix(in srgb, var(--p-blue-400) 18%, transparent);
+    color: var(--p-blue-300);
+}
+
+.sk-vtab__icon-tile--amber {
+    background: color-mix(in srgb, var(--p-amber-500) 14%, transparent);
+    color: var(--p-amber-600);
+}
+:root.dark .sk-vtab__icon-tile--amber {
+    background: color-mix(in srgb, var(--p-amber-400) 18%, transparent);
+    color: var(--p-amber-300);
+}
+
+.sk-vtab__icon-tile--emerald {
+    background: color-mix(in srgb, var(--p-emerald-500) 14%, transparent);
+    color: var(--p-emerald-600);
+}
+:root.dark .sk-vtab__icon-tile--emerald {
+    background: color-mix(in srgb, var(--p-emerald-400) 18%, transparent);
+    color: var(--p-emerald-300);
+}
+
+.sk-vtab__icon-tile--purple {
+    background: color-mix(in srgb, var(--p-purple-500) 14%, transparent);
+    color: var(--p-purple-600);
+}
+:root.dark .sk-vtab__icon-tile--purple {
+    background: color-mix(in srgb, var(--p-purple-400) 18%, transparent);
+    color: var(--p-purple-300);
+}
+
+.sk-vtab__icon-tile--teal {
+    background: color-mix(in srgb, var(--p-teal-500) 14%, transparent);
+    color: var(--p-teal-600);
+}
+:root.dark .sk-vtab__icon-tile--teal {
+    background: color-mix(in srgb, var(--p-teal-400) 18%, transparent);
+    color: var(--p-teal-300);
+}
+
+.sk-vtab__icon-tile--red {
+    background: color-mix(in srgb, var(--p-red-500) 14%, transparent);
+    color: var(--p-red-600);
+}
+:root.dark .sk-vtab__icon-tile--red {
+    background: color-mix(in srgb, var(--p-red-400) 18%, transparent);
+    color: var(--p-red-300);
+}
+
+.sk-vtab__icon-tile--indigo {
+    background: color-mix(in srgb, var(--p-indigo-500) 14%, transparent);
+    color: var(--p-indigo-600);
+}
+:root.dark .sk-vtab__icon-tile--indigo {
+    background: color-mix(in srgb, var(--p-indigo-400) 18%, transparent);
+    color: var(--p-indigo-300);
+}
+
+.sk-vtab__icon-tile--pink {
+    background: color-mix(in srgb, var(--p-pink-500) 14%, transparent);
+    color: var(--p-pink-600);
+}
+:root.dark .sk-vtab__icon-tile--pink {
+    background: color-mix(in srgb, var(--p-pink-400) 18%, transparent);
+    color: var(--p-pink-300);
+}
+
+.sk-vtab__icon-tile--orange {
+    background: color-mix(in srgb, var(--p-orange-500) 14%, transparent);
+    color: var(--p-orange-600);
+}
+:root.dark .sk-vtab__icon-tile--orange {
+    background: color-mix(in srgb, var(--p-orange-400) 18%, transparent);
+    color: var(--p-orange-300);
+}
+
+.sk-vtab__icon-tile--cyan {
+    background: color-mix(in srgb, var(--p-cyan-500) 14%, transparent);
+    color: var(--p-cyan-600);
+}
+:root.dark .sk-vtab__icon-tile--cyan {
+    background: color-mix(in srgb, var(--p-cyan-400) 18%, transparent);
+    color: var(--p-cyan-300);
+}
+
+.sk-vtab__icon-tile--green {
+    background: color-mix(in srgb, var(--p-green-500) 14%, transparent);
+    color: var(--p-green-600);
+}
+:root.dark .sk-vtab__icon-tile--green {
+    background: color-mix(in srgb, var(--p-green-400) 18%, transparent);
+    color: var(--p-green-300);
+}
+
+.sk-vtab__icon-tile--yellow {
+    background: color-mix(in srgb, var(--p-yellow-500) 14%, transparent);
+    color: var(--p-yellow-600);
+}
+:root.dark .sk-vtab__icon-tile--yellow {
+    background: color-mix(in srgb, var(--p-yellow-400) 18%, transparent);
+    color: var(--p-yellow-300);
+}
+
+.sk-vtab__icon-tile--slate {
+    @apply text-surface-600 dark:text-surface-300;
+    background: color-mix(in srgb, var(--p-surface-500) 12%, transparent);
+}
+:root.dark .sk-vtab__icon-tile--slate {
+    background: color-mix(in srgb, var(--p-surface-400) 18%, transparent);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TRAILING: CHECK MARK + BADGE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-vtab__trailing {
+    @apply flex shrink-0 items-center justify-center;
+}
+
+.sk-vtab__check {
+    @apply text-base;
+    color: var(--p-green-500);
+}
+
+.sk-vtab__badge {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-semibold;
+}
+
+.sk-vtab__badge--secondary {
+    @apply text-surface-700 dark:text-surface-200;
+    background: color-mix(in srgb, var(--p-surface-500) 16%, transparent);
+}
+:root.dark .sk-vtab__badge--secondary {
+    background: color-mix(in srgb, var(--p-surface-400) 22%, transparent);
+}
+
+.sk-vtab__badge--success {
+    background: color-mix(in srgb, var(--p-green-500) 18%, transparent);
+    color: var(--p-green-700);
+}
+:root.dark .sk-vtab__badge--success {
+    background: color-mix(in srgb, var(--p-green-400) 22%, transparent);
+    color: var(--p-green-300);
+}
+
+.sk-vtab__badge--warn {
+    background: color-mix(in srgb, var(--p-orange-500) 18%, transparent);
+    color: var(--p-orange-700);
+}
+:root.dark .sk-vtab__badge--warn {
+    background: color-mix(in srgb, var(--p-orange-400) 22%, transparent);
+    color: var(--p-orange-300);
+}
+
+.sk-vtab__badge--info {
+    background: color-mix(in srgb, var(--p-indigo-500) 18%, transparent);
+    color: var(--p-indigo-700);
+}
+:root.dark .sk-vtab__badge--info {
+    background: color-mix(in srgb, var(--p-indigo-400) 22%, transparent);
+    color: var(--p-indigo-300);
+}
+
+.sk-vtab__badge--danger {
+    background: color-mix(in srgb, var(--p-red-500) 18%, transparent);
+    color: var(--p-red-700);
+}
+:root.dark .sk-vtab__badge--danger {
+    background: color-mix(in srgb, var(--p-red-400) 22%, transparent);
+    color: var(--p-red-300);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
