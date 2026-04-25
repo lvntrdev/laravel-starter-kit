@@ -5,6 +5,34 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.4] - 2026-04-25
+
+Adds a maintainer-only log viewer at `/logs` for browsing, searching, and deleting Laravel log files in `storage/logs/`. Self-contained — no new composer or npm dependency, no migration, no permission entry. Visible only to `system_admin` users; everyone else still sees the same panel as before. All changes are additive. Existing consumer apps pick up the shipped Vue pages, domain layer, route file, and language keys via `php artisan sk:update`.
+
+### Added
+
+- **Shipped `/logs` admin section — system-admin-only log viewer.** A new sidebar item under "System" lists the contents of `storage/logs/` in an `SkDatatable` (filename, channel type, size, modified time, active flag); a per-file viewer page applies structured filters (level, date range, keyword) over a cursor-paginated entry stream. Single + bulk delete are wired through the same endpoint with partial-success semantics — active files (today's daily log, anything written within the last 5 seconds) are refused per-file and reported back in `failed[]`, the rest go through. Each delete batch dispatches a `LogFilesDeleted` event; the new `LogActivityForLogFilesDeleted` listener writes a `spatie/activitylog` entry under `log_name = system`, so deletions surface automatically in **Admin → Activity Logs**.
+
+- **Shipped `app/Domain/Logs/` bounded context.** Four DTOs (`LogFileDTO`, `LogEntryDTO`, `LogEntryFilterDTO`, `DeleteLogFilesDTO`), two queries (`LogFileQuery` for the file list, `LogEntryQuery` for streaming entries), one action (`DeleteLogFilesAction`), one event/listener pair, and a stateless `LaravelLogParser` service. `LogEntryQuery::paginate()` reads the file with `fopen('rb')` + 64KB-capped `fgets()` and a byte-offset cursor, so memory stays bounded regardless of file size; multi-line stack traces are kept attached to the entry that opened them, and any line that appears before the first Laravel-format header (or in a file with no headers at all) surfaces as a single raw `LogEntryDTO` (`is_raw = true`, gray chip, hidden timestamp) so file content is never silently dropped. Raw entries are filtered out the moment any structured filter (level / from / to / keyword) is applied.
+
+- **Shipped `logs.*` named route group.** `routes/web/log-route.php` ships five routes — `index`, `dtApi`, `show`, `entries`, `destroy` — wrapped in `role:system_admin`. The `{filename}` parameter constraint (`[A-Za-z0-9._-]+\.log`) is enforced on both `show` and `entries`, so path traversal and non-`.log` requests never reach the controller. The file is added to the shipped `$routesWithoutPermissionMiddleware` allowlist in `routes/web.php` because the section is role-gated, not permission-gated.
+
+- **Shipped `lang/{en,tr}/sk-log.php` translation file.** All UI copy (filter labels, empty states, delete confirmations, failure reason codes) lives behind the `sk-log.*` namespace in both languages. New `sk-menu.logs` key labels the sidebar entry.
+
+### Security
+
+- **Shipped path-traversal guardrail at three layers.** The safe filename regex `^[A-Za-z0-9._-]+\.log$` is enforced in (1) the route parameter constraint, (2) `DeleteLogFilesRequest` rules, and (3) `DeleteLogFilesAction::execute()` itself (defence in depth). Anything else returns a `log.invalid_filename` failure or a 404 from the route binding — the disk path is never built from raw input.
+
+- **Shipped active-file deletion refused.** `LogFileQuery::isActive()` flags today's daily file (`laravel-{today}.log`) and any file with an `mtime` within the last 5 seconds. `DeleteLogFilesAction` rejects flagged files per-item with `reason: 'active_file_protected'`, so a bulk submit cannot accidentally truncate the file Laravel is currently appending to.
+
+- **Shipped `role:system_admin` route gate, no permission entry.** The viewer is intentionally **not** added to `config/permission-resources.php`. Granting an `admin` role does not unlock it; only the dedicated `system_admin` role does. Non-system-admin users get a 403 on the route and never see the menu item — the feature is invisible to them.
+
+- **Shipped per-line read cap of 64KB.** `LogEntryQuery` calls `fgets($handle, 65536)`, so a pathological single-line entry of unbounded size cannot exhaust process memory. Long lines truncate cleanly without aborting the request.
+
+### Upgrade
+
+No breaking changes. Fresh installs pick everything up via `sk:install`; existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update` to pick up the new shipped Vue pages (`Admin/Logs/Index.vue`, `Admin/Logs/Show.vue`), the new domain layer under `app/Domain/Logs/`, the new admin controller (`Admin/LogController.php`), the FormRequest pair under `Http/Requests/Admin/Log/`, the new `routes/web/log-route.php`, the EN/TR `sk-log.php` translation file, the new `sk-menu.logs` key, and the `LogFilesDeleted → LogActivityForLogFilesDeleted` event-listener registration in `DomainServiceProvider`. Add `'log-route.php'` to the `$routesWithoutPermissionMiddleware` array in `routes/web.php` if your project has diverged from the shipped orchestrator.
+
 ## [13.4.3] - 2026-04-25
 
 Brings a richer vertical tab presentation through the `TB` builder (icon tile, description line, trailing badge or check) and an opt-in upper bound on the `?per_page=` query parameter handled by `DatatableQueryBuilder`. All changes are additive; no breaking changes. Existing consumer apps pick up the new shipped TabBuilder Vue components, the rewritten `_tabs.scss`, and the EN/TR `sk-setting.tab_descriptions` keys via `php artisan sk:update`; the package-tier `max_per_page` config is picked up by `composer update`.
