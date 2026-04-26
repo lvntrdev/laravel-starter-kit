@@ -84,7 +84,6 @@
 
     const tabConfig = TB.tabs()
         .vertical()
-        .isCard(true)
         .addTabs(
             TB.item()
                 .key('general')

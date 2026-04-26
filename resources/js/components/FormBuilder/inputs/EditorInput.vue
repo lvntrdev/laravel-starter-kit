@@ -113,10 +113,7 @@
     });
 
     const extensions: Extensions = [
-        // Tiptap v3 bundles the Link extension into StarterKit; disable it here so the
-        // optional manual-push branch below (with our own openOnClick/autolink config)
-        // is the only source — otherwise Tiptap warns "Duplicate extension names found: ['link']".
-        StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: false }),
+        StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
         Placeholder.configure({ placeholder: () => props.placeholder ?? '' }),
         TextAlign.configure({
             types: ['heading', 'paragraph'],
