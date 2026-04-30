@@ -5,7 +5,12 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build && vite build --ssr",
-        "test": "vitest run"
+        "test": "vitest run",
+        "ai:doctor": "~/.claude/bin/ai-kit doctor",
+        "ai:diff": "~/.claude/bin/ai-kit diff",
+        "ai:update": "~/.claude/bin/ai-kit update",
+        "ai:install": "~/.claude/bin/ai-kit install",
+        "ai:uninstall": "~/.claude/bin/ai-kit uninstall"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

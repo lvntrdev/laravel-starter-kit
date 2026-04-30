@@ -11,6 +11,9 @@ export type FileManagerContext = 'user' | 'global' | (string & {});
 export type SortKey = 'name' | 'size' | 'date';
 export type SortDirection = 'asc' | 'desc';
 
+export type ViewMode = 'grid' | 'list';
+export type QuickView = 'all' | 'recent' | 'favorites' | 'trash';
+
 export interface FolderNode {
     id: string;
     parent_id: string | null;

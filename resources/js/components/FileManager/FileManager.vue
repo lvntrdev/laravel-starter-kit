@@ -6,9 +6,10 @@
     import Button from 'primevue/button';
     import ContextMenu from 'primevue/contextmenu';
     import Dialog from 'primevue/dialog';
+    import IconField from 'primevue/iconfield';
+    import InputIcon from 'primevue/inputicon';
     import InputText from 'primevue/inputtext';
     import ProgressSpinner from 'primevue/progressspinner';
-    import Select from 'primevue/select';
     import Tooltip from 'primevue/tooltip';
     import { useToast } from 'primevue/usetoast';
 
@@ -19,10 +20,21 @@
     import { computed, onMounted, ref } from 'vue';
     import FilePreviewModal, { suggestedPreviewWidth } from '@lvntr/components/ui/FilePreviewModal.vue';
     import Breadcrumb from './components/Breadcrumb.vue';
+    import FileDetailsDialog from './components/FileDetailsDialog.vue';
     import FileGrid from './components/FileGrid.vue';
+    import FileManagerSidebar from './components/FileManagerSidebar.vue';
+    import FileManagerStats from './components/FileManagerStats.vue';
     import FolderTree from './components/FolderTree.vue';
     import { useFileManager } from './composables/useFileManager';
-    import type { FileItem, FileManagerProps, FolderSummary, SelectionKey, SortKey } from './types';
+    import type {
+        FileItem,
+        FileManagerProps,
+        FolderNode,
+        FolderSummary,
+        QuickView,
+        SelectionKey,
+        ViewMode,
+    } from './types';
 
     const props = withDefaults(defineProps<FileManagerProps>(), {
         contextId: null,
@@ -85,28 +97,84 @@
         }
     }
 
-    // ── Sort ─────────────────────────────────────────────────────
-    const sortOptions = computed(() => [
-        { label: trans('sk-file-manager.labels.sort_name'), value: 'name' as SortKey },
-        { label: trans('sk-file-manager.labels.sort_size'), value: 'size' as SortKey },
-        { label: trans('sk-file-manager.labels.sort_date'), value: 'date' as SortKey },
-    ]);
+    // ── View / quick-view / search ──────────────────────────────
+    const viewMode = ref<ViewMode>('grid');
+    const quickView = ref<QuickView>('all');
+    const searchQuery = ref('');
 
-    function onSortChange(value: SortKey): void {
-        fm.setSort(value, fm.direction.value);
+    function flattenTree(nodes: FolderNode[]): FolderSummary[] {
+        const out: FolderSummary[] = [];
+        const walk = (list: FolderNode[]) => {
+            for (const node of list) {
+                out.push({ id: node.id, parent_id: node.parent_id, name: node.name });
+                if (node.children.length) walk(node.children);
+            }
+        };
+        walk(nodes);
+        return out;
     }
 
-    function toggleSortDir(): void {
-        fm.toggleSortDirection();
+    const allFolders = computed(() => flattenTree(fm.tree.value));
+
+    const filteredFolders = computed<FolderSummary[]>(() => {
+        const q = searchQuery.value.trim().toLowerCase();
+        if (!q) return fm.contents.folders;
+        return fm.contents.folders.filter((f) => f.name.toLowerCase().includes(q));
+    });
+
+    const filteredFiles = computed<FileItem[]>(() => {
+        const q = searchQuery.value.trim().toLowerCase();
+        if (!q) return fm.contents.files;
+        return fm.contents.files.filter((f) => f.file_name.toLowerCase().includes(q));
+    });
+
+    function onSelectQuick(view: QuickView): void {
+        quickView.value = view;
+        if (view === 'all') {
+            fm.setSort('name', 'asc');
+            fm.loadContents(null);
+            return;
+        }
+        if (view === 'recent') {
+            fm.setSort('date', 'desc');
+            fm.loadContents(null);
+            return;
+        }
+        toast.add({
+            severity: 'info',
+            summary: '',
+            group: 'bc',
+            detail: trans('sk-file-manager.coming_soon'),
+            life: 2500,
+        });
     }
 
-    const sortDirectionTooltip = computed(() =>
-        fm.direction.value === 'asc'
-            ? trans('sk-file-manager.labels.sort_asc_tooltip')
-            : trans('sk-file-manager.labels.sort_desc_tooltip'),
-    );
+    function onSelectSidebarFolder(folderId: string): void {
+        quickView.value = 'all';
+        fm.loadContents(folderId);
+    }
+
+    function setViewMode(mode: ViewMode): void {
+        viewMode.value = mode;
+    }
 
     // ── Stats ────────────────────────────────────────────────────
+    const folderTotalCount = computed(() => allFolders.value.length);
+
+    const lastUploadAt = computed<string | null>(() => {
+        let latest: string | null = null;
+        for (const f of fm.contents.files) {
+            if (!f.created_at) continue;
+            if (!latest || f.created_at > latest) latest = f.created_at;
+        }
+        return latest;
+    });
+
+    // Storage quota — currently a sane visual default (10 GB) until a backend
+    // setting is wired up. The bar still scales correctly when filled.
+    const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
+    const usedBytes = computed(() => fm.contents.stats.total_size);
+
     function humanSize(bytes: number): string {
         if (!bytes) return '0 B';
         const units = ['B', 'KB', 'MB', 'GB'];
@@ -283,7 +351,7 @@
         }
     }
 
-    // ── Preview modal ────────────────────────────────────────────
+    // ── Preview / details modal ──────────────────────────────────
     const dialog = useDialog();
     const lightbox = useImageLightbox();
 
@@ -308,6 +376,56 @@
             file.file_name,
             width ? { width } : {},
         );
+    }
+
+    function openInNewTab(file: FileItem): void {
+        window.open(file.url, '_blank', 'noopener,noreferrer');
+    }
+
+    function openFileDetails(file: FileItem): void {
+        const folderName =
+            fm.breadcrumb.value.length > 0
+                ? fm.breadcrumb.value[fm.breadcrumb.value.length - 1].name
+                : trans('sk-file-manager.labels.root');
+
+        dialog.open(
+            FileDetailsDialog,
+            { file, folderName, onDownload: () => downloadFile(file) },
+            trans('sk-file-manager.labels.details.title'),
+            { width: '32rem' },
+        );
+    }
+
+    async function shareFile(file: FileItem): Promise<void> {
+        const link = new URL(file.url, window.location.origin).toString();
+        try {
+            await navigator.clipboard.writeText(link);
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.link_copied'),
+                life: 2500,
+            });
+        } catch {
+            toast.add({
+                severity: 'info',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.coming_soon'),
+                life: 2500,
+            });
+        }
+    }
+
+    function comingSoon(): void {
+        toast.add({
+            severity: 'info',
+            summary: '',
+            group: 'bc',
+            detail: trans('sk-file-manager.coming_soon'),
+            life: 2500,
+        });
     }
 
     function openRename(folder: FolderSummary): void {
@@ -360,6 +478,7 @@
                 disabled: multi,
                 command: () => contextFolder.value && fm.loadContents(contextFolder.value.id),
             },
+            { separator: true },
             {
                 label: trans('sk-file-manager.labels.rename'),
                 icon: 'pi pi-pencil',
@@ -376,10 +495,18 @@
             },
             { separator: true },
             {
+                label: trans('sk-file-manager.labels.add_to_favorites'),
+                icon: 'pi pi-star',
+                disabled: multi,
+                command: () => comingSoon(),
+            },
+            { separator: true },
+            {
                 label: multi
                     ? trans('sk-file-manager.labels.delete_selected') + ` (${fm.selectionCount.value})`
                     : trans('sk-file-manager.labels.delete'),
                 icon: 'pi pi-trash',
+                class: 'fm-menu-danger',
                 disabled: props.readonly,
                 command: () => {
                     if (multi) {
@@ -397,16 +524,30 @@
         return [
             {
                 label: trans('sk-file-manager.labels.open'),
+                icon: 'pi pi-external-link',
+                disabled: multi,
+                command: () => contextFile.value && openInNewTab(contextFile.value),
+            },
+            {
+                label: trans('sk-file-manager.labels.preview'),
                 icon: 'pi pi-eye',
                 disabled: multi,
                 command: () => contextFile.value && openPreview(contextFile.value),
             },
+            { separator: true },
             {
                 label: trans('sk-file-manager.labels.download'),
                 icon: 'pi pi-download',
                 disabled: multi,
                 command: () => contextFile.value && downloadFile(contextFile.value),
             },
+            {
+                label: trans('sk-file-manager.labels.share'),
+                icon: 'pi pi-share-alt',
+                disabled: multi,
+                command: () => contextFile.value && shareFile(contextFile.value),
+            },
+            { separator: true },
             {
                 label: multi
                     ? trans('sk-file-manager.labels.move') + ` (${fm.selectionCount.value})`
@@ -415,12 +556,38 @@
                 disabled: props.readonly,
                 command: () => contextFile.value && openMoveFile(contextFile.value),
             },
+            {
+                label: trans('sk-file-manager.labels.copy'),
+                icon: 'pi pi-copy',
+                disabled: multi,
+                command: () => comingSoon(),
+            },
+            {
+                label: trans('sk-file-manager.labels.rename'),
+                icon: 'pi pi-pencil',
+                disabled: props.readonly || multi,
+                command: () => comingSoon(),
+            },
+            { separator: true },
+            {
+                label: trans('sk-file-manager.labels.add_to_favorites'),
+                icon: 'pi pi-star',
+                disabled: multi,
+                command: () => comingSoon(),
+            },
+            {
+                label: trans('sk-file-manager.labels.details'),
+                icon: 'pi pi-info-circle',
+                disabled: multi,
+                command: () => contextFile.value && openFileDetails(contextFile.value),
+            },
             { separator: true },
             {
                 label: multi
                     ? trans('sk-file-manager.labels.delete_selected') + ` (${fm.selectionCount.value})`
                     : trans('sk-file-manager.labels.delete'),
                 icon: 'pi pi-trash',
+                class: 'fm-menu-danger',
                 disabled: props.readonly,
                 command: () => {
                     if (multi) {
@@ -663,124 +830,163 @@
 
     const currentFolderName = computed(() => {
         const trail = fm.breadcrumb.value;
-        if (trail.length === 0) return trans('sk-file-manager.labels.root');
+        if (trail.length === 0) {
+            if (quickView.value === 'recent') return trans('sk-file-manager.labels.sidebar.recent');
+            if (quickView.value === 'favorites') return trans('sk-file-manager.labels.sidebar.favorites');
+            if (quickView.value === 'trash') return trans('sk-file-manager.labels.sidebar.trash');
+            return trans('sk-file-manager.labels.files_section');
+        }
         return trail[trail.length - 1].name;
     });
 
-    const parentFolderId = computed<string | null>(() => {
-        const trail = fm.breadcrumb.value;
-        if (trail.length <= 1) return null;
-        return trail[trail.length - 2].id;
-    });
-
-    function goBack(): void {
-        fm.loadContents(parentFolderId.value);
-    }
+    const showBreadcrumb = computed(() => fm.currentFolderId.value !== null || fm.breadcrumb.value.length > 0);
 </script>
 
 <template>
     <div
-        class="fm-root relative flex overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
+        class="fm-root relative flex flex-col overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
         :style="{ height }"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="onDrop"
     >
-        <section
-            class="fm-main flex min-w-0 flex-1 flex-col"
-            :class="{ 'bg-primary-50/50 dark:bg-primary-950/20': isDropping }"
+        <!-- Top bar: search -->
+        <div
+            class="flex items-center justify-end gap-3 border-b border-surface-200 bg-surface-0 px-4 py-3 dark:border-surface-700 dark:bg-surface-900"
         >
-            <header
-                class="flex flex-wrap items-center gap-2 border-b border-surface-200 px-4 py-3 dark:border-surface-700"
+            <IconField icon-position="left" class="w-full max-w-sm">
+                <InputIcon class="pi pi-search" />
+                <InputText
+                    v-model="searchQuery"
+                    type="text"
+                    :placeholder="trans('sk-file-manager.labels.search_placeholder')"
+                    class="w-full"
+                />
+            </IconField>
+        </div>
+
+        <!-- Body: sidebar + main -->
+        <div class="flex min-h-0 flex-1">
+            <FileManagerSidebar
+                :tree="fm.tree.value"
+                :current-folder-id="fm.currentFolderId.value"
+                :quick-view="quickView"
+                :used-bytes="usedBytes"
+                :quota-bytes="STORAGE_QUOTA_BYTES"
+                :readonly="readonly"
+                @select-quick="onSelectQuick"
+                @select-folder="onSelectSidebarFolder"
+                @new-folder="openNewFolder"
+            />
+
+            <section
+                class="fm-main flex min-w-0 flex-1 flex-col"
+                :class="{ 'bg-primary-50/50 dark:bg-primary-950/20': isDropping }"
             >
-                <div class="flex min-w-0 flex-1 items-center gap-2">
-                    <Button
-                        v-if="fm.currentFolderId.value"
-                        severity="secondary"
-                        text
-                        rounded
-                        icon="pi pi-arrow-left"
-                        :aria-label="trans('sk-file-manager.labels.back')"
-                        @click="goBack"
-                    />
-                    <i class="pi pi-folder-open text-primary-500" style="font-size: 1.6rem" />
-                    <h2 class="truncate text-2xl font-semibold" :title="currentFolderName">
-                        {{ currentFolderName }}
-                    </h2>
-                </div>
-
-                <div class="flex items-center gap-1.5">
-                    <Select
-                        :model-value="fm.sort.value"
-                        :options="sortOptions"
-                        option-label="label"
-                        option-value="value"
-                        class="fm-sort-select w-32"
-                        @update:model-value="onSortChange"
-                    />
-                    <Button
-                        v-tooltip.bottom="sortDirectionTooltip"
-                        severity="secondary"
-                        text
-                        :icon="fm.direction.value === 'asc' ? 'pi pi-sort-amount-up' : 'pi pi-sort-amount-down'"
-                        :aria-label="sortDirectionTooltip"
-                        @click="toggleSortDir"
-                    />
-                </div>
-
-                <Button
-                    severity="secondary"
-                    icon="pi pi-folder-plus"
-                    :label="trans('sk-file-manager.labels.new_folder')"
-                    :disabled="readonly"
-                    @click="openNewFolder"
-                />
-
-                <Button
-                    :icon="uploading ? 'pi pi-spin pi-spinner' : 'pi pi-upload'"
-                    :label="trans('sk-file-manager.labels.upload')"
-                    :disabled="readonly || uploading"
-                    @click="triggerUpload"
-                />
-
-                <input
-                    ref="fileInput"
-                    type="file"
-                    multiple
-                    class="hidden"
-                    :accept="acceptedMimes?.join(',')"
-                    @change="onFileChange"
+                <!-- Stats -->
+                <div
+                    class="border-b border-surface-200 bg-surface-50/40 px-5 py-4 dark:border-surface-700 dark:bg-surface-950/30"
                 >
-            </header>
-
-            <div
-                class="flex flex-wrap items-center justify-between gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-surface-600 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-300"
-            >
-                <div class="flex items-center gap-4">
-                    <span class="inline-flex items-center gap-1.5">
-                        <i class="pi pi-file text-surface-400" style="font-size: 0.85rem" />
-                        {{
-                            trans('sk-file-manager.labels.total_files', { count: String(fm.contents.stats.file_count) })
-                        }}
-                    </span>
-                    <span class="inline-flex items-center gap-1.5">
-                        <i class="pi pi-database text-surface-400" style="font-size: 0.85rem" />
-                        {{
-                            trans('sk-file-manager.labels.total_size', {
-                                size: humanSize(fm.contents.stats.total_size),
-                            })
-                        }}
-                    </span>
+                    <FileManagerStats
+                        :file-count="fm.contents.stats.file_count"
+                        :total-size="fm.contents.stats.total_size"
+                        :folder-count="folderTotalCount"
+                        :favorite-count="0"
+                        :last-upload-at="lastUploadAt"
+                    />
                 </div>
 
-                <div v-if="fm.selectionCount.value > 0" class="flex items-center gap-2">
+                <!-- Header: title + view toggle + upload -->
+                <header
+                    class="flex flex-wrap items-center gap-3 border-b border-surface-200 px-5 py-3 dark:border-surface-700"
+                >
+                    <div class="flex min-w-0 flex-1 items-center gap-2">
+                        <i class="pi pi-folder-open text-primary-500" style="font-size: 1.4rem" />
+                        <h2 class="truncate text-xl font-semibold" :title="currentFolderName">
+                            {{ currentFolderName }}
+                        </h2>
+                        <span
+                            v-if="searchQuery.trim()"
+                            class="ml-2 rounded-full bg-surface-100 px-2 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300"
+                        >
+                            {{ filteredFolders.length + filteredFiles.length }}
+                        </span>
+                    </div>
+
+                    <div
+                        class="inline-flex overflow-hidden rounded-lg border border-surface-200 dark:border-surface-700"
+                    >
+                        <button
+                            v-tooltip.bottom="trans('sk-file-manager.labels.view_grid')"
+                            type="button"
+                            class="px-3 py-1.5 transition-colors"
+                            :class="
+                                viewMode === 'grid'
+                                    ? 'bg-primary-500 text-white'
+                                    : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
+                            "
+                            :aria-pressed="viewMode === 'grid'"
+                            @click="setViewMode('grid')"
+                        >
+                            <i class="pi pi-th-large" style="font-size: 0.95rem" />
+                        </button>
+                        <button
+                            v-tooltip.bottom="trans('sk-file-manager.labels.view_list')"
+                            type="button"
+                            class="px-3 py-1.5 transition-colors"
+                            :class="
+                                viewMode === 'list'
+                                    ? 'bg-primary-500 text-white'
+                                    : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
+                            "
+                            :aria-pressed="viewMode === 'list'"
+                            @click="setViewMode('list')"
+                        >
+                            <i class="pi pi-list" style="font-size: 0.95rem" />
+                        </button>
+                    </div>
+
+                    <Button
+                        :icon="uploading ? 'pi pi-spin pi-spinner' : 'pi pi-cloud-upload'"
+                        :label="trans('sk-file-manager.labels.upload_new')"
+                        :disabled="readonly || uploading"
+                        @click="triggerUpload"
+                    />
+
+                    <input
+                        ref="fileInput"
+                        type="file"
+                        multiple
+                        class="hidden"
+                        :accept="acceptedMimes?.join(',')"
+                        @change="onFileChange"
+                    >
+                </header>
+
+                <!-- Breadcrumb -->
+                <div
+                    v-if="showBreadcrumb"
+                    class="border-b border-surface-200 bg-surface-50 px-5 py-2 dark:border-surface-700 dark:bg-surface-950"
+                >
+                    <Breadcrumb
+                        :trail="fm.breadcrumb.value"
+                        :root-label="trans('sk-file-manager.labels.root')"
+                        @navigate="(id) => fm.loadContents(id)"
+                    />
+                </div>
+
+                <!-- Selection bar -->
+                <div
+                    v-if="fm.selectionCount.value > 0"
+                    class="flex items-center justify-end gap-2 border-b border-surface-200 bg-primary-50/40 px-5 py-2 dark:border-surface-700 dark:bg-primary-950/20"
+                >
                     <span class="font-medium text-primary-600 dark:text-primary-300">{{ bulkLabel }}</span>
                     <Button
                         size="small"
                         severity="secondary"
                         text
                         icon="pi pi-times"
-                        label="Clear"
+                        :label="trans('sk-file-manager.labels.close')"
                         @click="fm.clearSelection"
                     />
                     <Button
@@ -792,49 +998,44 @@
                         @click="confirmBulkDelete"
                     />
                 </div>
-            </div>
 
-            <div
-                class="border-b border-surface-200 bg-surface-50 px-3 py-2 dark:border-surface-700 dark:bg-surface-950"
-            >
-                <Breadcrumb
-                    :trail="fm.breadcrumb.value"
-                    :root-label="trans('sk-file-manager.labels.root')"
-                    @navigate="(id) => fm.loadContents(id)"
-                />
-            </div>
+                <div class="relative flex-1 overflow-hidden">
+                    <FileGrid
+                        :folders="filteredFolders"
+                        :files="filteredFiles"
+                        :pending="visiblePending"
+                        :loading="fm.loading.contents"
+                        :empty-label="
+                            searchQuery.trim()
+                                ? trans('sk-file-manager.labels.no_results')
+                                : trans('sk-file-manager.labels.empty_folder')
+                        "
+                        :is-selected="fm.isSelected"
+                        :view-mode="viewMode"
+                        @open-folder="(id) => fm.loadContents(id)"
+                        @open-file="openFileFromGrid"
+                        @context-folder="showFolderMenu"
+                        @context-file="showFileMenu"
+                        @context-empty="showEmptyMenu"
+                        @download-file="downloadFile"
+                        @toggle-select="onToggleSelect"
+                        @set-selection="(keys) => fm.setSelection(keys)"
+                        @clear-selection="fm.clearSelection"
+                        @dismiss-pending="(id) => fm.dismissPending(id)"
+                        @drop-on-folder="(targetId) => handleDropOnFolder(targetId)"
+                        @internal-drag-start="onInternalDragStart"
+                        @check-toggle="(type, id) => fm.toggleSelect(type, id)"
+                    />
 
-            <div class="relative flex-1 overflow-hidden">
-                <FileGrid
-                    :folders="fm.contents.folders"
-                    :files="fm.contents.files"
-                    :pending="visiblePending"
-                    :loading="fm.loading.contents"
-                    :empty-label="trans('sk-file-manager.labels.empty_folder')"
-                    :is-selected="fm.isSelected"
-                    @open-folder="(id) => fm.loadContents(id)"
-                    @open-file="openFileFromGrid"
-                    @context-folder="showFolderMenu"
-                    @context-file="showFileMenu"
-                    @context-empty="showEmptyMenu"
-                    @download-file="downloadFile"
-                    @toggle-select="onToggleSelect"
-                    @set-selection="(keys) => fm.setSelection(keys)"
-                    @clear-selection="fm.clearSelection"
-                    @dismiss-pending="(id) => fm.dismissPending(id)"
-                    @drop-on-folder="(targetId) => handleDropOnFolder(targetId)"
-                    @internal-drag-start="onInternalDragStart"
-                    @check-toggle="(type, id) => fm.toggleSelect(type, id)"
-                />
-
-                <div
-                    v-if="fm.loading.contents"
-                    class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-surface-900/50"
-                >
-                    <ProgressSpinner style="width: 32px; height: 32px" stroke-width="4" />
+                    <div
+                        v-if="fm.loading.contents"
+                        class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-surface-900/50"
+                    >
+                        <ProgressSpinner style="width: 32px; height: 32px" stroke-width="4" />
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
         <!-- Full-area drop zone overlay -->
         <div
@@ -934,21 +1135,21 @@
 
 <style>
     .fm-context-menu.p-contextmenu {
-        min-width: 14rem;
-        padding: 0.5rem;
+        min-width: 16rem;
+        padding: 0.4rem;
         background: var(--p-surface-0);
         border: 1px solid var(--p-surface-200);
-        border-radius: 0.875rem;
+        border-radius: 1rem;
         box-shadow:
-            0 10px 30px -12px rgba(15, 23, 42, 0.18),
-            0 4px 10px -4px rgba(15, 23, 42, 0.08);
+            0 16px 40px -12px rgba(15, 23, 42, 0.22),
+            0 4px 14px -4px rgba(15, 23, 42, 0.1);
     }
     .fm-context-menu.p-contextmenu .p-contextmenu-item-content {
         border-radius: 0.625rem;
     }
     .fm-context-menu.p-contextmenu .p-contextmenu-item-link {
-        padding: 0.65rem 0.9rem;
-        gap: 0.9rem;
+        padding: 0.55rem 0.85rem;
+        gap: 0.85rem;
         font-weight: 500;
         color: var(--p-surface-800);
     }
@@ -960,15 +1161,29 @@
         background: var(--p-surface-100);
     }
     .fm-context-menu.p-contextmenu .p-contextmenu-separator {
-        margin: 0.35rem 0;
+        margin: 0.3rem 0.25rem;
         border-top: 1px solid var(--p-surface-200);
     }
+
+    /* Danger entry — colours the label *and* icon red, on hover too. */
+    .fm-context-menu.p-contextmenu .p-contextmenu-item.fm-menu-danger .p-contextmenu-item-link {
+        color: var(--p-red-600, #dc2626);
+    }
+    .fm-context-menu.p-contextmenu .p-contextmenu-item.fm-menu-danger .p-contextmenu-item-icon {
+        color: var(--p-red-600, #dc2626);
+    }
+    .fm-context-menu.p-contextmenu
+        .p-contextmenu-item.fm-menu-danger:not(.p-disabled)
+        .p-contextmenu-item-content:hover {
+        background: var(--p-red-50, #fef2f2);
+    }
+
     .dark .fm-context-menu.p-contextmenu {
         background: var(--p-surface-900);
         border-color: var(--p-surface-700);
         box-shadow:
-            0 10px 30px -12px rgba(0, 0, 0, 0.6),
-            0 4px 10px -4px rgba(0, 0, 0, 0.35);
+            0 16px 40px -12px rgba(0, 0, 0, 0.6),
+            0 4px 14px -4px rgba(0, 0, 0, 0.35);
     }
     .dark .fm-context-menu.p-contextmenu .p-contextmenu-item-link {
         color: var(--p-surface-100);
@@ -981,5 +1196,15 @@
     }
     .dark .fm-context-menu.p-contextmenu .p-contextmenu-separator {
         border-color: var(--p-surface-700);
+    }
+    .dark .fm-context-menu.p-contextmenu .p-contextmenu-item.fm-menu-danger .p-contextmenu-item-link,
+    .dark .fm-context-menu.p-contextmenu .p-contextmenu-item.fm-menu-danger .p-contextmenu-item-icon {
+        color: var(--p-red-400, #f87171);
+    }
+    .dark
+        .fm-context-menu.p-contextmenu
+        .p-contextmenu-item.fm-menu-danger:not(.p-disabled)
+        .p-contextmenu-item-content:hover {
+        background: rgba(220, 38, 38, 0.12);
     }
 </style>

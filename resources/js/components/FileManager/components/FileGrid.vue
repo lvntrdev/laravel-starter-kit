@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { trans } from 'laravel-vue-i18n';
     import { computed, onBeforeUnmount, ref } from 'vue';
-    import type { FileItem, FolderSummary, PendingUpload, SelectionKey } from '../types';
+    import type { FileItem, FolderSummary, PendingUpload, SelectionKey, ViewMode } from '../types';
 
     interface Props {
         folders: FolderSummary[];
@@ -10,9 +10,14 @@
         loading?: boolean;
         emptyLabel?: string;
         isSelected: (type: 'folder' | 'file', id: string | number) => boolean;
+        viewMode?: ViewMode;
     }
 
-    const props = withDefaults(defineProps<Props>(), { pending: () => [], emptyLabel: '' });
+    const props = withDefaults(defineProps<Props>(), {
+        pending: () => [],
+        emptyLabel: '',
+        viewMode: 'grid',
+    });
     const emit = defineEmits<{
         (e: 'open-folder', folderId: string): void;
         (e: 'open-file', file: FileItem): void;
@@ -184,7 +189,7 @@
     function onGridMouseDown(event: MouseEvent): void {
         if (event.button !== 0) return;
         const target = event.target as HTMLElement;
-        if (target.closest('.fm-tile') || target.closest('button, a, input')) return;
+        if (target.closest('.fm-tile') || target.closest('.fm-row') || target.closest('button, a, input')) return;
 
         const el = gridRef.value;
         if (!el) return;
@@ -311,7 +316,7 @@
 
     function onGridContextMenu(event: MouseEvent): void {
         const target = event.target as HTMLElement;
-        if (target.closest('.fm-tile') || target.closest('button, a, input')) return;
+        if (target.closest('.fm-tile') || target.closest('.fm-row') || target.closest('button, a, input')) return;
         event.preventDefault();
         emit('clear-selection');
         emit('context-empty', event);
@@ -357,7 +362,7 @@
             </ul>
         </div>
 
-        <template v-else>
+        <template v-else-if="viewMode === 'grid'">
             <!-- Folders -->
             <div
                 v-if="folders.length > 0"
@@ -585,6 +590,137 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </template>
+
+        <!-- List view -->
+        <template v-else>
+            <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-700">
+                <table class="w-full text-left text-sm">
+                    <thead
+                        class="bg-surface-50 text-xs uppercase tracking-wide text-surface-500 dark:bg-surface-950 dark:text-surface-400"
+                    >
+                        <tr>
+                            <th class="px-4 py-2.5 font-semibold">
+                                {{ trans('sk-file-manager.labels.sort_name') }}
+                            </th>
+                            <th class="px-4 py-2.5 font-semibold">
+                                {{ trans('sk-file-manager.labels.sort_size') }}
+                            </th>
+                            <th class="px-4 py-2.5 font-semibold">
+                                {{ trans('sk-file-manager.labels.sort_date') }}
+                            </th>
+                            <th class="w-10 px-4 py-2.5" />
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-surface-100 bg-surface-0 dark:divide-surface-800 dark:bg-surface-900">
+                        <tr
+                            v-for="folder in folders"
+                            :key="`row-folder-${folder.id}`"
+                            :data-fm-key="`folder:${folder.id}`"
+                            draggable="true"
+                            class="fm-row cursor-pointer transition-colors"
+                            :class="
+                                isSelected('folder', folder.id)
+                                    ? 'bg-primary-50 dark:bg-primary-950/30'
+                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50'
+                            "
+                            @click="(ev) => onFolderTileClick(folder, ev)"
+                            @dblclick="emit('open-folder', folder.id)"
+                            @contextmenu.prevent="(ev) => emit('context-folder', ev, folder)"
+                            @dragstart="(ev) => onTileDragStart('folder', folder.id, ev)"
+                            @dragend="onTileDragEnd"
+                            @dragover="(ev) => onFolderDragOver(folder, ev)"
+                            @dragleave="() => onFolderDragLeave(folder)"
+                            @drop="(ev) => onFolderDrop(folder, ev)"
+                        >
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                                        :class="folderPalette(folder.id).bg"
+                                    >
+                                        <i
+                                            class="pi pi-folder-open"
+                                            :class="folderPalette(folder.id).icon"
+                                            style="font-size: 1rem"
+                                        />
+                                    </span>
+                                    <span class="truncate font-medium" :title="folder.name">{{ folder.name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2.5 text-surface-500 dark:text-surface-400">
+                                {{ humanSize(folder.total_size ?? 0) }}
+                            </td>
+                            <td class="px-4 py-2.5 text-surface-500 dark:text-surface-400">
+                                —
+                            </td>
+                            <td class="px-4 py-2.5 text-right">
+                                <span class="text-xs text-surface-400">{{ folder.file_count ?? 0 }}</span>
+                            </td>
+                        </tr>
+
+                        <tr
+                            v-for="file in files"
+                            :key="`row-file-${file.id}`"
+                            :data-fm-key="`file:${file.id}`"
+                            draggable="true"
+                            class="fm-row cursor-pointer transition-colors"
+                            :class="
+                                isSelected('file', file.id)
+                                    ? 'bg-primary-50 dark:bg-primary-950/30'
+                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50'
+                            "
+                            @click="(ev) => onFileTileClick(file, ev)"
+                            @contextmenu.prevent="(ev) => emit('context-file', ev, file)"
+                            @dragstart="(ev) => onTileDragStart('file', file.id, ev)"
+                            @dragend="onTileDragEnd"
+                        >
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+                                        :class="paletteFor(file.mime_type).preview"
+                                    >
+                                        <img
+                                            v-if="isImage(file.mime_type)"
+                                            :src="file.url"
+                                            :alt="file.file_name"
+                                            class="h-full w-full object-cover"
+                                        >
+                                        <i
+                                            v-else
+                                            class="pi"
+                                            :class="[
+                                                paletteFor(file.mime_type).icon,
+                                                paletteFor(file.mime_type).iconClass,
+                                            ]"
+                                            style="font-size: 1rem"
+                                        />
+                                    </span>
+                                    <span class="truncate font-medium" :title="file.file_name">{{
+                                        file.file_name
+                                    }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2.5 text-surface-500 dark:text-surface-400">
+                                {{ humanSize(file.size) }}
+                            </td>
+                            <td class="px-4 py-2.5 text-surface-500 dark:text-surface-400">
+                                {{ relativeDate(file.created_at) }}
+                            </td>
+                            <td class="px-4 py-2.5 text-right">
+                                <button
+                                    type="button"
+                                    class="rounded p-1 text-surface-400 hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-800 dark:hover:text-surface-200"
+                                    @click.stop="emit('download-file', file)"
+                                >
+                                    <i class="pi pi-download" style="font-size: 0.9rem" />
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </template>
 
