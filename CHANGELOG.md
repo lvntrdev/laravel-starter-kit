@@ -5,6 +5,54 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.9] - 2026-05-02
+
+File Manager now ships the feature set that was previously visible as placeholders in 13.4.8. Favorites and Trash are real quick-access views, folder and file tiles can be starred, deleted items move to trash by default, trash items can be restored or permanently deleted, and the trash view has an **Empty Trash** action. Files can also be duplicated and renamed from the context menu. This release adds two migrations (`file_favorites` and soft deletes on `media`), new shipped backend actions/queries/requests, new File Manager routes, extended EN/TR language keys, and a daily `file-manager:purge-trash` scheduled command. Existing consumer apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && php artisan migrate && npm install && npm run build`.
+
+### Added
+
+- **Shipped Favorites.** New `file_favorites` table and `FileFavorite` model store starred folders/files per owner context. `FavoritesContentsQuery` powers the sidebar **Favorites** view, `FolderContentsQuery` now annotates items with `is_favorited`, and the shipped grid/context menus expose Add/Remove Favorite actions.
+
+- **Shipped Trash and restore flow.** Files and folders now soft-delete into Trash when `enableTrash` is true. `TrashContentsQuery` powers the **Trash** quick view, deleted tiles show their deleted timestamp, and trash context menus switch to Restore / Permanently Delete actions.
+
+- **Shipped Empty Trash.** `EmptyTrashAction` and `DELETE /file-manager/trash/empty` permanently delete all trashed File Manager items for the current context; files are removed before folders and folders are deleted post-order so nested trees clear safely.
+
+- **Shipped file copy and file rename.** Files can be duplicated with copy-safe names such as `photo (copy).jpg` / `photo (copy 2).jpg`, and renamed through the shipped dialog and `PATCH /file-manager/files/{media}` endpoint.
+
+- **Shipped trash purge command.** `php artisan file-manager:purge-trash --days=7` permanently deletes File Manager trash older than the selected age. It is scheduled daily from `routes/console.php`.
+
+- **Shipped `enableTrash` prop.** `FileManager` defaults to soft-delete behaviour; setting `:enable-trash="false"` restores immediate permanent deletion semantics for projects that do not want a trash workflow.
+
+### Security
+
+- **Context validation centralised.** `FileManagerContextRequest` now validates and resolves the current File Manager context consistently across virtual views and item mutations, closing gaps where favorites/trash endpoints could drift from the regular folder-content checks.
+
+- **Soft-delete scope hardening.** Restore, permanent-delete, copy, rename and favorite actions now explicitly scope items to the current context and use `withTrashed()` / `onlyTrashed()` where needed, preventing cross-context access and ensuring trashed items are found only in the intended paths.
+
+- **Folder restore cascade guardrails.** Restoring a trashed folder restores its descendant folders and File Manager media in a transaction. If its parent folder is still trashed, restore is refused until the parent is restored first; if the parent was permanently deleted, the item is restored to root to avoid an orphan.
+
+### Fixed
+
+- **Bulk force delete can now find trashed items.** `BulkDeleteAction` uses `withTrashed()` when `force=true`, so permanent deletion from the Trash view no longer misses items that are already soft-deleted.
+
+- **Language key collision fixed.** `labels.details` is now the details-section array, while the action label moved to `labels.details_action`; this prevents the file details dialog labels from being overwritten by the context-menu action string.
+
+- **Collection scoping tightened.** Trash purge and permanent delete affect File Manager media (`collection_name = files`) without touching avatars, logos, editor uploads or other MediaLibrary collections.
+
+### Upgrade
+
+No API response breaking change. Existing consumer apps should run:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+npm install
+npm run build
+```
+
+Fresh installs pick everything up through `sk:install`. Existing apps that customised File Manager stubs should compare their local files before using `sk:update --force`, especially `FileManager.vue`, `useFileManager.ts`, `FileGrid.vue`, `FileManagerController.php`, `routes/web/file-manager-route.php`, `lang/{en,tr}/sk-file-manager.php`, the new request/action/query files, and the two migrations.
+
 ## [13.4.8] - 2026-04-30
 
 File Manager UX overhaul — the same backend, the same routes, the same media table; a new shell. The single-column grid is replaced by a sidebar + main-column layout, with three new shipped components (`FileManagerSidebar`, `FileDetailsDialog`, `FileManagerStats`), a top-bar search box that filters the current folder client-side, and an expanded right-click menu with new entries (Open in new tab, Preview, Share, Copy, Rename, Add to Favorites, Details). All previously documented behaviour — uploads, drag-and-drop move, bulk delete, image lightbox, preview dialog, custom contexts, settings, permissions — works exactly as before; the change is purely shipped frontend (`FileManager.vue` + the three new components + `types.ts` + `lang/{en,tr}/sk-file-manager.php`). No new composer or npm dependency, no migration, no config, no permission entry. Existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` to pick up the patches; no breaking change.
@@ -332,11 +380,11 @@ New installs via `sk:install` pick up everything automatically. Existing consume
 - **Test-mail endpoint no longer reflects raw exception details.** The shipped `SettingsController::testMail()` used to flash the SMTP exception message (host / username / TLS details) back to the browser. It now writes the exception class + message to `Log::error` and returns a generic "Failed to send test email. Check the server logs for details." message to the user — same success/failure signal without the information disclosure.
 
 - **API auth — email verification and 2FA parity with the web flow.** The shipped `RegisterUserAction`, `LoginUserAction`, `AuthController` and `routes/api/public-api.php` stubs were reworked. The API previously issued an access token immediately on register and on any successful password login, bypassing the email-verification and 2FA checkpoints that the web flow enforces:
-    - **`register`** — when Fortify's `emailVerification` feature is enabled, no token is issued. The action creates the user, fires `Illuminate\Auth\Events\Registered` so Fortify's notification pipeline sends the verification link, and returns `{ user, requires_verification: true }` with 201. Feature-off behaviour (token issued on register) is preserved.
-    - **`login`** — returns a discriminated payload: `{ user, token }` on normal success, `{ requires_verification: true }` when the email is unverified with the feature on, or `{ requires_two_factor: true, challenge: "<uuid>" }` when the account has confirmed 2FA. The challenge id is cached for 5 minutes.
-    - **`two-factor-challenge`** — new endpoint `POST /api/v1/auth/two-factor-challenge` (throttled `5/min`) plus a `TwoFactorChallengeAction` + `TwoFactorChallengeRequest` stub. Accepts `{ challenge, code }` for TOTP or `{ challenge, recovery_code }`. On success it issues `{ user, token }`. TOTP is verified through Fortify's `TwoFactorAuthenticationProvider`; recovery codes are matched with `hash_equals` and consumed via `replaceRecoveryCode`. Invalid / unknown / expired challenges return 401.
+  - **`register`** — when Fortify's `emailVerification` feature is enabled, no token is issued. The action creates the user, fires `Illuminate\Auth\Events\Registered` so Fortify's notification pipeline sends the verification link, and returns `{ user, requires_verification: true }` with 201. Feature-off behaviour (token issued on register) is preserved.
+  - **`login`** — returns a discriminated payload: `{ user, token }` on normal success, `{ requires_verification: true }` when the email is unverified with the feature on, or `{ requires_two_factor: true, challenge: "<uuid>" }` when the account has confirmed 2FA. The challenge id is cached for 5 minutes.
+  - **`two-factor-challenge`** — new endpoint `POST /api/v1/auth/two-factor-challenge` (throttled `5/min`) plus a `TwoFactorChallengeAction` + `TwoFactorChallengeRequest` stub. Accepts `{ challenge, code }` for TOTP or `{ challenge, recovery_code }`. On success it issues `{ user, token }`. TOTP is verified through Fortify's `TwoFactorAuthenticationProvider`; recovery codes are matched with `hash_equals` and consumed via `replaceRecoveryCode`. Invalid / unknown / expired challenges return 401.
 
-    **Breaking for API consumers** — clients that expected `{ user, token }` on every 2xx response from `register` / `login` must now branch on `data.requires_verification` and `data.requires_two_factor` flags, and complete the challenge at `/api/v1/auth/two-factor-challenge` before receiving a token when 2FA is confirmed on the account. Non-2FA, verified users keep seeing the old shape.
+  **Breaking for API consumers** — clients that expected `{ user, token }` on every 2xx response from `register` / `login` must now branch on `data.requires_verification` and `data.requires_two_factor` flags, and complete the challenge at `/api/v1/auth/two-factor-challenge` before receiving a token when 2FA is confirmed on the account. Non-2FA, verified users keep seeing the old shape.
 
 - **Settings `required` validation now matches the UI secret indicator.** `UpdateMailSettingsRequest` and `UpdateTurnstileSettingsRequest` previously only checked the DB row when deciding whether a secret was "already set"; if the value lived only in `.env`, the UI's `*_is_set` flag reported `true` (because `SettingsDefaultsQuery` falls back to `config()`) but a blank submit triggered a confusing `required` validation error. The `required` branch now mirrors the query — DB row OR config fallback — so env-backed installations no longer see the spurious error.
 
@@ -401,16 +449,15 @@ New installs via `sk:install` pick up everything automatically. Existing consume
 - The **Fixed** changes are additive or behaviour-preserving in the happy path; consumers who publish the affected stubs should re-run `php artisan sk:update` (or copy the new versions) to pick up the user-event dispatch and the policy additions. Hash-aware merge will skip any of these files you have modified — review the update summary and resolve manually.
 
 - The **Security** changes are behaviour-changing and should not be skipped. Re-run `php artisan sk:update` and make sure the following files land (or merge them manually):
-
-    - `app/Http/Requests/Admin/User/{Store,Update}UserRequest.php` — new hierarchy-aware `role` validation and the `UpdateUserRequest::authorize()` rank check.
-    - `app/Domain/Setting/Queries/SettingsDefaultsQuery.php` — secret redaction + `*_is_set` flags.
-    - `app/Domain/Setting/DTOs/{Mail,Storage,Turnstile}SettingsDTO.php` — blank-preserves-stored-value semantics.
-    - `app/Http/Requests/Admin/Settings/Update{Mail,Turnstile}SettingsRequest.php` — config-aware `hasEffectiveSecret()` check.
-    - `app/Http/Middleware/CheckResourcePermission.php` — fail-closed in production.
-    - `app/Http/Controllers/Admin/SettingsController.php` — generic test-mail error message.
-    - `app/Domain/Auth/Actions/{Register,Login,TwoFactorChallenge}UserAction.php`, `app/Http/Controllers/Api/Auth/AuthController.php`, `app/Http/Requests/Api/Auth/TwoFactorChallengeRequest.php`, `routes/api/public-api.php` — API verification + 2FA parity.
-    - `config/settings.php` — `storage.aws_secret` added to `sensitive_keys`.
-    - Shipped Vue: `resources/js/pages/Admin/Settings/components/{MailTab,StorageTab,TurnstileTab}.vue` + `resources/js/pages/Admin/Settings/Index.vue` prop types.
+  - `app/Http/Requests/Admin/User/{Store,Update}UserRequest.php` — new hierarchy-aware `role` validation and the `UpdateUserRequest::authorize()` rank check.
+  - `app/Domain/Setting/Queries/SettingsDefaultsQuery.php` — secret redaction + `*_is_set` flags.
+  - `app/Domain/Setting/DTOs/{Mail,Storage,Turnstile}SettingsDTO.php` — blank-preserves-stored-value semantics.
+  - `app/Http/Requests/Admin/Settings/Update{Mail,Turnstile}SettingsRequest.php` — config-aware `hasEffectiveSecret()` check.
+  - `app/Http/Middleware/CheckResourcePermission.php` — fail-closed in production.
+  - `app/Http/Controllers/Admin/SettingsController.php` — generic test-mail error message.
+  - `app/Domain/Auth/Actions/{Register,Login,TwoFactorChallenge}UserAction.php`, `app/Http/Controllers/Api/Auth/AuthController.php`, `app/Http/Requests/Api/Auth/TwoFactorChallengeRequest.php`, `routes/api/public-api.php` — API verification + 2FA parity.
+  - `config/settings.php` — `storage.aws_secret` added to `sensitive_keys`.
+  - Shipped Vue: `resources/js/pages/Admin/Settings/components/{MailTab,StorageTab,TurnstileTab}.vue` + `resources/js/pages/Admin/Settings/Index.vue` prop types.
 
 - If any `storage.aws_secret` rows already exist in your `settings` table (saved through the UI before this release), they are still plaintext — rotate the AWS secret through the admin panel (or re-encrypt via a one-off tinker snippet) so the at-rest value becomes encrypted.
 
@@ -527,7 +574,7 @@ New installs via `sk:install` pick up everything automatically. Existing consume
 
 ### Changed
 
-- **Helpers reorganized** — `to_api()` and `format_date()` (plus the two new helpers) now ship from the package vendor. End-user apps no longer keep a `to_api` copy under `app/`. The new `app/Helpers/custom.php` is published into the consumer app on first install and added to the app's `composer.json` `autoload.files`; it is *never* overwritten by `sk:update` so user code is preserved across upgrades.
+- **Helpers reorganized** — `to_api()` and `format_date()` (plus the two new helpers) now ship from the package vendor. End-user apps no longer keep a `to_api` copy under `app/`. The new `app/Helpers/custom.php` is published into the consumer app on first install and added to the app's `composer.json` `autoload.files`; it is _never_ overwritten by `sk:update` so user code is preserved across upgrades.
 - **`app/helpers.php` deprecated** — `sk:update` compares the existing file's md5 against a list of known stock hashes; a stock copy is removed silently. A user-modified copy is left in place with a console warning so user code is not destroyed. The `composer.json` autoload entry is rewritten only when the file is actually gone.
 - **`InstallCommand` injects helpers autoload entry** — fresh installs now have `app/Helpers/custom.php` registered in `composer.json` `autoload.files` automatically. Idempotent: re-running `sk:install` is a no-op once injected. Legacy `app/helpers.php` entries are rewritten to `app/Helpers/custom.php` in the same step.
 
@@ -543,10 +590,10 @@ New installs via `sk:install` pick up everything automatically. Existing consume
 ### Fixed
 
 - **Type-safety sweep** — source now passes `vue-tsc --noEmit` and `eslint 'resources/js/**/*.{ts,vue}'` with zero errors and zero warnings.
-    - `SkDatatable.vue` `activeFilters` widened to a single `FilterValue` union (`string | number | Date | (Date | null)[] | null`); DatePicker filters migrated from `v-model` to `:model-value` + `@update:model-value` with narrow casts.
-    - `:icon` expression coerces trailing null to `undefined`; `datatable.records_info` pagination params are passed through `String(... ?? 0)` to match i18n string arguments.
-    - `SelectOption` cast in `SkFormInput.vue` routed through `unknown`.
-    - `router.reload({ preserveScroll: true })` calls reduced to `router.reload()` (Inertia v3 preserves scroll/state on reload by default).
+  - `SkDatatable.vue` `activeFilters` widened to a single `FilterValue` union (`string | number | Date | (Date | null)[] | null`); DatePicker filters migrated from `v-model` to `:model-value` + `@update:model-value` with narrow casts.
+  - `:icon` expression coerces trailing null to `undefined`; `datatable.records_info` pagination params are passed through `String(... ?? 0)` to match i18n string arguments.
+  - `SelectOption` cast in `SkFormInput.vue` routed through `unknown`.
+  - `router.reload({ preserveScroll: true })` calls reduced to `router.reload()` (Inertia v3 preserves scroll/state on reload by default).
 - **Typed shared props aligned with runtime shape** — `SharedPageProps` gained a `[key: string]: unknown` index signature so it satisfies Inertia's `PageProps` constraint; `env.d.ts` now declares `sharedPageProps.auth` as `{ user, role, role_names, permissions }` plus `appEnv / appDebug / locale / availableLocales`.
 - **Page-level prop/type fixes** — `Dashboard/Index.vue` reads `user?.first_name` (real field) instead of a non-existent `user?.name`; `Settings/Index.vue` declares `logo_url: string | null` on the `general` shape; `RoleForm.vue` calls Wayfinder as `update.url({ id: props.role!.id! })`.
 - **ESLint warnings cleared** — `Breadcrumb.rootLabel`, `FileGrid.emptyLabel` and `SkTag.{value, icon, color, severity}` have `withDefaults` fallbacks; `SkDatatable` `v-html` usage is marked with a reasoned `eslint-disable-next-line` (render string is author-defined, `escapeHtml` helper is exposed).
