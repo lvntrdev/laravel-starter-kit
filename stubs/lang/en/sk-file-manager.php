@@ -54,6 +54,10 @@ return [
         'renaming' => 'Renaming…',
         'empty_hint_upload' => 'Drag files from your desktop, or use the Upload button above.',
         'empty_hint_new_folder' => 'Click New Folder to create a subfolder.',
+        'empty_folder_title' => 'No files here yet',
+        'empty_folder_subtitle' => 'Upload files or drag and drop them to fill this folder.',
+        'empty_upload_files' => 'Upload Files',
+        'empty_drag_label' => 'Drag & drop area',
         'stop' => 'Stop',
         'bulk_remaining' => ':count items remaining.',
 

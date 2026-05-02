@@ -1,7 +1,9 @@
 <script setup lang="ts">
     import { trans } from 'laravel-vue-i18n';
+    import Button from 'primevue/button';
     import { computed, onBeforeUnmount, ref } from 'vue';
     import type { FileItem, FolderSummary, PendingUpload, SelectionKey, ViewMode } from '../types';
+    import folderImg from '../assets/folder.svg';
 
     interface Props {
         folders: FolderSummary[];
@@ -11,12 +13,16 @@
         emptyLabel?: string;
         isSelected: (type: 'folder' | 'file', id: string | number) => boolean;
         viewMode?: ViewMode;
+        searchActive?: boolean;
+        readonly?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         pending: () => [],
         emptyLabel: '',
         viewMode: 'grid',
+        searchActive: false,
+        readonly: false,
     });
     const emit = defineEmits<{
         (e: 'open-folder', folderId: string): void;
@@ -33,6 +39,7 @@
         (e: 'drop-on-folder', targetFolderId: string, event: DragEvent): void;
         (e: 'internal-drag-start', type: 'folder' | 'file', id: string | number): void;
         (e: 'internal-drag-end'): void;
+        (e: 'upload'): void;
     }>();
 
     const isEmpty = computed(
@@ -330,36 +337,51 @@
         @mousedown="onGridMouseDown"
         @contextmenu="onGridContextMenu"
     >
-        <div v-if="isEmpty" class="fm-empty flex min-h-80 flex-col items-center justify-center gap-5 p-10">
-            <svg
-                class="text-surface-300 dark:text-surface-600"
-                width="112"
-                height="112"
-                viewBox="0 0 120 120"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-            >
-                <path d="M14 36a6 6 0 0 1 6-6h22l8 10h36a6 6 0 0 1 6 6v42a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V36Z" />
-                <path d="M14 44h92" opacity="0.6" />
-            </svg>
-
+        <!-- Empty: search found nothing -->
+        <div
+            v-if="isEmpty && searchActive"
+            class="fm-empty flex min-h-80 flex-col items-center justify-center gap-3 p-10"
+        >
+            <i class="pi pi-search text-surface-300 dark:text-surface-600" style="font-size: 3rem" />
             <h3 class="text-lg font-semibold text-surface-800 dark:text-surface-100">
-                {{ emptyLabel ?? 'This folder is empty.' }}
+                {{ emptyLabel }}
             </h3>
+        </div>
 
-            <ul
-                class="grid max-w-md grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2.5 text-left text-surface-500 dark:text-surface-400"
+        <!-- Empty: folder genuinely empty -->
+        <div
+            v-else-if="isEmpty"
+            class="fm-empty flex min-h-[500px] flex-col items-center justify-center gap-6 p-10"
+        >
+            <div
+                class="flex h-40 w-40 items-center justify-center rounded-full bg-surface-100 dark:bg-surface-800"
             >
-                <i class="pi pi-cloud-upload mt-0.5 text-surface-400" style="font-size: 1.05rem" />
-                <span>{{ trans('sk-file-manager.labels.empty_hint_upload') }}</span>
+                <img :src="folderImg" alt="" class="h-28 w-28 object-contain" aria-hidden="true" />
+            </div>
 
-                <i class="pi pi-folder-plus mt-0.5 text-surface-400" style="font-size: 1.05rem" />
-                <span>{{ trans('sk-file-manager.labels.empty_hint_new_folder') }}</span>
-            </ul>
+            <div class="flex flex-col items-center gap-2 text-center">
+                <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                    {{ trans('sk-file-manager.labels.empty_folder_title') }}
+                </h3>
+                <p class="max-w-xs text-surface-500 dark:text-surface-400">
+                    {{ trans('sk-file-manager.labels.empty_folder_subtitle') }}
+                </p>
+            </div>
+
+            <Button
+                v-if="!readonly"
+                icon="pi pi-cloud-upload"
+                :label="trans('sk-file-manager.labels.empty_upload_files')"
+                @click="emit('upload')"
+            />
+
+            <div
+                v-if="!readonly"
+                class="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl border border-dashed border-surface-300 px-4 py-3 text-surface-400 dark:border-surface-600 dark:text-surface-500"
+            >
+                <i class="pi pi-hand-pointer" style="font-size: 1.1rem" />
+                <span class="text-sm">{{ trans('sk-file-manager.labels.empty_drag_label') }}</span>
+            </div>
         </div>
 
         <template v-else-if="viewMode === 'grid'">

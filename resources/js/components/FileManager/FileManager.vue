@@ -1005,11 +1005,9 @@
                         :files="filteredFiles"
                         :pending="visiblePending"
                         :loading="fm.loading.contents"
-                        :empty-label="
-                            searchQuery.trim()
-                                ? trans('sk-file-manager.labels.no_results')
-                                : trans('sk-file-manager.labels.empty_folder')
-                        "
+                        :empty-label="trans('sk-file-manager.labels.no_results')"
+                        :search-active="searchQuery.trim().length > 0"
+                        :readonly="readonly"
                         :is-selected="fm.isSelected"
                         :view-mode="viewMode"
                         @open-folder="(id) => fm.loadContents(id)"
@@ -1025,6 +1023,7 @@
                         @drop-on-folder="(targetId) => handleDropOnFolder(targetId)"
                         @internal-drag-start="onInternalDragStart"
                         @check-toggle="(type, id) => fm.toggleSelect(type, id)"
+                        @upload="triggerUpload"
                     />
 
                     <div

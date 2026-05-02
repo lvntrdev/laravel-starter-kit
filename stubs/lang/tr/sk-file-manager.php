@@ -54,6 +54,10 @@ return [
         'renaming' => 'Yeniden adlandırılıyor…',
         'empty_hint_upload' => 'Dosyaları masaüstünden sürükle bırak ya da yukardaki Yükle butonunu kullan.',
         'empty_hint_new_folder' => 'Yeni klasör oluşturmak için Yeni Klasör butonuna tıkla.',
+        'empty_folder_title' => 'Henüz burada dosya yok',
+        'empty_folder_subtitle' => 'Bu klasörü canlandırmak için dosya yükleyebilir veya sürükleyip bırakabilirsiniz.',
+        'empty_upload_files' => 'Dosya Yükle',
+        'empty_drag_label' => 'Sürükle ve bırak alanı',
         'stop' => 'Durdur',
         'bulk_remaining' => 'İşlenecek :count öğe kaldı.',
 

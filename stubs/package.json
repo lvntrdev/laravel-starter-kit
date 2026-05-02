@@ -10,7 +10,8 @@
         "ai:diff": "~/.claude/bin/ai-kit diff",
         "ai:update": "~/.claude/bin/ai-kit update",
         "ai:install": "~/.claude/bin/ai-kit install",
-        "ai:uninstall": "~/.claude/bin/ai-kit uninstall"
+        "ai:uninstall": "~/.claude/bin/ai-kit uninstall",
+        "ai:discipline": "~/.claude/bin/ai-kit setup-discipline"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
