@@ -92,7 +92,7 @@
                 <i :class="[card.icon, card.iconClass]" style="font-size: 1.1rem" />
             </span>
             <div class="flex min-w-0 flex-col">
-                <span class="text-xs font-medium text-surface-500 dark:text-surface-400">{{ card.label }}</span>
+                <span class="text-base font-medium text-surface-500 dark:text-surface-400">{{ card.label }}</span>
                 <span class="truncate text-base font-semibold text-surface-900 dark:text-surface-100">
                     {{ card.value }}
                 </span>

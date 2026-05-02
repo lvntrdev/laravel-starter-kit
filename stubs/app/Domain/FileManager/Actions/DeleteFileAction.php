@@ -4,8 +4,8 @@ namespace App\Domain\FileManager\Actions;
 
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
+use App\Models\Media;
 use LogicException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DeleteFileAction extends BaseAction
 {

@@ -7,6 +7,7 @@ import type {
     FolderNode,
     FolderSummary,
     PendingUpload,
+    QuickView,
     SelectedItem,
     SelectionKey,
     SortDirection,
@@ -51,6 +52,7 @@ export function useFileManager(options: Options) {
 
     const tree = ref<FolderNode[]>([]);
     const currentFolderId = ref<string | null>(null);
+    const currentView = ref<QuickView>('all');
     const contents = reactive<FolderContents>({
         folder: null,
         folders: [],
@@ -66,6 +68,7 @@ export function useFileManager(options: Options) {
     const selectedKeys = ref<Set<SelectionKey>>(new Set());
 
     const pendingUploads = ref<PendingUpload[]>([]);
+    const favoritePending = ref<Set<string>>(new Set());
 
     const contextQuery = computed(() => {
         const params = new URLSearchParams({ context: options.context });
@@ -129,6 +132,7 @@ export function useFileManager(options: Options) {
             contents.files = res.files;
             contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
             currentFolderId.value = folderId;
+            currentView.value = 'all';
             breadcrumb.value = folderId ? (findFolder(tree.value, folderId) ?? []) : [];
             clearSelection();
         } finally {
@@ -198,6 +202,26 @@ export function useFileManager(options: Options) {
         return out;
     });
 
+    // ── View Refresh ─────────────────────────────────────────────
+    /**
+     * Mevcut görünümü yeniden yükler.
+     * Sanal görünümlerde (favorites, trash) mutasyon sonrası loadContents(root)
+     * çağrısı currentView'ı 'all'a düşürür — bu helper bunu önler.
+     */
+    async function refreshCurrentView(): Promise<void> {
+        switch (currentView.value) {
+            case 'favorites':
+                await loadFavorites();
+                break;
+            case 'trash':
+                await loadTrash();
+                break;
+            default:
+                await loadContents(currentFolderId.value);
+                break;
+        }
+    }
+
     // ── Mutations ────────────────────────────────────────────────
     async function createFolder(name: string, parentId: string | null = currentFolderId.value): Promise<void> {
         await api.post<FolderResponse>('/file-manager/folders', contextPayload({ name, parent_id: parentId }));
@@ -207,6 +231,139 @@ export function useFileManager(options: Options) {
     async function renameFolder(folderId: string, name: string): Promise<void> {
         await api.patch<FolderResponse>(`/file-manager/folders/${folderId}`, contextPayload({ name }));
         await refresh();
+    }
+
+    async function renameFile(fileId: string | number, name: string): Promise<void> {
+        await api.patch(`/file-manager/files/${fileId}`, contextPayload({ name }));
+        await refreshCurrentView();
+    }
+
+    async function copyFile(fileId: string | number, targetFolderId: string | null = null): Promise<void> {
+        await api.post(`/file-manager/files/${fileId}/copy`, contextPayload({ target_folder_id: targetFolderId }));
+        await refreshCurrentView();
+    }
+
+    async function loadFavorites(): Promise<void> {
+        loading.contents = true;
+        try {
+            const res = await api.get<FolderContents>(`/file-manager/favorites/contents?${contextQuery.value}`);
+            contents.folder = res.folder;
+            contents.folders = res.folders;
+            contents.files = res.files;
+            contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
+            currentFolderId.value = null;
+            currentView.value = 'favorites';
+            breadcrumb.value = [];
+            clearSelection();
+        } finally {
+            loading.contents = false;
+        }
+    }
+
+    async function addFavorite(favoritableType: 'folder' | 'file', favoritableId: string): Promise<void> {
+        await api.post(
+            '/file-manager/favorites',
+            contextPayload({
+                favoritable_type: favoritableType,
+                favoritable_id: favoritableId,
+            }),
+        );
+    }
+
+    async function removeFavorite(favoritableType: 'folder' | 'file', favoritableId: string): Promise<void> {
+        await api.delete(
+            `/file-manager/favorites?${qs({
+                favoritable_type: favoritableType,
+                favoritable_id: favoritableId,
+            })}`,
+        );
+    }
+
+    async function toggleFavorite(
+        favoritableType: 'folder' | 'file',
+        favoritableId: string,
+        currentlyFavorited: boolean,
+    ): Promise<void> {
+        // Çift tıklama koruması: aynı item için in-flight istek varsa no-op
+        const pendingKey = `${favoritableType}:${favoritableId}`;
+        if (favoritePending.value.has(pendingKey)) {
+            return;
+        }
+
+        favoritePending.value.add(pendingKey);
+
+        // Optimistic update: flip flag in current contents, revert on failure
+        const list = favoritableType === 'folder' ? contents.folders : contents.files;
+        const target = (list as Array<FolderSummary | FileItem>).find((item) =>
+            favoritableType === 'folder'
+                ? (item as FolderSummary).id === favoritableId
+                : String((item as FileItem).id) === favoritableId,
+        );
+        if (target) target.is_favorited = !currentlyFavorited;
+
+        try {
+            if (currentlyFavorited) {
+                await removeFavorite(favoritableType, favoritableId);
+            } else {
+                await addFavorite(favoritableType, favoritableId);
+            }
+            // Favoriler view'ındayken unfavorite edildiyse listeyi yenile
+            if (currentView.value === 'favorites' && currentlyFavorited) {
+                await loadFavorites();
+            }
+        } catch (err) {
+            // Hata durumunda optimistic update'i geri al
+            if (target) target.is_favorited = currentlyFavorited;
+            throw err;
+        } finally {
+            favoritePending.value.delete(pendingKey);
+        }
+    }
+
+    async function loadTrash(): Promise<void> {
+        loading.contents = true;
+        try {
+            const res = await api.get<FolderContents>(`/file-manager/trash/contents?${contextQuery.value}`);
+            contents.folder = res.folder;
+            contents.folders = res.folders;
+            contents.files = res.files;
+            contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
+            currentFolderId.value = null;
+            currentView.value = 'trash';
+            breadcrumb.value = [];
+            clearSelection();
+        } finally {
+            loading.contents = false;
+        }
+    }
+
+    async function restoreItem(itemType: 'folder' | 'file', itemId: string): Promise<void> {
+        await api.post(
+            '/file-manager/items/restore',
+            contextPayload({
+                item_type: itemType,
+                item_id: itemId,
+            }),
+        );
+        if (currentView.value === 'trash') {
+            await loadTrash();
+        } else {
+            await refresh();
+        }
+    }
+
+    async function permanentlyDeleteItem(itemType: 'folder' | 'file', itemId: string): Promise<void> {
+        await api.delete(
+            `/file-manager/items/permanent?${qs({
+                item_type: itemType,
+                item_id: itemId,
+            })}`,
+        );
+        if (currentView.value === 'trash') {
+            await loadTrash();
+        } else {
+            await refresh();
+        }
     }
 
     async function deleteFolder(folderId: string): Promise<void> {
@@ -219,7 +376,7 @@ export function useFileManager(options: Options) {
 
     async function deleteFile(mediaId: number | string): Promise<void> {
         await api.delete(`/file-manager/files/${mediaId}?${contextQuery.value}`);
-        await loadContents(currentFolderId.value);
+        await refreshCurrentView();
     }
 
     async function bulkDelete(): Promise<void> {
@@ -227,6 +384,21 @@ export function useFileManager(options: Options) {
         await api.post('/file-manager/items/bulk-delete', contextPayload({ items: selectedItems.value }));
         clearSelection();
         await refresh();
+    }
+
+    async function bulkForceDelete(): Promise<void> {
+        if (selectionCount.value === 0) return;
+        await api.post(
+            '/file-manager/items/bulk-delete',
+            contextPayload({ items: selectedItems.value, force_delete: true }),
+        );
+        clearSelection();
+        await refresh();
+    }
+
+    async function emptyTrash(): Promise<void> {
+        await api.delete(`/file-manager/trash/empty?${contextQuery.value}`);
+        await loadTrash();
     }
 
     async function moveItem(
@@ -361,7 +533,7 @@ export function useFileManager(options: Options) {
         for (const p of queued) {
             if (!p.error) removePending(p.tempId);
         }
-        await loadContents(currentFolderId.value);
+        await refreshCurrentView();
         return { uploaded, errors };
     }
 
@@ -373,6 +545,7 @@ export function useFileManager(options: Options) {
         tree,
         contents,
         currentFolderId,
+        currentView,
         breadcrumb,
         loading,
         sort,
@@ -381,8 +554,16 @@ export function useFileManager(options: Options) {
         selectionCount,
         selectedItems,
         pendingUploads,
+        favoritePending,
         loadTree,
         loadContents,
+        loadFavorites,
+        loadTrash,
+        restoreItem,
+        permanentlyDeleteItem,
+        addFavorite,
+        removeFavorite,
+        toggleFavorite,
         refresh,
         setSort,
         toggleSortDirection,
@@ -393,9 +574,13 @@ export function useFileManager(options: Options) {
         selectAll,
         createFolder,
         renameFolder,
+        renameFile,
+        copyFile,
         deleteFolder,
         deleteFile,
         bulkDelete,
+        bulkForceDelete,
+        emptyTrash,
         moveItem,
         uploadFiles,
         dismissPending,

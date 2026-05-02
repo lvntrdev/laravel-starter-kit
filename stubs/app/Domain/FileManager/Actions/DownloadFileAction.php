@@ -4,9 +4,9 @@ namespace App\Domain\FileManager\Actions;
 
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
+use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use LogicException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

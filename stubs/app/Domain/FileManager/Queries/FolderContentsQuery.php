@@ -4,9 +4,10 @@ namespace App\Domain\FileManager\Queries;
 
 use App\Domain\FileManager\DTOs\FileItemDTO;
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
+use App\Models\FileFavorite;
 use App\Models\FileFolder;
+use App\Models\Media;
 use Illuminate\Support\Collection;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Returns the immediate contents (sub-folders + files) for the given folder
@@ -38,6 +39,25 @@ class FolderContentsQuery
                 ->firstOrFail();
         }
 
+        // Eager-load all favorite ids for this context to avoid N+1.
+        $favoritesCollection = FileFavorite::query()
+            ->where('owner_type', $context->ownerType)
+            ->where('owner_id', $context->ownerId)
+            ->get(['favoritable_type', 'favoritable_id']);
+
+        // Use isset() for O(1) lookup instead of in_array() on every iteration.
+        $favoritedFolderIds = $favoritesCollection
+            ->where('favoritable_type', 'folder')
+            ->pluck('favoritable_id')
+            ->flip()
+            ->all(); // [id => index]; presence checked with isset()
+
+        $favoritedFileIds = $favoritesCollection
+            ->where('favoritable_type', 'file')
+            ->pluck('favoritable_id')
+            ->flip()
+            ->all();
+
         $allFolders = FileFolder::query()
             ->where('owner_type', $context->ownerType)
             ->where('owner_id', $context->ownerId)
@@ -64,6 +84,7 @@ class FolderContentsQuery
                 'name' => $child->name,
                 'file_count' => $folderStats[(string) $child->id]['count'] ?? 0,
                 'total_size' => $folderStats[(string) $child->id]['size'] ?? 0,
+                'is_favorited' => isset($favoritedFolderIds[(string) $child->id]),
             ])
             ->values()
             ->all();
@@ -83,7 +104,12 @@ class FolderContentsQuery
         $mediaList = $mediaQuery->get();
 
         $files = $mediaList
-            ->map(fn (Media $media) => FileItemDTO::fromModel($media)->toArray())
+            ->map(function (Media $media) use ($favoritedFileIds) {
+                $payload = FileItemDTO::fromModel($media)->toArray();
+                $payload['is_favorited'] = isset($favoritedFileIds[(string) $media->id]);
+
+                return $payload;
+            })
             ->values()
             ->all();
 
@@ -124,6 +150,7 @@ class FolderContentsQuery
 
         $allIds = array_unique(array_merge(...array_values($subtreeMap)));
 
+        /** @var Collection<string, object{c: int|string, s: int|string, folder_id: string}> $stats */
         $stats = Media::query()
             ->where('model_type', $context->ownerType)
             ->where('model_id', $context->ownerId)
@@ -164,6 +191,9 @@ class FolderContentsQuery
         ?string $folderId,
         array $childrenMap,
     ): array {
+        // Default scope intentionally excludes soft-deleted records.
+        // Trash view is handled by TrashContentsQuery (onlyTrashed); this
+        // method is only called for the "all" / folder views.
         $query = Media::query()
             ->where('model_type', $context->ownerType)
             ->where('model_id', $context->ownerId)

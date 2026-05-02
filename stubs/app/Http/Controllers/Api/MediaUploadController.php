@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\Media;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaUploadController extends Controller
 {

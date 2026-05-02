@@ -5,10 +5,10 @@ namespace App\Domain\FileManager\Actions;
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\FileFolder;
+use App\Models\Media;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use LogicException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Move a folder or a file to another (or root) folder within the same context.

@@ -14,6 +14,7 @@ class BulkDeleteRequest extends FileManagerRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.type' => ['required', 'string', 'in:folder,file'],
             'items.*.id' => ['required'],
+            'force_delete' => ['sometimes', 'boolean'],
         ];
     }
 }

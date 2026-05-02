@@ -5,8 +5,8 @@ namespace App\Domain\FileManager\Actions;
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\FileFolder;
+use App\Models\Media;
 use Illuminate\Support\Facades\DB;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Delete multiple folders and/or files in one transaction.
@@ -19,7 +19,7 @@ class BulkDeleteAction extends BaseAction
      * @param  array<int, array{type: string, id: string}>  $items
      * @return array{folders: int, files: int}
      */
-    public function execute(FileManagerContextDTO $context, array $items): array
+    public function execute(FileManagerContextDTO $context, array $items, bool $force = false): array
     {
         $folderIds = [];
         $fileIds = [];
@@ -32,12 +32,12 @@ class BulkDeleteAction extends BaseAction
             }
         }
 
-        return DB::transaction(function () use ($context, $folderIds, $fileIds) {
+        return DB::transaction(function () use ($context, $folderIds, $fileIds, $force) {
             $deletedFiles = 0;
             $deletedFolders = 0;
 
             if ($fileIds !== []) {
-                $files = Media::query()
+                $files = ($force ? Media::withTrashed() : Media::query())
                     ->where('model_type', $context->ownerType)
                     ->where('model_id', $context->ownerId)
                     ->where('collection_name', 'files')
@@ -45,25 +45,25 @@ class BulkDeleteAction extends BaseAction
                     ->get();
 
                 foreach ($files as $media) {
-                    $media->delete();
+                    $force ? $media->forceDelete() : $media->delete();
                     $deletedFiles++;
                 }
             }
 
             if ($folderIds !== []) {
-                $rootFolders = FileFolder::query()
+                $rootFolders = ($force ? FileFolder::withTrashed() : FileFolder::query())
                     ->where('owner_type', $context->ownerType)
                     ->where('owner_id', $context->ownerId)
                     ->whereIn('id', $folderIds)
                     ->get();
 
-                $childrenByParent = $this->buildChildrenMap($context);
+                $childrenByParent = $this->buildChildrenMap($context, $force);
 
                 foreach ($rootFolders as $folder) {
                     $descendants = $this->collectDescendantIds($folder, $childrenByParent);
                     $allIds = [...$descendants, (string) $folder->id];
 
-                    $media = Media::query()
+                    $media = ($force ? Media::withTrashed() : Media::query())
                         ->where('model_type', $context->ownerType)
                         ->where('model_id', $context->ownerId)
                         ->where('collection_name', 'files')
@@ -71,15 +71,23 @@ class BulkDeleteAction extends BaseAction
                         ->get();
 
                     foreach ($media as $m) {
-                        $m->delete();
+                        $force ? $m->forceDelete() : $m->delete();
                         $deletedFiles++;
                     }
 
                     if ($descendants !== []) {
-                        FileFolder::query()->whereIn('id', $descendants)->delete();
+                        // Iterate per-model so the forceDeleted observer fires for
+                        // favorites cleanup when force-deleting.
+                        ($force ? FileFolder::withTrashed() : FileFolder::query())
+                            ->whereIn('id', $descendants)
+                            ->get()
+                            ->each($force
+                                ? fn (FileFolder $f) => $f->forceDelete()
+                                : fn (FileFolder $f) => $f->delete()
+                            );
                     }
 
-                    $folder->delete();
+                    $force ? $folder->forceDelete() : $folder->delete();
                     $deletedFolders++;
                 }
             }
@@ -94,9 +102,9 @@ class BulkDeleteAction extends BaseAction
      *
      * @return array<string, array<int, string>>
      */
-    private function buildChildrenMap(FileManagerContextDTO $context): array
+    private function buildChildrenMap(FileManagerContextDTO $context, bool $withTrashed = false): array
     {
-        $rows = FileFolder::query()
+        $rows = ($withTrashed ? FileFolder::withTrashed() : FileFolder::query())
             ->where('owner_type', $context->ownerType)
             ->where('owner_id', $context->ownerId)
             ->get(['id', 'parent_id']);

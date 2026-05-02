@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class FileFolder extends Model
 {
@@ -22,6 +21,19 @@ class FileFolder extends Model
         'owner_id',
         'created_by',
     ];
+
+    protected static function booted(): void
+    {
+        // Cascade-clean favorites when a folder is permanently removed.
+        // Soft deletes intentionally leave favorites in place so a restore
+        // brings the favorited state back with the folder.
+        static::forceDeleted(function (FileFolder $folder): void {
+            FileFavorite::query()
+                ->where('favoritable_type', 'folder')
+                ->where('favoritable_id', (string) $folder->id)
+                ->delete();
+        });
+    }
 
     public function parent(): BelongsTo
     {

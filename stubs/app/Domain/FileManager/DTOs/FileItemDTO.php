@@ -3,8 +3,8 @@
 namespace App\Domain\FileManager\DTOs;
 
 use App\Domain\Shared\DTOs\BaseDTO;
+use App\Models\Media;
 use RuntimeException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Shape used by the FileManager frontend for a single file entry.

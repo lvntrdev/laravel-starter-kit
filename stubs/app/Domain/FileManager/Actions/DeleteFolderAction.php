@@ -5,9 +5,9 @@ namespace App\Domain\FileManager\Actions;
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\FileFolder;
+use App\Models\Media;
 use Illuminate\Support\Facades\DB;
 use LogicException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Cascade-delete a folder: its subfolders (DB cascade) AND every Media record

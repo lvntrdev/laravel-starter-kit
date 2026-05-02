@@ -70,7 +70,7 @@
             <i v-else class="pi pi-file text-surface-400" style="font-size: 4rem" />
         </div>
 
-        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-base">
             <template v-for="row in rows" :key="row.label">
                 <dt class="font-medium text-surface-500 dark:text-surface-400">
                     {{ row.label }}

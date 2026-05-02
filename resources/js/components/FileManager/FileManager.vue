@@ -39,11 +39,12 @@
     const props = withDefaults(defineProps<FileManagerProps>(), {
         contextId: null,
         readonly: false,
+        enableTrash: true,
         height: '600px',
     });
 
     const toast = useToast();
-    const { confirmDelete } = useConfirm();
+    const { confirmDelete, confirmAction } = useConfirm();
 
     const fm = useFileManager({ context: props.context, contextId: props.contextId });
 
@@ -65,7 +66,7 @@
     }
 
     function isAnyDialogOpen(): boolean {
-        return showNewFolder.value || showRename.value || showMove.value;
+        return showNewFolder.value || showRename.value || showRenameFile.value || showMove.value;
     }
 
     function onKeyDown(event: KeyboardEvent): void {
@@ -128,25 +129,26 @@
         return fm.contents.files.filter((f) => f.file_name.toLowerCase().includes(q));
     });
 
-    function onSelectQuick(view: QuickView): void {
+    async function onSelectQuick(view: QuickView): Promise<void> {
         quickView.value = view;
         if (view === 'all') {
             fm.setSort('name', 'asc');
-            fm.loadContents(null);
+            await fm.loadContents(null);
             return;
         }
         if (view === 'recent') {
             fm.setSort('date', 'desc');
-            fm.loadContents(null);
+            await fm.loadContents(null);
             return;
         }
-        toast.add({
-            severity: 'info',
-            summary: '',
-            group: 'bc',
-            detail: trans('sk-file-manager.coming_soon'),
-            life: 2500,
-        });
+        if (view === 'favorites') {
+            await fm.loadFavorites();
+            return;
+        }
+        if (view === 'trash') {
+            await fm.loadTrash();
+            return;
+        }
     }
 
     function onSelectSidebarFolder(folderId: string): void {
@@ -213,6 +215,10 @@
     const showRename = ref(false);
     const renameTarget = ref<FolderSummary | null>(null);
     const renameValue = ref('');
+
+    const showRenameFile = ref(false);
+    const renameFileTarget = ref<FileItem | null>(null);
+    const renameFileValue = ref('');
 
     // ── Move modal ───────────────────────────────────────────────
     interface MoveSource {
@@ -325,6 +331,7 @@
     }
 
     async function handleDropOnFolder(targetFolderId: string): Promise<void> {
+        if (props.readonly) return;
         const items = fm.selectedItems.value.length > 0 ? [...fm.selectedItems.value] : [];
         if (items.length === 0) return;
         try {
@@ -458,6 +465,164 @@
         }
     }
 
+    async function copyFile(file: FileItem): Promise<void> {
+        try {
+            await runBusy(trans('sk-file-manager.labels.copying'), () => fm.copyFile(file.id));
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.file_copied'),
+                life: 2500,
+            });
+        } catch {
+            /* handled by interceptor */
+        }
+    }
+
+    function openRenameFile(file: FileItem): void {
+        renameFileTarget.value = file;
+        renameFileValue.value = file.file_name;
+        showRenameFile.value = true;
+    }
+
+    async function submitRenameFile(): Promise<void> {
+        if (!renameFileTarget.value) return;
+        const name = renameFileValue.value.trim();
+        if (!name || name === renameFileTarget.value.file_name) {
+            showRenameFile.value = false;
+            return;
+        }
+        showRenameFile.value = false;
+        try {
+            await runBusy(trans('sk-file-manager.labels.renaming'), () =>
+                fm.renameFile(renameFileTarget.value!.id, name),
+            );
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.file_renamed'),
+                life: 2500,
+            });
+        } catch {
+            /* handled by interceptor */
+        }
+    }
+
+    async function toggleFolderFavorite(folder: FolderSummary): Promise<void> {
+        const currentlyFavorited = folder.is_favorited === true;
+        try {
+            await fm.toggleFavorite('folder', folder.id, currentlyFavorited);
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans(
+                    currentlyFavorited ? 'sk-file-manager.favorite_removed' : 'sk-file-manager.favorite_added',
+                ),
+                life: 2000,
+            });
+        } catch {
+            /* useApi interceptor tarafından yönetilir */
+        }
+    }
+
+    async function toggleFileFavorite(file: FileItem): Promise<void> {
+        const currentlyFavorited = file.is_favorited === true;
+        try {
+            await fm.toggleFavorite('file', String(file.id), currentlyFavorited);
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans(
+                    currentlyFavorited ? 'sk-file-manager.favorite_removed' : 'sk-file-manager.favorite_added',
+                ),
+                life: 2000,
+            });
+        } catch {
+            /* useApi interceptor tarafından yönetilir */
+        }
+    }
+
+    // ── Trash actions ────────────────────────────────────────────
+    async function restoreFolder(folder: FolderSummary): Promise<void> {
+        try {
+            await runBusy(trans('sk-file-manager.labels.restoring'), () => fm.restoreItem('folder', folder.id));
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.item_restored'),
+                life: 2500,
+            });
+        } catch {
+            /* useApi interceptor tarafından yönetilir */
+        }
+    }
+
+    async function restoreFile(file: FileItem): Promise<void> {
+        try {
+            await runBusy(trans('sk-file-manager.labels.restoring'), () => fm.restoreItem('file', String(file.id)));
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.item_restored'),
+                life: 2500,
+            });
+        } catch {
+            /* useApi interceptor tarafından yönetilir */
+        }
+    }
+
+    function confirmPermanentDeleteFolder(folder: FolderSummary): void {
+        confirmAction({
+            header: trans('sk-file-manager.confirm.permanent_delete_title'),
+            message: trans('sk-file-manager.confirm.permanent_delete_message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: trans('sk-file-manager.labels.permanently_delete'),
+            rejectLabel: trans('sk-file-manager.labels.close'),
+            acceptClass: 'p-button-danger',
+            onAccept: async () => {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () =>
+                    fm.permanentlyDeleteItem('folder', folder.id),
+                );
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.item_permanently_deleted'),
+                    life: 2500,
+                });
+            },
+        });
+    }
+
+    function confirmPermanentDeleteFile(file: FileItem): void {
+        confirmAction({
+            header: trans('sk-file-manager.confirm.permanent_delete_title'),
+            message: trans('sk-file-manager.confirm.permanent_delete_message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: trans('sk-file-manager.labels.permanently_delete'),
+            rejectLabel: trans('sk-file-manager.labels.close'),
+            acceptClass: 'p-button-danger',
+            onAccept: async () => {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () =>
+                    fm.permanentlyDeleteItem('file', String(file.id)),
+                );
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.item_permanently_deleted'),
+                    life: 2500,
+                });
+            },
+        });
+    }
+
     // ── Context menus ────────────────────────────────────────────
     const folderMenu = ref<InstanceType<typeof ContextMenu> | null>(null);
     const fileMenu = ref<InstanceType<typeof ContextMenu> | null>(null);
@@ -471,6 +636,26 @@
         const multi = Boolean(
             bulkActive.value && contextFolder.value && fm.isSelected('folder', contextFolder.value.id),
         );
+
+        if (fm.currentView.value === 'trash') {
+            return [
+                {
+                    label: trans('sk-file-manager.labels.restore'),
+                    icon: 'pi pi-undo',
+                    disabled: multi,
+                    command: () => contextFolder.value && restoreFolder(contextFolder.value),
+                },
+                { separator: true },
+                {
+                    label: trans('sk-file-manager.labels.permanently_delete'),
+                    icon: 'pi pi-times',
+                    class: 'fm-menu-danger',
+                    disabled: multi,
+                    command: () => contextFolder.value && confirmPermanentDeleteFolder(contextFolder.value),
+                },
+            ];
+        }
+
         return [
             {
                 label: trans('sk-file-manager.labels.open'),
@@ -495,10 +680,14 @@
             },
             { separator: true },
             {
-                label: trans('sk-file-manager.labels.add_to_favorites'),
-                icon: 'pi pi-star',
-                disabled: multi,
-                command: () => comingSoon(),
+                label: trans(
+                    contextFolder.value?.is_favorited
+                        ? 'sk-file-manager.labels.remove_from_favorites'
+                        : 'sk-file-manager.labels.add_to_favorites',
+                ),
+                icon: contextFolder.value?.is_favorited ? 'pi pi-star-fill' : 'pi pi-star',
+                disabled: multi || props.readonly,
+                command: () => contextFolder.value && toggleFolderFavorite(contextFolder.value),
             },
             { separator: true },
             {
@@ -521,6 +710,26 @@
 
     const fileMenuItems = computed(() => {
         const multi = Boolean(bulkActive.value && contextFile.value && fm.isSelected('file', contextFile.value.id));
+
+        if (fm.currentView.value === 'trash') {
+            return [
+                {
+                    label: trans('sk-file-manager.labels.restore'),
+                    icon: 'pi pi-undo',
+                    disabled: multi,
+                    command: () => contextFile.value && restoreFile(contextFile.value),
+                },
+                { separator: true },
+                {
+                    label: trans('sk-file-manager.labels.permanently_delete'),
+                    icon: 'pi pi-times',
+                    class: 'fm-menu-danger',
+                    disabled: multi,
+                    command: () => contextFile.value && confirmPermanentDeleteFile(contextFile.value),
+                },
+            ];
+        }
+
         return [
             {
                 label: trans('sk-file-manager.labels.open'),
@@ -559,24 +768,28 @@
             {
                 label: trans('sk-file-manager.labels.copy'),
                 icon: 'pi pi-copy',
-                disabled: multi,
-                command: () => comingSoon(),
+                disabled: props.readonly || multi,
+                command: () => contextFile.value && copyFile(contextFile.value),
             },
             {
                 label: trans('sk-file-manager.labels.rename'),
                 icon: 'pi pi-pencil',
                 disabled: props.readonly || multi,
-                command: () => comingSoon(),
+                command: () => contextFile.value && openRenameFile(contextFile.value),
             },
             { separator: true },
             {
-                label: trans('sk-file-manager.labels.add_to_favorites'),
-                icon: 'pi pi-star',
-                disabled: multi,
-                command: () => comingSoon(),
+                label: trans(
+                    contextFile.value?.is_favorited
+                        ? 'sk-file-manager.labels.remove_from_favorites'
+                        : 'sk-file-manager.labels.add_to_favorites',
+                ),
+                icon: contextFile.value?.is_favorited ? 'pi pi-star-fill' : 'pi pi-star',
+                disabled: multi || props.readonly,
+                command: () => contextFile.value && toggleFileFavorite(contextFile.value),
             },
             {
-                label: trans('sk-file-manager.labels.details'),
+                label: trans('sk-file-manager.labels.details_action'),
                 icon: 'pi pi-info-circle',
                 disabled: multi,
                 command: () => contextFile.value && openFileDetails(contextFile.value),
@@ -643,41 +856,100 @@
 
     function confirmDeleteFolder(folder: FolderSummary): void {
         confirmDelete(async () => {
-            await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFolder(folder.id));
-            toast.add({
-                severity: 'success',
-                summary: '',
-                group: 'bc',
-                detail: trans('sk-file-manager.folder_deleted'),
-                life: 2500,
-            });
+            if (props.enableTrash) {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFolder(folder.id));
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.folder_deleted'),
+                    life: 2500,
+                });
+            } else {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () =>
+                    fm.permanentlyDeleteItem('folder', folder.id),
+                );
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.folder_force_deleted'),
+                    life: 2500,
+                });
+            }
         });
     }
 
     function confirmDeleteFile(file: FileItem): void {
         confirmDelete(async () => {
-            await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFile(file.id));
-            toast.add({
-                severity: 'success',
-                summary: '',
-                group: 'bc',
-                detail: trans('sk-file-manager.file_deleted'),
-                life: 2500,
-            });
+            if (props.enableTrash) {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFile(file.id));
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.file_deleted'),
+                    life: 2500,
+                });
+            } else {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () =>
+                    fm.permanentlyDeleteItem('file', String(file.id)),
+                );
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.file_force_deleted'),
+                    life: 2500,
+                });
+            }
         });
     }
 
     function confirmBulkDelete(): void {
         if (fm.selectionCount.value === 0) return;
+        const inTrash = fm.currentView.value === 'trash';
         confirmDelete(async () => {
-            await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.bulkDelete());
-            toast.add({
-                severity: 'success',
-                summary: '',
-                group: 'bc',
-                detail: trans('sk-file-manager.bulk_deleted'),
-                life: 2500,
-            });
+            if (inTrash || !props.enableTrash) {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.bulkForceDelete());
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.bulk_force_deleted'),
+                    life: 2500,
+                });
+            } else {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.bulkDelete());
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.bulk_deleted'),
+                    life: 2500,
+                });
+            }
+        });
+    }
+
+    function confirmEmptyTrash(): void {
+        confirmAction({
+            header: trans('sk-file-manager.confirm.empty_trash_title'),
+            message: trans('sk-file-manager.confirm.empty_trash_message'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: trans('sk-file-manager.labels.empty_trash'),
+            rejectLabel: trans('sk-file-manager.labels.close'),
+            acceptClass: 'p-button-danger',
+            onAccept: async () => {
+                await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.emptyTrash());
+                toast.add({
+                    severity: 'success',
+                    summary: '',
+                    group: 'bc',
+                    detail: trans('sk-file-manager.trash_emptied'),
+                    life: 2500,
+                });
+            },
         });
     }
 
@@ -800,12 +1072,14 @@
     }
 
     function onDrop(event: DragEvent): void {
+        if (props.readonly) return;
         event.preventDefault();
         isDropping.value = false;
         handleFiles(event.dataTransfer?.files ?? null);
     }
 
     function onDragOver(event: DragEvent): void {
+        if (props.readonly) return;
         event.preventDefault();
         if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files')) {
             isDropping.value = true;
@@ -874,6 +1148,7 @@
                 :used-bytes="usedBytes"
                 :quota-bytes="STORAGE_QUOTA_BYTES"
                 :readonly="readonly"
+                :enable-trash="enableTrash"
                 @select-quick="onSelectQuick"
                 @select-folder="onSelectSidebarFolder"
                 @new-folder="openNewFolder"
@@ -907,7 +1182,7 @@
                         </h2>
                         <span
                             v-if="searchQuery.trim()"
-                            class="ml-2 rounded-full bg-surface-100 px-2 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300"
+                            class="ml-2 rounded-full bg-surface-100 px-2 py-0.5 text-base font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300"
                         >
                             {{ filteredFolders.length + filteredFiles.length }}
                         </span>
@@ -947,9 +1222,19 @@
                     </div>
 
                     <Button
+                        v-if="quickView === 'trash'"
+                        severity="danger"
+                        icon="pi pi-trash"
+                        :label="trans('sk-file-manager.labels.empty_trash')"
+                        :disabled="readonly || (fm.contents.folders.length === 0 && fm.contents.files.length === 0)"
+                        @click="confirmEmptyTrash"
+                    />
+
+                    <Button
+                        v-else
                         :icon="uploading ? 'pi pi-spin pi-spinner' : 'pi pi-cloud-upload'"
                         :label="trans('sk-file-manager.labels.upload_new')"
-                        :disabled="readonly || uploading"
+                        :disabled="readonly || uploading || quickView === 'favorites'"
                         @click="triggerUpload"
                     />
 
@@ -1000,7 +1285,46 @@
                 </div>
 
                 <div class="relative flex-1 overflow-hidden">
+                    <!-- Favoriler empty state -->
+                    <div
+                        v-if="
+                            quickView === 'favorites' &&
+                                fm.contents.folders.length === 0 &&
+                                fm.contents.files.length === 0 &&
+                                !fm.loading.contents
+                        "
+                        class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+                    >
+                        <i class="pi pi-star text-5xl text-amber-400" />
+                        <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                            {{ trans('sk-file-manager.favorites_empty_title') }}
+                        </h3>
+                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
+                            {{ trans('sk-file-manager.favorites_empty_subtitle') }}
+                        </p>
+                    </div>
+
+                    <!-- Çöp kutusu empty state -->
+                    <div
+                        v-else-if="
+                            quickView === 'trash' &&
+                                fm.contents.folders.length === 0 &&
+                                fm.contents.files.length === 0 &&
+                                !fm.loading.contents
+                        "
+                        class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+                    >
+                        <i class="pi pi-trash text-5xl text-amber-400" />
+                        <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                            {{ trans('sk-file-manager.trash_empty_title') }}
+                        </h3>
+                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
+                            {{ trans('sk-file-manager.trash_empty_subtitle') }}
+                        </p>
+                    </div>
+
                     <FileGrid
+                        v-else
                         :folders="filteredFolders"
                         :files="filteredFiles"
                         :pending="visiblePending"
@@ -1010,6 +1334,7 @@
                         :readonly="readonly"
                         :is-selected="fm.isSelected"
                         :view-mode="viewMode"
+                        :current-view="quickView"
                         @open-folder="(id) => fm.loadContents(id)"
                         @open-file="openFileFromGrid"
                         @context-folder="showFolderMenu"
@@ -1024,6 +1349,8 @@
                         @internal-drag-start="onInternalDragStart"
                         @check-toggle="(type, id) => fm.toggleSelect(type, id)"
                         @upload="triggerUpload"
+                        @toggle-folder-favorite="toggleFolderFavorite"
+                        @toggle-file-favorite="toggleFileFavorite"
                     />
 
                     <div
@@ -1099,6 +1426,19 @@
             <template #footer>
                 <Button severity="secondary" text label="Cancel" @click="showRename = false" />
                 <Button label="OK" @click="submitRename" />
+            </template>
+        </Dialog>
+
+        <Dialog
+            v-model:visible="showRenameFile"
+            :header="trans('sk-file-manager.labels.rename_file_title')"
+            modal
+            :style="{ width: '24rem' }"
+        >
+            <InputText v-model="renameFileValue" class="w-full" autofocus @keyup.enter="submitRenameFile" />
+            <template #footer>
+                <Button severity="secondary" text label="Cancel" @click="showRenameFile = false" />
+                <Button label="OK" @click="submitRenameFile" />
             </template>
         </Dialog>
 

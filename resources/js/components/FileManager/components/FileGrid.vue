@@ -2,7 +2,7 @@
     import { trans } from 'laravel-vue-i18n';
     import Button from 'primevue/button';
     import { computed, onBeforeUnmount, ref } from 'vue';
-    import type { FileItem, FolderSummary, PendingUpload, SelectionKey, ViewMode } from '../types';
+    import type { FileItem, FolderSummary, PendingUpload, QuickView, SelectionKey, ViewMode } from '../types';
     import folderImg from '../assets/folder.svg';
 
     interface Props {
@@ -15,6 +15,7 @@
         viewMode?: ViewMode;
         searchActive?: boolean;
         readonly?: boolean;
+        currentView?: QuickView;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -23,6 +24,7 @@
         viewMode: 'grid',
         searchActive: false,
         readonly: false,
+        currentView: 'all',
     });
     const emit = defineEmits<{
         (e: 'open-folder', folderId: string): void;
@@ -40,6 +42,8 @@
         (e: 'internal-drag-start', type: 'folder' | 'file', id: string | number): void;
         (e: 'internal-drag-end'): void;
         (e: 'upload'): void;
+        (e: 'toggle-folder-favorite', folder: FolderSummary): void;
+        (e: 'toggle-file-favorite', file: FileItem): void;
     }>();
 
     const isEmpty = computed(
@@ -67,6 +71,11 @@
         if (days === 1) return 'yesterday';
         if (days < 7) return `${days}d`;
         return date.toLocaleDateString();
+    }
+
+    function formatDeletedAt(deletedAt: string | null | undefined): string {
+        if (!deletedAt) return '';
+        return new Date(deletedAt).toLocaleString();
     }
 
     // ── Mime → color palette & icon ──────────────────────────────
@@ -274,6 +283,12 @@
         }
     }
 
+    function onFolderDblClick(folder: FolderSummary): void {
+        // Çöp kutusunda klasöre tıklayınca içine girilmez
+        if (props.currentView === 'trash') return;
+        emit('open-folder', folder.id);
+    }
+
     function onFileTileClick(file: FileItem, event: MouseEvent): void {
         if (event.ctrlKey || event.metaKey || event.shiftKey) {
             emit('toggle-select', 'file', file.id, event);
@@ -286,6 +301,10 @@
     const dropTargetId = ref<string | null>(null);
 
     function onTileDragStart(type: 'folder' | 'file', id: string | number, event: DragEvent): void {
+        if (props.readonly) {
+            event.preventDefault();
+            return;
+        }
         if (!event.dataTransfer) return;
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('application/x-fm-item', JSON.stringify({ type, id: String(id) }));
@@ -314,6 +333,7 @@
     }
 
     function onFolderDrop(folder: FolderSummary, event: DragEvent): void {
+        if (props.readonly) return;
         if (!isInternalDrag(event)) return;
         event.preventDefault();
         event.stopPropagation();
@@ -349,14 +369,9 @@
         </div>
 
         <!-- Empty: folder genuinely empty -->
-        <div
-            v-else-if="isEmpty"
-            class="fm-empty flex min-h-[500px] flex-col items-center justify-center gap-6 p-10"
-        >
-            <div
-                class="flex h-40 w-40 items-center justify-center rounded-full bg-surface-100 dark:bg-surface-800"
-            >
-                <img :src="folderImg" alt="" class="h-28 w-28 object-contain" aria-hidden="true" />
+        <div v-else-if="isEmpty" class="fm-empty flex min-h-[500px] flex-col items-center justify-center gap-6 p-10">
+            <div class="flex h-40 w-40 items-center justify-center rounded-full bg-surface-100 dark:bg-surface-800">
+                <img :src="folderImg" alt="" class="h-28 w-28 object-contain" aria-hidden="true">
             </div>
 
             <div class="flex flex-col items-center gap-2 text-center">
@@ -380,7 +395,7 @@
                 class="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl border border-dashed border-surface-300 px-4 py-3 text-surface-400 dark:border-surface-600 dark:text-surface-500"
             >
                 <i class="pi pi-hand-pointer" style="font-size: 1.1rem" />
-                <span class="text-sm">{{ trans('sk-file-manager.labels.empty_drag_label') }}</span>
+                <span class="text-base">{{ trans('sk-file-manager.labels.empty_drag_label') }}</span>
             </div>
         </div>
 
@@ -396,7 +411,7 @@
                     :key="`folder-${folder.id}`"
                     role="button"
                     tabindex="0"
-                    draggable="true"
+                    :draggable="!props.readonly"
                     :data-fm-key="`folder:${folder.id}`"
                     class="fm-tile fm-folder-tile group relative flex flex-col gap-3 rounded-2xl p-5 text-left transition-all"
                     :class="[
@@ -404,10 +419,14 @@
                             ? 'bg-primary-100 ring-2 ring-primary-400 dark:bg-primary-950/50'
                             : `${folderPalette(folder.id).bg} hover:-translate-y-0.5`,
                         dropTargetId === folder.id ? 'ring-2 ring-primary-500 ring-offset-2' : '',
+                        currentView === 'trash' ? 'opacity-70' : '',
                     ]"
+                    :title="
+                        currentView === 'trash' && folder.deleted_at ? formatDeletedAt(folder.deleted_at) : undefined
+                    "
                     @click="(ev) => onFolderTileClick(folder, ev)"
-                    @dblclick="emit('open-folder', folder.id)"
-                    @keydown.enter.prevent="emit('open-folder', folder.id)"
+                    @dblclick="onFolderDblClick(folder)"
+                    @keydown.enter.prevent="onFolderDblClick(folder)"
                     @contextmenu.prevent="(ev) => emit('context-folder', ev, folder)"
                     @dragstart="(ev) => onTileDragStart('folder', folder.id, ev)"
                     @dragend="onTileDragEnd"
@@ -428,6 +447,35 @@
                         @click.stop="emit('check-toggle', 'folder', folder.id)"
                     >
                         <i v-if="isSelected('folder', folder.id)" class="pi pi-check" style="font-size: 0.8rem" />
+                    </button>
+
+                    <!-- Favori star (top-left) — trash view'da gizle -->
+                    <button
+                        v-if="currentView !== 'trash'"
+                        type="button"
+                        class="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-full transition-all"
+                        :class="[
+                            folder.is_favorited
+                                ? 'opacity-100 text-amber-400'
+                                : 'opacity-0 group-hover:opacity-100 text-surface-400',
+                            props.readonly
+                                ? 'cursor-not-allowed opacity-60'
+                                : folder.is_favorited
+                                    ? 'hover:text-amber-500'
+                                    : 'hover:text-amber-400',
+                        ]"
+                        :disabled="props.readonly"
+                        :aria-label="
+                            trans(
+                                folder.is_favorited
+                                    ? 'sk-file-manager.labels.remove_from_favorites'
+                                    : 'sk-file-manager.labels.add_to_favorites',
+                            )
+                        "
+                        :aria-pressed="folder.is_favorited === true"
+                        @click.stop="!props.readonly && emit('toggle-folder-favorite', folder)"
+                    >
+                        <i :class="folder.is_favorited ? 'pi pi-star-fill' : 'pi pi-star'" style="font-size: 0.85rem" />
                     </button>
 
                     <!-- Icon square -->
@@ -463,14 +511,16 @@
                     :key="`file-${file.id}`"
                     role="button"
                     tabindex="0"
-                    draggable="true"
+                    :draggable="!props.readonly"
                     :data-fm-key="`file:${file.id}`"
                     class="fm-tile fm-file-tile group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all"
-                    :class="
+                    :class="[
                         isSelected('file', file.id)
                             ? 'border-primary-500 ring-2 ring-primary-200 dark:ring-primary-800'
-                            : 'border-surface-200 hover:-translate-y-0.5 dark:border-surface-700'
-                    "
+                            : 'border-surface-200 hover:-translate-y-0.5 dark:border-surface-700',
+                        currentView === 'trash' ? 'opacity-70' : '',
+                    ]"
+                    :title="currentView === 'trash' && file.deleted_at ? formatDeletedAt(file.deleted_at) : undefined"
                     @click="(ev) => onFileTileClick(file, ev)"
                     @keydown.enter.prevent="emit('open-file', file)"
                     @contextmenu.prevent="(ev) => emit('context-file', ev, file)"
@@ -515,6 +565,38 @@
                             @click.stop="emit('check-toggle', 'file', file.id)"
                         >
                             <i v-if="isSelected('file', file.id)" class="pi pi-check" style="font-size: 0.8rem" />
+                        </button>
+
+                        <!-- Favori star (top-left) — trash view'da gizle -->
+                        <button
+                            v-if="currentView !== 'trash'"
+                            type="button"
+                            class="absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full transition-all"
+                            :class="[
+                                file.is_favorited
+                                    ? 'opacity-100 text-amber-400'
+                                    : 'opacity-0 group-hover:opacity-100 text-white/80',
+                                props.readonly
+                                    ? 'cursor-not-allowed opacity-60'
+                                    : file.is_favorited
+                                        ? 'hover:text-amber-500'
+                                        : 'hover:text-amber-400',
+                            ]"
+                            :disabled="props.readonly"
+                            :aria-label="
+                                trans(
+                                    file.is_favorited
+                                        ? 'sk-file-manager.labels.remove_from_favorites'
+                                        : 'sk-file-manager.labels.add_to_favorites',
+                                )
+                            "
+                            :aria-pressed="file.is_favorited === true"
+                            @click.stop="!props.readonly && emit('toggle-file-favorite', file)"
+                        >
+                            <i
+                                :class="file.is_favorited ? 'pi pi-star-fill' : 'pi pi-star'"
+                                style="font-size: 0.85rem"
+                            />
                         </button>
                     </div>
 
@@ -618,9 +700,9 @@
         <!-- List view -->
         <template v-else>
             <div class="overflow-hidden rounded-xl border border-surface-200 dark:border-surface-700">
-                <table class="w-full text-left text-sm">
+                <table class="w-full text-left text-base">
                     <thead
-                        class="bg-surface-50 text-xs uppercase tracking-wide text-surface-500 dark:bg-surface-950 dark:text-surface-400"
+                        class="bg-surface-50 text-base uppercase tracking-wide text-surface-500 dark:bg-surface-950 dark:text-surface-400"
                     >
                         <tr>
                             <th class="px-4 py-2.5 font-semibold">
@@ -640,15 +722,21 @@
                             v-for="folder in folders"
                             :key="`row-folder-${folder.id}`"
                             :data-fm-key="`folder:${folder.id}`"
-                            draggable="true"
+                            :draggable="!props.readonly"
                             class="fm-row cursor-pointer transition-colors"
-                            :class="
+                            :class="[
                                 isSelected('folder', folder.id)
                                     ? 'bg-primary-50 dark:bg-primary-950/30'
-                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50'
+                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50',
+                                currentView === 'trash' ? 'opacity-70' : '',
+                            ]"
+                            :title="
+                                currentView === 'trash' && folder.deleted_at
+                                    ? formatDeletedAt(folder.deleted_at)
+                                    : undefined
                             "
                             @click="(ev) => onFolderTileClick(folder, ev)"
-                            @dblclick="emit('open-folder', folder.id)"
+                            @dblclick="onFolderDblClick(folder)"
                             @contextmenu.prevent="(ev) => emit('context-folder', ev, folder)"
                             @dragstart="(ev) => onTileDragStart('folder', folder.id, ev)"
                             @dragend="onTileDragEnd"
@@ -678,7 +766,7 @@
                                 —
                             </td>
                             <td class="px-4 py-2.5 text-right">
-                                <span class="text-xs text-surface-400">{{ folder.file_count ?? 0 }}</span>
+                                <span class="text-base text-surface-400">{{ folder.file_count ?? 0 }}</span>
                             </td>
                         </tr>
 
@@ -686,12 +774,18 @@
                             v-for="file in files"
                             :key="`row-file-${file.id}`"
                             :data-fm-key="`file:${file.id}`"
-                            draggable="true"
+                            :draggable="!props.readonly"
                             class="fm-row cursor-pointer transition-colors"
-                            :class="
+                            :class="[
                                 isSelected('file', file.id)
                                     ? 'bg-primary-50 dark:bg-primary-950/30'
-                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50'
+                                    : 'hover:bg-surface-50 dark:hover:bg-surface-800/50',
+                                currentView === 'trash' ? 'opacity-70' : '',
+                            ]"
+                            :title="
+                                currentView === 'trash' && file.deleted_at
+                                    ? formatDeletedAt(file.deleted_at)
+                                    : undefined
                             "
                             @click="(ev) => onFileTileClick(file, ev)"
                             @contextmenu.prevent="(ev) => emit('context-file', ev, file)"

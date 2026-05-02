@@ -6,11 +6,11 @@ use App\Domain\FileManager\DTOs\FileItemDTO;
 use App\Domain\FileManager\DTOs\FileManagerContextDTO;
 use App\Domain\Shared\Actions\BaseAction;
 use App\Models\FileFolder;
+use App\Models\Media;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use LogicException;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Upload one or more files into a folder (or root) of the given context.

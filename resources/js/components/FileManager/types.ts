@@ -27,6 +27,8 @@ export interface FolderSummary {
     name: string;
     file_count?: number;
     total_size?: number;
+    is_favorited?: boolean;
+    deleted_at?: string | null;
 }
 
 export interface FileItem {
@@ -39,6 +41,8 @@ export interface FileItem {
     folder_id: string | null;
     url: string;
     created_at: string | null;
+    is_favorited?: boolean;
+    deleted_at?: string | null;
 }
 
 export interface FolderStats {
@@ -57,6 +61,7 @@ export interface FileManagerProps {
     context: FileManagerContext;
     contextId?: string | null;
     readonly?: boolean;
+    enableTrash?: boolean;
     acceptedMimes?: string[];
     maxSizeKb?: number;
     height?: string;

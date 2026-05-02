@@ -11,9 +11,10 @@
         usedBytes: number;
         quotaBytes: number;
         readonly?: boolean;
+        enableTrash?: boolean;
     }
 
-    const props = withDefaults(defineProps<Props>(), { readonly: false });
+    const props = withDefaults(defineProps<Props>(), { readonly: false, enableTrash: true });
     const emit = defineEmits<{
         (e: 'select-quick', view: QuickView): void;
         (e: 'select-folder', folderId: string): void;
@@ -59,36 +60,43 @@
         bgClass: string;
     }
 
-    const quickItems = computed<QuickItem[]>(() => [
-        {
-            key: 'all',
-            label: trans('sk-file-manager.labels.sidebar.all_files'),
-            icon: 'pi pi-folder',
-            iconClass: 'text-primary-500',
-            bgClass: 'bg-primary-50 dark:bg-primary-950/40',
-        },
-        {
-            key: 'recent',
-            label: trans('sk-file-manager.labels.sidebar.recent'),
-            icon: 'pi pi-clock',
-            iconClass: 'text-emerald-500',
-            bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
-        },
-        {
-            key: 'favorites',
-            label: trans('sk-file-manager.labels.sidebar.favorites'),
-            icon: 'pi pi-heart',
-            iconClass: 'text-rose-500',
-            bgClass: 'bg-rose-50 dark:bg-rose-950/40',
-        },
-        {
-            key: 'trash',
-            label: trans('sk-file-manager.labels.sidebar.trash'),
-            icon: 'pi pi-trash',
-            iconClass: 'text-amber-500',
-            bgClass: 'bg-amber-50 dark:bg-amber-950/40',
-        },
-    ]);
+    const quickItems = computed<QuickItem[]>(() => {
+        const items: QuickItem[] = [
+            {
+                key: 'all',
+                label: trans('sk-file-manager.labels.sidebar.all_files'),
+                icon: 'pi pi-folder',
+                iconClass: 'text-primary-500',
+                bgClass: 'bg-primary-50 dark:bg-primary-950/40',
+            },
+            {
+                key: 'recent',
+                label: trans('sk-file-manager.labels.sidebar.recent'),
+                icon: 'pi pi-clock',
+                iconClass: 'text-emerald-500',
+                bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
+            },
+            {
+                key: 'favorites',
+                label: trans('sk-file-manager.labels.sidebar.favorites'),
+                icon: 'pi pi-heart',
+                iconClass: 'text-rose-500',
+                bgClass: 'bg-rose-50 dark:bg-rose-950/40',
+            },
+        ];
+
+        if (props.enableTrash) {
+            items.push({
+                key: 'trash',
+                label: trans('sk-file-manager.labels.sidebar.trash'),
+                icon: 'pi pi-trash',
+                iconClass: 'text-amber-500',
+                bgClass: 'bg-amber-50 dark:bg-amber-950/40',
+            });
+        }
+
+        return items;
+    });
 
     // Deterministic colour for top-level folder dots
     const folderPalettes = [
@@ -148,20 +156,20 @@
                 <span class="font-semibold text-surface-900 dark:text-surface-100">
                     {{ trans('sk-file-manager.labels.sidebar.storage_usage') }}
                 </span>
-                <span class="text-xs text-surface-500 dark:text-surface-400">{{ usageLabel }}</span>
+                <span class="text-base text-surface-500 dark:text-surface-400">{{ usageLabel }}</span>
             </div>
         </div>
 
         <!-- Quick access -->
         <div class="flex flex-col gap-1.5">
-            <h3 class="px-2 text-xs font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+            <h3 class="px-2 text-base font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
                 {{ trans('sk-file-manager.labels.sidebar.quick_access') }}
             </h3>
             <button
                 v-for="item in quickItems"
                 :key="item.key"
                 type="button"
-                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all"
+                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-medium transition-all"
                 :class="
                     quickView === item.key && currentFolderId === null
                         ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:ring-primary-900'
@@ -182,7 +190,7 @@
         <!-- Folders -->
         <div class="flex min-h-0 flex-col gap-1.5">
             <div class="flex items-center justify-between px-2">
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+                <h3 class="text-base font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
                     {{ trans('sk-file-manager.labels.sidebar.folders') }}
                 </h3>
                 <Button
@@ -198,7 +206,7 @@
                 />
             </div>
 
-            <div v-if="tree.length === 0" class="px-2 py-3 text-xs text-surface-400 dark:text-surface-500">
+            <div v-if="tree.length === 0" class="px-2 py-3 text-base text-surface-400 dark:text-surface-500">
                 {{ trans('sk-file-manager.labels.sidebar.no_folders') }}
             </div>
 
@@ -207,7 +215,7 @@
                 v-else
                 :key="folder.id"
                 type="button"
-                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all"
+                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-medium transition-all"
                 :class="
                     currentFolderId === folder.id
                         ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:ring-primary-900'
@@ -221,7 +229,7 @@
 
             <button
                 type="button"
-                class="mt-1 flex items-center gap-2 rounded-xl border border-dashed border-surface-300 px-3 py-2.5 text-sm font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
+                class="mt-1 flex items-center gap-2 rounded-xl border border-dashed border-surface-300 px-3 py-2.5 text-base font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
                 :disabled="readonly"
                 @click="emit('new-folder')"
             >
