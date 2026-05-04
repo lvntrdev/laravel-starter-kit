@@ -6,6 +6,7 @@ return [
     'users' => 'Users',
     'roles_permissions' => 'Roles & Permissions',
     'files' => 'Files',
+    'sample_contents' => 'Sample Contents',
     'system' => 'System',
     'activity_logs' => 'Activity Logs',
     'logs' => 'Logs',

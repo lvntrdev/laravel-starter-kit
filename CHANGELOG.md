@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Translatable field support in FormBuilder.** Three new field types — `FB.translatableText()`, `FB.translatableTextarea()`, and `FB.translatableEditor()` — render a per-locale input group driven by the `general.languages` setting. Adding or removing a language in Settings automatically adapts every translatable form on the next page load. Backend support ships as the `HasTranslatableRules` trait (per-locale validation rules in FormRequests), the `TranslatableQueryHelpers` static class (locale-aware search and sort for Datatable queries), and two global helpers (`sk_locale_keys()`, `sk_default_locale()`). See [`docs/translatable-fields.md`](./docs/translatable-fields.md) for the full guide and a complete Product domain example.
+
 ## [13.4.9] - 2026-05-02
 
 File Manager now ships the feature set that was previously visible as placeholders in 13.4.8. Favorites and Trash are real quick-access views, folder and file tiles can be starred, deleted items move to trash by default, trash items can be restored or permanently deleted, and the trash view has an **Empty Trash** action. Files can also be duplicated and renamed from the context menu. This release adds two migrations (`file_favorites` and soft deletes on `media`), new shipped backend actions/queries/requests, new File Manager routes, extended EN/TR language keys, and a daily `file-manager:purge-trash` scheduled command. Existing consumer apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && php artisan migrate && npm install && npm run build`.

@@ -27,6 +27,10 @@ export type {
     ExistingMedia,
     OptionFilter,
     FormResourceConfig,
+    TranslatableLayout,
+    TranslatableTextFieldConfig,
+    TranslatableTextareaFieldConfig,
+    TranslatableEditorFieldConfig,
 } from './types';
 
 export {
@@ -47,6 +51,9 @@ export {
     ColorSelectorBuilder,
     TitleBuilder,
     SlotBuilder,
+    TranslatableTextBuilder,
+    TranslatableTextareaBuilder,
+    TranslatableEditorBuilder,
 } from './builder';
 
 import {
@@ -67,6 +74,9 @@ import {
     ColorSelectorBuilder,
     TitleBuilder,
     SlotBuilder,
+    TranslatableTextBuilder,
+    TranslatableTextareaBuilder,
+    TranslatableEditorBuilder,
 } from './builder';
 
 /**
@@ -110,4 +120,7 @@ export const FB = {
     colorSelector: () => new ColorSelectorBuilder(),
     title: (text?: string) => new TitleBuilder(text),
     slot: () => new SlotBuilder(),
+    translatableText: () => new TranslatableTextBuilder(),
+    translatableTextarea: () => new TranslatableTextareaBuilder(),
+    translatableEditor: () => new TranslatableEditorBuilder(),
 };

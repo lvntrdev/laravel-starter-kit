@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { useForm } from '@inertiajs/vue3';
+    import { useForm, usePage } from '@inertiajs/vue3';
     import type {
         ExistingMedia,
         FieldConfig,
@@ -10,7 +10,9 @@
         SelectOption,
         SlotFieldConfig,
         TitleFieldConfig,
+        TranslatableTextFieldConfig,
     } from '@lvntr/components/FormBuilder/core';
+    import type { SharedPageProps } from '@/types';
     import { useApi } from '@/composables/useApi';
     import { useCan } from '@/composables/useCan';
     import { useDefinition } from '@/composables/useDefinition';
@@ -156,6 +158,45 @@
 
     // ── Internal form mode (Inertia useForm) ─────────────────────────────────────
 
+    // ── Translatable field helpers ──────────────────────────────────────────────
+
+    function isTranslatableField(field: FieldConfig): boolean {
+        return (
+            field.type === 'translatable-text' ||
+            field.type === 'translatable-textarea' ||
+            field.type === 'translatable-editor'
+        );
+    }
+
+    function sk_locale_keys_from_page(): string[] {
+        const page = usePage<SharedPageProps>();
+        return Object.keys(page.props.availableLocales ?? {});
+    }
+
+    function applyLocaleFilters(locales: string[], field: FieldConfig): string[] {
+        const cfg = field as Partial<TranslatableTextFieldConfig>;
+        let out = locales;
+        if (cfg.onlyLocales?.length) out = out.filter((l) => cfg.onlyLocales!.includes(l));
+        if (cfg.exceptLocales?.length) out = out.filter((l) => !cfg.exceptLocales!.includes(l));
+        return out;
+    }
+
+    function buildTranslatableDefault(field: FieldConfig): Record<string, string> {
+        const locales = sk_locale_keys_from_page();
+        const filtered = applyLocaleFilters(locales, field);
+        return Object.fromEntries(filtered.map((l) => [l, '']));
+    }
+
+    function translatableErrorsFor(field: FieldConfig): Record<string, string> | undefined {
+        if (!isTranslatableField(field)) return undefined;
+        const result: Record<string, string> = {};
+        const prefix = `${field.key}.`;
+        for (const [k, v] of Object.entries(activeErrors.value)) {
+            if (k.startsWith(prefix)) result[k] = String(v);
+        }
+        return Object.keys(result).length > 0 ? result : undefined;
+    }
+
     /**
      * Auto-derive initial form values.
      * Priority: initialData[key] → field.defaultValue → null
@@ -172,6 +213,10 @@
                             fromData = new Date(fromData);
                         }
                         return [f.key, fromData];
+                    }
+                    // Translatable field'lar için locale bazlı boş Record üret
+                    if (isTranslatableField(f)) {
+                        return [f.key, buildTranslatableDefault(f)];
                     }
                     return [f.key, f.defaultValue ?? null];
                 }),
@@ -601,6 +646,7 @@
                                                 :invalid="!!activeErrors[field.key]"
                                                 :options="getOptions(field)"
                                                 :loading="isLoading(field)"
+                                                :translatable-errors="translatableErrorsFor(field)"
                                                 @update="(v) => setValue(field.key, v)"
                                             />
                                         </slot>
@@ -613,7 +659,7 @@
                                         </template>
                                     </div>
 
-                                    <small v-if="activeErrors[field.key]" class="sk-fb__error">{{
+                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
                                         activeErrors[field.key]
                                     }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
@@ -649,6 +695,7 @@
                                                     :invalid="!!activeErrors[field.key]"
                                                     :options="getOptions(field)"
                                                     :loading="isLoading(field)"
+                                                    :translatable-errors="translatableErrorsFor(field)"
                                                     @update="(v) => setValue(field.key, v)"
                                                 />
                                             </slot>
@@ -674,12 +721,13 @@
                                                 :invalid="!!activeErrors[field.key]"
                                                 :options="getOptions(field)"
                                                 :loading="isLoading(field)"
+                                                :translatable-errors="translatableErrorsFor(field)"
                                                 @update="(v) => setValue(field.key, v)"
                                             />
                                         </slot>
                                     </template>
 
-                                    <small v-if="activeErrors[field.key]" class="sk-fb__error">{{
+                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
                                         activeErrors[field.key]
                                     }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
@@ -712,6 +760,7 @@
                                                 :invalid="!!activeErrors[field.key]"
                                                 :options="getOptions(field)"
                                                 :loading="isLoading(field)"
+                                                :translatable-errors="translatableErrorsFor(field)"
                                                 @update="(v) => setValue(field.key, v)"
                                             />
                                         </slot>
@@ -731,11 +780,12 @@
                                             :invalid="!!activeErrors[field.key]"
                                             :options="getOptions(field)"
                                             :loading="isLoading(field)"
+                                            :translatable-errors="translatableErrorsFor(field)"
                                             @update="(v) => setValue(field.key, v)"
                                         />
                                     </slot>
 
-                                    <small v-if="activeErrors[field.key]" class="sk-fb__error">{{
+                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
                                         activeErrors[field.key]
                                     }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>

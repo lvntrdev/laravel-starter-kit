@@ -29,6 +29,10 @@ import type {
     TitleFieldConfig,
     ToggleButtonFieldConfig,
     ToggleSwitchFieldConfig,
+    TranslatableLayout,
+    TranslatableTextFieldConfig,
+    TranslatableTextareaFieldConfig,
+    TranslatableEditorFieldConfig,
 } from './types';
 
 // ── Base Builder ──────────────────────────────────────────────────────────────
@@ -657,6 +661,88 @@ export class SlotBuilder extends BaseFieldBuilder<SlotFieldConfig> {
 
     slotName(name: string): this {
         this.config.slotName = name;
+        return this;
+    }
+}
+
+// ── Translatable Field Builders ───────────────────────────────────────────────
+
+abstract class TranslatableBaseBuilder<T extends TranslatableTextFieldConfig | TranslatableTextareaFieldConfig | TranslatableEditorFieldConfig> extends BaseFieldBuilder<T> {
+    onlyLocales(locales: string[]): this {
+        this.config.onlyLocales = locales;
+        return this;
+    }
+
+    exceptLocales(locales: string[]): this {
+        this.config.exceptLocales = locales;
+        return this;
+    }
+
+    translatableLayout(layout: TranslatableLayout): this {
+        this.config.translatableLayout = layout;
+        return this;
+    }
+
+    localeLabelStyle(style: 'badge' | 'name' | 'flag'): this {
+        this.config.localeLabelStyle = style;
+        return this;
+    }
+}
+
+export class TranslatableTextBuilder extends TranslatableBaseBuilder<TranslatableTextFieldConfig> {
+    constructor() {
+        super('translatable-text');
+    }
+
+    placeholder(p: string): this {
+        this.config.placeholder = p;
+        return this;
+    }
+
+    inputType(t: 'text' | 'email' | 'url'): this {
+        this.config.inputType = t;
+        return this;
+    }
+
+    maxLength(n: number): this {
+        this.config.maxLength = n;
+        return this;
+    }
+}
+
+export class TranslatableTextareaBuilder extends TranslatableBaseBuilder<TranslatableTextareaFieldConfig> {
+    constructor() {
+        super('translatable-textarea');
+    }
+
+    placeholder(p: string): this {
+        this.config.placeholder = p;
+        return this;
+    }
+
+    rows(n: number): this {
+        this.config.rows = n;
+        return this;
+    }
+
+    autoResize(enabled = true): this {
+        this.config.autoResize = enabled;
+        return this;
+    }
+}
+
+export class TranslatableEditorBuilder extends TranslatableBaseBuilder<TranslatableEditorFieldConfig> {
+    constructor() {
+        super('translatable-editor');
+    }
+
+    minHeight(h: string): this {
+        this.config.minHeight = h;
+        return this;
+    }
+
+    toolbar(t: 'minimal' | 'full'): this {
+        this.config.toolbar = t;
         return this;
     }
 }

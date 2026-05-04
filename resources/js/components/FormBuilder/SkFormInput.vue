@@ -16,9 +16,13 @@
         SelectOption,
         TextareaFieldConfig,
         ToggleButtonFieldConfig,
+        TranslatableTextFieldConfig,
+        TranslatableTextareaFieldConfig,
+        TranslatableEditorFieldConfig,
     } from '@lvntr/components/FormBuilder/core';
     import ColorSelector from '@lvntr/components/FormBuilder/SkColorSelector.vue';
     import EditorInput from '@lvntr/components/FormBuilder/inputs/EditorInput.vue';
+    import TranslatableInput from '@lvntr/components/FormBuilder/inputs/TranslatableInput.vue';
     import { generatePassword } from '@lvntr/components/FormBuilder/utils/passwordGenerator';
     import FilePreviewModal, {
         suggestedPreviewWidth,
@@ -39,6 +43,7 @@
         invalid?: boolean;
         options?: SelectOption[];
         loading?: boolean;
+        translatableErrors?: Record<string, string>;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -46,6 +51,7 @@
         invalid: false,
         options: () => [],
         loading: false,
+        translatableErrors: undefined,
     });
 
     const emit = defineEmits<{
@@ -63,6 +69,10 @@
     const asPassword = computed(() => props.field as PasswordFieldConfig);
     const asTextarea = computed(() => props.field as TextareaFieldConfig);
     const asEditor = computed(() => props.field as EditorFieldConfig);
+    const asTranslatable = computed(
+        () =>
+            props.field as TranslatableTextFieldConfig | TranslatableTextareaFieldConfig | TranslatableEditorFieldConfig,
+    );
     const asToggleButton = computed(() => props.field as ToggleButtonFieldConfig);
     const asFileUpload = computed(() => props.field as FileUploadFieldConfig);
     const asColorSelector = computed(() => props.field as ColorSelectorFieldConfig);
@@ -765,6 +775,20 @@
             :disabled="disabled"
             :invalid="invalid"
             v-bind="extraProps"
+        />
+
+        <!-- TranslatableInput (translatable-text / translatable-textarea / translatable-editor) -->
+        <TranslatableInput
+            v-else-if="
+                field.type === 'translatable-text' ||
+                field.type === 'translatable-textarea' ||
+                field.type === 'translatable-editor'
+            "
+            :field="asTranslatable"
+            :model-value="(value as Record<string, string> | null | undefined)"
+            :errors="translatableErrors"
+            :disabled="disabled"
+            @update="(v: Record<string, string>) => emit('update', v)"
         />
 
         <InputGroupAddon v-if="field.groupSuffix">

@@ -58,7 +58,7 @@ It is designed for teams who want to skip re-building the same admin screens on 
     - Definitions (DB-backed enums used across forms and tables)
 - **Developer Tooling**
     - DDD-style domain layer (Actions / DTOs / Queries / Events / Listeners)
-    - FormBuilder, DatatableBuilder, TabBuilder fluent APIs
+    - FormBuilder, DatatableBuilder, TabBuilder fluent APIs (including [Translatable Fields](./docs/translatable-fields.md))
     - Domain scaffolding via `make:sk-domain`
     - Safe upgrade flow via `sk:update` (hash-tracked, preserves your edits)
     - Light & Dark themes

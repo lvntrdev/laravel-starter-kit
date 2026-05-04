@@ -4,6 +4,7 @@ import activityLogs from '@/routes/activity-logs';
 import apiRoutes from '@/routes/api-routes';
 import dashboard from '@/routes/dashboard';
 import files from '@/routes/files';
+import sampleContents from '@/routes/sample-contents';
 import logs from '@/routes/logs';
 import roles from '@/routes/roles';
 import settings from '@/routes/settings';
@@ -38,6 +39,12 @@ export function useAdminMenu() {
             icon: 'pi pi-folder',
             href: files.index.url(),
             permission: 'files.read',
+        },
+        {
+            title: 'sk-menu.sample_contents',
+            icon: 'pi pi-file-edit',
+            href: sampleContents.index.url(),
+            permission: 'sample-contents.read',
         },
         {
             title: 'sk-menu.system',

@@ -127,6 +127,28 @@ if (! function_exists('definitionLabel')) {
     }
 }
 
+if (! function_exists('sk_locale_keys')) {
+    /**
+     * @return list<string> Aktif locale kodları (örn. ['tr', 'en'])
+     */
+    function sk_locale_keys(): array
+    {
+        return array_keys(config('app.languages', []));
+    }
+}
+
+if (! function_exists('sk_default_locale')) {
+    /**
+     * Aktif diller arasından default (ilk) locale kodu.
+     */
+    function sk_default_locale(): string
+    {
+        $locales = sk_locale_keys();
+
+        return $locales[0] ?? config('app.fallback_locale', 'en');
+    }
+}
+
 if (! function_exists('format_date')) {
     /**
      * Format a date/datetime to the application's display timezone.

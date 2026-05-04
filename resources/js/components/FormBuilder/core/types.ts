@@ -22,7 +22,10 @@ export type FieldType =
     | 'file-upload'
     | 'color-selector'
     | 'title'
-    | 'slot';
+    | 'slot'
+    | 'translatable-text'
+    | 'translatable-textarea'
+    | 'translatable-editor';
 
 export interface SelectOption {
     label: string;
@@ -319,6 +322,39 @@ export interface SlotFieldConfig extends BaseFieldConfig {
     slotName?: string;
 }
 
+export type TranslatableLayout = 'inline' | 'tabs';
+
+interface TranslatableBaseConfig extends BaseFieldConfig {
+    /** Field bazında dil filtresi: bu liste dışındaki diller render edilmez. */
+    onlyLocales?: string[];
+    /** Field bazında dil filtresi: bu listedeki diller render edilmez. */
+    exceptLocales?: string[];
+    /** Çok dilli render layout'u. Default: 'inline' (her dil için ayrı InputGroup). */
+    translatableLayout?: TranslatableLayout;
+    /** Dil etiketinin görünüş şekli. Default: 'badge' (uppercase iki harf). */
+    localeLabelStyle?: 'badge' | 'name' | 'flag';
+}
+
+export interface TranslatableTextFieldConfig extends TranslatableBaseConfig {
+    type: 'translatable-text';
+    placeholder?: string;
+    inputType?: 'text' | 'email' | 'url';
+    maxLength?: number;
+}
+
+export interface TranslatableTextareaFieldConfig extends TranslatableBaseConfig {
+    type: 'translatable-textarea';
+    placeholder?: string;
+    rows?: number;
+    autoResize?: boolean;
+}
+
+export interface TranslatableEditorFieldConfig extends TranslatableBaseConfig {
+    type: 'translatable-editor';
+    minHeight?: string;
+    toolbar?: 'minimal' | 'full';
+}
+
 export type FieldConfig =
     | InputTextFieldConfig
     | InputNumberFieldConfig
@@ -335,7 +371,10 @@ export type FieldConfig =
     | FileUploadFieldConfig
     | ColorSelectorFieldConfig
     | TitleFieldConfig
-    | SlotFieldConfig;
+    | SlotFieldConfig
+    | TranslatableTextFieldConfig
+    | TranslatableTextareaFieldConfig
+    | TranslatableEditorFieldConfig;
 
 export interface FormSubmitConfig {
     url: string;
