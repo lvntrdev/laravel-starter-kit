@@ -7,9 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [13.4.10] - 2026-05-04
+
+FormBuilder now supports multi-language text fields out of the box. Three new shipped field types — `FB.translatableText()`, `FB.translatableTextarea()` and `FB.translatableEditor()` — render one input per active language and submit JSON-ready locale maps for Spatie Translatable models. Backend support ships as validation, datatable and resource helpers, and the new Sample Contents admin module demonstrates the full pattern end to end. Existing consumer apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && php artisan migrate && npm install && npm run build`.
+
 ### Added
 
-- **Translatable field support in FormBuilder.** Three new field types — `FB.translatableText()`, `FB.translatableTextarea()`, and `FB.translatableEditor()` — render a per-locale input group driven by the `general.languages` setting. Adding or removing a language in Settings automatically adapts every translatable form on the next page load. Backend support ships as the `HasTranslatableRules` trait (per-locale validation rules in FormRequests), the `TranslatableQueryHelpers` static class (locale-aware search and sort for Datatable queries), and two global helpers (`sk_locale_keys()`, `sk_default_locale()`). See [`docs/translatable-fields.md`](./docs/translatable-fields.md) for the full guide and a complete Product domain example.
+- **Shipped translatable field support in FormBuilder.** `FB.translatableText()`, `FB.translatableTextarea()` and `FB.translatableEditor()` render per-locale input groups driven by the active language list. Adding or removing a language in Settings adapts every translatable form on the next page load. Field-level locale filters (`onlyLocales`, `exceptLocales`), inline/tabbed layouts and locale label styles (`badge`, `name`, `flag`) are supported.
+
+- **Shipped backend helpers for translatable attributes.** `HasTranslatableRules` generates per-locale validation rules and labels inside FormRequests. `TranslatableQueryHelpers` provides JSON-column search, locale-aware sorting and `resourceShape()` for datatable resources and edit forms. Two global helpers, `sk_locale_keys()` and `sk_default_locale()`, centralise active locale access.
+
+- **Shipped Sample Contents reference module.** A complete admin CRUD example ships with a translatable model, migration, factory, domain actions/events/listeners, FormRequests, resource, datatable query, Vue pages, route file, menu labels and permission-resource entries. It demonstrates `title`, `description` and `content` as JSON-backed translated fields.
+
+- **Shipped `docs/translatable-fields.md`.** The new guide covers JSON migrations, model setup, FormRequest rules, FormBuilder usage, datatable search/sort, resource output, Settings interaction, limitations and migration tips.
+
+- **Package dependency on `spatie/laravel-translatable`.** Fresh installs get the dependency automatically; upgraded apps receive it through the package update flow and should run Composer before `sk:update`.
+
+### Improved
+
+- **Shipped FormBuilder docs and builder guidance.** FormBuilder documentation and project builder guidance now list the translatable builders and point to the dedicated guide.
+
+- **Shipped File Manager no-trash documentation.** The File Manager guide now clarifies that `enableTrash=false` sends single-item deletes directly to the permanent-delete endpoint and selected-item deletes to the bulk-delete endpoint with `force_delete=true`.
+
+### Upgrade
+
+No API response breaking change. Existing consumer apps should run:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+npm install
+npm run build
+```
+
+Existing plain string columns are not migrated automatically. Convert them to JSON in a staged migration before adding the attribute to a model's `$translatable` array. Apps with customised language/settings flows should verify that `general.languages` contains the locale codes expected by the new fields.
 
 ## [13.4.9] - 2026-05-02
 
