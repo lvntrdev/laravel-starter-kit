@@ -54,7 +54,7 @@
             };
             file_manager: {
                 max_size_mb: number;
-                storage_quota_mb: number;
+                storage_quota_gb: number;
                 accepted_mimes: string[];
                 allow_video: boolean;
                 allow_audio: boolean;

@@ -11,7 +11,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
      */
     public function __construct(
         public int $maxSizeMb,
-        public int $storageQuotaMb,
+        public int $storageQuotaGb,
         public array $acceptedMimes,
         public bool $allowVideo,
         public bool $allowAudio,
@@ -30,7 +30,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
 
         return new static(
             maxSizeMb: (int) ($data['max_size_mb'] ?? 10),
-            storageQuotaMb: (int) ($data['storage_quota_mb'] ?? 10240),
+            storageQuotaGb: (int) ($data['storage_quota_gb'] ?? 10),
             acceptedMimes: array_values(array_filter(array_map('strval', (array) $mimes))),
             allowVideo: (bool) ($data['allow_video'] ?? false),
             allowAudio: (bool) ($data['allow_audio'] ?? false),
@@ -44,7 +44,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
     {
         return [
             'max_size_mb' => (string) $this->maxSizeMb,
-            'storage_quota_mb' => (string) $this->storageQuotaMb,
+            'storage_quota_gb' => (string) $this->storageQuotaGb,
             'accepted_mimes' => json_encode($this->acceptedMimes),
             'allow_video' => $this->allowVideo ? '1' : '0',
             'allow_audio' => $this->allowAudio ? '1' : '0',

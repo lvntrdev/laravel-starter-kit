@@ -51,6 +51,6 @@ trait ResolvesMediaModel
      */
     protected function storageQuotaBytes(): int
     {
-        return (int) config('file-manager.settings.storage_quota_mb', 10240) * 1024 * 1024;
+        return (int) config('file-manager.settings.storage_quota_gb', 10) * 1024 * 1024 * 1024;
     }
 }

@@ -154,15 +154,15 @@ it('computeStorageUsed decreases only after forceDelete', function (): void {
 it('quota calculation: current + incoming exceeds quota', function (): void {
     $helper = new StorageQuoteHelper;
 
-    // Kotayı 1 MB olarak ayarla
-    config(['file-manager.settings.storage_quota_mb' => 1]);
+    // Kotayı 1 GB olarak ayarla
+    config(['file-manager.settings.storage_quota_gb' => 1]);
 
-    // 800 KB mevcut kullanım
-    insertMediaRow('user', '1', 800 * 1024);
+    // 700 MB mevcut kullanım
+    insertMediaRow('user', '1', 700 * 1024 * 1024);
 
-    $current  = $helper->getStorageUsed();       // 819200 bytes
-    $quota    = $helper->getQuotaBytes();         // 1 * 1024 * 1024 = 1048576
-    $incoming = 300 * 1024;                       // 307200 bytes — toplam 1126400 > 1048576
+    $current  = $helper->getStorageUsed();       // 734003200 bytes
+    $quota    = $helper->getQuotaBytes();         // 1 * 1024^3 = 1073741824
+    $incoming = 400 * 1024 * 1024;               // 419430400 bytes — toplam > 1 GB
 
     expect($current + $incoming)->toBeGreaterThan($quota);
 });
@@ -170,14 +170,14 @@ it('quota calculation: current + incoming exceeds quota', function (): void {
 it('quota calculation: current + incoming within quota is allowed', function (): void {
     $helper = new StorageQuoteHelper;
 
-    config(['file-manager.settings.storage_quota_mb' => 1]);
+    config(['file-manager.settings.storage_quota_gb' => 1]);
 
-    // 500 KB mevcut kullanım
-    insertMediaRow('user', '1', 500 * 1024);
+    // 300 MB mevcut kullanım
+    insertMediaRow('user', '1', 300 * 1024 * 1024);
 
     $current  = $helper->getStorageUsed();
     $quota    = $helper->getQuotaBytes();
-    $incoming = 200 * 1024; // 700 KB toplam < 1 MB
+    $incoming = 200 * 1024 * 1024; // 500 MB toplam < 1 GB
 
     expect($current + $incoming)->toBeLessThanOrEqual($quota);
 });
@@ -218,10 +218,10 @@ it('FolderContentsQuery stats includes storage_quota key', function (): void {
 });
 
 it('stats.storage_quota equals storageQuotaBytes() helper value', function (): void {
-    config(['file-manager.settings.storage_quota_mb' => 512]);
+    config(['file-manager.settings.storage_quota_gb' => 5]);
 
     $helper     = new StorageQuoteHelper;
-    $expected   = $helper->getQuotaBytes(); // 512 * 1024 * 1024
+    $expected   = $helper->getQuotaBytes(); // 5 * 1024 * 1024 * 1024
 
     $context = makeTestContext('user', 'test-user-4');
     $result  = (new FavoritesContentsQuery)->execute($context);
@@ -230,20 +230,20 @@ it('stats.storage_quota equals storageQuotaBytes() helper value', function (): v
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// E) storageQuotaBytes config'den MB → byte çevrimini doğru yapar
+// E) storageQuotaBytes config'den GB → byte çevrimini doğru yapar
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('storageQuotaBytes correctly converts MB to bytes', function (): void {
+it('storageQuotaBytes correctly converts GB to bytes', function (): void {
     $helper = new StorageQuoteHelper;
 
-    config(['file-manager.settings.storage_quota_mb' => 10240]);
-    expect($helper->getQuotaBytes())->toBe(10240 * 1024 * 1024);
+    config(['file-manager.settings.storage_quota_gb' => 10]);
+    expect($helper->getQuotaBytes())->toBe(10 * 1024 * 1024 * 1024);
 
-    config(['file-manager.settings.storage_quota_mb' => 1]);
-    expect($helper->getQuotaBytes())->toBe(1 * 1024 * 1024);
+    config(['file-manager.settings.storage_quota_gb' => 1]);
+    expect($helper->getQuotaBytes())->toBe(1 * 1024 * 1024 * 1024);
 
-    config(['file-manager.settings.storage_quota_mb' => 1048576]);
-    expect($helper->getQuotaBytes())->toBe(1048576 * 1024 * 1024);
+    config(['file-manager.settings.storage_quota_gb' => 1024]);
+    expect($helper->getQuotaBytes())->toBe(1024 * 1024 * 1024 * 1024);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

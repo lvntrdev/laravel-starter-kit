@@ -51,7 +51,7 @@ class _03_SettingSeeder extends Seeder
             ],
             'file_manager' => [
                 'max_size_mb' => '10',
-                'storage_quota_mb' => '10240',
+                'storage_quota_gb' => '10',
                 'accepted_mimes' => json_encode([
                     'image/jpeg',
                     'image/png',

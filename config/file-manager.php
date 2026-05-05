@@ -47,8 +47,8 @@ return [
     |                      defaults. Overridden by admin settings at runtime.
     | allow_video        — Whether video MIME types are accepted.
     | allow_audio        — Whether audio MIME types are accepted.
-    | storage_quota_mb   — MB cinsinden, tüm Media kayıtları üzerinde tek bir
-    |                      disk-genel kota (default 10 GB = 10240 MB).
+    | storage_quota_gb   — GB cinsinden, tüm Media kayıtları üzerinde tek bir
+    |                      disk-genel kota (default 10 GB).
     |
     */
 
@@ -57,7 +57,7 @@ return [
         'accepted_mimes' => null,
         'allow_video' => false,
         'allow_audio' => false,
-        'storage_quota_mb' => 10240,
+        'storage_quota_gb' => 10,
     ],
 
 ];

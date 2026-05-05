@@ -74,7 +74,7 @@ return [
         'title' => 'Dosya Yöneticisi Ayarları',
         'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
         'storage_quota' => [
-            'label' => 'Depolama Kotası (MB)',
+            'label' => 'Depolama Kotası (GB)',
             'help' => 'Tüm context\'leri ve çöp kutusunu kapsayan tek toplam kota.',
         ],
         'mime_categories' => [

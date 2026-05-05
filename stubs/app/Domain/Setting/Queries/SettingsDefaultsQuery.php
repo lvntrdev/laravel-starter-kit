@@ -103,7 +103,7 @@ class SettingsDefaultsQuery
 
         return [
             'max_size_mb' => (int) ($stored['max_size_mb'] ?? 10),
-            'storage_quota_mb' => (int) ($stored['storage_quota_mb'] ?? 10240),
+            'storage_quota_gb' => (int) ($stored['storage_quota_gb'] ?? 10),
             'accepted_mimes' => $mimes,
             'allow_video' => ($stored['allow_video'] ?? '0') === '1',
             'allow_audio' => ($stored['allow_audio'] ?? '0') === '1',

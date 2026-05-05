@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`sk:install --without-ai-skill`** — `stubs/.claude/skills/` AI skill yayınını atla (Claude Code skill bundle kullanmayan consumer'lar için).
 - **`.gitattributes`** — Composer arşivi `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` vb. development dosyalarını dışlıyor; arşiv boyutu küçüldü.
 - **`.npmignore`** — NPM paketi `__tests__/`, `*.spec.*`, `*.test.*` dosyalarını dışlıyor (root + subdirectory; npm 11 davranışıyla uyumlu).
-- **Disk-genel depolama kotası (`storage_quota_mb`).** Admin Settings > File Manager panelinden MB cinsinden tek kota değeri tanımlanır (default 10240 MB / 10 GB). Kota, tüm context'leri (`user`, `global`, özel morph map'ler) ve çöp kutusunu (`withTrashed`) kapsayan disk-genel tek toplam bütçeyi temsil eder.
+- **Disk-genel depolama kotası (`storage_quota_gb`).** Admin Settings > File Manager panelinden GB cinsinden tek kota değeri tanımlanır (default 10 GB). Kota, tüm context'leri (`user`, `global`, özel morph map'ler) ve çöp kutusunu (`withTrashed`) kapsayan disk-genel tek toplam bütçeyi temsil eder.
 - **Upload kota aşım validasyonu.** `UploadFileRequest::withValidator()` kota kontrolü ekler; kota aşıldığında 422 döner ve kullanıcıya `errors.quota_exceeded` anahtarıyla çok dilli hata mesajı gösterilir.
 
 ### Removed
@@ -57,7 +57,7 @@ Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
 - **`sk:publish` ve `vendor:publish` davranışları** consumer projesinin npm/composer tarafına dokunmaz; düzeltmeler pure bug fix.
 - **`ResolvesMediaModel`** internal trait olduğu için public package API kırılmaz. Trait'i doğrudan extend eden host uygulamalar imza değişikliğinden etkilenir (yukarıdaki Changed notuna bakın).
 - **`FolderStats.storage_quota`** TypeScript arayüzünde optional (`storage_quota?: number`) — eski response'lara karşı güvenli.
-- **DB schema değişikliği yoktur**; migration gerekmez. `storage_quota_mb` ayarı seeder çalıştırılmadan da config default'una (10240 MB) düşer.
+- **DB schema değişikliği yoktur**; migration gerekmez. `storage_quota_gb` ayarı seeder çalıştırılmadan da config default'una (10 GB) düşer.
 - v13.5.0 BC garantileri korunmaktadır.
 
 ### Upgrade

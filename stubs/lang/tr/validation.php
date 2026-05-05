@@ -244,7 +244,7 @@ return [
         'spaces_bucket' => 'Spaces Bucket',
         'current_password' => 'Mevcut Parola',
         'max_size_mb' => 'Maks. Yükleme Boyutu (MB)',
-        'storage_quota_mb' => 'Depolama Kotası (MB)',
+        'storage_quota_gb' => 'Depolama Kotası (GB)',
         'accepted_mimes' => 'Kabul Edilen Dosya Türleri',
         'allow_video' => 'Video Yüklemesine İzin Ver',
         'allow_audio' => 'Ses Yüklemesine İzin Ver',

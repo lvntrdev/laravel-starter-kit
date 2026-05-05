@@ -55,7 +55,7 @@ abstract class DatabaseTestCase extends Orchestra
         $app['config']->set('file-manager.models.favorite', \Lvntr\StarterKit\Tests\Stubs\TestFileFavorite::class);
 
         // file-manager config defaults
-        $app['config']->set('file-manager.settings.storage_quota_mb', 10240);
+        $app['config']->set('file-manager.settings.storage_quota_gb', 10);
         $app['config']->set('file-manager.settings.max_size_mb', 10);
 
         // MediaLibrary disk
