@@ -107,6 +107,9 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
 
+- [Upgrading between versions](./docs/UPGRADE.md)
+- [Changelog](./CHANGELOG.md)
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](./LICENSE)

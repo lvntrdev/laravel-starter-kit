@@ -19,15 +19,15 @@
         TranslatableTextFieldConfig,
         TranslatableTextareaFieldConfig,
         TranslatableEditorFieldConfig,
-    } from '@lvntr/components/FormBuilder/core';
-    import ColorSelector from '@lvntr/components/FormBuilder/SkColorSelector.vue';
-    import EditorInput from '@lvntr/components/FormBuilder/inputs/EditorInput.vue';
-    import TranslatableInput from '@lvntr/components/FormBuilder/inputs/TranslatableInput.vue';
-    import { generatePassword } from '@lvntr/components/FormBuilder/utils/passwordGenerator';
+    } from './core';
+    import ColorSelector from './SkColorSelector.vue';
+    import EditorInput from './inputs/EditorInput.vue';
+    import TranslatableInput from './inputs/TranslatableInput.vue';
+    import { generatePassword } from './utils/passwordGenerator';
     import FilePreviewModal, {
         suggestedPreviewWidth,
         type FilePreviewFile,
-    } from '@lvntr/components/ui/FilePreviewModal.vue';
+    } from '../ui/FilePreviewModal.vue';
     import { InputGroup } from 'primevue';
     import { useToast } from 'primevue/usetoast';
     import { useApi } from '@/composables/useApi';
@@ -71,8 +71,12 @@
     const asEditor = computed(() => props.field as EditorFieldConfig);
     const asTranslatable = computed(
         () =>
-            props.field as TranslatableTextFieldConfig | TranslatableTextareaFieldConfig | TranslatableEditorFieldConfig,
+            props.field as
+                | TranslatableTextFieldConfig
+                | TranslatableTextareaFieldConfig
+                | TranslatableEditorFieldConfig,
     );
+    const translatableValue = computed(() => props.value as Record<string, string> | null | undefined);
     const asToggleButton = computed(() => props.field as ToggleButtonFieldConfig);
     const asFileUpload = computed(() => props.field as FileUploadFieldConfig);
     const asColorSelector = computed(() => props.field as ColorSelectorFieldConfig);
@@ -100,6 +104,10 @@
 
     /** Local visibility state — only used when we render the custom eye toggle. */
     const passwordVisible = ref(false);
+
+    function handleTranslatableUpdate(value: Record<string, string>): void {
+        emit('update', value);
+    }
 
     /** Resolve the generator config: `true` → {}, object → itself. */
     const passwordGeneratorConfig = computed<PasswordGeneratorConfig>(() => {
@@ -781,14 +789,14 @@
         <TranslatableInput
             v-else-if="
                 field.type === 'translatable-text' ||
-                field.type === 'translatable-textarea' ||
-                field.type === 'translatable-editor'
+                    field.type === 'translatable-textarea' ||
+                    field.type === 'translatable-editor'
             "
             :field="asTranslatable"
-            :model-value="(value as Record<string, string> | null | undefined)"
+            :model-value="translatableValue"
             :errors="translatableErrors"
             :disabled="disabled"
-            @update="(v: Record<string, string>) => emit('update', v)"
+            @update="handleTranslatableUpdate"
         />
 
         <InputGroupAddon v-if="field.groupSuffix">

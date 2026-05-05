@@ -18,7 +18,7 @@
     // avoids the "resolveDirective imported but never used" warning in consumer builds.
     const vTooltip = Tooltip;
     import { computed, onMounted, ref } from 'vue';
-    import FilePreviewModal, { suggestedPreviewWidth } from '@lvntr/components/ui/FilePreviewModal.vue';
+    import FilePreviewModal, { suggestedPreviewWidth } from '../ui/FilePreviewModal.vue';
     import Breadcrumb from './components/Breadcrumb.vue';
     import FileDetailsDialog from './components/FileDetailsDialog.vue';
     import FileGrid from './components/FileGrid.vue';

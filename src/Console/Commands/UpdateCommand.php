@@ -24,33 +24,41 @@ class UpdateCommand extends Command
      * Files/directories that are always safe to update (not user-customized).
      * These are core package files the user should not modify.
      *
+     * v13.5.0+: runtime files (Domain/Shared, Traits, Helpers, ApiResponse,
+     * Middleware/SecurityHeaders, Exceptions) are now vendor-resident and are
+     * NOT copied to the application. Only app-owned scaffold files remain here.
+     *
      * @var list<string>
      */
     private const SAFE_UPDATE_PATHS = [
-        // Shared domain base classes (excluding Services — user may customize those)
-        'app/Domain/Shared/Actions/',
-        'app/Domain/Shared/Contracts/',
-        'app/Domain/Shared/DTOs/',
-        'app/Domain/Shared/Pipelines/',
-
-        // Base enums and contracts from package
+        // PermissionEnum is generated per-project but kept in sync with package constants
         'app/Enums/PermissionEnum.php',
 
-        // Middleware from package (excluding CheckResourcePermission — user may customize)
-        'app/Http/Middleware/SecurityHeaders.php',
+        // AssignTraceId is an app-owned middleware stub (thin wrapper around vendor)
         'app/Http/Middleware/AssignTraceId.php',
+    ];
 
-        // API Response builder
-        'app/Http/Responses/ApiResponse.php',
-
-        // Global helpers (to_api, format_date, definition, definitionLabel)
+    /**
+     * Paths that were previously published to the application but are now
+     * vendor-resident (v13.5.0+). These are NOT copied during update.
+     * Displayed as an informational notice if still present in the application.
+     *
+     * @var list<string>
+     */
+    private const VENDOR_RESIDENT_PATHS = [
+        'app/Domain/FileManager/',
+        'app/Domain/Shared/',
+        'app/Traits/HasActivityLogging.php',
+        'app/Traits/HasMediaCollections.php',
         'app/Helpers/sk-helpers.php',
-
-        // Traits from package
-        'app/Traits/',
-
-        // Exception handler
+        'app/Http/Responses/ApiResponse.php',
+        'app/Http/Middleware/CheckResourcePermission.php',
+        'app/Http/Middleware/SecurityHeaders.php',
+        'app/Exceptions/ApiException.php',
         'app/Exceptions/ApiExceptionHandler.php',
+        'app/Http/Controllers/FileManagerController.php',
+        'app/Http/Requests/FileManager/',
+        'app/Console/Commands/PurgeFileManagerTrash.php',
     ];
 
     /**
@@ -101,7 +109,10 @@ class UpdateCommand extends Command
         $this->files = new Filesystem;
 
         $this->newLine();
-        $this->components->info('Updating Lvntr Starter Kit...');
+        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Updater (v13.5.x)</>');
+        $this->newLine();
+        $this->line('  <fg=gray>v13.5.0+: paket runtime vendor/lvntr/laravel-starter-kit\'te çalışır.</>');
+        $this->line('  <fg=gray>composer update yeterli; runtime dosyalar app\'e kopyalanmaz.</>');
         $this->newLine();
 
         $force = (bool) $this->option('force');
@@ -154,6 +165,9 @@ class UpdateCommand extends Command
         if (! $dryRun) {
             $this->updateHashRegistry();
         }
+
+        // Optional: inform user about vendor-resident paths still in app/
+        $this->printVendorResidentNotice();
 
         // Summary
         $this->newLine();
@@ -844,6 +858,47 @@ PHP;
         if (! $this->files->isDirectory($path)) {
             $this->files->makeDirectory($path, 0755, true);
         }
+    }
+
+    /**
+     * Print an informational notice about vendor-resident paths that are still
+     * present in the application. Shown only when at least one such path exists.
+     * No automatic cleanup is performed — the user decides.
+     */
+    private function printVendorResidentNotice(): void
+    {
+        $present = [];
+
+        foreach (self::VENDOR_RESIDENT_PATHS as $path) {
+            $target = base_path($path);
+
+            if (str_ends_with($path, '/')) {
+                if ($this->files->isDirectory($target)) {
+                    $present[] = $path;
+                }
+            } else {
+                if ($this->files->exists($target)) {
+                    $present[] = $path;
+                }
+            }
+        }
+
+        if (empty($present)) {
+            return;
+        }
+
+        $this->newLine();
+        $this->components->warn('v13.5.0+: paket runtime vendor\'da çalışır. Aşağıdaki dosyalar app\'te hâlâ mevcut:');
+        $this->newLine();
+
+        foreach ($present as $path) {
+            $this->line("  <fg=yellow>•</> {$path}");
+        }
+
+        $this->newLine();
+        $this->line('  <fg=gray>Bu dosyaları silmek opsiyonel; vendor sürümleri öncelik alır.</>');
+        $this->line('  <fg=gray>Ayrıntı için: docs/migrate-existing-project-to-vendor.tr.md</>');
+        $this->newLine();
     }
 
     /**

@@ -24,7 +24,7 @@ use Illuminate\Pagination\Paginator;
  *
  * @template TData
  */
-final class ApiResponse implements Responsable
+class ApiResponse implements Responsable
 {
     private bool $success;
 
@@ -45,7 +45,7 @@ final class ApiResponse implements Responsable
 
     private array $extraHeaders = [];
 
-    private function __construct(bool $success, int $status, string $message, mixed $data = null)
+    protected function __construct(bool $success, int $status, string $message, mixed $data = null)
     {
         $this->success = $success;
         $this->status = $status;
@@ -61,11 +61,11 @@ final class ApiResponse implements Responsable
      * @template T
      *
      * @param  T  $data
-     * @return self<T>
+     * @return static<T>
      */
-    public static function success(mixed $data = null, string $message = 'Operation successful.'): self
+    public static function success(mixed $data = null, string $message = 'Operation successful.'): static
     {
-        return new self(true, 200, $message, $data);
+        return new static(true, 200, $message, $data);
     }
 
     /**
@@ -74,21 +74,21 @@ final class ApiResponse implements Responsable
      * @template T
      *
      * @param  T  $data
-     * @return self<T>
+     * @return static<T>
      */
-    public static function created(mixed $data = null, string $message = 'Record created.'): self
+    public static function created(mixed $data = null, string $message = 'Record created.'): static
     {
-        return new self(true, 201, $message, $data);
+        return new static(true, 201, $message, $data);
     }
 
     /**
      * Error response (4xx/5xx).
      *
-     * @return self<null>
+     * @return static<null>
      */
-    public static function error(string $message = 'An error occurred.', int $status = 400): self
+    public static function error(string $message = 'An error occurred.', int $status = 400): static
     {
-        return new self(false, $status, $message);
+        return new static(false, $status, $message);
     }
 
     /**
@@ -109,11 +109,11 @@ final class ApiResponse implements Responsable
      * Paginated response — supports LengthAwarePaginator, CursorPaginator,
      * or simple Paginator (from `simplePaginate()`).
      *
-     * @return self<array<int, mixed>>
+     * @return static<array<int, mixed>>
      */
-    public static function paginated(LengthAwarePaginator|CursorPaginator|Paginator $paginator, string $message = 'Operation successful.'): self
+    public static function paginated(LengthAwarePaginator|CursorPaginator|Paginator $paginator, string $message = 'Operation successful.'): static
     {
-        $instance = new self(true, 200, $message, $paginator->items());
+        $instance = new static(true, 200, $message, $paginator->items());
         $instance->meta = array_merge($instance->meta, self::paginationMeta($paginator));
 
         return $instance;
@@ -125,9 +125,9 @@ final class ApiResponse implements Responsable
      * Preserves the resource transformation (e.g. hidden fields, computed attrs)
      * and exposes pagination metadata alongside the transformed items.
      *
-     * @return self<array<int, array<string, mixed>>>
+     * @return static<array<int, array<string, mixed>>>
      */
-    public static function paginatedCollection(ResourceCollection $collection, string $message = 'Operation successful.'): self
+    public static function paginatedCollection(ResourceCollection $collection, string $message = 'Operation successful.'): static
     {
         $paginator = $collection->resource;
 
@@ -135,7 +135,7 @@ final class ApiResponse implements Responsable
             fn ($resource) => $resource->toArray(request())
         )->all();
 
-        $instance = new self(true, 200, $message, $items);
+        $instance = new static(true, 200, $message, $items);
         $instance->meta = array_merge($instance->meta, self::paginationMeta($paginator));
 
         return $instance;
@@ -174,56 +174,56 @@ final class ApiResponse implements Responsable
 
     // ─── Fluent Setters ─────────────────────────────────────────────────
 
-    public function message(string $message): self
+    public function message(string $message): static
     {
         $this->message = $message;
 
         return $this;
     }
 
-    public function status(int $status): self
+    public function status(int $status): static
     {
         $this->status = $status;
 
         return $this;
     }
 
-    public function meta(array $meta): self
+    public function meta(array $meta): static
     {
         $this->meta = array_merge($this->meta, $meta);
 
         return $this;
     }
 
-    public function traceId(string $traceId): self
+    public function traceId(string $traceId): static
     {
         $this->traceId = $traceId;
 
         return $this;
     }
 
-    public function debug(array $debug): self
+    public function debug(array $debug): static
     {
         $this->debugInfo = $debug;
 
         return $this;
     }
 
-    public function errors(?array $errors): self
+    public function errors(?array $errors): static
     {
         $this->errors = $errors;
 
         return $this;
     }
 
-    public function header(string $key, string $value): self
+    public function header(string $key, string $value): static
     {
         $this->extraHeaders[$key] = $value;
 
         return $this;
     }
 
-    public function headers(array $headers): self
+    public function headers(array $headers): static
     {
         $this->extraHeaders = array_merge($this->extraHeaders, $headers);
 

@@ -11,13 +11,13 @@
         SlotFieldConfig,
         TitleFieldConfig,
         TranslatableTextFieldConfig,
-    } from '@lvntr/components/FormBuilder/core';
+    } from './core';
     import type { SharedPageProps } from '@/types';
     import { useApi } from '@/composables/useApi';
     import { useCan } from '@/composables/useCan';
     import { useDefinition } from '@/composables/useDefinition';
     import { trans } from 'laravel-vue-i18n';
-    import SkFormInput from '@lvntr/components/FormBuilder/SkFormInput.vue';
+    import SkFormInput from './SkFormInput.vue';
 
     /**
      * Render a field's label: translates it via laravel-vue-i18n when the label is
@@ -659,9 +659,10 @@
                                         </template>
                                     </div>
 
-                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
-                                        activeErrors[field.key]
-                                    }}</small>
+                                    <small
+                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
+                                        class="sk-fb__error"
+                                    >{{ activeErrors[field.key] }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
                                 </div>
 
@@ -727,9 +728,10 @@
                                         </slot>
                                     </template>
 
-                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
-                                        activeErrors[field.key]
-                                    }}</small>
+                                    <small
+                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
+                                        class="sk-fb__error"
+                                    >{{ activeErrors[field.key] }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
                                 </div>
                             </template>
@@ -785,9 +787,10 @@
                                         />
                                     </slot>
 
-                                    <small v-if="activeErrors[field.key] && !isTranslatableField(field)" class="sk-fb__error">{{
-                                        activeErrors[field.key]
-                                    }}</small>
+                                    <small
+                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
+                                        class="sk-fb__error"
+                                    >{{ activeErrors[field.key] }}</small>
                                     <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
                                 </div>
                             </div>

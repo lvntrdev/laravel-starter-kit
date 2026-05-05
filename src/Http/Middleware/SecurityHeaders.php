@@ -20,7 +20,7 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
 
         // CSP is only applied in non-local environments — Vite HMR in local
         // dev needs to load scripts/styles/websockets from a dev server URL

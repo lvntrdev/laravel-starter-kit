@@ -9,7 +9,7 @@
         DataTableResponse,
         FilterConfig,
         FilterOption,
-    } from '@lvntr/components/DatatableBuilder/core';
+    } from './core';
     import { trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
     import Ripple from 'primevue/ripple';

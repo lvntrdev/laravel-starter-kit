@@ -31,7 +31,7 @@ class InstallCommand extends Command
     protected $signature = 'sk:install
         {--force : Overwrite existing files}';
 
-    protected $description = 'Install the Lvntr Starter Kit scaffolding';
+    protected $description = 'Install the Lvntr Starter Kit application skeleton (v13.5.0+: package runtime runs from vendor, not copied to app)';
 
     private Filesystem $files;
 
@@ -70,6 +70,12 @@ class InstallCommand extends Command
         $this->files = new Filesystem;
 
         $this->newLine();
+        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer (v13.5.x)</>');
+        $this->newLine();
+        $this->line('  <fg=gray>Package runtime runs from vendor/lvntr/laravel-starter-kit.</>');
+        $this->line('  <fg=gray>This command copies only the application skeleton (auth, layout,</>');
+        $this->line('  <fg=gray>user/role/setting domains, config) to your app directory.</>');
+        $this->newLine();
         $this->components->info('Installing Lvntr Starter Kit...');
         $this->newLine();
 
@@ -106,8 +112,17 @@ class InstallCommand extends Command
 
         // 4. Publish config
         $this->step('Publishing configuration', function () {
+            // Core starter-kit config
             $this->callSilently('vendor:publish', [
                 '--tag' => 'starter-kit-config',
+                '--force' => $this->option('force'),
+            ]);
+
+            // FileManager config — vendor runtime reads its defaults from here.
+            // Published separately so users can override file-manager.php settings
+            // (allowed mime types, max size, model bindings) without touching vendor code.
+            $this->callSilently('vendor:publish', [
+                '--tag' => 'starter-kit-file-manager-config',
                 '--force' => $this->option('force'),
             ]);
         });
@@ -169,24 +184,31 @@ class InstallCommand extends Command
             $this->runSeeders();
         }
 
-        // 9. Passport keys
+        // 9. Seed permissions (config-driven, vendor runtime reads from permission-resources.php)
+        if ($this->confirmStep('Seed permissions from config/permission-resources.php?')) {
+            $this->step('Seeding permissions', function () {
+                $this->callSilently('sk:seed-permissions', ['--fresh' => true]);
+            });
+        }
+
+        // 10. Passport keys
         if ($this->confirmStep('Generate Passport encryption keys?')) {
             $this->step('Generating Passport keys', function () {
                 $this->callSilently('passport:keys', ['--force' => true]);
             });
         }
 
-        // 10. Create admin user
+        // 11. Create admin user
         if ($this->confirmStep('Create default admin user?')) {
             $this->createAdminUser();
         }
 
-        // 11. Install npm dependencies
+        // 12. Install npm dependencies
         if ($this->confirmStep('Install npm dependencies and build assets?')) {
             $this->installFrontend();
         }
 
-        // 12. Save stub hashes for update tracking
+        // 13. Save stub hashes for update tracking
         $this->saveStubHashes();
 
         // Summary
@@ -1218,6 +1240,12 @@ class InstallCommand extends Command
 
     /**
      * Save hashes of published stub files for update tracking.
+     *
+     * v13.5.0+: Only app-owned skeleton stubs are tracked. Vendor-runtime files
+     * (Domain/FileManager, Domain/Shared, Traits, Helpers/sk-helpers.php,
+     * Http/Responses/ApiResponse.php, Http/Middleware/CheckResourcePermission.php,
+     * Exceptions/ApiException.php) are NOT in the stubs directory and therefore
+     * never appear in this registry. They run from vendor and need no tracking.
      */
     private function saveStubHashes(): void
     {

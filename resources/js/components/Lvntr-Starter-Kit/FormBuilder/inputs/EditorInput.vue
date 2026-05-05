@@ -20,10 +20,10 @@
     import type { Extensions } from '@tiptap/core';
     import InputText from 'primevue/inputtext';
     import Popover from 'primevue/popover';
-    import EditorColorPalette from '@lvntr/components/FormBuilder/inputs/EditorColorPalette.vue';
-    import type { EditorImageUploadConfig, EditorToolbarPreset } from '@lvntr/components/FormBuilder/core';
-    import type { FileItem } from '@lvntr/components/FileManager/types';
-    import EditorImagePicker from '@lvntr/components/FormBuilder/inputs/EditorImagePicker.vue';
+    import EditorColorPalette from './EditorColorPalette.vue';
+    import type { EditorImageUploadConfig, EditorToolbarPreset } from '../core';
+    import type { FileItem } from '../../FileManager/types';
+    import EditorImagePicker from './EditorImagePicker.vue';
     import { useDialog } from '@/composables/useDialog';
     import { useToast } from 'primevue/usetoast';
     import { trans } from 'laravel-vue-i18n';

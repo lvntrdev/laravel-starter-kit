@@ -7,12 +7,18 @@ return [
     | Package Migrations
     |--------------------------------------------------------------------------
     |
-    | When true, the package will load its own migrations.
-    | When false (default), migrations are published to the app.
+    | When true (default), the package auto-loads its own migrations via
+    | loadMigrationsFrom() so consumer apps do not need to publish them.
+    | Filenames inside database/migrations/ MUST stay stable across releases:
+    | Laravel records the bare basename in the `migrations` table, so any
+    | rename would re-run an already-applied migration and likely fail with
+    | "table already exists". Apps that prefer to own a physical copy can
+    | still publish via `vendor:publish --tag=starter-kit-migrations` and
+    | flip this flag to false to disable auto-load.
     |
     */
 
-    'run_migrations' => false,
+    'run_migrations' => true,
 
     /*
     |--------------------------------------------------------------------------

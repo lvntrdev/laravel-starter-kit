@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\HasActivityLogging;
+use Lvntr\StarterKit\Traits\HasActivityLogging;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 /**

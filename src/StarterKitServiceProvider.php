@@ -10,10 +10,24 @@ use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Domain\Shared\Pipelines\ActionPipeline;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Exceptions\ApiExceptionHandler;
+use Lvntr\StarterKit\Facades\FileManager as FileManagerFacade;
+use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
+use Lvntr\StarterKit\Http\Middleware\SecurityHeaders;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 class StarterKitServiceProvider extends ServiceProvider
 {
@@ -22,7 +36,86 @@ class StarterKitServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Helper autoload order: load the consumer-published copy FIRST (when
+        // present) so its function declarations register before the vendor
+        // helper's `function_exists` guards run. The vendor file then fills in
+        // any helper the consumer did not override.
+        //
+        // We load helpers here (instead of via `autoload.files` in
+        // composer.json) because Composer would load the vendor copy before
+        // the consumer's, and the symlinked `vendor/lvntr/laravel-starter-kit`
+        // path makes a `dirname(__DIR__, 4)` walk inside the helper file
+        // unreliable for locating the consumer copy. Loading from the
+        // ServiceProvider lets us use `base_path()` directly.
+        $userHelpers = base_path('app/Helpers/sk-helpers.php');
+        if (is_file($userHelpers)) {
+            require_once $userHelpers;
+        }
+
+        require_once __DIR__.'/sk-helpers.php';
+
         $this->mergeConfigFrom(__DIR__.'/../config/starter-kit.php', 'starter-kit');
+
+        // Task 6/7 hook: file-manager config will live at
+        // config/file-manager.php in the package once that domain is moved
+        // vendor-first. Guard with file_exists() so we can land this hook
+        // in Task 1 without breaking anything until the file ships.
+        $fileManagerConfig = __DIR__.'/../config/file-manager.php';
+        if (file_exists($fileManagerConfig)) {
+            $this->mergeConfigFrom($fileManagerConfig, 'file-manager');
+        }
+
+        // Backward-compatibility aliases: consumer apps that were generated
+        // before v13.5.1 still import from `App\` namespace. These aliases
+        // make those imports resolve to the vendor classes transparently so
+        // consumer app code (domain actions, DTOs, models, controllers)
+        // continues to work without any changes after the published stubs
+        // are removed during cleanup.
+        //
+        // New installs should import directly from `Lvntr\StarterKit\*`.
+        // Note: PHP traits cannot be safely aliased via class_alias() —
+        // HasActivityLogging and HasMediaCollections are NOT included here.
+        // Consumer models must update their `use` import to the vendor
+        // namespace directly (see UPGRADE.md migration notes).
+        $bcAliases = [
+            'App\Domain\Shared\Actions\BaseAction' => BaseAction::class,
+            'App\Domain\Shared\Contracts\PipeableAction' => PipeableAction::class,
+            'App\Domain\Shared\DTOs\BaseDTO' => BaseDTO::class,
+            'App\Domain\Shared\Pipelines\ActionPipeline' => ActionPipeline::class,
+            'App\Domain\Shared\Services\DefinitionService' => DefinitionService::class,
+            'App\Exceptions\ApiException' => ApiException::class,
+            'App\Exceptions\ApiExceptionHandler' => ApiExceptionHandler::class,
+            'App\Http\Responses\ApiResponse' => ApiResponse::class,
+            'App\Http\Middleware\CheckResourcePermission' => CheckResourcePermission::class,
+            'App\Http\Middleware\SecurityHeaders' => SecurityHeaders::class,
+            'App\Domain\FileManager\Support\ContextRegistry' => ContextRegistry::class,
+        ];
+
+        // Resolve the consumer base path. `base_path()` is unavailable during
+        // ServiceProvider::register() in some bootstrap contexts, so fall back
+        // to the application instance when the helper is missing.
+        $basePath = function_exists('base_path') ? base_path() : $this->app->basePath();
+
+        foreach ($bcAliases as $appClass => $vendorClass) {
+            // If the consumer ships their own implementation of the App\* class,
+            // skip alias registration entirely. Without this guard, class_alias()
+            // would register the vendor class against the alias name and PHP's
+            // class resolution would short-circuit before Composer's autoloader
+            // ever loads the consumer's file — silently dropping their override.
+            $relativePath = str_replace('\\', '/', $appClass);
+            if (str_starts_with($relativePath, 'App/')) {
+                $relativePath = substr($relativePath, 4);
+            }
+            $appPath = $basePath.'/app/'.$relativePath.'.php';
+
+            if (file_exists($appPath)) {
+                continue;
+            }
+
+            if (! class_exists($appClass, false) && ! interface_exists($appClass, false)) {
+                class_alias($vendorClass, $appClass);
+            }
+        }
     }
 
     /**
@@ -40,6 +133,23 @@ class StarterKitServiceProvider extends ServiceProvider
         $this->registerPublishables();
         $this->registerMigrations();
         $this->registerViews();
+
+        // Middleware aliases — registered here so new vendor-first installs
+        // resolve both alias names to the same vendor class. ServiceProvider
+        // boot() runs AFTER bootstrap/app.php's withMiddleware() closure, so
+        // even when consumer apps call Bootstrap::middleware() and register
+        // 'check.permission' with their own App\Http\Middleware\CheckResourcePermission,
+        // the vendor alias re-registration here wins last. Functionally this
+        // is safe: the consumer's CheckResourcePermission and the vendor's
+        // implementation both delegate to the same Spatie permission table.
+        // Consumers needing a true override should bind the vendor class to
+        // their own subclass via the container, not via alias re-registration.
+        /** @var Router $router */
+        $router = $this->app['router'];
+        $router->aliasMiddleware('check.permission', CheckResourcePermission::class);
+        $router->aliasMiddleware('check.resource.permission', CheckResourcePermission::class);
+
+        $this->registerRoutes();
     }
 
     /**
@@ -148,7 +258,7 @@ class StarterKitServiceProvider extends ServiceProvider
     private function registerCommands(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([
+            $commands = [
                 Console\Commands\InstallCommand::class,
                 Console\Commands\UpdateCommand::class,
                 Console\Commands\UpgradeCommand::class,
@@ -156,7 +266,17 @@ class StarterKitServiceProvider extends ServiceProvider
                 Console\Commands\MakeDomainCommand::class,
                 Console\Commands\RemoveDomainCommand::class,
                 Console\Commands\EnvSyncCommand::class,
-            ]);
+            ];
+
+            // Register the vendor PurgeFileManagerTrashCommand only when the
+            // consumer app does not define its own version. The signature
+            // 'file-manager:purge-trash' must appear exactly once — duplicate
+            // registration causes an Artisan conflict exception.
+            if (! class_exists('App\\Console\\Commands\\PurgeFileManagerTrash')) {
+                $commands[] = Console\Commands\PurgeFileManagerTrashCommand::class;
+            }
+
+            $this->commands($commands);
         }
     }
 
@@ -173,6 +293,15 @@ class StarterKitServiceProvider extends ServiceProvider
 
     /**
      * Register publishable resources.
+     *
+     * Tag naming convention: every tag is prefixed with `starter-kit-` so
+     * the package never collides with consumer-defined tags. Existing tags
+     * (`starter-kit-config`, `starter-kit-lang`, `starter-kit-components`)
+     * are kept verbatim because `InstallCommand` already references them;
+     * Task 1 only adds new placeholder tags for resources that ship in
+     * later tasks (views, migrations, stubs, file-manager subset). All
+     * placeholder publishes are guarded by file_exists() / is_dir() so
+     * `vendor:publish` does not error out before the source ships.
      */
     private function registerPublishables(): void
     {
@@ -194,16 +323,106 @@ class StarterKitServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/js/components' => resource_path('js/components/Lvntr-Starter-Kit'),
         ], 'starter-kit-components');
+
+        // Task 1 placeholders: registered conditionally so they become
+        // active automatically once the source files land in later tasks.
+        // No existing publish flow changes today.
+
+        // Blade views (Task 2+ may ship a few server-rendered views)
+        $viewsPath = __DIR__.'/../resources/views';
+        if (is_dir($viewsPath)) {
+            $this->publishes([
+                $viewsPath => resource_path('views/vendor/starter-kit'),
+            ], 'starter-kit-views');
+        }
+
+        // Migrations (Task 8 will move package migrations here)
+        $migrationsPath = __DIR__.'/../database/migrations';
+        if (is_dir($migrationsPath)) {
+            $this->publishes([
+                $migrationsPath => database_path('migrations'),
+            ], 'starter-kit-migrations');
+        }
+
+        // Stubs (Task 5+ may publish customizable scaffolding stubs)
+        $stubsPath = __DIR__.'/../stubs';
+        if (is_dir($stubsPath)) {
+            $this->publishes([
+                $stubsPath => base_path('stubs/starter-kit'),
+            ], 'starter-kit-stubs');
+        }
+
+        // FileManager domain publishables (Task 6/7)
+        $fileManagerConfig = __DIR__.'/../config/file-manager.php';
+        if (file_exists($fileManagerConfig)) {
+            $this->publishes([
+                $fileManagerConfig => config_path('file-manager.php'),
+            ], 'starter-kit-file-manager-config');
+        }
+
+        $fileManagerComponentsPath = __DIR__.'/../resources/js/components/file-manager';
+        if (is_dir($fileManagerComponentsPath)) {
+            $this->publishes([
+                $fileManagerComponentsPath => resource_path('js/components/Lvntr-Starter-Kit/file-manager'),
+            ], 'starter-kit-file-manager-components');
+        }
     }
 
     /**
      * Register package migrations.
+     *
+     * Default behaviour: auto-load migrations from the package so consumer
+     * apps inherit FileManager schema without a publish step. Existing apps
+     * that already ran these files have their basenames recorded in the
+     * `migrations` table — Laravel keys migration history by basename, so
+     * the duplicate vendor copy is silently skipped on the next migrate run.
+     * Filenames inside database/migrations/ are therefore immutable.
      */
     private function registerMigrations(): void
     {
-        if ($this->app->runningInConsole() && config('starter-kit.run_migrations', false)) {
+        if ($this->app->runningInConsole() && config('starter-kit.run_migrations', true)) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
+    }
+
+    /**
+     * Register vendor FileManager routes.
+     *
+     * Override mechanism: when the consumer app already ships its own
+     * `routes/web/file-manager-route.php` (or the API equivalent) the
+     * orchestrator in `routes/web.php` / `routes/api.php` will load that
+     * file directly. In that case the package MUST NOT auto-mount — doing
+     * so would register the same route names twice and clash with the
+     * consumer's customized controller.
+     *
+     * On a fresh install where neither stub exists, the package mounts the
+     * routes itself under the `web` middleware group with `auth + verified`,
+     * matching the previously published stub's behaviour.
+     */
+    private function registerRoutes(): void
+    {
+        $consumerRouteFiles = [
+            base_path('routes/web/file-manager-route.php'),
+            base_path('routes/api/file-manager-route.php'),
+        ];
+
+        foreach ($consumerRouteFiles as $consumerRouteFile) {
+            if (file_exists($consumerRouteFile)) {
+                // Consumer owns the route mount (either via the stub
+                // one-liner that calls FileManager::routes() or via a fully
+                // customized route file pointing to their own controller).
+                // Either way the orchestrator in routes/web.php picks it up
+                // automatically — nothing for the package to do here.
+                return;
+            }
+        }
+
+        // Fresh install fallback: mount under the standard web auth stack so
+        // the FileManager UI works out of the box without requiring a stub
+        // route file in the consumer app.
+        Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
+            FileManagerFacade::routes();
+        });
     }
 
     /**

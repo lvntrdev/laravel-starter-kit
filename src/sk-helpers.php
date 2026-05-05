@@ -1,39 +1,25 @@
 <?php
 
 use App\Domain\Shared\Services\DefinitionService;
-use App\Http\Responses\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 /*
 |--------------------------------------------------------------------------
-| User-Published Override Hook
+| Vendor Helper Functions
 |--------------------------------------------------------------------------
 |
-| When loaded from `vendor/lvntr/laravel-starter-kit/src/sk-helpers.php`,
-| the dirname() walk lands at the consumer application's base path. If the
-| user has published a customised copy via `php artisan sk:publish
-| --tag=helpers`, route through it so their definitions win. The
-| `require_once` is idempotent, so this stays safe in every load order.
-|
-| When this same file is loaded as the user's published copy, the realpath
-| guard short-circuits the recursion and the function declarations below
-| run normally.
+| This file is loaded by `StarterKitServiceProvider::register()` AFTER the
+| consumer-published copy at `app/Helpers/sk-helpers.php` (when present), so
+| every declaration below is wrapped in a `function_exists` guard — the
+| consumer's definitions always win.
 |
 */
-
-$skPublishedHelpers = dirname(__DIR__, 4).'/app/Helpers/sk-helpers.php';
-if (is_file($skPublishedHelpers) && realpath($skPublishedHelpers) !== realpath(__FILE__)) {
-    require_once $skPublishedHelpers;
-    unset($skPublishedHelpers);
-
-    return;
-}
-unset($skPublishedHelpers);
 
 if (! function_exists('to_api')) {
     /**

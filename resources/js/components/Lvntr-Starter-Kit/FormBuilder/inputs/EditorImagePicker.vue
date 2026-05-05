@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { computed, onMounted, ref } from 'vue';
-    import { useFileManager } from '@lvntr/components/FileManager/composables/useFileManager';
-    import type { FileItem } from '@lvntr/components/FileManager/types';
+    import { useFileManager } from '../../FileManager/composables/useFileManager';
+    import type { FileItem } from '../../FileManager/types';
     import { useDialog } from '@/composables/useDialog';
     import ProgressSpinner from 'primevue/progressspinner';
     import { useToast } from 'primevue/usetoast';

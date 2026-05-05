@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Traits\HasActivityLogging;
-use App\Traits\HasMediaCollections;
+use Lvntr\StarterKit\Traits\HasActivityLogging;
+use Lvntr\StarterKit\Traits\HasMediaCollections;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;

@@ -11,10 +11,28 @@ import Components from 'unplugin-vue-components/vite';
 import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import path from 'path';
 
+// NOTE (stubs perspective): When this file is published to a consumer project
+// via `php artisan sk:install`, __dirname resolves to the consumer project root.
+// All alias paths below therefore point to the vendor directory of the consumer.
+// preserveSymlinks is enabled so that Composer path-repository symlinks (used
+// during local package development) are followed correctly without breaking HMR.
+// For Levent's own sibling-dev workflow the alias is the same — vendor/lvntr/...
+// is a symlink to ../starter-kit-package thanks to the Composer path repository.
+
 export default defineConfig({
     resolve: {
+        preserveSymlinks: true,
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
+            // @lvntr/components/* → Lvntr-Starter-Kit UI lib from vendor.
+            // Consumer's __dirname is the project root; vendor symlink is followed
+            // via preserveSymlinks so HMR works for both install and sibling-dev.
+            '@lvntr/components': path.resolve(
+                __dirname,
+                'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
+            ),
+            // Remaining @lvntr/* imports (e.g. shared utilities) resolve to the
+            // same vendor package root.
             '@lvntr': path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js'),
         },
     },
@@ -40,7 +58,10 @@ export default defineConfig({
         Components({
             dirs: [
                 'resources/js/components',
-                'vendor/lvntr/laravel-starter-kit/resources/js/components',
+                // Lvntr-Starter-Kit components from vendor are auto-imported so
+                // templates can use <SkForm/>, <SkDatatable/>, <AppDialog/> etc.
+                // without explicit import statements.
+                'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
             ],
             dts: 'components.d.ts',
             resolvers: [PrimeVueResolver()],
@@ -61,6 +82,16 @@ export default defineConfig({
                 ) {
                     return;
                 }
+                // @vueuse/core dist dosyasındaki #__PURE__ yorumlarının konumu
+                // Rollup tarafından yorumlanamıyor — upstream sorun, build'ı etkilemiyor.
+                if (warning.code === 'INVALID_ANNOTATION' && msg.includes('@vueuse/core')) {
+                    return;
+                }
+                // <script setup> SSR dönüşümü sırasında Vue plugin'in eklediği
+                // h/resolveDirective import'ları Rollup'a "kullanılmıyor" görünür.
+                if (warning.code === 'UNUSED_EXTERNAL_IMPORT' && msg.includes('"vue"')) {
+                    return;
+                }
                 warn(warning);
             },
             output: {
@@ -78,6 +109,8 @@ export default defineConfig({
                 },
             },
         },
+        // vendor chunk 900 kB+ olabiliyor; uyarı limiti buna göre ayarlandı.
+        chunkSizeWarningLimit: 1000,
     },
 
     server: {

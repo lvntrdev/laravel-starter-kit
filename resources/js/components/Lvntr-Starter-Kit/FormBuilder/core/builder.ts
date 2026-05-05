@@ -667,7 +667,9 @@ export class SlotBuilder extends BaseFieldBuilder<SlotFieldConfig> {
 
 // ── Translatable Field Builders ───────────────────────────────────────────────
 
-abstract class TranslatableBaseBuilder<T extends TranslatableTextFieldConfig | TranslatableTextareaFieldConfig | TranslatableEditorFieldConfig> extends BaseFieldBuilder<T> {
+abstract class TranslatableBaseBuilder<
+    T extends TranslatableTextFieldConfig | TranslatableTextareaFieldConfig | TranslatableEditorFieldConfig,
+> extends BaseFieldBuilder<T> {
     onlyLocales(locales: string[]): this {
         this.config.onlyLocales = locales;
         return this;

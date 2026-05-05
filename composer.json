@@ -42,9 +42,6 @@
     "orchestra/testbench": "^11.0"
   },
   "autoload": {
-    "files": [
-      "src/sk-helpers.php"
-    ],
     "psr-4": {
       "Lvntr\\StarterKit\\": "src/"
     }

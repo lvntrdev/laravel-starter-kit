@@ -3,8 +3,8 @@
         TranslatableEditorFieldConfig,
         TranslatableTextareaFieldConfig,
         TranslatableTextFieldConfig,
-    } from '@lvntr/components/FormBuilder/core';
-    import EditorInput from '@lvntr/components/FormBuilder/inputs/EditorInput.vue';
+    } from '../core';
+    import EditorInput from './EditorInput.vue';
     import { usePage } from '@inertiajs/vue3';
     import type { SharedPageProps } from '@/types';
 
@@ -193,11 +193,7 @@
 
         <!-- Çok dil, inline -->
         <template v-else-if="layout === 'inline'">
-            <div
-                v-for="loc in resolvedLocales"
-                :key="loc.code"
-                class="sk-translatable-field__row"
-            >
+            <div v-for="loc in resolvedLocales" :key="loc.code" class="sk-translatable-field__row">
                 <InputGroup>
                     <InputGroupAddon class="sk-translatable-field__locale">
                         {{ formatLocaleLabel(loc) }}
@@ -246,11 +242,7 @@
         <template v-else>
             <Tabs :value="activeTab" @update:value="(v) => (activeTab = String(v))">
                 <TabList>
-                    <Tab
-                        v-for="loc in resolvedLocales"
-                        :key="loc.code"
-                        :value="loc.code"
-                    >
+                    <Tab v-for="loc in resolvedLocales" :key="loc.code" :value="loc.code">
                         {{ formatLocaleLabel(loc) }}
                         <i
                             v-if="hasErrorInLocale(loc.code)"
@@ -260,11 +252,7 @@
                     </Tab>
                 </TabList>
                 <TabPanels>
-                    <TabPanel
-                        v-for="loc in resolvedLocales"
-                        :key="loc.code"
-                        :value="loc.code"
-                    >
+                    <TabPanel v-for="loc in resolvedLocales" :key="loc.code" :value="loc.code">
                         <InputText
                             v-if="fieldType === 'translatable-text'"
                             :model-value="value[loc.code] ?? ''"
