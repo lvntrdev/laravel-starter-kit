@@ -581,6 +581,22 @@ class UpdateCommand extends Command
             }
         }
 
+        // Mark stub files that were previously installed but are now missing as deleted.
+        // This persists the user's deletion decision so future sk:update / sk:install
+        // runs do not restore the file — even after storage/ is cleared or re-deployed.
+        foreach ($this->files->allFiles($stubsPath, true) as $file) {
+            $relativePath = str_replace('\\', '/', $file->getRelativePathname());
+            $existing = $hashes[$relativePath] ?? null;
+
+            if ($existing === null || $existing === '__deleted__' || $existing === '__skipped__') {
+                continue;
+            }
+
+            if (! $this->files->exists(base_path($relativePath))) {
+                $hashes[$relativePath] = '__deleted__';
+            }
+        }
+
         $this->saveHashRegistry($hashes);
     }
 

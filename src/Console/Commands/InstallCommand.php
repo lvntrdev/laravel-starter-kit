@@ -407,6 +407,20 @@ class InstallCommand extends Command
                 continue;
             }
 
+            // Re-install guard: if hash registry exists and has a record for this file
+            // but the target is missing, the user intentionally deleted it — don't restore.
+            if (! $force && ! $this->files->exists($targetPath)) {
+                $hashFile = config('starter-kit.published_hashes', storage_path('starter-kit/hashes.json'));
+                if ($this->files->exists($hashFile)) {
+                    $hashes = json_decode($this->files->get($hashFile), true) ?: [];
+                    if (isset($hashes[$normalizedPath])) {
+                        $this->skipped[] = $relativePath;
+
+                        continue;
+                    }
+                }
+            }
+
             $this->files->copy($file->getPathname(), $targetPath);
             $this->published[] = $relativePath;
         }
