@@ -32,7 +32,7 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
  * exception handler (ApiExceptionHandler) are now resolved from the vendor
  * namespace so consumers no longer need to publish these stubs.
  * Existing published copies remain functional as long as the consumer
- * registers them via the container binding (see UPGRADE.md).
+ * registers them via the container binding (see UPGRADE_.md).
  */
 class Bootstrap
 {

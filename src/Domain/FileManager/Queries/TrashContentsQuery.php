@@ -22,7 +22,7 @@ class TrashContentsQuery
      *     folder: null,
      *     folders: array<int, array<string, mixed>>,
      *     files: array<int, array<string, mixed>>,
-     *     stats: array{file_count: int, total_size: int},
+     *     stats: array{file_count: int, total_size: int, storage_used: int},
      * }
      */
     public function execute(FileManagerContextDTO $context): array
@@ -75,6 +75,7 @@ class TrashContentsQuery
             'stats' => [
                 'file_count' => $mediaModels->count(),
                 'total_size' => (int) $mediaModels->sum('size'),
+                'storage_used' => $this->computeStorageUsed($context),
             ],
         ];
     }

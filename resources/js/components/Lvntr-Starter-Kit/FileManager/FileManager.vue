@@ -172,10 +172,10 @@
         return latest;
     });
 
-    // Storage quota — currently a sane visual default (10 GB) until a backend
-    // setting is wired up. The bar still scales correctly when filled.
+    // Storage quota — hardcoded 10 GB until a per-owner quota setting is wired up.
     const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
-    const usedBytes = computed(() => fm.contents.stats.total_size);
+    // Use storage_used (all collections) when available; fall back to current-view total_size.
+    const usedBytes = computed(() => fm.contents.stats.storage_used ?? fm.contents.stats.total_size);
 
     function humanSize(bytes: number): string {
         if (!bytes) return '0 B';

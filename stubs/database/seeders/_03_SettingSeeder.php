@@ -50,7 +50,7 @@ class _03_SettingSeeder extends Seeder
                 'aws_endpoint' => config('filesystems.disks.s3.endpoint'),
             ],
             'file_manager' => [
-                'max_size_kb' => '10240',
+                'max_size_mb' => '10',
                 'accepted_mimes' => json_encode([
                     'image/jpeg',
                     'image/png',

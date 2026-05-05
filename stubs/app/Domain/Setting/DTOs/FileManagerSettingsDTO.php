@@ -10,7 +10,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
      * @param  array<int, string>  $acceptedMimes
      */
     public function __construct(
-        public int $maxSizeKb,
+        public int $maxSizeMb,
         public array $acceptedMimes,
         public bool $allowVideo,
         public bool $allowAudio,
@@ -28,7 +28,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
         }
 
         return new static(
-            maxSizeKb: (int) ($data['max_size_kb'] ?? 10240),
+            maxSizeMb: (int) ($data['max_size_mb'] ?? 10),
             acceptedMimes: array_values(array_filter(array_map('strval', (array) $mimes))),
             allowVideo: (bool) ($data['allow_video'] ?? false),
             allowAudio: (bool) ($data['allow_audio'] ?? false),
@@ -41,7 +41,7 @@ readonly class FileManagerSettingsDTO extends BaseDTO
     public function toArray(): array
     {
         return [
-            'max_size_kb' => (string) $this->maxSizeKb,
+            'max_size_mb' => (string) $this->maxSizeMb,
             'accepted_mimes' => json_encode($this->acceptedMimes),
             'allow_video' => $this->allowVideo ? '1' : '0',
             'allow_audio' => $this->allowAudio ? '1' : '0',

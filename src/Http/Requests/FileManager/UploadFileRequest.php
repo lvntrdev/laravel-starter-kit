@@ -43,7 +43,7 @@ class UploadFileRequest extends FileManagerRequest
      */
     public function rules(): array
     {
-        $maxSizeKb = (int) config('file-manager.settings.max_size_kb', 10240);
+        $maxSizeKb = (int) config('file-manager.settings.max_size_mb', 10) * 1024;
         $mimetypes = $this->acceptedMimes();
 
         return [
@@ -107,12 +107,9 @@ class UploadFileRequest extends FileManagerRequest
 
     protected function humanMaxSize(): string
     {
-        $kb = (int) config('file-manager.settings.max_size_kb', 10240);
-        if ($kb >= 1024) {
-            return number_format($kb / 1024, $kb % 1024 === 0 ? 0 : 1).' MB';
-        }
+        $mb = (int) config('file-manager.settings.max_size_mb', 10);
 
-        return $kb.' KB';
+        return $mb.' MB';
     }
 
     protected function mimeExtensionList(): string

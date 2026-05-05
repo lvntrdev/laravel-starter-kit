@@ -76,7 +76,7 @@ class StarterKitServiceProvider extends ServiceProvider
         // Note: PHP traits cannot be safely aliased via class_alias() —
         // HasActivityLogging and HasMediaCollections are NOT included here.
         // Consumer models must update their `use` import to the vendor
-        // namespace directly (see UPGRADE.md migration notes).
+        // namespace directly (see UPGRADE_.md migration notes).
         $bcAliases = [
             'App\Domain\Shared\Actions\BaseAction' => BaseAction::class,
             'App\Domain\Shared\Contracts\PipeableAction' => PipeableAction::class,
@@ -268,6 +268,7 @@ class StarterKitServiceProvider extends ServiceProvider
                 Console\Commands\MakeDomainCommand::class,
                 Console\Commands\RemoveDomainCommand::class,
                 Console\Commands\EnvSyncCommand::class,
+                Console\Commands\SeedPermissionsCommand::class,
             ];
 
             // Register the vendor PurgeFileManagerTrashCommand only when the

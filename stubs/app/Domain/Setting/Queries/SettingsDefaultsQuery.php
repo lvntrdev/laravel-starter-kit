@@ -102,7 +102,7 @@ class SettingsDefaultsQuery
         $mimes = array_values(array_diff(array_map('strval', $mimes), $blocked));
 
         return [
-            'max_size_kb' => (int) ($stored['max_size_kb'] ?? 10240),
+            'max_size_mb' => (int) ($stored['max_size_mb'] ?? 10),
             'accepted_mimes' => $mimes,
             'allow_video' => ($stored['allow_video'] ?? '0') === '1',
             'allow_audio' => ($stored['allow_audio'] ?? '0') === '1',

@@ -42,7 +42,7 @@ return [
     | populate these via their SettingsServiceProvider by writing DB-stored
     | values into config('file-manager.settings.*') at boot time.
     |
-    | max_size_kb      — Maximum allowed upload size in kilobytes (default 10 MB).
+    | max_size_mb      — Maximum allowed upload size in megabytes (default 10 MB).
     | accepted_mimes   — Array of accepted MIME types, or null to use built-in
     |                    defaults. Overridden by admin settings at runtime.
     | allow_video      — Whether video MIME types are accepted.
@@ -51,7 +51,7 @@ return [
     */
 
     'settings' => [
-        'max_size_kb' => 10240,
+        'max_size_mb' => 10,
         'accepted_mimes' => null,
         'allow_video' => false,
         'allow_audio' => false,

@@ -63,7 +63,7 @@ php artisan sk:update
 
 ## [13.5.0] - 2026-05-05
 
-Paket runtime artık vendor'da çalışıyor ve frontend UI lib vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader `vendor/lvntr/laravel-starter-kit/src/` altına `Lvntr\StarterKit\` namespace'iyle taşındı; frontend bileşenleri ise `resources/js/components/Lvntr-Starter-Kit/` altında paketin canonical konumuna geldi. Mevcut kullanıcılar için `composer update` yeterli; hiçbir dosya değişmez, hiçbir rota adı kırılmaz. Frontend cleanup opt-in'dir. Yükseltme talimatları: [docs/UPGRADE.md](./docs/UPGRADE.md).
+Paket runtime artık vendor'da çalışıyor ve frontend UI lib vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader `vendor/lvntr/laravel-starter-kit/src/` altına `Lvntr\StarterKit\` namespace'iyle taşındı; frontend bileşenleri ise `resources/js/components/Lvntr-Starter-Kit/` altında paketin canonical konumuna geldi. Mevcut kullanıcılar için `composer update` yeterli; hiçbir dosya değişmez, hiçbir rota adı kırılmaz. Frontend cleanup opt-in'dir. Yükseltme talimatları: [docs/UPGRADE.md](docs/UPGRADE_.md).
 
 ### Changed
 
@@ -120,7 +120,7 @@ Bu sürümde **breaking change yoktur**. Mevcut kullanıcılar için garantiler:
 3. **Migration history dokunulmadı.** Vendor'daki 3 migration dosyasının adı ve içeriği mevcut kullanıcının DB'sindeki kayıtlarla eşleşiyor. `php artisan migrate` "Nothing to migrate" döner.
 4. **Config ekleme yönünde değişti.** Yeni key'ler eklendi; hiçbir mevcut key silinmedi veya yeniden adlandırılmadı.
 5. **Frontend `@lvntr` alias'ı dokunulmadı.** Paket `vite.config.ts`'e müdahale etmiyor.
-6. **REMOS gibi mevcut consumer'lar etkilenmez.** Kendi `resources/js/components/Lvntr-Starter-Kit/` kopyası ve kendi vite alias'ı olan uygulamalar `composer update` sonrası değişmeden çalışır. Frontend cleanup opt-in'dir (bkz. [docs/UPGRADE.md](./docs/UPGRADE.md)).
+6. **REMOS gibi mevcut consumer'lar etkilenmez.** Kendi `resources/js/components/Lvntr-Starter-Kit/` kopyası ve kendi vite alias'ı olan uygulamalar `composer update` sonrası değişmeden çalışır. Frontend cleanup opt-in'dir (bkz. [docs/UPGRADE.md](docs/UPGRADE_.md)).
 
 ### Upgrade
 
@@ -129,7 +129,7 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Detaylı talimatlar ve opsiyonel frontend cleanup: [docs/UPGRADE.md](./docs/UPGRADE.md)
+Detaylı talimatlar ve opsiyonel frontend cleanup: [docs/UPGRADE.md](docs/UPGRADE_.md)
 
 Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek isteğe bağlıdır: [Mevcut Projeyi Vendor'a Taşıma Rehberi](https://github.com/lvntrdev/laravel-starter-kit) (bkz. `docs_project/migrate-existing-project-to-vendor.tr.md`).
 

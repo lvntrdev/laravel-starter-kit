@@ -253,6 +253,17 @@ return [
         'aws_bucket' => 'AWS Bucket',
         'spaces_bucket' => 'Spaces Bucket',
         'current_password' => 'Current Password',
+        'max_size_mb' => 'Max Upload Size (MB)',
+        'accepted_mimes' => 'Accepted File Types',
+        'allow_video' => 'Allow Video Uploads',
+        'allow_audio' => 'Allow Audio Uploads',
+        'enabled' => 'Enabled',
+        'site_key' => 'Site Key',
+        'api_key' => 'API Key',
+        'workspace_id' => 'Workspace ID',
+        'access_token' => 'Access Token',
+        'project_id' => 'Project ID',
+        'collection_id' => 'Collection ID',
     ],
 
 ];

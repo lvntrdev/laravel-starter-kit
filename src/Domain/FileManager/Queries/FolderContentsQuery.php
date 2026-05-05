@@ -23,7 +23,7 @@ class FolderContentsQuery
      *     folder: array<string, mixed>|null,
      *     folders: array<int, array<string, mixed>>,
      *     files: array<int, array<string, mixed>>,
-     *     stats: array{file_count: int, total_size: int},
+     *     stats: array{file_count: int, total_size: int, storage_used: int},
      * }
      */
     public function execute(FileManagerContextDTO $context, ?string $folderId = null, array $options = []): array
@@ -123,6 +123,7 @@ class FolderContentsQuery
             ->all();
 
         $stats = $this->computeAggregateStats($context, $folderId, $childrenMap);
+        $stats['storage_used'] = $this->computeStorageUsed($context);
 
         return [
             'folder' => $folder ? [
@@ -194,7 +195,7 @@ class FolderContentsQuery
      * When $folderId is null, covers all files in the context (root view).
      *
      * @param  array<string, array<int, string>>  $childrenMap
-     * @return array{file_count: int, total_size: int}
+     * @return array{file_count: int, total_size: int} storage_used is added by the caller
      */
     private function computeAggregateStats(
         FileManagerContextDTO $context,

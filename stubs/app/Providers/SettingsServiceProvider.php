@@ -150,6 +150,28 @@ class SettingsServiceProvider extends ServiceProvider
             }
         }
 
+        // File Manager — push DB-stored upload constraints into the package config
+        // so UploadFileRequest reads the correct admin-configured values at runtime.
+        if ($fileManager = $settings['file_manager'] ?? null) {
+            if (isset($fileManager['max_size_mb'])) {
+                config(['file-manager.settings.max_size_mb' => (int) $fileManager['max_size_mb']]);
+            }
+            if (isset($fileManager['accepted_mimes'])) {
+                $mimes = $fileManager['accepted_mimes'];
+                if (is_string($mimes)) {
+                    $decoded = json_decode($mimes, true);
+                    $mimes = is_array($decoded) ? $decoded : [];
+                }
+                config(['file-manager.settings.accepted_mimes' => $mimes]);
+            }
+            if (isset($fileManager['allow_video'])) {
+                config(['file-manager.settings.allow_video' => $fileManager['allow_video'] === '1']);
+            }
+            if (isset($fileManager['allow_audio'])) {
+                config(['file-manager.settings.allow_audio' => $fileManager['allow_audio'] === '1']);
+            }
+        }
+
         // Turnstile
         if ($turnstile = $settings['turnstile'] ?? null) {
             if (array_key_exists('enabled', $turnstile)) {

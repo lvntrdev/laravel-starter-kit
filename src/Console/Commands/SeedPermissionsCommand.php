@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Console\Commands;
+namespace Lvntr\StarterKit\Console\Commands;
 
-use Database\Seeders\_01_RolePermissionSeeder;
 use Illuminate\Console\Command;
 
 use function Laravel\Prompts\spin;
@@ -16,7 +15,15 @@ class SeedPermissionsCommand extends Command
 
     public function handle(): int
     {
-        $seeder = new _01_RolePermissionSeeder;
+        $seederClass = 'Database\\Seeders\\_01_RolePermissionSeeder';
+
+        if (! class_exists($seederClass)) {
+            $this->components->error("Seeder class not found: {$seederClass}. Run sk:install first.");
+
+            return self::FAILURE;
+        }
+
+        $seeder = new $seederClass;
         $seeder->setCommand($this);
 
         if ($this->option('fresh')) {

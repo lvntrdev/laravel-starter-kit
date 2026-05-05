@@ -8,7 +8,7 @@
 
     interface Props {
         settings: {
-            max_size_kb: number;
+            max_size_mb: number;
             accepted_mimes: string[];
             allow_video: boolean;
             allow_audio: boolean;
@@ -24,7 +24,7 @@
             .cardTitle('sk-setting.file_manager.title')
             .cardSubtitle('sk-setting.file_manager.subtitle')
             .initialData({
-                max_size_kb: props.settings.max_size_kb,
+                max_size_mb: props.settings.max_size_mb,
                 accepted_mimes: props.settings.accepted_mimes,
                 allow_video: props.settings.allow_video,
                 allow_audio: props.settings.allow_audio,
@@ -35,7 +35,7 @@
                 preserveScroll: true,
             })
             .addFields(
-                FB.inputNumber().key('max_size_kb').min(1).max(1048576).class('col-span-1'),
+                FB.inputNumber().key('max_size_mb').min(1).max(1024).class('col-span-1'),
                 FB.multiselect().key('accepted_mimes').class('col-span-full'),
                 FB.toggleSwitch().key('allow_video').label(false).class('col-span-1'),
                 FB.toggleSwitch().key('allow_audio').label(false).class('col-span-1'),

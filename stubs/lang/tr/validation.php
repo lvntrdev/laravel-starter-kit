@@ -243,6 +243,17 @@ return [
         'aws_bucket' => 'AWS Bucket',
         'spaces_bucket' => 'Spaces Bucket',
         'current_password' => 'Mevcut Parola',
+        'max_size_mb' => 'Maks. Yükleme Boyutu (MB)',
+        'accepted_mimes' => 'Kabul Edilen Dosya Türleri',
+        'allow_video' => 'Video Yüklemesine İzin Ver',
+        'allow_audio' => 'Ses Yüklemesine İzin Ver',
+        'enabled' => 'Aktif',
+        'site_key' => 'Site Anahtarı',
+        'api_key' => 'API Anahtarı',
+        'workspace_id' => 'Workspace ID',
+        'access_token' => 'Erişim Tokeni',
+        'project_id' => 'Proje ID',
+        'collection_id' => 'Koleksiyon ID',
     ],
 
 ];

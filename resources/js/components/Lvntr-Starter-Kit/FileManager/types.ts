@@ -48,6 +48,8 @@ export interface FileItem {
 export interface FolderStats {
     file_count: number;
     total_size: number;
+    /** Total bytes across ALL collections for this owner (quota indicator). */
+    storage_used?: number;
 }
 
 export interface FolderContents {

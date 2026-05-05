@@ -38,8 +38,9 @@
     "spatie/laravel-translatable": "^6.11"
   },
   "require-dev": {
-    "pestphp/pest": "^4.4",
-    "orchestra/testbench": "^11.0"
+    "laravel/pint": "^1.29",
+    "orchestra/testbench": "^11.0",
+    "pestphp/pest": "^4.4"
   },
   "autoload": {
     "psr-4": {

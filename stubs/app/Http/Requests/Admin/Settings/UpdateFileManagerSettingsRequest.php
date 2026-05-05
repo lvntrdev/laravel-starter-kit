@@ -33,7 +33,7 @@ class UpdateFileManagerSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'max_size_kb' => ['required', 'integer', 'min:1', 'max:1048576'],
+            'max_size_mb' => ['required', 'integer', 'min:1', 'max:1024'],
             'accepted_mimes' => ['required', 'array', 'min:1'],
             'accepted_mimes.*' => [
                 'string',
