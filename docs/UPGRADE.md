@@ -4,54 +4,7 @@ Bu dosya sürümler arası yükseltme talimatlarını içerir. Her bölüm bir s
 
 ---
 
-## v13.5.0 → v13.5.1
-
-`composer update lvntr/laravel-starter-kit` yeterli. Mevcut davranış korunur.
-
-### Opsiyonel cleanup (frontend)
-
-App'te `resources/js/components/Lvntr-Starter-Kit/` klasörü hala duruyorsa ve özel customization yoksa, vendor frontend'ine geçebilirsiniz:
-
-1. **Vite alias** — `vite.config.ts` içinde `@lvntr/components` alias'ını vendor path'e yönlendirin:
-
-   ```ts
-   '@lvntr/components': path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit'),
-   ```
-
-   `Components({ dirs })` plugin array'ine vendor path ekleyin:
-
-   ```ts
-   dirs: [
-     'resources/js/components',
-     'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
-   ],
-   ```
-
-   `preserveSymlinks: true` olduğundan emin olun.
-
-2. **App kopyasını silin**:
-
-   ```bash
-   rm -rf resources/js/components/Lvntr-Starter-Kit
-   ```
-
-3. **Build smoke**:
-
-   ```bash
-   npm run build
-   ```
-
-   Exit 0 olmalı.
-
-Customize edilmiş component'iniz varsa silmeyin; kendi `resources/js/components/<X>` altında app-specific bileşenlerinizi tutarken vendor lib'i import edebilirsiniz.
-
-### sk:sync deprecation
-
-`php artisan sk:sync` deprecated oldu. Composer path repository (symlink) workflow'u kullananlar için gerekmiyordu zaten. `--force` ile eski davranış korunur ama önerilmez.
-
----
-
-## v13.4.x → v13.5.x
+## v13.4.x → v13.5.0
 
 ### Özet
 
@@ -96,11 +49,54 @@ php artisan sk:update --dry-run
 
 ### Opsiyonel Cleanup
 
+#### Backend dosyaları (vendor'a taşıma)
+
 `app/Domain/FileManager/`, `app/Domain/Shared/` gibi dosyalar artık vendor'dan da çalışıyor. Eğer bu dosyaları uygulamanızdan kaldırıp vendor versiyonunu kullanmak istiyorsanız adım adım rehber için bakın:
 
 `docs_project/migrate-existing-project-to-vendor.tr.md` (uygulama worktree'sinde)
 
 Bu adım tamamen isteğe bağlıdır ve hemen yapılması gerekmez.
+
+#### Frontend (vendor symlink'e geçiş)
+
+App'te `resources/js/components/Lvntr-Starter-Kit/` klasörü hâlâ duruyorsa ve özel customization yoksa, vendor frontend'ine geçebilirsiniz:
+
+1. **Vite alias** — `vite.config.ts` içinde `@lvntr/components` alias'ını vendor path'e yönlendirin:
+
+   ```ts
+   '@lvntr/components': path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit'),
+   ```
+
+   `Components({ dirs })` plugin array'ine vendor path ekleyin:
+
+   ```ts
+   dirs: [
+     'resources/js/components',
+     'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
+   ],
+   ```
+
+   `preserveSymlinks: true` olduğundan emin olun.
+
+2. **App kopyasını silin**:
+
+   ```bash
+   rm -rf resources/js/components/Lvntr-Starter-Kit
+   ```
+
+3. **Build smoke**:
+
+   ```bash
+   npm run build
+   ```
+
+   Exit 0 olmalı.
+
+Customize edilmiş component'iniz varsa silmeyin; kendi `resources/js/components/<X>` altında app-specific bileşenlerinizi tutarken vendor lib'i import edebilirsiniz.
+
+#### sk:sync deprecation
+
+`php artisan sk:sync` deprecated oldu. Composer path repository (symlink) workflow'u kullananlar için gerekmiyordu zaten. `--force` ile eski davranış korunur ama önerilmez.
 
 ### sk:update Çıktısı
 

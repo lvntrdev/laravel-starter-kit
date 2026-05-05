@@ -192,14 +192,15 @@ php artisan sk:update
 
 The update command uses a hash-based tracking system to safely merge package updates with your customizations:
 
-| File category                                                                        | Behavior                                                            |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| **Core files** (`Domain/Shared/`, Traits, Middleware, helpers, `ApiResponse`)        | Always updated to latest version                                    |
-| **User-modifiable files** (Controllers, Models, Pages, Routes, `SiteInstallCommand`) | Updated only if you haven't modified them since last install/update |
-| **Never-update files** (`config/permission-resources.php`)                           | Installed once, never touched again                                 |
-| **Your custom domains**                                                              | Never touched                                                       |
-| **New files from package**                                                           | Automatically added                                                 |
-| **Deprecated files**                                                                 | Automatically removed                                               |
+| File category                                                                                           | Behavior                                                                            |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Runtime (vendor)** — `Domain/Shared/`, Traits, Middleware, helpers, `ApiResponse`, FileManager layer  | Live in `vendor/` — updated automatically via `composer update`; `sk:update` does not copy them |
+| **Hash-tracked stubs** — auth/layout Vue components, user/role/settings domain skeleton                 | Diff-notified when the package version changes; applied only when the local hash still matches |
+| **User-modifiable files** (Controllers, Models, Pages, Routes, `SiteInstallCommand`)                   | Updated only if you haven't modified them since last install/update                 |
+| **Never-update files** (`config/permission-resources.php`)                                             | Installed once, never touched again                                                 |
+| **Your custom domains**                                                                                | Never touched                                                                       |
+| **New files from package**                                                                             | Automatically added                                                                 |
+| **Deprecated files**                                                                                   | Automatically removed                                                               |
 
 ```bash
 # Preview what would change without modifying anything

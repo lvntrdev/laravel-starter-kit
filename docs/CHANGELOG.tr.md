@@ -2,6 +2,54 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-05 -v.13.5.0
+
+### Major sürüm — Vendor-first runtime ve frontend UI lib taşıması
+
+Starter kit runtime tamamen vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader artık `vendor/lvntr/laravel-starter-kit/src/` altında `Lvntr\StarterKit\` namespace'iyle çalışıyor. Frontend bileşen kütüphanesi (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) de artık paketin canonical konumunda, app tarafı vendor symlink üzerinden tüketiyor. Mevcut uygulamalar yalnızca `composer update` çalıştırmalı; hiçbir dosya değişmez, rota adı kırılmaz, `php artisan migrate` "Nothing to migrate" döner. Frontend geçişi tamamen isteğe bağlıdır. Yükseltme talimatları: [UPGRADE.md](./UPGRADE.md).
+
+#### Changed
+
+- **Vendor-first yapıya geçildi.** Paket runtime artık stub akışından değil, doğrudan `vendor/` altından çalışıyor. `sk:install` iskelet dosyalarını (auth, layout, user/rol/ayar domain, config) publish eder; FileManager ve Shared katmanlarını `app/` dizinine kopyalamaz.
+- **`sk:update` basitleştirildi.** Vendor runtime için kopyalama yapmıyor; `composer update` yeterli. Hash takipli stub'lar (auth/layout/user/rol/ayar) için mevcut davranış korundu.
+- **Frontend UI lib taşındı.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` artık paketin canonical konumudur. App tarafı vendor symlink üzerinden tüketir.
+- **`stubs/vite.config.ts` alias güncellendi.** Yeni install için `@lvntr/components` alias'ı `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` path'ini kullanır; `preserveSymlinks: true`; `Components({ dirs })` array'inde vendor path mevcut.
+- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** `media-library.media_model` config'i üzerinden Media model resolve eder. App-specific `App\Models\Media` overrider'ları (örn. SoftDeletes ile) backward compatible çalışır.
+- **`Http/Requests/FileManager/UploadFileRequest`.** Protected method'lar — app tarafında override edilebilir (Setting entegrasyonu vb.).
+
+#### Added
+
+- **`src/Domain/FileManager/`** — Actions, DTOs, Queries, Services, Support `Lvntr\StarterKit\Domain\FileManager\` namespace'iyle vendor'da.
+- **`src/Domain/Shared/`** — BaseAction, BaseDTO, ActionPipeline, PipeableAction `Lvntr\StarterKit\Domain\Shared\` namespace'iyle vendor'da.
+- **`src/Traits/`** — HasActivityLogging, HasMediaCollections `Lvntr\StarterKit\Traits\` namespace'iyle vendor'da.
+- **`src/sk-helpers.php`** — `to_api()`, `definition()`, `definitionLabel()`, `sk_locale_keys()`, `sk_default_locale()`, `format_date()` fonksiyonları `function_exists` guard'larıyla vendor'da.
+- **`src/Http/Responses/ApiResponse.php`** — `{success, status, message, data, errors?}` envelope formatı korunarak vendor'a taşındı.
+- **`src/Http/Middleware/`** — CheckResourcePermission, SecurityHeaders `Lvntr\StarterKit\Http\Middleware\` namespace'iyle vendor'da.
+- **`src/Http/Controllers/FileManagerController.php`** ve **`src/Http/Requests/FileManager/*`** — vendor'da.
+- **`src/Console/Commands/PurgeFileManagerTrashCommand.php`** — `file-manager:purge-trash` signature AYNEN korundu.
+- **`src/Exceptions/`** — ApiException, ApiExceptionHandler vendor'da.
+- **`src/Facades/FileManager.php`** — `FileManager::routes()` ile tek satır route mount.
+- **`src/routes/file-manager.php`** — 19 route, isimler AYNEN. Consumer'ın kendi route dosyası varsa vendor mount edilmez.
+- **`database/migrations/`** — 3 FileManager migration, dosya adı ve içerik AYNEN korundu.
+- **`config/file-manager.php`** — `models.*` ve `settings.*` key'leri eklendi.
+
+#### Deprecated
+
+- **`sk:sync` (PackageSyncCommand).** Composer path symlink workflow'unda gereksiz hale geldi. `--force` ile escape hatch korunur.
+
+#### Upgrade
+
+Güncelleme sonrası yeterli:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan migrate
+```
+
+Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek tamamen isteğe bağlıdır. Frontend cleanup (Vite alias'ını vendor path'e yönlendirme ve app tarafındaki kopyayı silme) da opt-in'dir. Her iki rehber için bkz. [UPGRADE.md](./UPGRADE.md).
+
+---
+
 ## 2026-05-04 -v.13.4.10
 
 ### Minor sürüm — Çevrilebilir FormBuilder alanları ve Sample Contents referans modülü

@@ -2,6 +2,52 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-05 -v.13.5.0
+
+### Major release — Vendor-first runtime and frontend UI lib
+
+The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [UPGRADE.md](./UPGRADE.md).
+
+#### Changed
+
+- **Vendor-first architecture.** Package runtime no longer flows through stubs — it runs directly from `vendor/`. `sk:install` publishes skeleton files (auth, layout, user/role/settings domain, config); it no longer copies FileManager and Shared layers into `app/`.
+- **`sk:update` simplified.** No file copying for vendor runtime; `composer update` is enough. Hash-tracked stubs (auth/layout/user/role/settings) retain their existing diff/notify behaviour.
+- **Frontend UI lib relocated.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` is now the canonical package location. Apps consume it via vendor symlink.
+- **`stubs/vite.config.ts` alias updated.** New installs get `@lvntr/components` pointing to `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` with `preserveSymlinks: true` and vendor path in the `Components({ dirs })` array.
+- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** Resolves the Media model via `media-library.media_model` config; app-specific `App\Models\Media` overrides (e.g. with SoftDeletes) work without changes.
+- **`Http/Requests/FileManager/UploadFileRequest`.** Protected methods — overridable on the app side (e.g. Settings integration).
+
+#### Added
+
+- **`src/Domain/FileManager/`** — Actions, DTOs, Queries, Services, Support under `Lvntr\StarterKit\Domain\FileManager\` in vendor.
+- **`src/Domain/Shared/`** — BaseAction, BaseDTO, ActionPipeline, PipeableAction under `Lvntr\StarterKit\Domain\Shared\` in vendor.
+- **`src/Traits/`** — HasActivityLogging, HasMediaCollections under `Lvntr\StarterKit\Traits\` in vendor.
+- **`src/sk-helpers.php`** — `to_api()`, `definition()`, `definitionLabel()`, `sk_locale_keys()`, `sk_default_locale()`, `format_date()` with `function_exists` guards in vendor.
+- **`src/Http/Responses/ApiResponse.php`** — `{success, status, message, data, errors?}` envelope preserved, moved to vendor.
+- **`src/Http/Middleware/`** — CheckResourcePermission, SecurityHeaders under `Lvntr\StarterKit\Http\Middleware\` in vendor.
+- **`src/Http/Controllers/FileManagerController.php`** and **`src/Http/Requests/FileManager/*`** — in vendor.
+- **`src/Console/Commands/PurgeFileManagerTrashCommand.php`** — `file-manager:purge-trash` signature preserved.
+- **`src/Exceptions/`** — ApiException, ApiExceptionHandler in vendor.
+- **`src/Facades/FileManager.php`** — single-line route mount via `FileManager::routes()`.
+- **`src/routes/file-manager.php`** — 19 routes, all names preserved exactly. Consumer's own route file takes precedence.
+- **`database/migrations/`** — 3 FileManager migrations, filenames and content preserved exactly.
+- **`config/file-manager.php`** — `models.*` and `settings.*` keys added.
+
+#### Deprecated
+
+- **`sk:sync` (PackageSyncCommand).** No longer needed with the Composer path-repository symlink workflow. The `--force` escape hatch is preserved.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan migrate
+```
+
+Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional. Frontend cleanup (switching the Vite alias to vendor path and removing the app-side copy) is also opt-in. See [UPGRADE.md](./UPGRADE.md) for both guides.
+
+---
+
 ## 2026-05-04 -v.13.4.10
 
 ### Minor release — Translatable FormBuilder fields and Sample Contents reference module

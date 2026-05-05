@@ -278,6 +278,12 @@ class StarterKitServiceProvider extends ServiceProvider
                 $commands[] = Console\Commands\PurgeFileManagerTrashCommand::class;
             }
 
+            // sk:release sadece paket kaynak dizininde gelistirilirken aktif olur.
+            // vendor/ altina kurulmus uygulamalarda .git olmadigi icin kayit edilmez.
+            if (is_dir(static::basePath().'/.git')) {
+                $commands[] = Console\Commands\ReleaseCommand::class;
+            }
+
             $this->commands($commands);
         }
     }

@@ -50,7 +50,7 @@ Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
   - `App\Http\Responses\ApiResponse` import'u alias üzerinden vendor sınıfına resolve edilir; code değişikliği gerekmez.
 - **Vendor `PermissionEnum` kullanımı yok**, bu silme BC kırmaz. Tüm consumer'lar zaten `App\Enums\PermissionEnum` kullanır (stub resmi konum).
 - **`sk:publish` ve `vendor:publish` davranışları** consumer projesinin npm/composer tarafına dokunmaz; düzeltmeler pure bug fix.
-- v13.5.0 ve v13.5.1 BC garantileri korunmaktadır.
+- v13.5.0 BC garantileri korunmaktadır.
 
 ### Upgrade
 
@@ -61,43 +61,23 @@ php artisan sk:update
 
 `sk:update` çıktısında "Removed" listesinde 4 path görünecek — bu beklenen davranış.
 
-## [13.5.1] - 2026-05-05
+## [13.5.0] - 2026-05-05
 
-### Changed
-
-- **Frontend UI lib taşındı.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` artık paketin canonical konumudur. App tarafı vendor symlink üzerinden tüketir.
-- **`stubs/vite.config.ts` alias güncellendi.** Yeni install için `@lvntr/components` alias'ı `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` path'ini kullanır; `preserveSymlinks: true`; `Components({ dirs })` array'inde vendor path mevcut.
-- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** `media-library.media_model` config'i üzerinden Media model resolve eder. App-specific `App\Models\Media` overrider'ları (örn. SoftDeletes ile) backward compatible çalışır.
-- **`Http/Requests/FileManager/UploadFileRequest`.** Protected method'lar — app tarafında override edilebilir (Setting entegrasyonu vb.).
-
-### Deprecated
-
-- **`sk:sync` (PackageSyncCommand).** Composer path symlink workflow'unda gereksiz hale geldi. `--force` ile escape hatch korunur.
-
-### Backward Compatibility Guarantees
-
-Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
-
-- **REMOS gibi mevcut consumer'lar etkilenmez.** Kendi `resources/js/components/Lvntr-Starter-Kit/` kopyası ve kendi vite alias'ı olan uygulamalar `composer update` sonrası değişmeden çalışır. Frontend cleanup opt-in'dir (bkz. [docs/UPGRADE.md](./docs/UPGRADE.md)).
-- v13.5.0 BC garantileri (helper guard, route name preservation, migration history, config additive, `@lvntr` alias) korunmaktadır.
-
-### Upgrade
-
-```bash
-composer update lvntr/laravel-starter-kit
-```
-
-Detaylı ve opsiyonel frontend cleanup talimatları: [docs/UPGRADE.md](./docs/UPGRADE.md)
-
-## [13.5.0] - 2026-05-04
-
-Paket runtime artık vendor'da çalışıyor. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader `vendor/lvntr/laravel-starter-kit/src/` altına `Lvntr\StarterKit\` namespace'iyle taşındı. Mevcut kullanıcılar için `composer update` yeterli; hiçbir dosya değişmez, hiçbir rota adı kırılmaz. Yükseltme talimatları: [docs/UPGRADE.md](./docs/UPGRADE.md).
+Paket runtime artık vendor'da çalışıyor ve frontend UI lib vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader `vendor/lvntr/laravel-starter-kit/src/` altına `Lvntr\StarterKit\` namespace'iyle taşındı; frontend bileşenleri ise `resources/js/components/Lvntr-Starter-Kit/` altında paketin canonical konumuna geldi. Mevcut kullanıcılar için `composer update` yeterli; hiçbir dosya değişmez, hiçbir rota adı kırılmaz. Frontend cleanup opt-in'dir. Yükseltme talimatları: [docs/UPGRADE.md](./docs/UPGRADE.md).
 
 ### Changed
 
 - **Vendor-first yapıya geçildi.** Paket runtime artık stub akışından değil, doğrudan `vendor/` altından çalışıyor. `sk:install` iskelet dosyalarını (auth, layout, user/rol/ayar domain, config) publish eder; FileManager ve Shared katmanlarını `app/` dizinine kopyalamaz.
 
 - **`sk:update` komutu güncellendi.** Vendor runtime için kopyalama yapmıyor; `composer update` yeterli. Hash takipli stub'lar (auth/layout/user/rol/ayar) için mevcut davranış korundu.
+
+- **Frontend UI lib taşındı.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` artık paketin canonical konumudur. App tarafı vendor symlink üzerinden tüketir.
+
+- **`stubs/vite.config.ts` alias güncellendi.** Yeni install için `@lvntr/components` alias'ı `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` path'ini kullanır; `preserveSymlinks: true`; `Components({ dirs })` array'inde vendor path mevcut.
+
+- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** `media-library.media_model` config'i üzerinden Media model resolve eder. App-specific `App\Models\Media` overrider'ları (örn. SoftDeletes ile) backward compatible çalışır.
+
+- **`Http/Requests/FileManager/UploadFileRequest`.** Protected method'lar — app tarafında override edilebilir (Setting entegrasyonu vb.).
 
 ### Added
 
@@ -127,15 +107,20 @@ Paket runtime artık vendor'da çalışıyor. FileManager backend, paylaşılan 
 
 - **`config/file-manager.php`** — `models.*` ve `settings.*` key'leri eklendi.
 
+### Deprecated
+
+- **`sk:sync` (PackageSyncCommand).** Composer path symlink workflow'unda gereksiz hale geldi. `--force` ile escape hatch korunur.
+
 ### Backward Compatibility Guarantees
 
-Bu sürümde **breaking change yoktur**. Mevcut kullanıcılar için beş garanti:
+Bu sürümde **breaking change yoktur**. Mevcut kullanıcılar için garantiler:
 
 1. **Helper fonksiyon çakışması yok.** Vendor helper'ları `function_exists` guard'lıdır; kullanıcının `app/Helpers/sk-helpers.php` dosyasındaki tanımlar baskın kalır.
 2. **Route isimleri korundu.** `file-manager.contents`, `file-manager.files.upload` dahil 19 route adı AYNEN. Wayfinder regenerate diff vermez.
 3. **Migration history dokunulmadı.** Vendor'daki 3 migration dosyasının adı ve içeriği mevcut kullanıcının DB'sindeki kayıtlarla eşleşiyor. `php artisan migrate` "Nothing to migrate" döner.
 4. **Config ekleme yönünde değişti.** Yeni key'ler eklendi; hiçbir mevcut key silinmedi veya yeniden adlandırılmadı.
 5. **Frontend `@lvntr` alias'ı dokunulmadı.** Paket `vite.config.ts`'e müdahale etmiyor.
+6. **REMOS gibi mevcut consumer'lar etkilenmez.** Kendi `resources/js/components/Lvntr-Starter-Kit/` kopyası ve kendi vite alias'ı olan uygulamalar `composer update` sonrası değişmeden çalışır. Frontend cleanup opt-in'dir (bkz. [docs/UPGRADE.md](./docs/UPGRADE.md)).
 
 ### Upgrade
 
@@ -144,7 +129,7 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Detaylı talimatlar: [docs/UPGRADE.md](./docs/UPGRADE.md)
+Detaylı talimatlar ve opsiyonel frontend cleanup: [docs/UPGRADE.md](./docs/UPGRADE.md)
 
 Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek isteğe bağlıdır: [Mevcut Projeyi Vendor'a Taşıma Rehberi](https://github.com/lvntrdev/laravel-starter-kit) (bkz. `docs_project/migrate-existing-project-to-vendor.tr.md`).
 

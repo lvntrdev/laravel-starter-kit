@@ -38,8 +38,9 @@ php artisan sk:update
 
 ### What `sk:update` Does
 
-- always updates package-owned safe paths
-- removes deprecated package files when needed
+- runtime code (`Domain/Shared/`, Traits, Middleware, helpers, `ApiResponse`, FileManager layer) lives in `vendor/` since v13.5.0 — `composer update` is sufficient, `sk:update` does not copy these
+- removes deprecated app-side files that have been moved to vendor
+- notifies of hash-tracked stub changes (auth/layout Vue components, user/role/settings skeleton); applies them only when the local hash still matches
 - updates user-modifiable files only if they were not changed locally
 - asks how to handle untracked files
 - adds new files introduced by the package

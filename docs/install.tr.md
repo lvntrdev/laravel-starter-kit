@@ -192,14 +192,15 @@ php artisan sk:update
 
 Güncelleme komutu, paket güncellemelerini özelleştirmelerinizle güvenli şekilde birleştirmek için hash tabanlı izleme sistemi kullanır:
 
-| Dosya kategorisi                                                                                           | Davranış                                                             |
-| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Çekirdek dosyalar** (`Domain/Shared/`, Trait'ler, Middleware, helper'lar, `ApiResponse`)                 | Her zaman en son sürüme güncellenir                                  |
-| **Kullanıcı tarafından değiştirilebilir dosyalar** (Controller, Model, Sayfa, Route, `SiteInstallCommand`) | Sadece son kurulum/güncellemeden beri değiştirmediyseniz güncellenir |
-| **Asla güncellenmeyen dosyalar** (`config/permission-resources.php`)                                       | Bir kez kurulur, bir daha dokunulmaz                                 |
-| **Sizin özel domain'leriniz**                                                                              | Asla dokunulmaz                                                      |
-| **Paketten gelen yeni dosyalar**                                                                           | Otomatik olarak eklenir                                              |
-| **Kullanım dışı dosyalar**                                                                                 | Otomatik olarak silinir                                              |
+| Dosya kategorisi                                                                                                          | Davranış                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Runtime (vendor)** — `Domain/Shared/`, Trait'ler, Middleware, helper'lar, `ApiResponse`, FileManager katmanı            | `vendor/` altında çalışır — `composer update` ile otomatik güncellenir; `sk:update` kopyalamaz       |
+| **Hash takipli stub'lar** — auth/layout Vue bileşenleri, user/rol/ayar domain iskeleti                                    | Paket sürümü değiştiğinde diff bildirimi yapılır; lokal hash hâlâ eşleşiyorsa uygulanır              |
+| **Kullanıcı tarafından değiştirilebilir dosyalar** (Controller, Model, Sayfa, Route, `SiteInstallCommand`)                | Sadece son kurulum/güncellemeden beri değiştirmediyseniz güncellenir                                 |
+| **Asla güncellenmeyen dosyalar** (`config/permission-resources.php`)                                                      | Bir kez kurulur, bir daha dokunulmaz                                                                 |
+| **Sizin özel domain'leriniz**                                                                                             | Asla dokunulmaz                                                                                      |
+| **Paketten gelen yeni dosyalar**                                                                                          | Otomatik olarak eklenir                                                                              |
+| **Kullanım dışı dosyalar**                                                                                                | Otomatik olarak silinir                                                                              |
 
 ```bash
 # Hiçbir değişiklik yapmadan nelerin değişeceğini önizleyin

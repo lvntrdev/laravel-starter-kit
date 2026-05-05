@@ -38,8 +38,9 @@ php artisan sk:update
 
 ### `sk:update` Ne Yapar
 
-- paket sahipli güvenli yolları her zaman günceller
-- gerekirse artık kullanılmayan paket dosyalarını kaldırır
+- runtime kod (`Domain/Shared/`, Trait'ler, Middleware, helper'lar, `ApiResponse`, FileManager katmanı) v13.5.0'dan itibaren `vendor/` altında çalışıyor — `composer update` yeterli, `sk:update` bu dosyaları kopyalamıyor
+- vendor'a taşınan eski app-tarafı dosyaları kaldırır
+- hash takipli stub değişikliklerini bildirir (auth/layout Vue bileşenleri, user/rol/ayar domain iskeleti); lokal hash hâlâ eşleşiyorsa uygular
 - kullanıcı tarafından değiştirilebilen dosyaları yalnızca lokal olarak değiştirilmemişse günceller
 - izlenmeyen dosyalar için nasıl davranılacağını sorar
 - paketle gelen yeni dosyaları ekler
