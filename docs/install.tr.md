@@ -107,10 +107,12 @@ Sihirbaz her adımda sizinle interaktif olarak ilerler:
 ```bash
 php artisan sk:install --force
 php artisan sk:install --no-interaction
+php artisan sk:install --without-ai-skill
 ```
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder
+- `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
 
 ## 4. Frontend Asset'lerini Derleyin
 
@@ -147,6 +149,7 @@ Paket birçok varlığı varsayılan olarak kendi içinde tutar. Proje seviyesin
 ```bash
 php artisan sk:publish
 php artisan sk:publish --tag=components
+php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```

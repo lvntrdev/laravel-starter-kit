@@ -51,7 +51,6 @@ class UpdateCommand extends Command
         'app/Traits/HasActivityLogging.php',
         'app/Traits/HasMediaCollections.php',
         'app/Helpers/sk-helpers.php',
-        'app/Http/Responses/ApiResponse.php',
         'app/Http/Middleware/CheckResourcePermission.php',
         'app/Http/Middleware/SecurityHeaders.php',
         'app/Exceptions/ApiException.php',
@@ -87,6 +86,10 @@ class UpdateCommand extends Command
         'app/Enums/YesNo.php',
         'app/Traits/HasEnumAccessors.php',
         'resources/js/composables/useEnum.ts',
+        'app/Console/Commands/EnvSyncCommand.php',
+        'app/Console/Commands/MakeDomainCommand.php',
+        'app/Console/Commands/RemoveDomainCommand.php',
+        'app/Http/Responses/ApiResponse.php',
     ];
 
     /** @var list<string> */
@@ -284,6 +287,12 @@ class UpdateCommand extends Command
                 continue;
             }
 
+            // Skip files explicitly opted out at install time (e.g. --without-ai-skill).
+            // Even if the target somehow exists, we must not overwrite with package version.
+            if (($hashes[$relativePath] ?? null) === '__skipped__') {
+                continue;
+            }
+
             // Skip if files are identical
             if ($this->filesAreIdentical($file->getPathname(), $targetPath)) {
                 continue;
@@ -385,8 +394,10 @@ class UpdateCommand extends Command
                 continue;
             }
 
-            // If hash registry has an entry, the file was previously installed
-            // but the user deleted it — respect that decision, don't re-add.
+            // If hash registry has an entry, the file was previously handled:
+            // installed-then-deleted ('__deleted__'), or explicitly skipped at
+            // install time via --without-ai-skill ('__skipped__'). Either way,
+            // respect that decision — don't re-add.
             if (isset($hashes[$relativePath])) {
                 continue;
             }
@@ -512,10 +523,12 @@ class UpdateCommand extends Command
             $targetPath = base_path($relativePath);
 
             if (! $this->files->exists($targetPath)) {
-                // File was deleted by user or never installed.
-                // If it was in old registry, keep the entry so addNewFiles knows it existed.
+                // File was deleted by user, explicitly skipped at install, or never installed.
+                // Preserve the original sentinel so addNewFiles/updateModifiableFiles respect
+                // the previous decision (__deleted__ or __skipped__).
                 if (isset($oldHashes[$relativePath])) {
-                    $newHashes[$relativePath] = '__deleted__';
+                    $sentinel = $oldHashes[$relativePath] === '__skipped__' ? '__skipped__' : '__deleted__';
+                    $newHashes[$relativePath] = $sentinel;
                 }
 
                 continue;

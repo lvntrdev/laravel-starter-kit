@@ -29,7 +29,8 @@ use function Laravel\Prompts\text;
 class InstallCommand extends Command
 {
     protected $signature = 'sk:install
-        {--force : Overwrite existing files}';
+        {--force : Overwrite existing files}
+        {--without-ai-skill : Skip stubs/.claude/skills/ AI skill files}';
 
     protected $description = 'Install the Lvntr Starter Kit application skeleton (v13.5.0+: package runtime runs from vendor, not copied to app)';
 
@@ -387,6 +388,12 @@ class InstallCommand extends Command
                 continue;
             }
 
+            foreach ($this->getSkipPaths() as $skipPath) {
+                if (str_starts_with($normalizedPath, $skipPath)) {
+                    continue 2; // skip this file
+                }
+            }
+
             $targetPath = $destination.DIRECTORY_SEPARATOR.$relativePath;
             $targetDir = dirname($targetPath);
 
@@ -523,6 +530,23 @@ class InstallCommand extends Command
                 }
             }
         }
+    }
+
+    /**
+     * Paths within the stubs directory to skip during publish.
+     * Returned as relative paths under stubsPath() with forward slashes.
+     *
+     * @return list<string>
+     */
+    private function getSkipPaths(): array
+    {
+        $skip = [];
+
+        if ($this->option('without-ai-skill')) {
+            $skip[] = '.claude/skills/';
+        }
+
+        return $skip;
     }
 
     /**
@@ -1253,10 +1277,27 @@ class InstallCommand extends Command
         $hashes = [];
 
         $stubsPath = StarterKitServiceProvider::stubsPath();
+        $skipPaths = $this->getSkipPaths();
 
         foreach ($this->files->allFiles($stubsPath, true) as $file) {
             $relativePath = $file->getRelativePathname();
+            $normalizedPath = str_replace('\\', '/', $relativePath);
             $targetPath = base_path($relativePath);
+
+            // Mark explicitly-skipped paths (e.g. --without-ai-skill) so sk:update
+            // knows not to re-add them. Mirrors the '__deleted__' sentinel pattern.
+            $skipped = false;
+            foreach ($skipPaths as $skipPath) {
+                if (str_starts_with($normalizedPath, $skipPath)) {
+                    $skipped = true;
+                    break;
+                }
+            }
+
+            if ($skipped) {
+                $hashes[$relativePath] = '__skipped__';
+                continue;
+            }
 
             if ($this->files->exists($targetPath)) {
                 // Store STUB hash — this is what we shipped, used to detect user modifications

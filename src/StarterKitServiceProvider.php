@@ -253,7 +253,9 @@ class StarterKitServiceProvider extends ServiceProvider
 
     /**
      * Register Artisan commands.
-     * Domain commands are available but never published.
+     * Domain commands run from vendor only — they are NOT published to the
+     * consumer's app/Console/Commands. Stub copies were removed in v13.5.2;
+     * the vendor command registration here is the single source.
      */
     private function registerCommands(): void
     {
@@ -321,7 +323,7 @@ class StarterKitServiceProvider extends ServiceProvider
 
         // Vue components (optional publish for customization)
         $this->publishes([
-            __DIR__.'/../resources/js/components' => resource_path('js/components/Lvntr-Starter-Kit'),
+            __DIR__.'/../resources/js/components/Lvntr-Starter-Kit' => resource_path('js/components/Lvntr-Starter-Kit'),
         ], 'starter-kit-components');
 
         // Task 1 placeholders: registered conditionally so they become
@@ -360,10 +362,10 @@ class StarterKitServiceProvider extends ServiceProvider
             ], 'starter-kit-file-manager-config');
         }
 
-        $fileManagerComponentsPath = __DIR__.'/../resources/js/components/file-manager';
+        $fileManagerComponentsPath = __DIR__.'/../resources/js/components/Lvntr-Starter-Kit/FileManager';
         if (is_dir($fileManagerComponentsPath)) {
             $this->publishes([
-                $fileManagerComponentsPath => resource_path('js/components/Lvntr-Starter-Kit/file-manager'),
+                $fileManagerComponentsPath => resource_path('js/components/Lvntr-Starter-Kit/FileManager'),
             ], 'starter-kit-file-manager-components');
         }
     }

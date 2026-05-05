@@ -28,7 +28,12 @@ Use this on first setup.
 php artisan sk:install
 php artisan sk:install --force
 php artisan sk:install --no-interaction
+php artisan sk:install --without-ai-skill
 ```
+
+- `--force` overwrites existing publishable files
+- `--no-interaction` accepts all defaults automatically; useful for CI or scripted installs
+- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
 
 ## `sk:update`
 
@@ -62,6 +67,7 @@ php artisan sk:publish --tag=form
 php artisan sk:publish --tag=tabs
 php artisan sk:publish --tag=skeleton
 php artisan sk:publish --tag=ui
+php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```

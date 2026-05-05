@@ -107,10 +107,12 @@ The installer walks through each step interactively:
 ```bash
 php artisan sk:install --force
 php artisan sk:install --no-interaction
+php artisan sk:install --without-ai-skill
 ```
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` is useful for CI or scripted installs; accepts all defaults automatically
+- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
 
 ## 4. Build Frontend Assets
 
@@ -147,6 +149,7 @@ The package keeps many assets inside the package by default. Publish them only w
 ```bash
 php artisan sk:publish
 php artisan sk:publish --tag=components
+php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```

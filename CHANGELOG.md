@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [13.5.2] - 2026-05-05
+
+### Fixed
+
+- **NPM paketi exports + main path'leri düzeltildi.** `package.json` `main` ve `exports` artık gerçek dosya yapısını yansıtıyor (`resources/js/components/Lvntr-Starter-Kit/...`). FileManager export'u eklendi.
+- **`sk:publish` bireysel tag'leri artık çalışıyor.** `form`, `datatable`, `tabs`, `skeleton`, `ui` tag'lerinin source path'leri eski yapıya göre kırıktı; `Lvntr-Starter-Kit/` segment'i ile düzeltildi.
+- **`vendor:publish --tag=starter-kit-components` nested path bug'ı giderildi.** Eski: `resources/js/components/Lvntr-Starter-Kit/Lvntr-Starter-Kit/...`. Yeni: doğrudan `resources/js/components/Lvntr-Starter-Kit/`.
+- **`vendor:publish --tag=starter-kit-file-manager-components` artık aktif.** Source path eski klasör adına işaret ediyordu (`file-manager`); gerçek dizin yapısıyla (`Lvntr-Starter-Kit/FileManager`) hizalandı.
+- **`index.ts` barrel'da eksik 9 component export eklendi:** `EditorInput`, `EditorImagePicker`, `EditorColorPalette`, `TranslatableInput`, `ImageLightbox`, `FilePreviewModal`, `ToggleFeatureCard`, `MimePickerField`, `SkTag`.
+
+### Added
+
+- **`sk:publish --tag=filemanager`** — FileManager UI publish için yeni tag.
+- **`sk:install --without-ai-skill`** — `stubs/.claude/skills/` AI skill yayınını atla (Claude Code skill bundle kullanmayan consumer'lar için).
+- **`.gitattributes`** — Composer arşivi `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` vb. development dosyalarını dışlıyor; arşiv boyutu küçüldü.
+- **`.npmignore`** — NPM paketi `__tests__/`, `*.spec.*`, `*.test.*` dosyalarını dışlıyor (root + subdirectory; npm 11 davranışıyla uyumlu).
+
+### Removed
+
+- **Stub'dan duplike vendor-owned domain command'ları silindi:** `EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`. Vendor'dan tek kaynak olarak çalışmaya devam eder. Mevcut consumer'larda `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
+- **Stub `App\Http\Responses\ApiResponse.php` silindi.** ServiceProvider alias guard'ı (`App\Http\Responses\ApiResponse` → `Lvntr\StarterKit\Http\Responses\ApiResponse`) consumer dosyası silindikten sonra otomatik devreye girer; consumer kodu (`use App\Http\Responses\ApiResponse;`) hiç değişmez. Mevcut consumer'larda `sk:update` `DEPRECATED_PATHS` cleanup'la siler.
+- **Vendor `Lvntr\StarterKit\Enums\PermissionEnum` silindi.** App-owned tek kaynak: `App\Enums\PermissionEnum` (stubs altındaki resmi konum). Vendor src'de kullanılan referans yoktu (grep onayladı), BC kırılmaz.
+  > **Migration note:** Eğer kodunuz doğrudan `Lvntr\StarterKit\Enums\PermissionEnum` import ediyorsa, `App\Enums\PermissionEnum`'a geçirin (resmi konum). Vendor kopya kullanılmıyordu ama bazı early-adopter consumer'larında doğrudan import olmuş olabilir. Search & replace:
+  > ```bash
+  > grep -rn "Lvntr\\StarterKit\\Enums\\PermissionEnum" app/ src/
+  > # Eşleşme varsa: use Lvntr\StarterKit\Enums\PermissionEnum;
+  > # → use App\Enums\PermissionEnum;
+  > ```
+
+### Changed
+
+- **`sk:publish` primary publish komutu olarak konumlandırıldı.** Granular interactive flow + namespace rewrite desteği. `vendor:publish --tag=starter-kit-*` BC için kalır ama `sk:publish` öne çıkar (docs/install.md, docs/artisan-commands.md).
+- **`StarterKitServiceProvider::registerCommands` yorumu güncellendi.** v13.5.2 itibariyle "domain commands single source" ifadesi gerçeği yansıtıyor (stub'lar silindi).
+
+### Backward Compatibility Guarantees
+
+Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
+
+- **REMOS gibi mevcut consumer'lar etkilenmez.** `composer update` + `sk:update` sonrası:
+  - Silinen 4 stub dosya (`EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`, `ApiResponse`) `DEPRECATED_PATHS` cleanup'la otomatik temizlenir.
+  - `App\Http\Responses\ApiResponse` import'u alias üzerinden vendor sınıfına resolve edilir; code değişikliği gerekmez.
+- **Vendor `PermissionEnum` kullanımı yok**, bu silme BC kırmaz. Tüm consumer'lar zaten `App\Enums\PermissionEnum` kullanır (stub resmi konum).
+- **`sk:publish` ve `vendor:publish` davranışları** consumer projesinin npm/composer tarafına dokunmaz; düzeltmeler pure bug fix.
+- v13.5.0 ve v13.5.1 BC garantileri korunmaktadır.
+
+### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update` çıktısında "Removed" listesinde 4 path görünecek — bu beklenen davranış.
+
 ## [13.5.1] - 2026-05-05
 
 ### Changed

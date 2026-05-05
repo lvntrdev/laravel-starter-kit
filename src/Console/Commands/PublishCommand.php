@@ -12,7 +12,7 @@ use function Laravel\Prompts\select;
 class PublishCommand extends Command
 {
     protected $signature = 'sk:publish
-        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, lang, config, helpers)}
+        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, filemanager, lang, config, helpers)}
         {--force : Overwrite existing files}
         {--destination= : Override destination base path (for testing or custom layouts)}';
 
@@ -21,38 +21,44 @@ class PublishCommand extends Command
     /** @var array<string, array{source: string, destination: string, label: string, group?: string}> */
     private const PUBLISHABLE_TAGS = [
         'components' => [
-            'source' => 'resources/js/components',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit',
             'label' => 'All Vue Components',
         ],
         'datatable' => [
-            'source' => 'resources/js/components/DatatableBuilder',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/DatatableBuilder',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/DatatableBuilder',
             'label' => 'DatatableBuilder (SkDatatable)',
             'group' => 'components',
         ],
         'form' => [
-            'source' => 'resources/js/components/FormBuilder',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/FormBuilder',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/FormBuilder',
             'label' => 'FormBuilder (SkForm, SkFormInput, SkColorSelector)',
             'group' => 'components',
         ],
         'tabs' => [
-            'source' => 'resources/js/components/TabBuilder',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/TabBuilder',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/TabBuilder',
             'label' => 'TabBuilder (SkTabs)',
             'group' => 'components',
         ],
         'skeleton' => [
-            'source' => 'resources/js/components/Skeleton',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/Skeleton',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/Skeleton',
             'label' => 'Skeleton (PageLoading, SkeletonBox, SkeletonCard, SkeletonTable, SkeletonText)',
             'group' => 'components',
         ],
         'ui' => [
-            'source' => 'resources/js/components/ui',
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/ui',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/ui',
             'label' => 'UI (AppDialog, AvatarUpload, ConfirmDialogComponent, SkTag, ToastComponent)',
+            'group' => 'components',
+        ],
+        'filemanager' => [
+            'source' => 'resources/js/components/Lvntr-Starter-Kit/FileManager',
+            'destination' => 'resources/js/components/Lvntr-Starter-Kit/FileManager',
+            'label' => 'FileManager (FileManager.vue, components, composables)',
             'group' => 'components',
         ],
         'lang' => [

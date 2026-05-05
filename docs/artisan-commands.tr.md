@@ -28,7 +28,12 @@ Bu döküman starter kit için komut referansıdır. DDD ile ilgili mimari notla
 php artisan sk:install
 php artisan sk:install --force
 php artisan sk:install --no-interaction
+php artisan sk:install --without-ai-skill
 ```
+
+- `--force` mevcut yayınlanabilir dosyaların üzerine yazar
+- `--no-interaction` tüm varsayılanları otomatik kabul eder; CI veya script tabanlı kurulumlar için uygundur
+- `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
 
 ## `sk:update`
 
@@ -62,6 +67,7 @@ php artisan sk:publish --tag=form
 php artisan sk:publish --tag=tabs
 php artisan sk:publish --tag=skeleton
 php artisan sk:publish --tag=ui
+php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```

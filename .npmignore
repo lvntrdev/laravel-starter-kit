@@ -1,0 +1,6 @@
+__tests__
+**/__tests__/**
+**/*.spec.ts
+**/*.spec.js
+**/*.test.ts
+**/*.test.js

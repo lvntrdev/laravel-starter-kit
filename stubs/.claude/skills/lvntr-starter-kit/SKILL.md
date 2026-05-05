@@ -651,9 +651,7 @@ On `sk:update`:
 1. **SAFE_UPDATE paths** are always overwritten. These are kit-managed base
    files you must NOT customize:
    - `app/Domain/Shared/{Actions,Contracts,DTOs,Pipelines}/`
-   - `app/Enums/PermissionEnum.php`
    - `app/Http/Middleware/{SecurityHeaders,AssignTraceId}.php`
-   - `app/Http/Responses/ApiResponse.php`
    - `app/Helpers/sk-helpers.php`
    - `app/Traits/`
    - `app/Exceptions/ApiExceptionHandler.php`
