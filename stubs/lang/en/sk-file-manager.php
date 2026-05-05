@@ -148,6 +148,7 @@ return [
         'upload_invalid_type' => ':attribute could not be uploaded: this file type is not allowed. Allowed types: :types.',
         'upload_too_large' => ':attribute could not be uploaded: file is too large (max :max).',
         'upload_invalid_file' => ':attribute could not be uploaded: invalid file.',
+        'quota_exceeded' => 'Upload rejected: storage quota exceeded (used: :used MB, incoming: :incoming MB, quota: :quota MB).',
         'too_large' => 'File is too large — it exceeds the server upload limit.',
         'copy_failed' => 'Failed to duplicate file.',
         'invalid_favoritable_type' => 'Invalid favorite item type.',

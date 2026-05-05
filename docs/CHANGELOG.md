@@ -1,0 +1,837 @@
+# What's New
+
+Newly added features and improvements to the starter kit are listed here.
+
+## 2026-05-05 -v.13.5.0
+
+### Major release — Vendor-first runtime and frontend UI lib
+
+The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [UPGRADE.md](UPGRADE_.md).
+
+#### Changed
+
+- **Vendor-first architecture.** Package runtime no longer flows through stubs — it runs directly from `vendor/`. `sk:install` publishes skeleton files (auth, layout, user/role/settings domain, config); it no longer copies FileManager and Shared layers into `app/`.
+- **`sk:update` simplified.** No file copying for vendor runtime; `composer update` is enough. Hash-tracked stubs (auth/layout/user/role/settings) retain their existing diff/notify behaviour.
+- **Frontend UI lib relocated.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` is now the canonical package location. Apps consume it via vendor symlink.
+- **`stubs/vite.config.ts` alias updated.** New installs get `@lvntr/components` pointing to `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` with `preserveSymlinks: true` and vendor path in the `Components({ dirs })` array.
+- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** Resolves the Media model via `media-library.media_model` config; app-specific `App\Models\Media` overrides (e.g. with SoftDeletes) work without changes.
+- **`Http/Requests/FileManager/UploadFileRequest`.** Protected methods — overridable on the app side (e.g. Settings integration).
+
+#### Added
+
+- **`src/Domain/FileManager/`** — Actions, DTOs, Queries, Services, Support under `Lvntr\StarterKit\Domain\FileManager\` in vendor.
+- **`src/Domain/Shared/`** — BaseAction, BaseDTO, ActionPipeline, PipeableAction under `Lvntr\StarterKit\Domain\Shared\` in vendor.
+- **`src/Traits/`** — HasActivityLogging, HasMediaCollections under `Lvntr\StarterKit\Traits\` in vendor.
+- **`src/sk-helpers.php`** — `to_api()`, `definition()`, `definitionLabel()`, `sk_locale_keys()`, `sk_default_locale()`, `format_date()` with `function_exists` guards in vendor.
+- **`src/Http/Responses/ApiResponse.php`** — `{success, status, message, data, errors?}` envelope preserved, moved to vendor.
+- **`src/Http/Middleware/`** — CheckResourcePermission, SecurityHeaders under `Lvntr\StarterKit\Http\Middleware\` in vendor.
+- **`src/Http/Controllers/FileManagerController.php`** and **`src/Http/Requests/FileManager/*`** — in vendor.
+- **`src/Console/Commands/PurgeFileManagerTrashCommand.php`** — `file-manager:purge-trash` signature preserved.
+- **`src/Exceptions/`** — ApiException, ApiExceptionHandler in vendor.
+- **`src/Facades/FileManager.php`** — single-line route mount via `FileManager::routes()`.
+- **`src/routes/file-manager.php`** — 19 routes, all names preserved exactly. Consumer's own route file takes precedence.
+- **`database/migrations/`** — 3 FileManager migrations, filenames and content preserved exactly.
+- **`config/file-manager.php`** — `models.*` and `settings.*` keys added.
+
+#### Deprecated
+
+- **`sk:sync` (PackageSyncCommand).** No longer needed with the Composer path-repository symlink workflow. The `--force` escape hatch is preserved.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan migrate
+```
+
+Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional. Frontend cleanup (switching the Vite alias to vendor path and removing the app-side copy) is also opt-in. See [UPGRADE.md](UPGRADE_.md) for both guides.
+
+---
+
+## 2026-05-04 -v.13.4.10
+
+### Minor release — Translatable FormBuilder fields and Sample Contents reference module
+
+FormBuilder now supports multi-language text fields out of the box. Three new builders — `FB.translatableText()`, `FB.translatableTextarea()` and `FB.translatableEditor()` — render one input per active language and submit JSON-ready locale maps for Spatie Translatable models. The release also adds backend helpers for validation, datatable search/sort and resource output, plus a shipped Sample Contents module that demonstrates the full pattern end to end. Existing apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && php artisan migrate && npm install && npm run build`.
+
+#### Added
+
+- **Translatable FormBuilder fields.** `FB.translatableText()`, `FB.translatableTextarea()` and `FB.translatableEditor()` render per-locale inputs driven by the active language list. They support locale filtering (`onlyLocales`, `exceptLocales`), inline or tabbed layouts, and locale label styles (`badge`, `name`, `flag`).
+- **Backend translatable helpers.** `HasTranslatableRules` generates FormRequest rules and validation labels per locale. `TranslatableQueryHelpers` provides JSON-column search, locale-aware sorting and `resourceShape()` output for datatables and edit forms.
+- **Locale helper functions.** `sk_locale_keys()` returns active locale codes in order, while `sk_default_locale()` resolves the primary locale with a fallback to `app.fallback_locale`.
+- **Sample Contents module.** A complete admin CRUD reference ships with a translatable model, migration, factory, domain actions/events/listeners, FormRequests, resource, datatable query, Vue pages and menu/permission entries.
+- **Documentation.** New [Translatable Fields](./translatable-fields.md) and [Çevrilebilir Alanlar](./translatable-fields.tr.md) guides document the full backend/frontend flow, migration strategy and Sample Contents reference implementation.
+- **Package dependency.** `spatie/laravel-translatable` is now part of the application dependency set for JSON-backed translated attributes.
+
+#### Improved
+
+- **FormBuilder docs.** The FormBuilder guide now lists the translatable builders and links to the dedicated guide.
+- **File Manager no-trash mode docs.** The File Manager guide now clarifies that `enableTrash=false` routes single and bulk delete operations to permanent deletion, including `force_delete=true` for bulk deletion.
+- **Lvntr builder skill docs.** Project agent guidance for FormBuilder now includes the translatable field builders so future generated admin forms use the supported API.
+
+#### Upgrade
+
+Run migrations and rebuild frontend assets after updating:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+npm install
+npm run build
+```
+
+Apps that already have custom language/settings handling should verify the active language list used by `general.languages`. Existing plain string columns are not migrated automatically; convert them to JSON with a staged migration before switching a model attribute to Spatie `HasTranslations`.
+
+## 2026-05-02 -v.13.4.9
+
+### Minor release — File Manager favorites, trash, restore, permanent delete, copy and rename
+
+File Manager now ships the feature set that was previously visible as placeholders in v13.4.8. Favorites and Trash are real quick-access views, folder/file tiles can be starred, deleted items move to trash by default, trash items can be restored or permanently deleted, and the trash view has an **Empty Trash** action. Files can also be duplicated and renamed from the context menu. This release adds two migrations (`file_favorites` and soft deletes on `media`), new backend actions/queries/requests, new File Manager routes, extended EN/TR language keys, and a daily `file-manager:purge-trash` scheduled command. Existing apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && php artisan migrate && npm install && npm run build`.
+
+#### Added
+
+- **Favorites.** New `file_favorites` table and `FileFavorite` model store starred folders/files per owner context. `FavoritesContentsQuery` powers the sidebar **Favorites** view, `FolderContentsQuery` now annotates items with `is_favorited`, and the grid/context menus expose Add/Remove Favorite actions.
+- **Trash and restore flow.** Files and folders now soft-delete into Trash when `enableTrash` is true. `TrashContentsQuery` powers the **Trash** quick view, deleted tiles show their deleted timestamp, and trash context menus switch to Restore / Permanently Delete actions.
+- **Empty Trash.** `EmptyTrashAction` and `DELETE /file-manager/trash/empty` permanently delete all trashed File Manager items for the current context; files are removed before folders and folders are deleted post-order so nested trees clear safely.
+- **File copy and file rename.** Files can be duplicated with copy-safe names such as `photo (copy).jpg` / `photo (copy 2).jpg`, and renamed through the shipped dialog and `PATCH /file-manager/files/{media}` endpoint.
+- **Trash purge command.** `php artisan file-manager:purge-trash --days=7` permanently deletes File Manager trash older than the selected age. It is scheduled daily from `routes/console.php`.
+- **`enableTrash` prop.** `FileManager` defaults to soft-delete behaviour; setting `:enable-trash="false"` restores immediate permanent deletion semantics for projects that do not want a trash workflow.
+
+#### Security
+
+- **Context validation centralised.** `FileManagerContextRequest` now validates and resolves the current File Manager context consistently across virtual views and item mutations, closing gaps where favorites/trash endpoints could drift from the regular folder-content checks.
+- **Soft-delete scope hardening.** Restore, permanent-delete, copy, rename and favorite actions now explicitly scope items to the current context and use `withTrashed()` / `onlyTrashed()` where needed, preventing cross-context access and ensuring trashed items are found only in the intended paths.
+- **Folder restore cascade guardrails.** Restoring a trashed folder restores its descendant folders and File Manager media in a transaction. If its parent is still trashed, restore is refused until the parent is restored first; if the parent was permanently deleted, the item is restored to root to avoid an orphan.
+
+#### Fixed
+
+- **Bulk force delete can now find trashed items.** `BulkDeleteAction` uses `withTrashed()` when `force=true`, so permanent deletion from the Trash view no longer misses items that are already soft-deleted.
+- **Language key collision fixed.** `labels.details` is now the details-section array, while the action label moved to `labels.details_action`; this prevents the file details dialog labels from being overwritten by the context-menu action string.
+- **Collection scoping tightened.** Trash purge and permanent delete affect File Manager media (`collection_name = files`) without touching avatars, logos, editor uploads or other MediaLibrary collections.
+
+#### Upgrade
+
+Run migrations after update:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+npm install
+npm run build
+```
+
+No breaking API response change. Apps that customised File Manager stubs should compare their local files with the shipped updates before using `sk:update --force`, especially `FileManager.vue`, `useFileManager.ts`, `FileGrid.vue`, `FileManagerController.php`, `routes/web/file-manager-route.php`, `lang/{en,tr}/sk-file-manager.php`, the new requests/actions/queries, and the two migrations.
+
+## 2026-04-30 -v.13.4.8
+
+### Minor release — File Manager UX overhaul (sidebar + stats + details + search)
+
+File Manager UX overhaul — the same backend, same routes, same media table; a new shell. The single-column grid is replaced by a sidebar + main-column layout, with three new shipped components (`FileManagerSidebar`, `FileDetailsDialog`, `FileManagerStats`), a top-bar search box that filters the current folder client-side, and an expanded right-click menu with new entries (Open in new tab, Preview, Share, Copy, Rename, Add to Favorites, Details). All previously documented behaviour — uploads, drag-and-drop move, bulk delete, image lightbox, preview dialog, custom contexts, settings, permissions — works exactly as before; the change is purely shipped frontend (`FileManager.vue` + the three new components + `types.ts` + `lang/{en,tr}/sk-file-manager.php`). No new composer or npm dependency, no migration, no config, no permission entry. Existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` to pick up the patches; no breaking change.
+
+#### Added
+
+- **`FileManagerSidebar.vue` — left-rail with circular storage-usage ring, quick-access list, folder tree, "New Folder" button.** The storage ring uses an SVG circle with a `circumference - dashOffset` fill and a colour-band threshold (primary < 70 %, amber 70–90 %, rose ≥ 90 %); used bytes come from `fm.contents.stats.total_size`, the quota is currently a sane visual default of 10 GB until a backend setting is wired. The folder tree reuses the same `fm.tree` data the move modal already loads. Quick-access targets: **All Files** resets to the root sorted by name asc, **Recently Uploaded** resets to the root sorted by date desc, **Favorites** and **Trash** show the new `coming_soon` toast as placeholders for an upcoming feature.
+
+- **`FileDetailsDialog.vue` — file details modal showing Name, Type, Size, Uploaded, Folder, and (for images) Dimensions.** Image dimensions are loaded async — the dialog kicks off a hidden `new Image()` against `file.url` and pushes `naturalWidth × naturalHeight` into the rendered row when `onload` fires. The dialog ships with a "Download" footer button that reuses the same `downloadFile` handler as the right-click menu, so the action surfaces stay aligned. Wired up from the new "Details" entry in the file context menu.
+
+- **`FileManagerStats.vue` — top-bar stats widget (Total Files, Total Size, Folder Count, Favorites, Last Upload).** Renders a horizontal row of icon-tinted cards (`bg-{colour}-100` in light, `bg-{colour}-900/40` in dark). Folder count traverses the full nested tree (`flattenTree(fm.tree.value)`); last-upload reflects the most-recent `created_at` in the current folder, formatted as "Just now / X min / X hr / X d / locale-date" via the new `stats.time_*` keys.
+
+- **Top-bar search.** `IconField` + `InputText` strip above the body filters `fm.contents.folders` and `fm.contents.files` by `name` / `file_name` (case-insensitive `includes`), surfaced via the new `filteredFolders` / `filteredFiles` computeds. Filter is local to the rendered folder; navigating clears it implicitly the next time `fm.loadContents()` runs.
+
+- **Expanded file context menu — Open / Preview / Download / Share / Move / Copy / Rename / Add to Favorites / Details / Delete.** "Open" now opens the file in a new tab (`window.open(file.url, '_blank', 'noopener,noreferrer')`); "Preview" keeps the existing lightbox / dialog flow; "Share" copies the absolute file URL to the clipboard (`navigator.clipboard.writeText(...)`) with a localised "Link copied" toast on success and the `coming_soon` toast on permission refusal; "Details" opens the new dialog; "Copy", "Rename", "Add to Favorites" are placeholders for upcoming features. The destructive Delete row gets a new `fm-menu-danger` class so it can be styled distinctly.
+
+- **Folder context menu — adds "Add to Favorites" (placeholder) before Delete.** Same `coming_soon` toast pattern as the file-menu placeholders.
+
+- **`types.ts` — adds `ViewMode = 'grid' | 'list'` and `QuickView = 'all' | 'recent' | 'favorites' | 'trash'`.** `ViewMode` is reserved for an upcoming list-view renderer (currently grid-only); `QuickView` is consumed by the sidebar quick-access flow. Existing exports unchanged.
+
+- **`lang/{en,tr}/sk-file-manager.php` — new keys.** Top-level: `link_copied`, `coming_soon`. Labels: `upload_new`, `preview`, `share`, `copy`, `add_to_favorites`, `details`, `search_placeholder`, `view_grid`, `view_list`, `files_section`, `folders_section`, `no_results`. New nested groups: `labels.sidebar.*`, `labels.stats.*`, `labels.details.*`.
+
+#### Removed
+
+- **Legacy header back-button + sort dropdown removed from `FileManager.vue`.** The previous shell had a `←` back button + `Select` dropdown for sort key + a direction-toggle button in the header; navigation now happens through the sidebar (folder tree + breadcrumb) and sorting is driven by the quick-access flow ("Recently Uploaded" = `setSort('date', 'desc')`). The `useFileManager` composable still exposes `setSort` / `toggleSortDirection` for direct callers.
+
+#### Upgrade
+
+No breaking changes. Existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` — `sk:update` will pick up the new shipped files and the extended language keys. The data shape on the wire is unchanged; backend is unchanged.
+
+## 2026-04-26 -v.13.4.7
+
+### Patch release — silence duplicate Link extension warning in `EditorInput`
+
+Single-fix patch — silences the `Duplicate extension names found: ['link']` warning Tiptap printed when `EditorInput` booted. Tiptap v3's `@tiptap/starter-kit` started bundling the Link extension by default, but our editor was still pushing `@tiptap/extension-link` through the optional `props.links` branch with our own `openOnClick: false, autolink: true` config — so two `link` registrations went into the same editor. The fix is a single config flag on the StarterKit call (`link: false`) so the bundled copy is disabled and our manual-push branch stays the single source of truth. Behaviour is identical for both `props.links === false` (no Link at all) and `props.links === true` (manual-push only); only the console noise is gone. Existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update` — no migration, no config, no breaking change.
+
+#### Fixed
+
+- **`EditorInput.vue` — duplicate Link extension warning silenced.** Tiptap v3's `@tiptap/starter-kit` bundles the Link extension by default; the editor was also pushing `@tiptap/extension-link` through the optional `props.links` branch, so the editor booted with `Duplicate extension names found: ['link']` in the console. `StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: false })` disables the bundled copy so our manual-push branch (with our own `openOnClick: false, autolink: true` config) is the only source. `props.links === false` cleanly removes Link entirely; `props.links === true` runs only the manual-push branch — same effective behaviour, no warning.
+
+#### Upgrade
+
+No breaking changes. `composer update lvntr/laravel-starter-kit && php artisan sk:update` picks up the patch — the fix ships in the same shipped Vue file `sk:update` already tracks; no extra step needed.
+
+## 2026-04-26 -v.13.4.6
+
+### Patch release — Vite optional-peer-dep stub + `sk:update` package.json merge
+
+Two related build/upgrade fixes that surface when consumers upgrade from a pre-`EditorInput` version of the kit (any 13.4.0 or earlier install) to 13.4.2+. The package's `package.json` no longer declares its `@tiptap/*` set as `peerDependencies` + `peerDependenciesMeta.optional` — those declarations were tripping Vite's optional-peer-dep stub fallback (`__vite-optional-peer-dep:@tiptap/extension-table:@lvntr/starter-kit:false`) when resolving from `vendor/lvntr/laravel-starter-kit/`, even on consumer apps that already had the deps installed at the project root. The result was `"Table" is not exported by …` at build time and `does not provide an export named 'BubbleMenu'` at runtime — both produced by Vite's stub module (`export default {}; throw …`) instead of the real package. And `sk:update` now mirrors `sk:install`'s `mergePackageJson()` step so the new `@tiptap/*` set lands in the consumer's `package.json` automatically on upgrade — previously only fresh installs picked them up, leaving every consumer who upgraded from `<13.4.2` to copy 16 dependency entries by hand. Stub-version-wins for shared keys, user extras preserved, idempotent on re-runs.
+
+#### Fixed
+
+- **Package `package.json` — dropped `peerDependencies` + `peerDependenciesMeta` for the `@tiptap/*` set.** The package is composer-distributed (not on npm) so the peer-dep declarations had no effect on `npm install`; their only practical impact was Vite's `tryNodeResolve` fallback. When a bare-import (`import { Table } from '@tiptap/extension-table'`) couldn't be resolved through the normal `node_modules` walk-up — easy to trigger when the package is in `vendor/`, not `node_modules/` — Vite checked the importer's nearest `package.json`, found the dep listed as an optional peer, and returned `__vite-optional-peer-dep:<dep>:<parent>:<isRequire>` instead of erroring. The stub is loaded as `export default {}; throw new Error("Could not resolve …")` — no named exports, hence the misleading `"Table" is not exported by …` build error and the runtime `does not provide an export named 'BubbleMenu'` for the `@tiptap/vue-3/menus` subpath. Removing the declarations restores plain `node_modules` resolution which walks up to the project root and finds the real packages.
+
+- **`sk:update` now merges `stubs/package.json` into the consumer's `package.json`.** `UpdateCommand` previously only touched files under `app/`, `config/`, `resources/` and `routes/` — never the project's `package.json`. So the 16 `@tiptap/*` entries that 13.4.2 added to the stub never reached consumers who upgraded via `composer update lvntr/laravel-starter-kit && php artisan sk:update`. The new step (4c in `handle()`) mirrors `InstallCommand::mergePackageJson()`: stub keys win at the root, `array_merge`-d `dependencies`/`devDependencies` (sorted), user extras preserved, only writes when the rendered JSON actually differs (so re-runs are no-ops). The summary surfaces the change as `package.json (merged stub dependencies — run npm install)` so the user knows to run `npm install` afterwards.
+
+#### Upgrade
+
+No breaking changes. Existing consumer apps run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` — `sk:update` will now sync the missing `@tiptap/*` entries into your `package.json` and Vite will resolve them against the real packages instead of the stubs.
+
+## 2026-04-26 -v.13.4.5
+
+### Patch release — code-review sweep (API hierarchy + role-data + 2FA loading + permission directive + i18n)
+
+Closes a small batch of findings from a follow-up code review of the v13.4.x surface. Two security/info-disclosure fixes (API user list now applies the same role-hierarchy filter the admin panel does, and the role JSON `data` endpoint now runs the same `CanManageRoleQuery` guard the `edit`/`destroy` actions do), one UX fix (the 2FA enable/disable buttons now reset their loading state on failure paths, not just the happy path), one latent-bug fix (the `v-role` directive read the wrong Inertia shared-prop key and silently always returned `false`), and one i18n cleanup (the `useApi` composable's error toasts and synthesized envelope messages now flow through `sk-message.*` keys instead of hardcoded Turkish strings). All changes are additive on the wire — same response shape, same status codes, same UI. Three regression tests guard the two security fixes. Existing consumer apps pick the patches up via `php artisan sk:update`; no migration, no config, no breaking change.
+
+#### Security
+
+- **`Api/UserController::index` now delegates to `UserDatatableQuery` — same role-hierarchy filter as the admin panel.** Previously the API used a bespoke `DatatableQueryBuilder` chain that skipped the `whereDoesntHave('roles', sort_order < me)` clause `UserDatatableQuery` enforces. Result: a non-`system_admin` API consumer holding `users.read` could `GET /api/v1/users` and see every higher-rank user — including `system_admin` accounts — whereas the admin UI hid them. The controller now method-injects `UserDatatableQuery` and returns its `response($request->user())` directly. The query's allowlists were extended with the `first_name`, `last_name`, `email`, `status`, `id`, `created_at` sortable keys (previously API-only) so the wire contract for legitimate API callers is unchanged. Covered by the new `tests/Feature/Api/UserTest.php` "hides higher-rank users from non-system_admin api callers" regression test.
+
+- **`Admin/RoleController::data` now runs `CanManageRoleQuery` before returning role JSON.** `data()` is the JSON sibling of `edit()` (the admin role form prefetches it via `useApi().get('/admin/roles/{role}/data')`). `edit()` and `destroy()` already gated through `CanManageRoleQuery::check()` to enforce the role hierarchy; `data()` did not — so a lower-rank admin could read the full permission set of a higher-rank role over JSON, even though the form they would render the data into is hierarchy-aware. The check is now inlined at the top of `data()` (`abort(403)` on mismatch), mirroring `edit()`. Covered by two new `tests/Feature/Admin/RoleManagementTest.php` regression tests ("forbids non-system_admin from reading higher-rank role data" + the positive sibling for same/lower rank).
+
+#### Fixed
+
+- **2FA enable/disable buttons no longer get stuck on error.** `Profile/components/TwoFactorTab.vue` set `twoFactorProcessing = true` before calling Fortify, but only reset it on the success branch. An axios 4xx/5xx (typical: an expired session, password-confirm timing out) or an Inertia `router.reload` error left the button spinner stuck until full page reload. Both `enableTwoFactor()` and `disableTwoFactor()` now reset the flag in a `finally` block, so any failure surfaces as a re-clickable button + a toast (rather than a frozen UI).
+
+- **`v-role` directive now reads the correct Inertia shared-prop key.** `resources/js/plugins/permission.ts` checked `auth.roles`, but `HandleInertiaRequests` shares the user role names under `auth.role_names`. The directive silently always evaluated to `false` — `<div v-role="'system_admin'">` markup was never visible regardless of the actor's role. The plugin now reads `auth.role_names`. The duplicate `useCan` export inside the plugin file (which read the same wrong key) was removed too — the canonical `useCan()` lives at `@/composables/useCan` and was already correct, so application code was unaffected. The plugin file now exports only the `PermissionPlugin` (registers `v-can` + `v-role`).
+
+- **`useApi` composable error messages flow through `sk-message.*` i18n keys.** `resources/js/composables/useApi.ts` had three hardcoded Turkish error strings (synthesized envelope on non-JSON response, network-failure toast detail, toast `summary`). Replaced with `trans('sk-message.invalid_response')`, `trans('sk-message.request_failed', { status })`, `trans('sk-message.network_error')`, `trans('sk-message.error_summary')`. The four new keys are added to both `lang/en/sk-message.php` and `lang/tr/sk-message.php`. EN-locale users no longer see Turkish copy when an API call fails outside the normal envelope path.
+
+#### New
+
+- **Regression tests for the two security fixes.** `tests/Feature/Api/UserTest.php` gains the `hides higher-rank users from non-system_admin api callers` test — seeds the role hierarchy via `RoleEnum` index, mirrors `users.read` + `admin` role into the `api` guard (Spatie's `Guard::getDefaultName()` switches to `api` under `Passport::actingAs`), assigns both web + api versions of the role to an admin user, and asserts the response excludes the higher-rank `system_admin` peer + the acting `system_admin` user but includes the same-rank admin peer. `tests/Feature/Admin/RoleManagementTest.php` gains two: `forbids non-system_admin from reading higher-rank role data` (admin gets 403 on `/admin/roles/{system_admin}/data`) and `allows non-system_admin to read lower-rank role data` (admin gets 200 on `/admin/roles/{user}/data`).
+
+## 2026-04-25 -v.13.4.4
+
+### Patch release — system-admin log viewer (`/logs`)
+
+Adds a maintainer-only admin section for browsing, searching and deleting Laravel log files in `storage/logs/`. Self-contained — no new composer or npm dependency, no migration, no permission entry. Visible only to `system_admin` users; everyone else still sees the same panel as before. All additive.
+
+#### Added
+
+- **`/logs` admin section — system-admin-only log viewer.** A new sidebar item under "System" lists the contents of `storage/logs/` in an `SkDatatable` (filename, channel type, size, modified time, active flag), and a per-file viewer page applies structured filters (level, date range, keyword) over a cursor-paginated entry stream. Single + bulk delete are wired through the same endpoint with partial-success semantics — active files (today's daily log, anything written within the last 5 seconds) are refused per-file and reported back in `failed[]`, the rest go through. Each delete batch dispatches a `LogFilesDeleted` event; the new `LogActivityForLogFilesDeleted` listener writes a `spatie/activitylog` entry under `log_name = system`, so deletions surface automatically in **Admin → Activity Logs**.
+
+- **`app/Domain/Logs/` bounded context.** Four DTOs (`LogFileDTO`, `LogEntryDTO`, `LogEntryFilterDTO`, `DeleteLogFilesDTO`), two queries (`LogFileQuery` for the file list, `LogEntryQuery` for streaming entries), one action (`DeleteLogFilesAction`), one event/listener pair, and a stateless `LaravelLogParser` service. `LogEntryQuery::paginate()` reads the file with `fopen('rb')` + 64KB-capped `fgets()` and a byte-offset cursor, so memory stays bounded regardless of file size; multi-line stack traces are kept attached to the entry that opened them, and any line that appears before the first Laravel-format header (or in a file with no headers at all) surfaces as a single raw `LogEntryDTO` (`is_raw = true`, gray chip, hidden timestamp) so file content is never silently dropped. Raw entries are filtered out the moment any structured filter (level / from / to / keyword) is applied.
+
+- **`logs.*` named route group.** `routes/web/log-route.php` ships five routes — `index`, `dtApi`, `show`, `entries`, `destroy` — wrapped in `role:system_admin`. The `{filename}` parameter constraint (`[A-Za-z0-9._-]+\.log`) is enforced on both `show` and `entries`, so path traversal and non-`.log` requests never reach the controller. The file is added to the `$routesWithoutPermissionMiddleware` allowlist in `routes/web.php` because the section is role-gated, not permission-gated.
+
+- **`lang/{en,tr}/sk-log.php` translation file.** All UI copy (filter labels, empty states, delete confirmations, failure reason codes) lives behind the `sk-log.*` namespace in both languages. The new `sk-menu.logs` key labels the sidebar entry.
+
+#### Security
+
+- **Path-traversal guardrail at three layers.** The safe filename regex `^[A-Za-z0-9._-]+\.log$` is enforced in (1) the route parameter constraint, (2) `DeleteLogFilesRequest` rules, and (3) `DeleteLogFilesAction::execute()` itself (defence in depth). Anything else returns a `log.invalid_filename` failure or a 404 from the route binding — the disk path is never built from raw input.
+
+- **Active-file deletion refused.** `LogFileQuery::isActive()` flags today's daily file (`laravel-{today}.log`) and any file with an `mtime` within the last 5 seconds. `DeleteLogFilesAction` rejects flagged files per-item with `reason: 'active_file_protected'`, so a bulk submit cannot accidentally truncate the file Laravel is currently appending to.
+
+- **`role:system_admin` route gate, no permission entry.** The viewer is intentionally **not** added to `config/permission-resources.php`. Granting an `admin` role does not unlock it; only the dedicated `system_admin` role does. Non-system-admin users get a 403 on the route and never see the menu item — the feature is invisible to them.
+
+- **Per-line read cap of 64KB.** `LogEntryQuery` calls `fgets($handle, 65536)`, so a pathological single-line entry of unbounded size cannot exhaust process memory. Long lines truncate cleanly without aborting the request.
+
+## 2026-04-25 -v.13.4.3
+
+### Patch release — rich vertical tabs + datatable per_page upper bound
+
+Brings a richer vertical tab presentation through the `TB` builder (icon tile, description line, trailing badge or check) and an opt-in upper bound on the `?per_page=` query parameter handled by `DatatableQueryBuilder`. Both are additive — no breaking changes. `sk:update` ships the new TabBuilder Vue components, the rewritten `_tabs.scss`, and the EN/TR `sk-setting.tab_descriptions` language keys; `composer update` is sufficient for the package-tier `max_per_page` config.
+
+#### Added
+
+- **`TB.item()` rich vertical tab fluent methods.** Four new fluent methods: `.description(text)` for a secondary line under the label, `.iconColor(color)` for a colored icon tile preset (13 colors: `blue`, `amber`, `emerald`, `purple`, `teal`, `red`, `indigo`, `slate`, `pink`, `orange`, `cyan`, `green`, `yellow`), `.badge(value, severity?)` for a trailing badge (5 severities: `success`, `warn`, `info`, `danger`, `secondary`), and `.checked()` for a trailing green check (takes precedence over `badge`). Existing tab definitions render unchanged. The shipped Settings → General page uses the new API (per-tab description + icon color) as the canonical example. New i18n block `sk-setting.tab_descriptions` covers the seven settings tabs.
+
+- **`STARTER_KIT_DATATABLE_MAX_PER_PAGE` env var + `config('starter-kit.datatable.max_per_page')`.** Opt-in upper bound on the `?per_page=` query parameter for `DatatableQueryBuilder`. Defaults to `100` when the config key is absent.
+
+#### Security
+
+- **`DatatableQueryBuilder` — `?per_page=` upper bound enforced.** Previously a client could send `?per_page=99999` and force the builder to materialise an entire table into a single payload. The new ceiling (`config('starter-kit.datatable.max_per_page')`, default 100) silently clamps the value — anything inside the cap behaves identically, so legitimate callers are unaffected.
+
+#### Improved
+
+- **Vertical tab sidebar — PrimeVue Card wrap via `.isCard(true)`.** Set at the tabs level (not per-tab), the vertical sidebar wraps in a Card with reduced internal padding. Combined with the new icon tile + description fields, the Settings page sidebar now matches modern admin-panel layouts out of the box.
+
+#### Fixed
+
+- **Branding — legacy "Starter Kit 12" references.** Two places still read "Starter Kit 12" — `config/scramble.php` API description and `app.blade.php` fallback title; both now read "Starter Kit 13".
+
+## 2026-04-24 -v.13.4.2
+
+### Patch release — Tiptap editor input, password generator, dashboard welcome message + security hardening
+
+Introduces a rich-text `FB.editor()` FormBuilder field (Tiptap v3 under the hood) paired with a server-side `HtmlSanitizer` utility, a crypto-safe password generator on `FB.password()`, and an admin dashboard welcome message authored through the editor on **Settings → General**. File upload gains an optional `folder_name` parameter so editor-scoped uploads stay grouped, and the FileManager now surfaces a dedicated error for 413 Payload Too Large. All additive — no breaking changes. `sk:update` ships the published files (new Vue components, `HtmlSanitizer`, language keys); `composer update` is sufficient for package-tier changes.
+
+#### Added
+
+- **Tiptap-based `FB.editor()` FormBuilder input.** A new form field type backed by Tiptap v3 with bubble menu, link / image / table / task list / text align / text color / text style and placeholder extensions. Toolbar layout is chosen via `.preset('minimal' | 'standard' | 'full')`; image uploads route through the FileManager context with an optional folder-grouping parameter, and companion components (`EditorColorPalette`, `EditorImagePicker`) cover the color and image picker flows. Translations live in `lang/{en,tr}/sk-editor.php`. Content flows through the new `App\Support\HtmlSanitizer` on save, so only allowlisted tags / attributes / URL schemes are persisted.
+
+- **`FB.password().generator()` — crypto-safe password generator.** Opt-in fluent method that adds a generate button next to the password field, backed by `crypto.getRandomValues()`. Defaults are intentionally stricter than `Password::defaults()` (16 characters, mixed case + letters + digits + symbols) so every generated value passes the framework-wide password policy on the first submit. Paired with a rewritten custom eye toggle so `password` and `password_confirmation` fields render identically inside `InputGroup` containers. PrimeVue `<Password>` is now only used when `.feedback()` opts in to the strength meter — every other usage falls through the lighter `InputText + eye` path. Enabled on the admin User form out of the box.
+
+- **Admin dashboard welcome message.** **Settings → General** gains an optional `welcome_message` WYSIWYG field rendered through `FB.editor()`. The dashboard shares the sanitized HTML as an Inertia prop, and `resources/js/pages/Admin/Dashboard/Index.vue` renders it inside an `sk-prose` container via `v-html`. The value is sanitized on write (FormRequest `prepareForValidation` hook) and on read (DashboardController defense-in-depth pass) so pre-existing rows with hostile markup cannot surface even if the on-disk value drifts.
+
+- **File upload `folder_name` parameter.** `POST /file-manager/files` now accepts an optional `folder_name` string (nullable, `max:100`, strict regex: letters / digits / space / dash / underscore only — path-traversal and arbitrary-character risk closed at validation). When supplied, `UploadFileAction::ensureManagedFolder` atomically ensures a root-level folder with that name exists in the current context and stores the upload inside it. The welcome-message editor uses this to keep all inline image uploads grouped under a single "Welcome Message" folder without a read query ever writing side-effects. Frontend `EditorImageUploadConfig` exposes the same field via `folderName`.
+
+#### Security
+
+- **`App\Support\HtmlSanitizer` — allowlist for tags, attributes, and URL schemes.** New utility that strips every tag, attribute and URL scheme not on a small allowlist from editor payloads. URL handling flipped from blocklist to allowlist: relative URLs plus `http://`, `https://`, `mailto:` and `tel:` are permitted — anything else (`blob:`, `data:`, `file:`, `ftp:`, `javascript:`, `vbscript:`) is rejected. Covered by a dedicated `tests/Unit/HtmlSanitizerTest.php` suite.
+
+- **`SettingService::normalizeValue()` — HTML sanitize on every write path.** `setValue()` and `setGroup()` now pass every value through a shared `normalizeValue()` hook. Keys listed in a new `HTML_SAFE_KEYS` whitelist (currently `general.welcome_message`) are run through `HtmlSanitizer::sanitize()` before hitting the database, so non-FormRequest writes — tinker sessions, scheduled commands, queued jobs — cannot leave unsanitized HTML behind.
+
+- **Dashboard welcome message — defense-in-depth read sanitize.** `DashboardController::index` runs the stored welcome message through `HtmlSanitizer::sanitize()` a second time before sharing it to Inertia. Historical rows written before the write-path sanitize landed are neutralised, and a drifted or manually-poisoned DB value cannot reach the browser.
+
+- **`UploadFileAction::ensureManagedFolder` — concurrency-safe managed folder creation.** The ensure path runs inside `DB::transaction` with `lockForUpdate` on the candidate row, falls back on a `QueryException` catch for the unique-constraint race, and restores soft-deleted folders via `withTrashed()` instead of creating a duplicate. Combined, the three layers close the race window where two parallel editor uploads could either deadlock on the same folder name or resurrect a soft-deleted row by creating a sibling that trips the unique index.
+
+- **`UploadFileRequest` — `folder_name` input strictly validated.** The new field uses `nullable|string|max:100|regex:/^[\pL\pN _-]+$/u`; path-traversal and arbitrary-character content is rejected at the FormRequest boundary, not downstream.
+
+#### Improved
+
+- **FileManager upload error messages.** The client composable now recognises HTTP 413 (Payload Too Large) and surfaces the dedicated `too_large` translation (EN + TR) instead of a generic failure string; every other non-200 response carries the raw status code alongside the message, so upload failures are easier to diagnose without opening the devtools network tab.
+
+- **Password field default render path.** Beyond the `.generator()` addition above, the default `FB.password()` render now uses `InputText` + a custom eye toggle rather than PrimeVue `<Password>`. Fixes the long-standing issue where `<Password>`'s built-in eye icon disappeared inside `InputGroup` addons, and makes `password` / `password_confirmation` fields render identically. `<Password>` is still used when `.feedback()` is called (strength meter path). New i18n keys: `generate_password`, `password_generated`, `password_generated_detail`, `show_password`, `hide_password` (EN + TR).
+
+#### Fixed
+
+- **`SettingsDefaultsQuery` read path no longer writes.** The previous release read the **Settings → General** screen and, as a side effect, tried to `firstOrCreate` a "Welcome Message" folder through `resolveWelcomeMessageFolderId()`. On installs with a soft-deleted folder of that name, the unique index rejected the insert and the admin saw a 500 on a pure read. The folder ensure path is now owned exclusively by `UploadFileAction::ensureManagedFolder` at upload time, and `SettingsDefaultsQuery` is side-effect-free again. The frontend `welcome_message_folder_id` Inertia prop binding is gone as well — the editor uses `folderName` directly.
+
+- **Editor upload — stale `blob:` URLs no longer leak into the form payload.** `EditorInput.vue` now manually syncs the parent `v-model` after `setContent({ emitUpdate: false })`, so replaced / broken `<img src="blob:...">` fragments from a just-completed upload no longer travel to the server in the submitted HTML.
+
+## 2026-04-22 -v.13.4.1
+
+### Patch release — API response hardening + Postman/Apidog sync + OAuth UUID fix
+
+This release bundles the end-to-end API response envelope rework (trace-id pipeline, centralised exception handler, leak-closing controller patches) with two new API client integrations (Postman and Apidog sync) and a pair of install-time fixes (OAuth UUID compatibility, automatic Passport personal access client). Most changes are additive (new body fields + headers, new admin buttons), but three API-response behavioural breaks matter for strict clients — see [docs/UPGRADE.md](UPGRADE_.md). Fresh installs pick everything up automatically; existing projects should follow the upgrade guide. `sk:update` ships the published files; controller patches and the post-install Passport step are manual.
+
+#### Security
+
+- **Controller `$e->getMessage()` leaks closed (11 sites).** `FileManagerController` (bulkDelete/createFolder/renameFolder/moveItem/deleteFolder/upload/deleteFile), `Api/UserController::destroy`, and `Api/Auth/AuthController::login` + `twoFactorChallenge` swapped the `to_api(null, $e->getMessage(), 4xx)` pattern for `throw ApiException::*`. The client-facing message is unchanged, but the response now routes through the central handler — the `trace_id` is aligned, 500+ errors are logged, `X-Correlation-ID` is echoed. Moving away from raw `LogicException::getMessage()` closes the door on accidental internal-message leaks during future refactors.
+
+- **`abort($code, 'msg')` no longer leaks the raw message.** The `HttpExceptionInterface` branch now uses the fixed `defaultMessageForStatus()` table instead of `$e->getMessage()`. `abort(400, 'SQL error: ...')` now returns `"Bad request."` in the body; the internal detail only surfaces in `debug.message` while `APP_DEBUG=true`. Use `throw ApiException::badRequest('...')` for controlled messaging.
+
+- **`Api/AuthController` returns `UserResource` instead of a raw User.** `register`, `login` (default kind), `twoFactorChallenge`, and `me` now produce `data.user` via `UserResource::toArray()`. Raw Eloquent serialisation relied on `$hidden`; a future sensitive column could leak if forgotten. The resource makes the wire contract explicit.
+
+#### Added
+
+- **Postman sync — admin button + CLI.** New "Sync to Postman" action on the API Routes page (and `php artisan postman:sync`) pushes the Scramble OpenAPI spec through Postman's `/import/openapi` endpoint with `folderStrategy=Tags` so tags become folders. Each sync imports a fresh collection, persists the newly issued UID to the settings store, then best-effort deletes the previous collection — an `import-first, delete-after` sequence so a transient Postman outage or invalid token never leaves the workspace without a working collection. Configuration: Settings → API Clients → Postman card (API Key + Workspace ID; collection ID is managed automatically).
+
+- **Apidog sync — admin button + CLI.** Same pipeline pushes to Apidog's `POST /v1/projects/{projectId}/import-openapi` endpoint with inline JSON input and `OVERWRITE_EXISTING` merge behavior. Also available as `php artisan apidog:sync`. Configuration: Settings → API Clients → Apidog card (Access Token + Project ID).
+
+- **Settings → API Clients tab.** Single tab hosts both Postman and Apidog configuration as separate cards. Secret fields (`postman.api_key`, `apidog.access_token`) are encrypted at rest through the existing `sensitive_keys` list in `config/settings.php`. The previous `POSTMAN_*` `.env` keys are no longer used — existing values are migrated into the settings table.
+
+- **Shared `OpenApiExporter` helper.** Both sync Actions share a single exporter that runs `scramble:export`, writes to a per-request unique path under `storage/app/postman/`, and cleans up in a `finally` block — the CLI command and the admin UI button can run concurrently without racing on a shared file. The spec is emitted **unchanged**: no content-type rewriting, so the pushed collection mirrors the real server contract (clients are free to toggle the body view between raw / form-data in their own UI).
+
+#### Improved
+
+- **Success and error responses share a single `trace_id`.** The new `AssignTraceId` middleware prepended to the `api` group generates a UUID per request and both branches (`ApiResponse::toResponse` on success, `ApiExceptionHandler` on error) pick it up from `$request->attributes`. Body `trace_id` + header `X-Request-ID` + a sanitised echo of the client's `X-Request-ID` as `X-Correlation-ID`. In support scenarios, client-side logs and server-side logs correlate via one id.
+
+- **`ModelNotFoundException` message includes the model name.** `"The requested resource was not found."` → `"User not found."` (or `Role`, `Product`, …). `ApiExceptionHandler::modelNotFoundMessage` resolves it via `class_basename($e->getModel())`. Matches the previous AGENTS.md contract; no security impact since the model class name is already inferable from the URL.
+
+- **`Retry-After` header propagated on 429 responses.** All rate-limit headers from `ThrottleRequestsException::getHeaders()` (`Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`) are copied to the response. Throttled clients can read the standard header instead of parsing it out of the message string.
+
+- **`simplePaginate()` support.** `to_api(Model::simplePaginate(15))` no longer raises a type error; lightweight pagination with just `meta.has_more` is now supported. `LengthAwarePaginator` and `CursorPaginator` behaviour unchanged.
+
+- **`to_api(paginator, 'msg', 201)` no longer loses pagination meta.** Helper's paginator detection now runs before the 201/202 branches; batch-create style endpoints emit meta too (previous release serialised the paginator as a raw object — silent bug).
+
+- **`ApiResponse` DRY + `final`.** The meta builder for `paginated()` and `paginatedCollection()` was extracted into a single private helper. The class is now `final` to prevent subclass invariants drifting. No behavioural change to the controller return-type signatures; public API surface unchanged.
+
+- **Scramble `ApiResponseExtension` schema descriptions enriched.** Each envelope field now has a definition + example + validation-rule description. Multi-status schema (distinct `Response` objects for 201 / 204 / 4xx / 5xx) is deferred — `TypeToSchemaExtension` does not model it directly, so `OperationExtension` will take over in a follow-up.
+
+#### Fixed
+
+- **OAuth migrations UUID-compatible.** `oauth_access_tokens.user_id` and `oauth_auth_codes.user_id` are now `foreignUuid` (previously `foreignId` / `bigint unsigned`); `oauth_clients.owner_*` is now `nullableUuidMorphs`. Combined with the UUID `users.id` primary key shipped by this starter kit, the previous mismatch surfaced as `SQLSTATE 1265: Data truncated for column 'user_id'` on login — the API login flow is now clean out of the box.
+
+- **`site:install` provisions the Passport personal access client automatically.** A `passport:client --personal --provider=users` step was added between `passport:keys` and the admin-user seed. Fresh installs can issue API tokens right away; previously the operator had to remember to run that command manually after `site:install`.
+
+- **202 Accepted dead code removed.** The `'Operation queued.'` fallback for `to_api($data, '', 202)` never fired (the default `$message` was truthy). Helper simplified to a single logical flow.
+
+- **`ApiResponse::toResponse()` honours the `$request` parameter.** The previous implementation accepted the `Responsable::toResponse($request)` signature but ignored the argument — integration with the new middleware depends on this parameter, which is now actually consumed.
+
+- **Exception handler `match` ordering criticality documented.** `ApiException extends HttpException`, so it must be matched before the `HttpExceptionInterface` branch — otherwise custom API exceptions would fall through to the generic abort() handling. The fragile ordering is pinned by a comment and by the regression suite (`tests/Feature/Api/ApiResponseTest.php`).
+
+#### New
+
+- **Regression test file: `tests/Feature/Api/ApiResponseTest.php` (16 tests, 57 assertions).** Covers the envelope shape, exception → status mapping, trace id agreement, empty 204 body, `Retry-After` propagation, `debug` guarded by `APP_DEBUG=true`, and the sanitised `X-Correlation-ID` echo. Example copy available at `vendor/lvntr/laravel-starter-kit/tests/examples/ApiResponseTest.php`.
+
+- **Expanded `sk:update` coverage.** `app/Http/Middleware/AssignTraceId.php` and `app/Helpers/sk-helpers.php` joined the safe-update list; `php artisan sk:update` now syncs both automatically. `ApiResponse.php` and `ApiExceptionHandler.php` were already tracked.
+
+#### Breaking
+
+Detailed migration steps in [docs/UPGRADE.md](UPGRADE_.md). Summary:
+
+- `abort($code, 'custom message')` no longer surfaces the message — use `throw ApiException::*` instead.
+- `ModelNotFoundException` message now includes the model name (`"User not found."`). Frontend regex matches may need to loosen.
+- `Api/Auth/AuthController` `data.user` is limited to `UserResource::toArray()` output. If you depended on a raw-model field, extend the resource.
+
+## 2026-04-21 -v.13.4.0
+
+### Minor release — Security hardening sprint
+
+A parallel code-review sweep surfaced ~37 findings — 13 HIGH, 14 MEDIUM, 4 LOW. 36 are closed in this release; 1 HIGH (Passport private-key rotation in git history) is a manual operator step. Most patches touch **published** files (the files `sk:install` copies into your app), so existing consumer apps need to apply the diffs in [docs/UPGRADE.md](UPGRADE_.md). Fresh installs pick everything up automatically. The rare package-tier changes (HSTS `preload`, stub updates) arrive via `composer update lvntr/laravel-starter-kit`.
+
+#### Security
+
+- **Self-delete blocked on `UserPolicy::delete` + null guard on API `UserController::destroy`.** `UserPolicy::delete` previously returned `true` when actor === target, so any authenticated user holding `users.delete` could remove themselves via `DELETE /api/v1/users/{self}`. The self-branch now returns `false` — the only supported self-removal path is the password-confirmed Fortify flow in Profile. `Api\UserController::destroy` also returns a clean 401 when `$request->user()` is null (stale/expired bearer), replacing the previous `(string) null = ''` cast that would log an empty performer id.
+
+- **`CreateRoleAction` + `UpdateRoleAction` wrap role + permission sync in `DB::transaction`.** `Role::create(...)` followed by `->syncPermissions(...)` ran outside a transaction; a permission-cache race or a connection drop between the two writes could leave a role row with no permissions. Both actions now run inside `DB::transaction(...)`; `RoleCreated` / `RoleUpdated` dispatch after commit so listeners observe a consistent state.
+
+- **`UpdateAuthSettingsAction` wraps the 2FA revoke loop in `DB::transaction`.** When the admin toggles `auth.two_factor` off, the action writes the setting and then clears `two_factor_secret` / `two_factor_recovery_codes` / `two_factor_confirmed_at` on every user. A failure mid-loop used to leave the system in a half-revoked state — the setting said "2FA off" but some users still had active TOTP secrets. The full operation is now atomic.
+
+- **`LogoutUserAction` null-safe token revoke.** The API logout endpoint called `$user->token()->revoke()`; if the request hit the controller without an active access token (stale token, cleared cache, worker race) the chained call threw `Error: Call to a member function revoke() on null` and the endpoint 500'd. Now uses `?->revoke()` — returns a clean 204 even when the token is already gone.
+
+- **FileManager subtree walks reduced from N queries to 1.** `BulkDeleteAction::collectDescendantIds` and `DeleteFolderAction::collectDescendantIds` issued a `FileFolder::find` per hop when walking the subtree of a folder being deleted — a 50-level tree meant 50 serial queries, and the cost grew with siblings, giving attackers a request-timing DoS knob. Both actions now load the owner-scoped `(id, parent_id)` map in one `select` and walk the tree in PHP with a visited-set cycle guard for corrupt data.
+
+- **SMTP `encryption=none` now disables TLS correctly.** The shipped Mail settings screen offered a "No encryption" option, but `SettingsServiceProvider` rebroadcast the literal string `'none'` into `config('mail.mailers.smtp.encryption')`. Laravel's SMTP transport treats any non-null value — including `'none'` — as "use this TLS mode", so saved "No encryption" configurations fell back to the default STARTTLS upgrade on the first connect and could fail against servers that do not offer it. The provider now maps `'none' → null` on the outbound config write.
+
+- **`ApiExceptionHandler` — exception-message leak + `X-Request-ID` log injection.** The `default` arm of the exception→status mapping returned `config('app.debug') ? $e->getMessage() : 'A server error occurred.'`; in any environment where `APP_DEBUG` was accidentally left on, unhandled exceptions leaked stack-trace-grade detail to API consumers. The handler now returns the generic message unconditionally; debug details live only in `Log::error` plus the `debug` block that is already gated on `APP_DEBUG`. The trace id is now always server-generated via `Str::uuid()`; any `X-Request-ID` header sent by the client is accepted only as correlation metadata after a charset + length-cap sanitiser (`[A-Za-z0-9._-]`, ≤128 chars), then logged as `client_request_id` — a malicious client can no longer inject a CRLF payload or a fake trace id into the application log.
+
+- **`SecurityHeaders` HSTS directive gains `preload`.** The baseline HSTS header moved from `max-age=31536000; includeSubDomains` to `max-age=31536000; includeSubDomains; preload`, making the deployment eligible for the HSTS preload list. Ships from the package `src/` — picked up automatically by `composer update`.
+
+- **Password policy raised to 10+ / mixed case / digits / symbols.** `AppServiceProvider` now installs a project-wide `Password::defaults(...)` that every FormRequest relying on the default picks up automatically (registration, password reset, password confirm, profile password change). Existing users' passwords are not invalidated — only new passwords are measured against the stronger rule.
+
+- **Axios CSRF + credential defaults.** `resources/js/app.ts` now sets `axios.defaults.withCredentials = true`, `xsrfCookieName = 'XSRF-TOKEN'`, `xsrfHeaderName = 'X-XSRF-TOKEN'`, plus `X-Requested-With: XMLHttpRequest` and `Accept: application/json`. The admin UI calls Fortify endpoints (2FA, sessions, password-confirm) directly via Axios; without `withCredentials` and the XSRF header the browser sent the session cookie but not the CSRF token on mutating requests, so a compromised origin could interact with the session without the CSRF check the web flow relies on.
+
+- **2FA QR code rendered through `<img src="data:image/svg+xml;base64,...">` instead of `v-html`.** Fortify returns the QR code as an SVG string. The previous `v-html="qrCodeSvg"` worked but would have evaluated `<script>` or `onload` attributes in the SVG if a man-in-the-middle (or a compromised Fortify override) slipped them in. The new approach base64-encodes the SVG into an `<img>` data URL — the `<img>` sandbox does not execute inline scripts, even if the SVG contains them.
+
+- **`useDefinition.load()` / `loadAll()` no longer flip `loaded.value = true` on a failed fetch.** The composable is the one-stop loader for the definition JSON that drives datatable / form option dropdowns. It previously chained `.then(r => r.json())` directly — if the fetch failed (network error, 500, parse failure) `loaded.value` stayed `true` and the UI kept rendering stale / empty option lists without any console feedback. Both methods are now wrapped in `try/catch`, `res.ok` is checked, errors surface to the console, and `loaded.value` stays `false` on failure so consumers can retry.
+
+- **Eleven `FormRequest::authorize(): return true;` offenders closed.** The following requests — admin user store, API user store, admin role store, admin settings (auth/general/mail/storage/filemanager/turnstile), test-mail, destroy-sessions — now delegate `authorize()` to the matching `*.create` / `*.update` permission (destroy-sessions checks `$this->user() !== null`). The `CheckResourcePermission` middleware already enforced these at the route level, but moving the check into the request closes the defense-in-depth gap that would open the moment a controller action was invoked off-route (tests, internal dispatch) or the action map drifted out of sync with new route names. Public auth endpoints (`Api/Auth/*Request`) and FileManager context-based requests are intentionally left alone.
+
+- **2FA challenge is now strictly single-use.** `TwoFactorChallengeAction` previously left the `api:2fa_challenge:{uuid}` cache entry intact on a wrong TOTP / wrong recovery code / empty submit, so an attacker with a valid challenge id got the full 5-minute TTL × `throttle:5/min` window to try codes. Every failure arm now calls `Cache::forget($cacheKey)` — the challenge id works exactly once; subsequent attempts hit `invalidChallenge()` and the client must re-login to get a fresh uuid.
+
+- **`SettingService::getValue` / `getGroup` read from the `allGrouped()` cache + `setGroup()` wrapped in `DB::transaction`.** The hot read path previously ran one query per call even though a cache layer existed for the full `allGrouped()` result. Settings-heavy request paths (Dashboard, FileManager, Admin pages) saved a handful of round-trips per request. The bulk write path is also now atomic — a partial failure during a multi-setting save no longer leaves the DB in a mixed state.
+
+- **`MoveItemRequest` — typed `item_id` based on `item_type`.** The rules used to accept any `item_id` value for any `item_type`. The effective rule is now `integer|min:1` for `item_type=file` and `uuid` for `item_type=folder`, matching the DB schema; `item_type` itself uses `Rule::in([...])` instead of the `string|in:...` string form.
+
+- **`DeleteFolderRequest` — explicit FormRequest replaces a bare `Request`.** `FileManagerController::deleteFolder` previously accepted a raw `Request`, built the context in the controller, and called the authorizer directly. The new `DeleteFolderRequest` extends `FileManagerRequest`, runs the shared context rules, and exposes `$request->context()` — identical surface to the other FileManager endpoints; controller drops two lines of boilerplate.
+
+- **`UserController::uploadAvatar` runs an explicit `Gate::authorize('update', $user)`.** `UploadAvatarRequest::authorize()` already delegates to `UserPolicy::update` when a `{user}` route param is bound, but the redundant Gate call in the controller mirrors the belt-and-braces pattern used on view/update/delete and keeps the check visible when reading the controller in isolation.
+
+#### Security — manual operator step
+
+- **GV-H1 — Passport private keys rotation.** `storage/oauth-private.key` and `storage/oauth-public.key` live in git history for legacy installs that committed them before the `.gitignore` rule landed. [docs/UPGRADE.md §6](UPGRADE_.md#6-gv-h1--passport-private-key-rotation-critical-manual) documents the `git filter-repo` + `passport:keys --force` + `passport:purge` + team-wide `git reset --hard` sequence; this cannot be automated by the package. If your repo never committed the key files, skip this step.
+
+#### Changed
+
+- **`LOG_LEVEL` default is now `error`.** `.env.example` previously shipped `LOG_LEVEL=debug`, which in production (if committed verbatim) fills the log with SQL traces, Passport token debug info and similar — noisy and occasionally sensitive. Production profiles should ship `error` or `warning`.
+
+- **`laravel/tinker` moved to `require-dev`.** Tinker is a developer convenience — shipping it as a production dependency pulled PsySH and its transitive chain into every container build. Local dev still installs it because it's in `require-dev`.
+
+- **`.env.example` gains Passport key + Turnstile placeholders.** Two commented-out `PASSPORT_PRIVATE_KEY` / `PASSPORT_PUBLIC_KEY` stubs document the env-based key-loading path (the recommended alternative to committing `storage/oauth-*.key`), and an uncommented `TURNSTILE_ENABLED=false` + empty site/secret keys make the Turnstile middleware a no-op on fresh installs until the admin turns it on.
+
+- **Inertia `appEnv` / `appDebug` shared props no longer leak in production.** `HandleInertiaRequests::share` used to return `config('app.env')` + `config('app.debug')` unconditionally. In production this leaked the environment name and advertised whether `APP_DEBUG` was on to every authenticated user. Both keys now return `null` / `false` under `app()->environment('production')`; non-prod keeps the real value for the dev overlay.
+
+- **CORS preflight cache raised from 0 to 7200 seconds.** `config/cors.php` previously shipped `max_age => 0`, forcing the browser to re-run a preflight on every mutating request. With `max_age=7200` SPA / mobile clients cache the OPTIONS response for 2 hours.
+
+#### Fixed
+
+- **`useDialog` / `useImageLightbox` — 300 ms timer leak.** Both composables started a `setTimeout` in `close()` to delay DOM removal so the exit animation could play. A rapid `open → close → open` sequence could queue two timers, with the trailing one firing after the dialog was re-opened and cancelling the render. A module-level timer ref is now cleared on both `open()` and `close()` entry; the timeout body nulls the ref when it fires.
+
+- **`SkForm` dirty-form guard — stops parent prop updates from wiping user input.** The `watch(derivedDefaults, ...)` block unconditionally reset the form to the new defaults whenever the parent passed a new object. If the user was halfway through filling a form and the parent polled (e.g. a sibling datatable refresh triggered a shared-state update), their in-progress input was wiped. The watcher now checks `internalForm.isDirty` — when the form is dirty, the new values are recorded as defaults (so a subsequent `reset()` picks them up) but the live form state is preserved.
+
+- **`SkDatatable` URL filters — `api.get` + `Promise.allSettled`.** The URL-driven filter loader used bare `fetch(...)` + `Promise.all`, so a single 500 on one filter's options endpoint poisoned the whole filter bar via an unhandled rejection. The loader now uses the shared `api.get<T>()` helper (picks up the Axios defaults + XSRF) and `Promise.allSettled`, so each filter is independent; a failing endpoint falls back to an empty list with a console warning. Same file flips `let activeMenuItems` → `const activeMenuItems` (the ref was never re-assigned).
+
+- **`TwoFactorTab.enableTwoFactor` awaits the Inertia reload.** The original code fired `router.reload({ only: [...] })` without awaiting and immediately moved on to `loadQrAndSetupKey()`. On a slow connection the QR fetch could race the reload and render a stale screen. `router.reload` is now wrapped in a promise that resolves on `onFinish`.
+
+- **`ProfileInfoTab` / `UserForm` — drop `as any` avatar casts.** Two `(x as any)?.avatar_url` accesses were replaced with typed shapes — no behaviour change, but the cast hid a legitimate TypeScript error if the backing type ever dropped the `avatar_url` accessor.
+
+- **`DashboardController::index` gains an explicit `: Response` return type.** Closes the last Larastan `return_type_missing` finding under the project's configured level.
+
+### Upgrade
+
+`composer update lvntr/laravel-starter-kit --with-all-dependencies` picks up only the package `src/` tier (HSTS `preload`, stub updates). Every other fix above lives in published / stub-backed files. Follow [docs/UPGRADE.md](UPGRADE_.md) for the full diff-style patch list and smoke-test checklist.
+
+## 2026-04-20 -v.13.3.3
+
+### Patch release — Windows build fix for Builder core imports
+
+#### Fixed
+
+- **Windows production build failed with `Could not load .../FormBuilder/core`.** `FormBuilder`, `DatatableBuilder` and `TabBuilder` each expose a `core/` directory whose `index.ts` is imported as `@lvntr/components/<Builder>/core`. On some Windows setups Vite's resolver skipped the directory→`index.ts` step and fell through to `vite:load-fallback`, which tried to read the directory as a file and raised `ENOENT`. Fix: a sibling `core.ts` barrel file now re-exports from `./core/index` for each of the three builders, so the import resolves to a real file on every platform. macOS/Linux behaviour is unchanged, and existing subpath imports like `/core/builder` are untouched. Fixes lvntrdev/laravel-starter-kit#1.
+
+## 2026-04-19 -v.13.3.2
+
+### Patch release — security hardening, user audit events, Logo API envelope, media-delete policy, permission-middleware cache correctness, test bootstrap
+
+A batch of latent bugs uncovered by a full test-suite audit, plus a dedicated security review pass that closed a privilege-escalation path in the admin user flow, stopped the settings screen from leaking SMTP/S3/Turnstile secrets to the frontend, and brought the API auth flow to parity with the web flow (email verification + two-factor challenge). Most of the original bugs only showed up under specific runtimes (Octane/queue workers, fresh clones without `site:install`) or silently swallowed side-effects (audit log for user writes).
+
+#### Security
+
+- **Privilege escalation via unvalidated role assignment — admin user flow.** `StoreUserRequest` and `UpdateUserRequest` used to validate the `role` field with `Rule::exists('roles', 'name')` only, so any user holding `users.create` or `users.update` could submit `role=system_admin` in a raw HTTP request regardless of what the admin UI dropdown offered — instantly granting themselves the super-admin role that bypasses every authorization gate via `Gate::before`. `UpdateUserRequest` additionally had no rank check on the target user, so a lower-ranked actor could edit (or demote) a higher-ranked one. Fix: `role` is now validated with `Rule::in(...)` built from `RoleSelectOptionsQuery`, the same hierarchy-aware list that feeds the dropdown (`sort_order >= actor's min sort_order`, `system_admin` excluded for non-system_admin actors). `UpdateUserRequest::authorize()` additionally rejects edits where the target's top-ranked role outranks the actor's. A user holding `users.*` as a direct Spatie permission without any assigned role is treated as the lowest possible rank — they can no longer assign any role or edit anyone other than themselves; the previous `(int) null = 0` fallback accidentally opened the full role list including `system_admin`.
+
+- **Settings secrets no longer leak to the frontend.** The admin **Settings** page was sending `mail.password`, `storage.spaces_secret`, `storage.aws_secret` and `turnstile.secret_key` in plain text as Inertia props for any user with `settings.read`. Even values that lived only in `.env` leaked out through the `config()` fallback. Fix: `SettingsDefaultsQuery` now returns `null` for every secret field and adds a parallel `*_is_set: bool` flag. The admin UI renders a `••••••••` placeholder when a value is set and submits an empty string to keep the current secret; writing a non-empty value replaces it. The new `tests/Feature/Admin/Settings/SecretsDisclosureTest` asserts the Inertia payload never contains the raw secret string anywhere.
+
+- **`storage.aws_secret` now stored encrypted at rest.** `config/settings.php` gained `storage.aws_secret` in its `sensitive_keys` list — it previously had `mail.password`, `storage.spaces_secret` and `turnstile.secret_key` but not the AWS counterpart, so S3 secrets saved through the UI lived as plaintext in the `settings` table. `SettingService` encrypts every listed key with `Crypt::encryptString` on write and decrypts on read.
+
+- **`check.permission` middleware now fails closed in production.** The middleware used to allow the request through when a route-derived permission (e.g. `users.read` for `users.index`) was not seeded in the database. In production this silently unprotected any new route whose permission row was forgotten. The middleware now throws `AuthorizationException` (403) when running under `app()->environment('production')` and `Log::warning`s the unseeded permission in non-production environments — dev ergonomics preserved, the production foot-gun is closed.
+
+- **Test-mail endpoint no longer reflects raw exception details.** `SettingsController::testMail()` used to flash the SMTP exception message (host / username / TLS details) back to the browser. The message is now written to `Log::error` with class + message context; the user sees a generic "Failed to send test email. Check the server logs for details." — same success/failure signal without the information disclosure.
+
+- **API auth — email verification and two-factor parity with the web flow.** The API previously handed out an access token immediately on register and on any successful password login, bypassing the same email-verification and 2FA checkpoints the web flow enforces. All three `POST /api/v1/auth/*` endpoints were reworked:
+    - **`register`** — when Fortify's `emailVerification` feature is enabled (the default), no token is issued on registration. The endpoint creates the user, fires `Illuminate\Auth\Events\Registered` (so Fortify's notification pipeline sends the verification link) and returns `{ data: { user, requires_verification: true } }` with 201. When the feature is disabled, the previous token-on-register behaviour is kept.
+    - **`login`** — returns a discriminated payload:
+        - `{ user, token }` — normal success
+        - `{ requires_verification: true }` — credentials are valid but the email is not verified (when the verification feature is on)
+        - `{ requires_two_factor: true, challenge: "<uuid>" }` — credentials are valid but the account has confirmed 2FA; a single-use challenge id is issued with a 5-minute cache TTL. No access token is issued yet.
+    - **`two-factor-challenge`** — new endpoint `POST /api/v1/auth/two-factor-challenge` (throttled `5/min`). Accepts `{ challenge, code }` for TOTP or `{ challenge, recovery_code }`. On success it returns `{ user, token }`. TOTP is verified via Fortify's `TwoFactorAuthenticationProvider`; recovery codes are matched with `hash_equals` and consumed via `replaceRecoveryCode` so they cannot be reused. Invalid / unknown / expired challenges return 401.
+
+    **Breaking for API consumers** — existing clients that expected `{ user, token }` on every 2xx response from `register` / `login` must now branch on `data.requires_verification` and `data.requires_two_factor` flags, and complete the challenge at `/api/v1/auth/two-factor-challenge` before receiving a token when 2FA is confirmed on the account. Non-2FA, verified users keep seeing the old shape.
+
+- **Settings `required` validation now matches the UI secret indicator.** `UpdateMailSettingsRequest` and `UpdateTurnstileSettingsRequest` previously only checked the DB row when deciding whether a secret was "already set"; if the value lived only in `.env`, the UI's `*_is_set` flag reported `true` (because `SettingsDefaultsQuery` falls back to `config()`) but submitting the form with a blank password / secret_key triggered a confusing `required` validation error. The `required` branch now mirrors the query — DB row OR config fallback — so env-backed installations no longer see the spurious error.
+
+- **IDOR on admin avatar upload / delete.** `POST /users/{user}/avatar` and `DELETE /users/{user}/avatar` resolved to no permission under `CheckResourcePermission` because the route actions `uploadAvatar` / `deleteAvatar` were not in the middleware's `ACTION_ABILITY_MAP`; the middleware returned `$next($request)` without a permission check. `UploadAvatarRequest::authorize()` also returned `true` unconditionally. Any authenticated + email-verified user (including `user` role with only `dashboard.read`) could overwrite or delete any other user's avatar — system admin included. Fix: the action map now contains `uploadAvatar => update` and `deleteAvatar => update`; `UploadAvatarRequest::authorize()` delegates to `UserPolicy::update` when a `{user}` route param is present (self-upload via Profile route is preserved); `SettingsController::deleteAvatar` calls `Gate::authorize('update', $user)` explicitly.
+
+- **Admin `UserController` and API `UserController`: rank-hierarchy guard on view / update / delete.** `GET /users/{user}/data`, `GET /users/{user}/edit`, `DELETE /users/{user}`, `PATCH /api/v1/users/{user}` and `DELETE /api/v1/users/{user}` used to rely solely on the `users.read` / `users.update` / `users.delete` permission and the (admin-only) `UpdateUserRequest::authorize()` rank check. A lower-ranked admin holding the permission could still read or delete a higher-ranked user through the data endpoint or the API. Fix: `UserPolicy::view / update / delete` now run the same `canManage()` rank check used by the admin update request (system_admin bypasses, role-less actors are treated as the lowest rank). Admin and API controllers call `Gate::authorize('view' / 'update' / 'delete', $user)` on every cross-user operation. The admin `UpdateUserRequest` and the API `UpdateUserRequest` both delegate `authorize()` to `UserPolicy::update` so the rank check is uniform across flows.
+
+- **`POST /api-routes/regenerate-docs` was reachable by any authenticated user.** The route action `regenerateDocs` was not in the `ACTION_ABILITY_MAP`, so `CheckResourcePermission` returned `$next($request)` without a permission check. Any authenticated + verified user could trigger the OpenAPI regeneration (which runs an artisan command server-side). Fix: `regenerateDocs => update` added to the map; `api-routes.update` added to `config/permission-resources.php` so the seeder creates the permission row.
+
+- **SVG uploads blocked on logo + FileManager.** Both the admin logo uploader (`SettingsController::uploadLogo`) and the FileManager default MIME list accepted `image/svg+xml` and stored the file on the `public` disk. SVG can embed `<script>`, `onload` and foreignObject JavaScript; when a victim opens the direct `/storage/...` URL, the script executes in the app origin (stored XSS). Fix: logo validation now pins `mimes:png,jpg,jpeg,webp` + `dimensions:max_width=4096,max_height=4096`. `UploadFileRequest` keeps a `BLOCKED_MIMES` list (`image/svg+xml`, `image/svg`, `text/html`, `application/xhtml+xml`) that is stripped from the effective MIME list on every upload, regardless of what is stored in `file_manager.accepted_mimes`. `UpdateFileManagerSettingsRequest` rejects those MIME types at settings-save time via `Rule::notIn(...)` plus a `^[a-z0-9.+-]+/[a-z0-9.+-]+$` regex. The admin UI pickers (`MimePickerField`, `FileManagerTab`, `GeneralTab` logo input) no longer list SVG. `SettingsDefaultsQuery::fileManager()` also strips the blocked MIMEs from the stored list before sending the payload to the UI, so older installs whose seed included `image/svg+xml` no longer see it as a selected option.
+
+- **Avatar rule tightened.** `UploadAvatarRequest::rules()` used to be `['required','image','max:2048']` — the `image` rule allows SVG and does not bound pixel dimensions, leaving the door open for polyglot files and decompression-bomb PNGs. New rule: `required | image | mimes:jpg,jpeg,png,webp | max:2048 | dimensions:max_width=4096,max_height=4096`.
+
+- **`media-library.disk_name` now defaults to `local`.** The previous default was `public` — if the installer seeder failed, an admin flipped the FileManager disk toggle, or someone deployed without running the seeder, user-uploaded documents landed on a world-readable URL. The default is now `local` so missing configuration fails closed; the FileManager already streams downloads through `DownloadFileAction`, it never needed a public URL path.
+
+- **`SESSION_ENCRYPT` + `SESSION_SECURE_COOKIE` default to `true`.** `config/session.php` had `'encrypt' => env('SESSION_ENCRYPT', false)` and `'secure' => env('SESSION_SECURE_COOKIE')` (null default). A deployment that forgot to set either env var would ship plaintext session payloads over an insecure cookie on HTTPS. Both defaults are now `true`; local dev continues to work because `.env.example` already sets both to `true` and Herd serves over HTTPS.
+
+- **`SecurityHeaders` middleware now emits a baseline CSP.** The middleware already set X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy / HSTS, but no `Content-Security-Policy`. With two `v-html` sinks in the codebase (the Fortify 2FA QR SVG and the DataTable `column.render` escape hatch) a CSP meaningfully limits blast radius. The header is applied in non-local environments only — Vite HMR in local dev needs the dev-server origin on script/connect/style, which varies per developer, so enforcing a tight CSP there would just block normal work.
+
+- **Scramble "Try It" disabled in production.** `config/scramble.php` shipped with `hide_try_it: false` and `try_it_credentials_policy: 'include'`, which in production handed any admin with `api-docs.read` an in-browser API tester that attached their session cookies to every request. Both values now branch on `APP_ENV === 'production'` (hidden + `omit` in prod, interactive in local/staging).
+
+- **Passport access-token TTL shortened, scope catalogue seeded.** Access tokens were valid for 15 days, personal access tokens for 6 months. A leaked bearer token stayed usable for weeks. Defaults are now `access_token_minutes=60`, `refresh_token_days=14`, `personal_token_days=30`; the legacy `PASSPORT_TOKEN_DAYS` / `PASSPORT_PERSONAL_TOKEN_MONTHS` env keys still take precedence when set, so existing installs are not disturbed. `config/starter-kit.php` also ships an opt-in scope catalogue (`users.read`, `users.write`, `files.read`, `files.write`, `admin`) so `Passport::tokensCan()` is pre-wired; attach `middleware('scope:...')` to specific API routes when you are ready to enforce per-scope access.
+
+- **API register / login now honour the `turnstile` middleware.** Cloudflare Turnstile was already wired for the browser auth forms via `FortifyServiceProvider` + `ValidateTurnstile`, but the API routes (`POST /api/v1/auth/register`, `POST /api/v1/auth/login`) only had the `throttle:5,1` limiter. An attacker could automate account registration at five accounts per IP per minute. Both routes now run through the existing `turnstile` middleware alias — when Turnstile is disabled in settings the middleware is a no-op, when it is enabled the API picks up the same `cf_turnstile_response` enforcement as the web forms.
+
+#### Fixed
+
+- **User domain events now fire on Create/Update/Delete.** `App\Domain\User\Actions\CreateUserAction`, `UpdateUserAction` and `DeleteUserAction` previously had their `UserCreated::dispatch(...)` / `UserUpdated::dispatch(...)` calls commented out or missing — listeners registered in `DomainServiceProvider` (e.g. the audit-log listener) never ran for user writes. `Create` and `Update` now dispatch when a change actually occurs (no-op updates do not fire `UserUpdated`); `Delete` captures the id/email before deletion and dispatches `UserDeleted` on success, matching the `Role*` action pattern.
+
+- **Admin `users.show` route returned 500.** `routes/web/user-route.php` registered `Route::resource('users', UserController::class)`, which implicitly opened a `GET /users/{user}` route — but `UserController` never had a `show()` method, so any hit on that URL threw `BadMethodCallException`. The resource registration is now scoped with `->except(['show'])`; detail data remains available via the existing `GET /users/{user}/data` endpoint used by the admin UI.
+
+- **Settings logo endpoints now return the `ApiResponse` envelope.** `POST /settings/logo` and `DELETE /settings/logo` in `App\Http\Controllers\Admin\SettingsController` used to return raw `response()->json([...])` / `response()->json(status: 204)`, breaking the "every JSON response carries `{ success, status, message, data }`" contract that the rest of the admin API follows. Both endpoints now go through `to_api(...)`. The frontend consumer (`GeneralTab.vue`) reads `json.data.logo_url`, which is unchanged.
+
+- **`App\Policies\UserPolicy` gained a `delete` ability.** `DELETE /media/{media}` calls `Gate::authorize('delete', $media->model)` in `MediaUploadController`. For a media item owned by a `User`, the `delete` ability was undefined on `UserPolicy` (only `view` and `update` existed), so the Gate fell through to the default deny and returned 403 — even for the owner deleting their own avatar/file. The new `delete(User $actor, User $user)` method mirrors `update`: self is always allowed, otherwise the actor needs the `users.delete` permission.
+
+- **`CheckResourcePermission` middleware: process-wide cache replaced with request-scoped cache.** The permission-existence lookup inside the middleware held its result in a `static $cached` variable. On long-lived workers (Laravel Octane, queue workers that keep the container warm across jobs) this cache never rebuilt, so newly-created permission rows were invisible until the worker restarted. Worse, inside the test suite the static survived across tests — `RefreshDatabase` truncated the `permissions` table between tests but the middleware kept reporting permission names seeded by an earlier test as still existing, producing intermittent 403s on routes that should have been permission-less. The cache is now stored via `app()->instance('check-permission.cache', ...)` — request-scoped in production, test-scoped under the testing container.
+
+- **`UserFactory` seeds `two_factor_*` columns as `null` by default.** Eloquent strict mode (`Model::shouldBeStrict(! isProduction())`, set by `Lvntr\StarterKit\StarterKitServiceProvider`) throws "attribute [two_factor_secret] either does not exist or was not retrieved" when code reads those columns on a fresh factory instance (e.g. from `ProfileController` after `$this->actingAs(User::factory()->create())`). The factory now writes `two_factor_secret`, `two_factor_recovery_codes` and `two_factor_confirmed_at` as explicit `null`s so the in-memory model has all three attributes without a `->refresh()`.
+
+- **`CreateUserAction` and `UpdateUserAction` now wrap the write + role sync in a transaction.** `User::create(...)` followed by `->syncRoles(...)` was running outside a transaction — if `syncRoles` failed (connection drop, permission cache invalidation, role-not-found race), the user row persisted with no roles, leaving inconsistent state in the admin list. Both actions now run inside `DB::transaction(...)`; the event dispatch happens after the transaction commits so listeners see a consistent state.
+
+- **`MoveItemAction::wouldCreateCycle` no longer issues one SELECT per ancestor.** The method used to walk the folder tree by `FileFolder::find($parentId)` on every hop, so moving a folder with N ancestors produced N queries. For large trees this was both a perf footgun and a potential route for slow-query DoS. The ancestor map is now loaded once per call (single `SELECT id, parent_id WHERE owner_type=? AND owner_id=?`) and the walk happens in memory with a cycle-visited guard.
+
+- **Folder create / rename / move now catch unique-constraint violations.** `CreateFolderAction`, `RenameFolderAction` and `MoveItemAction` check-then-act against `(owner_type, owner_id, parent_id, name)` uniqueness. Two concurrent requests could pass the existence check in lockstep and the second one would surface a raw `QueryException` (500) instead of a validation error. The race window is now closed — each action catches SQL-state `23000` (or MySQL 1062) and rethrows a localised `LogicException`, which the controllers already translate to a 422 with the `sk-file-manager.errors.duplicate_folder` message. The existing pre-check still handles `parent_id=NULL` (where the unique index does not enforce uniqueness on MySQL/SQLite because NULL is treated as distinct).
+
+- **`UserDatatableQuery` now eager-loads `media`.** `UserResource::$appends` forces the `avatar_url` accessor, which calls `$user->getFirstMedia('avatar')`. With the datatable query eager-loading only `roles`, every row triggered a separate media lookup (N+1). `media` is now part of the eager load list; per-page rendering drops from `1 + n` queries to `2`.
+
+- **`RoleController@data` and `@edit` now use a `RoleResource` instead of spreading `$role->toArray()`.** The spread was cheap to add but violated the project's "responses go through a Resource" convention and would silently broadcast any future sensitive column added to the `roles` table. The new `App\Http\Resources\Admin\Role\RoleResource` lists the intended fields explicitly (`id`, `name`, `display_name`, `group`, `sort_order`, `guard_name`, `seeded_permissions`, timestamps, + conditional `permissions` when loaded). Frontend payload shape is preserved.
+
+- **`resources/js/pages/Admin/ApiRoutes/Index.vue`: external link now has `rel="noopener noreferrer"`.** The "Open API Docs" anchor used `target="_blank"` without the usual rel attributes. Consistent with the rest of the project.
+
+- **Missing translations for the 2FA disable confirmation dialog.** `sk-setting.auth.two_factor_disable_title` and `sk-setting.auth.two_factor_disable_warning` were referenced from the Auth settings tab but not defined in either language file. Added for EN and TR.
+
+#### Added
+
+- **Passport key auto-generation for the API test suite.** `tests/Pest.php` now registers a `beforeEach` hook scoped to `tests/Feature/Api` that runs `passport:keys --force` when `storage/oauth-private.key` is missing. Fresh clones and CI runners no longer need `php artisan site:install` before the Passport-backed tests (`AuthTest`, `UserTest`) can pass — the old behaviour was an opaque `LogicException: Invalid key supplied` from `league/oauth2-server`.
+
+- **`tests/Feature/Domain/User/UserEventsTest.php`.** Pins the event-dispatch contract introduced by the fix above — asserts that `UserCreated` fires on create, `UserUpdated` fires only when at least one tracked field changes, `UserDeleted` fires on successful delete, and that the self-deletion guard does not spuriously dispatch.
+
+- **Logo upload/delete coverage in `tests/Feature/Admin/SettingsTest.php`.** Locks the `ApiResponse` envelope on `POST /settings/logo` (200 with `data.logo_url`) and the 204 contract on `DELETE /settings/logo`.
+
+## 2026-04-18 -v.13.3.0
+
+### Feature release — Cloudflare Turnstile, last-login tracking, file preview modals, shipped `validation.php`, and the `sk-*` translation namespace
+
+A large release. Several independent additions plus one architectural shift on the translation layer.
+
+#### Added
+
+- **Cloudflare Turnstile captcha on the auth flows.** Login, register and password-reset forms now host a Turnstile widget (`resources/js/components/Auth/TurnstileWidget.vue`) and validate the token server-side. Ships with: a `turnstile` middleware alias backed by `App\Http\Middleware\ValidateTurnstile`, an `App\Rules\TurnstileRule` for ad-hoc validation, `App\Domain\Setting\DTOs\TurnstileSettingsDTO`, and a **Settings → Turnstile** admin tab to manage site key / secret key from the UI. Turn it on/off per installation; widgets short-circuit cleanly when the feature is disabled.
+
+- **Last login tracking.** A new `App\Listeners\UpdateLastLogin` listener, wired to `Illuminate\Auth\Events\Login`, writes `last_login_at` and `last_login_ip` to the user on every successful sign-in. Visible on the user detail page and exposed as a sortable column on the users datatable.
+
+- **Inactive user block on login.** `App\Providers\FortifyServiceProvider` now rejects the login attempt when the authenticated user's status is not `active`, returning a clear error message instead of starting a session. Suspending an account no longer requires deleting it.
+
+- **`FormBuilder.trans(bool)`.** New fluent method available on every field builder (`FB.inputText()`, `FB.select()`, `FB.toggleSwitch()`, …). Controls whether the label is rendered as a translation key (default, `true`) or as a pre-resolved raw string (`false`). Useful when you want to compose a label from `trans('admin.example')` inside the script itself — normally this breaks because the form template would call `$t()` again on the already-translated text and fall back to the original string. With `.trans(false)` the template skips the second translation step. Default behaviour is unchanged; existing pages continue to work without any edit.
+
+    ```ts
+    FB.inputText().key('last_name'); // default — label → $t('validation.attributes.last_name')
+    FB.inputText().key('x').label(trans('admin.example')).trans(false); // raw render, no second $t() pass
+    ```
+
+- **In-app file previews (lightbox + modal).** Uploaded files — in the file manager and in any `FB.fileUpload()` form field — no longer open in a new browser tab when you click the thumbnail or file-name. Images fly up in a **fullscreen lightbox** (Google-Drive style: blurred black backdrop, ESC to dismiss, name in the top-left). Non-image files (PDF, video, audio, text) open inside a **mime-aware dialog** that embeds the correct viewer (iframe / `<video>` / `<audio>`) and offers a "Download" button in the file manager and an "Open in new tab" escape hatch for unrecognised formats. The lightbox is a single global overlay registered next to `<AppDialog />` in `AdminLayout`; the modal is a `FilePreviewModal` component opened through the existing `useDialog` composable.
+
+- **Categorized mime-type picker in File Manager settings.** **Settings → File Manager → Accepted file types** used to be a long multiselect dropdown. It is now a categorized card-checkbox grid (Images / Documents / Archive) where each option shows the matching file-type icon next to the label. Easier to scan, click target is the whole card, and the list is grouped rather than alphabetical.
+
+- **Feature-toggle cards for "Video uploads" and "Audio uploads".** The two toggles in File Manager settings share the same card aesthetic as the mime picker — a tinted icon on the left, a bold label and a short description (e.g. "Allow MP4, WebM, MOV, MKV, AVI and OGG videos.") next to the switch on the right. Clicking anywhere on the card flips the toggle.
+
+- **`lang/{en,tr}/validation.php` are now shipped with the kit.** Laravel's default rule messages plus the `attributes` and `custom` sections used by both the Laravel validator and by FormBuilder / DatatableBuilder, which auto-resolve a field's label via `validation.attributes.{key}` when `.label()` is not specified. Turkish messages follow the Laravel-Lang/lang conventions. Consumer apps can edit these files freely to adjust wording or add new attribute labels — no custom translation loader is involved; everything runs through Laravel's native translation system.
+
+- **Role name localisation with a graceful fallback chain.** The role label shown in the admin topbar / sidebar (shared via Inertia `auth.role`) now resolves in three steps: first `roles.display_name[locale]` from the database; then the locale key under `config('permission-resources.display_names.roles.{name}.{locale}')`; and finally `Str::headline($role->name)` — so a freshly seeded role like `system_admin` shows as "System Admin" instead of the raw slug, even when nothing localised has been configured.
+
+#### Changed — translations moved to the `sk-*` namespace
+
+Every shipped translation file now has an `sk-` filename prefix: `sk-admin.php`, `sk-auth.php`, `sk-button.php`, `sk-datatable.php`, `sk-menu.php`, `sk-setting.php`, `sk-user.php`, `sk-attribute.php`, `sk-file-manager.php`, `sk-activity-log.php`, … All shipped Vue pages and PHP code now reference the new keys (`__('sk-button.save')` instead of `__('button.save')`). The goal: consumer apps are free to own the unprefixed namespace (`lang/en/admin.php` for their own dashboard strings, not a collision with the starter kit's menu items).
+
+#### Removed
+
+The pre-13.3 unprefixed stubs — `stubs/lang/{en,tr}/{admin,auth,button,common,datatable,enums,file-manager,message,pagination,passwords,validation}.php` (21 files) — are no longer shipped. No code path in the kit references them after the `sk-*` migration; keeping them in fresh installs only caused confusion. The **package-level `starter-kit::` namespace is untouched** — `__('starter-kit::admin.menu')` calls still resolve.
+
+#### Fixed
+
+- **Upload validation rejected `.ogg` video and `.avi` files even with "Video uploads" enabled.** The `allow_video=true` branch of the upload request only whitelisted `video/mp4`, `video/webm`, `video/quicktime` and `video/x-matroska`. Added `video/ogg`, `video/x-msvideo` and `video/avi`, and added the matching extension labels (`.OGV`, `.AVI`) to the "Allowed types" list shown in validation error messages.
+
+- **Spurious `npm run build` warnings silenced.** Two noisy warnings have been scrubbed from production builds: (1) the "Sourcemap is likely to be incorrect" notices emitted by `@tailwindcss/vite` and `@inertiajs/vite` — both plugins skip sourcemap regeneration after their transform, the runtime is unaffected — are now filtered via a targeted Rollup `onwarn` hook in `vite.config.ts` (other warnings still pass through); (2) the `resolveDirective imported but never used` warning from the shipped `SkDatatable.vue` and `FileManager.vue` — PrimeVue's `v-tooltip` / `v-ripple` directives are now bound explicitly in the `<script setup>` block (`const vTooltip = Tooltip`) so the template compiles to a direct reference instead of a dynamic lookup.
+
+#### Upgrading from 13.2.x
+
+`sk:update` is hash-aware: files you have not modified are replaced with the new version; files you have modified are reported as `skipped` or `untracked` and left alone. Several 13.3 feature files — `SettingsController`, `SettingsDefaultsQuery`, `FortifyServiceProvider`, `HandleInertiaRequests`, `AppServiceProvider`, and the new FormRequest classes — will likely show up in that list and need attention.
+
+1. Run `php artisan sk:update --dry-run` to see what is skipped/untracked.
+2. If you have no local customisations in the `app/` layer, take the package version for everything:
+
+    ```bash
+    php artisan sk:update --force
+    ```
+
+3. Pull the new translation files manually (`sk:update` does not touch `lang/`):
+
+    ```bash
+    cp vendor/lvntr/laravel-starter-kit/stubs/lang/en/sk-*.php lang/en/
+    cp vendor/lvntr/laravel-starter-kit/stubs/lang/tr/sk-*.php lang/tr/
+    ```
+
+4. If your `lang/en/` still contains `admin.php`, `auth.php`, … from a prior `sk:install`, they now linger as orphans. The package no longer references them; delete them after migrating your `__('admin.x')` calls to `__('sk-admin.x')`.
+5. `npm run build` — the new `TurnstileWidget.vue` is shipped and imported by `Login/Register/ForgotPassword`. Fresh installs get it automatically. Existing installs missing the file will see the build fail with `Could not load resources/js/components/Auth/TurnstileWidget.vue`; `sk:update` should copy it (it is a new file, not a replacement), but if not, copy it from `vendor/lvntr/laravel-starter-kit/stubs/resources/js/components/Auth/TurnstileWidget.vue`.
+
+---
+
+## 2026-04-16 -v.13.2.9
+
+### `npm run build` — lang JSON dual-import warning eliminated
+
+Consumer projects were emitting two warnings on every `npm run build`:
+
+```
+(!) lang/php_en.json is dynamically imported by resources/js/app.ts but also statically imported by resources/js/app.ts, dynamic import will not move module into another chunk.
+(!) lang/php_tr.json is dynamically imported ...
+```
+
+Cause: the `i18nVue` resolve callback in `resources/js/app.ts` held two separate `import.meta.glob('../../lang/*.json', ...)` calls for SSR and client — one with `eager: true` (static) and one without (dynamic). Vite analysed both branches statically, saw the same files imported in both static and dynamic form, and warned that the dynamic branch would not get its own chunk. The dynamic branch never produced any benefit because the files were already in the static bundle.
+
+Collapsed to a single eager glob hoisted to the module scope, with a `Promise.resolve()` wrapper for the client branch:
+
+```ts
+const langs = import.meta.glob<Record<string, string>>('../../lang/*.json', { eager: true });
+const resolveLang = (lang: string) => langs[`../../lang/php_${lang}.json`];
+app.use(i18nVue, {
+    resolve: ssr ? resolveLang : (lang: string) => Promise.resolve(resolveLang(lang)),
+});
+```
+
+Lang JSON files are small (a few KB), so static bundling has negligible bundle-size impact — the warning is gone permanently while behaviour is unchanged.
+
+---
+
+## 2026-04-16 -v.13.2.8
+
+### Cleaner fresh installs
+
+Fresh installs no longer include leftover development-only files or noisy placeholder data.
+
+- **`.env.example` cleanup** — duplicate `DB_*` entries and an old sample database name were removed. The file now keeps only generic placeholders such as `your_database` and `your_username`.
+- **Frontend/install cleanup** — unnecessary development-only frontend tooling entries were removed so `npm install` starts from a cleaner baseline.
+- **Less clutter in new projects** — stray assistant/tooling files that did not belong in a fresh application are no longer shipped.
+
+---
+
+## 2026-04-15 -v.13.2.7
+
+### File manager upload — `crypto.randomUUID` fallback for HTTP contexts
+
+The file manager upload composable generated a temporary id per queued file via `crypto.randomUUID()`. That API is only defined in a secure context — HTTPS or `localhost` — so any consumer running on a plain-HTTP dev domain (Herd's `.test`, a bare intranet IP, etc.) hit `TypeError: crypto.randomUUID is not a function` and the upload aborted before the first XHR fired.
+
+`useFileManager` now routes through a local `generateTempId()` helper with a three-tier fallback:
+
+1. `crypto.randomUUID()` when available (HTTPS / localhost)
+2. `crypto.getRandomValues(new Uint8Array(16))` serialized as hex (available in every modern browser, no secure-context requirement)
+3. `Date.now().toString(16)` + `Math.random().toString(16)` as last-resort
+
+The tempId is only used to correlate a pending-upload row with its completion/error callback — no cryptographic strength needed, so the fallback is safe.
+
+### Security headers — geolocation permitted from own origin
+
+`SecurityHeaders` middleware `Permissions-Policy` was `geolocation=()` (fully denied). Changed to `geolocation=(self)` so first-party scripts can request geolocation when a feature legitimately needs it; third-party frames remain blocked.
+
+---
+
+## 2026-04-15 -v.13.2.6
+
+### File manager validation messages — readable, localised, with original filename
+
+Server-side rejection toasts now actually surface in the file manager UI and carry a friendly message instead of Laravel's raw `files.0 field must be a file of type: image/webp` text.
+
+- **Toast group fix** — every `toast.add()` call in `FileManager.vue` now passes `group: 'bc'`. The shared `ToastComponent` is mounted with `group="bc"`, so previous calls without the key were silently dropped. Folder create/rename/delete/move and file upload toasts (success and error) all surface again.
+- **Server error extraction** — the upload XHR previously read only `envelope.message` ("Validation error.") on a 422. The composable now walks `envelope.errors` and surfaces the first field-specific message, so the toast carries the actual reason.
+- **Per-file friendly validation messages** — `UploadFileRequest` overrides `attributes()` and `messages()`. Each `files.{i}` slot is bound to the file's `getClientOriginalName()` (so the toast says `vacation.jpg yüklenemedi: …` instead of `files.0`). The mimetypes / max-size errors map to translation keys with a readable extension list (`İzinli tipler: WEBP, PDF, JPG, …`) and human-friendly size limit (`en fazla 10 MB`).
+- **Translation keys** — `errors.upload_invalid_type`, `errors.upload_too_large`, `errors.upload_invalid_file` added in `lang/{en,tr}/file-manager.php`.
+
+Two new feature tests cover the friendly messages: `it returns a friendly validation message with original filename when mime is rejected` and `… with size limit when file is too large`. The full file manager + install + publish suites stay green (22/22 + 11/11).
+
+### Helpers reorganized — vendor-owned core, user-owned custom, publishable override
+
+`to_api()` and `format_date()` (plus two new helpers — see below) now ship from the package vendor and are autoloaded automatically. End-user apps no longer keep a `to_api` copy under `app/`, removing the merge headache that used to come up every `sk:update`.
+
+- **`vendor/lvntr/laravel-starter-kit/src/sk-helpers.php`** is the canonical location. It is registered via the package's `composer.json` `autoload.files`, so any consumer gets the helpers the moment they `composer require`.
+- **`app/Helpers/custom.php`** is published into the consumer app on first install, added to the app's `composer.json` `autoload.files`, and is _never_ overwritten by `sk:update`. This is where user-specific global helpers live.
+- **`app/helpers.php` is deprecated.** `sk:update` now compares the existing file's md5 against a list of known stock hashes; if it matches, the file is removed silently. If the user added their own functions, the file is left in place with a console warning so their code is preserved. The `composer.json` autoload entry is rewritten only when the file is actually gone — never silently breaking user code.
+- **Two new helpers** — `definition($key, $value)` returns the matching definition record (object) from `DefinitionService`; `definitionLabel($key, $value)` returns its `label`. Useful for resolving enum-style values to display strings without re-fetching the definition list per call.
+
+### `sk:publish --tag=helpers` — override the bundled helpers without forking
+
+A new tag exposes `sk-helpers.php` to the publish command. After publishing, the file lands at `app/Helpers/sk-helpers.php` and the user can edit it freely.
+
+The vendor file detects the published copy at autoload time and routes through it via `require_once`:
+
+```php
+$skPublishedHelpers = dirname(__DIR__, 4).'/app/Helpers/sk-helpers.php';
+if (is_file($skPublishedHelpers) && realpath($skPublishedHelpers) !== realpath(__FILE__)) {
+    require_once $skPublishedHelpers;
+
+    return;
+}
+```
+
+The realpath guard prevents self-recursion when the file is loaded as the published copy. No `composer.json` change is needed — composer autoload still triggers vendor's file, which then delegates to the user's. Deleting the published file reverts to the vendor implementation immediately.
+
+The `sk:publish` interactive prompt gained a fourth option: **Global Helpers (sk-helpers.php)**.
+
+---
+
+## 2026-04-14 -v.13.2.4
+
+### Type-safety sweep — zero `vue-tsc` and ESLint warnings
+
+The starter kit source now passes `vue-tsc --noEmit` and `eslint 'resources/js/**/*.{ts,vue}'` with 0 errors / 0 warnings. No behavioural changes — purely type and lint cleanup.
+
+- **tsconfig deduplication** — type-checking paths were simplified so the same UI sources are no longer scanned twice. This removes the duplicate errors that were confusing local development.
+- **Vite `Components` plugin is single-source** — the `dirs` entry was trimmed to `resources/js/components` only; the package path is gone. The auto-generated `components.d.ts` now references source paths.
+- **SkDatatable filter types widened** — `activeFilters` is now typed as a single `FilterValue` alias (`string | number | Date | (Date | null)[] | null`). DatePicker usages switched from `v-model` to `:model-value` + `@update:model-value` with narrow casts, so `select`, `select-button`, `date` and `daterange` filters each operate on their own typed value.
+- **Tag icon / pagination i18n fixes** — the `:icon` expression closes off null leakage with `?? undefined`, and the `from/to/total` params passed to `datatable.records_info` are now `String(... ?? 0)` to match the expected `string` i18n argument type.
+- **`SharedPageProps` index signature** — `[key: string]: unknown` added so the interface satisfies Inertia's `PageProps` constraint. `useCan()` now compiles cleanly under `usePage<SharedPageProps>()`.
+- **`env.d.ts` auth shape aligned with runtime** — Inertia `sharedPageProps.auth` now carries `{ user, role, role_names, permissions }`; AdminHeader's `page.props.auth?.role` and similar reads resolve against correct types. `appEnv`, `appDebug`, `locale`, `availableLocales` are also typed on the shared props.
+- **Small prop / cast fixes** — `RoleForm.vue` calls Wayfinder as `update.url({ id })` (narrowing the optional `id`), `Settings/Index.vue` adds `logo_url: string | null` to the `general` type, `Dashboard/Index.vue` greets by the real field (`user?.first_name` instead of a non-existent `user?.name`), and the redundant `preserveScroll: true` option was dropped from `router.reload()` calls — Inertia v3 already preserves scroll and state on `reload()` by default.
+- **ESLint warnings** — the `v-html` usage inside `SkDatatable` is marked with a reasoned `eslint-disable-next-line` (the render string is author-defined and `escapeHtml` is provided). `Breadcrumb.rootLabel`, `FileGrid.emptyLabel` and `SkTag.{value,icon,color,severity}` now have `withDefaults` fallbacks.
+
+No action required for existing installs — changes are purely type/lint level.
+
+## 2026-04-14 -v.13.2.3
+
+### Installer DX — AST-based injection, bootstrap helper, preset-aware guidance
+
+A round of installer and upgrade ergonomics that make `composer require lvntr/laravel-starter-kit` on a fresh Laravel safer and less invasive.
+
+- **AST-based config injection** — `sk:install` now edits `config/app.php`, `config/filesystems.php` and `config/media-library.php` via `nikic/php-parser` with format-preserving pretty printing. Regex-based patching is gone; the injection is tolerant of different Laravel config formats and fully idempotent (re-running `sk:install` is a no-op once injected).
+- **Bootstrap helper cleanup** — middleware and exception wiring now flows through a single shared bootstrap helper, making installation updates more predictable.
+- **`bootstrap/app.php` is no longer overwritten** — the stub copy is removed. Instead the installer **AST-injects three lines** into the user's existing Laravel default file: `api: __DIR__.'/../routes/api.php'` inside `withRouting(...)`, plus `Bootstrap::middleware(...)` / `Bootstrap::exceptions(...)` calls inside the two closures. User-added middleware, trusted proxies, custom exception reporters etc. are preserved.
+- **`bootstrap/providers.php` is no longer overwritten** — the installer appends `DomainServiceProvider`, `FortifyServiceProvider`, `SettingsServiceProvider` to the array (idempotent, skips any already registered), leaving the user's existing entries untouched.
+- **`package.json` JSON-merge** — instead of blind overwrite, the installer merges: stub versions win for shared dependencies, but any user-added deps, scripts, workspaces or root-level keys survive.
+- **First-install detection for lang files** — `lang/*` is still preserved on re-install (so customisations aren't lost), but on a genuine first install (no hash registry) the installer now force-copies lang stubs so fresh projects don't inherit sparse Laravel defaults while the starter kit UI expects richer keys.
+- **Dead code removed** — old `IdentityType` and `YesNo` enums that are no longer part of the active flow were removed from fresh installs and update paths.
+- **IdeHelper cleanup** — `AppServiceProvider` no longer carries an unnecessary `class_exists(IdeHelperServiceProvider::class)` guard in fresh installs.
+- **Explicit `nikic/php-parser ^5.0` requirement** — was transitively available via Tinker, now a direct package dep.
+- **"Bare Laravel" install guidance** — README (EN/TR) and [install.md](./install.md) / [install.tr.md](./install.tr.md) open with a warning: do **not** run `install:inertia`, `install:api`, Breeze, Jetstream or similar presets before installing the starter kit — they scaffold controllers, routes, pages and layouts that this kit also ships, and the installer cannot detect them, leaving orphan dead code.
+- **Tests** — 12 new `InstallCommandTest` cases cover AST config injection (all three files), idempotency, format/comment preservation, `package.json` merge, first-install detection, bootstrap app/providers AST injection with user-code preservation. Total installer-related suite 20/20 green.
+
+No action required for existing installs — all installer-side changes are backwards-compatible and gated on first-install detection or idempotency guards.
+
+## 2026-04-14 -v.13.2.2
+
+### FileManager — pluggable contexts via `ContextRegistry`
+
+The FileManager is no longer limited to `user` / `global`. Any Eloquent model can own a folder tree with **zero service-provider wiring**.
+
+- **New `ContextRegistry` service** (`app/Domain/FileManager/Support/`) resolves a context key in three steps: explicit `register()` → Laravel morph-map alias → `App\Models\{Studly(key)}` convention fallback. Unknown keys still return 422 via validation.
+- **Zero-config custom contexts** — a model class + a matching policy (`view` / `update`) is all that's needed:
+    ```vue
+    <FileManager context="vehicle" :context-id="vehicle.id" height="100%" />
+    ```
+- **`global` baked into the registry** — the old registration in `AppServiceProvider::boot()` moved into `ContextRegistry`'s constructor, so adopting the starter kit no longer requires any boot-time setup for FM. `AppServiceProvider` only binds the singleton now.
+- **`user` is fully auto-resolved** — via the `App\Models\User` convention plus the new shipped `app/Policies/UserPolicy.php` (self-access + `users.read` / `users.update` admin gate). The built-in registrations for `user` were removed in favour of policy-driven auth.
+- **Default authorizer with self-match short-circuit** — auto-resolved contexts automatically allow an actor to manage their own record (actor IS owner). Other requests delegate to Laravel policies: `can('view', $owner)` for reads, `can('update', $owner)` for writes.
+- **MorphMap-aware storage** — `FileManagerContextDTO` now stores `ownerType` via `$owner->getMorphClass()` so queries and path generation work even when the model has a morph-map alias.
+- **Runtime-driven validation** — `FileManagerRequest` replaced the hard-coded `in:user,global` rule with a closure that queries `ContextRegistry` at runtime. Adding a new context no longer touches any Request file; `context_id` is only required when the registered path contains `{id}`.
+- **Frontend type loosens for custom keys** — `FileManagerContext` is now `'user' | 'global' | (string & {})`, so calling `<FileManager context="vehicle" />` stays fully type-checked without losing autocomplete on the built-ins.
+- **Upload resilience** — `UploadFileRequest` now falls back to a sensible MIME list (image / pdf / office / text) when `file_manager.accepted_mimes` isn't seeded yet, so a fresh install never hits the "file must be of type: ." 422.
+- **Tests** — new `CustomContextTest` exercises explicit registration, path override, folder listings, unknown-context rejection and morph-map auto-resolution. Total 26/26 FileManager tests green.
+- **Docs** — [file-manager.md](./file-manager.md) picked up a "Custom contexts" chapter with resolution order, zero-config walkthrough, `VehiclePolicy` example, contract table and override guidance.
+
+## 2026-04-14 -v.13.2.1
+
+### FileManager — UX polish & follow-ups
+
+A batch of refinements landed on top of the initial 13.2.0 release, driven by real usage:
+
+- **Preview modal** — tile click (for files) or context **Open** now opens a 90vw modal with inline preview for images, PDF, video, audio and text; non-previewable types fall back to an "Open in new tab" + "Download" pair.
+- **Per-tile upload progress** — uploads now stream per-file via XHR with a progress bar drawn on an optimistic placeholder tile; failed uploads show a dismissable error tile while successful ones slot in when the list refreshes. The toolbar Upload button also spins during the batch.
+- **Drag-and-drop move** — tiles are `draggable`; dropping onto a folder tile moves the whole selection there. External file-drag is detected via the `Files` data-transfer type, so internal drags no longer accidentally trigger the upload overlay.
+- **Move modal with folder tree** — new Move action in both folder & file context menus opens a dialog with a `FolderTree` picker. Works for both single and bulk selections.
+- **Busy overlay (modal card)** — Delete / Move / Rename operations now paint a white modal card over the FileManager area with a spinner, title, description and — for bulk ops — a live "N items remaining" counter plus a **Stop** button that cancels the remaining iterations.
+- **Always-visible selection checkbox** — each folder / file tile has a top-right checkbox (primary-filled when selected, outline-on-hover when not). Plain click on folders just selects; **double-click opens**. File tiles still single-click-to-preview. The old 3-dot menus on tiles are gone — right-click is the single entry point.
+- **Right-click no longer forces selection** — opening the context menu on an unselected tile keeps the existing selection untouched; bulk operations apply only when the right-clicked item is already in the selection.
+- **Keyboard shortcuts** — `Ctrl/Cmd + A` selects all items in the current folder, `Delete` / `Backspace` deletes the selection (with confirmation), `Esc` clears the selection. All shortcuts are guarded so they never fire while typing in an input or with a dialog open.
+- **Breadcrumb redesign** — replaced the PrimeVue breadcrumb with chip/pill crumbs, separated by chevrons, and moved below the info bar. Long folder names are truncated with `…` (configurable `maxChars`, default 18). Full path stays accessible as a `title` tooltip.
+- **Current-folder header + back button** — removed the left folder tree (still used inside the Move picker). The main area now shows the current folder name with an icon, plus a `←` button when not at the root.
+- **Empty-folder illustration** — empty folders render a large outlined folder SVG, a heading, and two-line hints (`Upload` / `New Folder`), replacing the plain "This folder is empty" line.
+- **Aggregate info-bar stats** — the file count + total size shown in the info bar now walks the entire subtree of the current folder, not just its immediate files.
+- **Download across disks** — `DownloadFileAction` now uses `Storage::disk($media->disk)->download(...)` so the force-download route works for local, S3 and DigitalOcean Spaces alike.
+- **Context menu restyle** — white rounded card, larger item padding, separator before destructive **Delete** in both folder and file menus.
+- **Sort direction tooltip** — the asc/desc toggle now has a dynamic PrimeVue tooltip ("Ascending · click for descending" / TR equivalent). As a side effect, the `Tooltip` directive is now globally registered in `app.ts`.
+- **Footer credit** — `AdminFooter` shows _Crafted with **Lvntr Starter Kit**_ linking to lvntr.dev.
+
+See [file-manager.md](./file-manager.md) for the refreshed usage guide, props and composable exports.
+
+## 2026-04-14 -v.13.2.0
+
+### FileManager — file management module
+
+A new **FileManager** module shipped: a Windows Explorer-style UI delivering full file management for user-scoped or global files.
+
+- **Nested folders** — create, rename, move, cascade delete
+- **Multi-file upload** — drag & drop or button
+- **Selection** — single click, `Ctrl/Cmd + click`, rubber-band drag for bulk
+- **Bulk delete** — toolbar button or right-click on selected items
+- **Sort** — by name / size / date + asc/desc
+- **Type-aware previews** — image thumbnails + color-coded icons for PDF/Word/Excel/Video/Audio/Archive
+- **Info bar** — current folder file count and aggregate size
+- **Context menus** — separate actions for folder / file / empty area (New Folder, Upload, Select All, Refresh)
+
+Added pages: **Files** in the main sidebar, **Files** tab on `Admin > Users > Edit`. Max upload size, accepted MIME types and video/audio toggles are configurable under `Admin > Settings > File Manager`.
+
+Storage: `user/{id}/files/{uuid}/...` and `global/files/{uuid}/...` — folder moves are metadata-only, files never move on disk.
+
+See [file-manager.md](./file-manager.md) for usage and API details.
+
+## 2026-04-13 -v.13.1.10
+
+### FormBuilder — stale form reset fix
+
+Fixed a bug where `FB`-generated forms could silently reset to stale remote data after an Inertia `back()` navigation or any `page.props` refresh that caused `formConfig` to be recomputed. The internal `SkForm` now shallow-compares the new derived defaults against the previous ones and skips the reset when the values are identical, preserving in-progress user edits.
+
+Affected: any form built with `FB` whose config depends on `page.props` (e.g. conditional `isFieldsLocked`, `isSelf`, auth-based field visibility). No API change — existing forms benefit automatically.
+
+## 2026-04-13 -v.13.1.8
+
+### FormBuilder — ColorSelector output format
+
+`FB.colorSelector()` now supports configurable output formats via `.format()` and `.defaultTone()`:
+
+- `format('name')` _(default)_ → stores `"blue"`
+- `format('name-tone')` → stores `"blue-500"`
+- `format('hex')` → stores `"#3b82f6"`
+
+A clickable tone selector is rendered below the dropdown for `'name-tone'` and `'hex'` formats, with the resolved value shown next to the tone pills. When the initial model value is a hex string, the component reverse-looks it up against the Tailwind palette to restore the matching color + tone.
+
+See [formbuilder.md](./formbuilder.md#colorselector-field-api) for details.

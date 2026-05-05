@@ -50,6 +50,8 @@ export interface FolderStats {
     total_size: number;
     /** Total bytes across ALL collections for this owner (quota indicator). */
     storage_used?: number;
+    /** Total byte budget for the disk-wide quota (settings.file_manager.storage_quota_mb). */
+    storage_quota?: number;
 }
 
 export interface FolderContents {

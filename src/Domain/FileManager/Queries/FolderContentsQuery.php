@@ -23,7 +23,7 @@ class FolderContentsQuery
      *     folder: array<string, mixed>|null,
      *     folders: array<int, array<string, mixed>>,
      *     files: array<int, array<string, mixed>>,
-     *     stats: array{file_count: int, total_size: int, storage_used: int},
+     *     stats: array{file_count: int, total_size: int, storage_used: int, storage_quota: int},
      * }
      */
     public function execute(FileManagerContextDTO $context, ?string $folderId = null, array $options = []): array
@@ -123,7 +123,8 @@ class FolderContentsQuery
             ->all();
 
         $stats = $this->computeAggregateStats($context, $folderId, $childrenMap);
-        $stats['storage_used'] = $this->computeStorageUsed($context);
+        $stats['storage_used'] = $this->computeStorageUsed();
+        $stats['storage_quota'] = $this->storageQuotaBytes();
 
         return [
             'folder' => $folder ? [

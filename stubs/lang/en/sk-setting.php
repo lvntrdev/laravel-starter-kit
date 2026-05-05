@@ -73,6 +73,10 @@ return [
     'file_manager' => [
         'title' => 'File Manager Settings',
         'subtitle' => 'Configure upload size and accepted file types.',
+        'storage_quota' => [
+            'label' => 'Storage Quota (MB)',
+            'help' => 'Single combined quota covering all contexts and trash.',
+        ],
         'mime_categories' => [
             'images' => 'Images',
             'documents' => 'Documents',

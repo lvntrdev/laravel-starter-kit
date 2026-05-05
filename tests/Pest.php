@@ -1,5 +1,6 @@
 <?php
 
+use Lvntr\StarterKit\Tests\DatabaseTestCase;
 use Lvntr\StarterKit\Tests\TestCase;
 
 /*
@@ -7,10 +8,19 @@ use Lvntr\StarterKit\Tests\TestCase;
 | Pest test bootstrap
 |--------------------------------------------------------------------------
 |
-| Binds the package TestCase only to the Feature suite. Unit tests (added
-| later) keep Pest's default base class, which is the cheaper option for
-| pure-PHP assertions that do not need a Laravel application boot.
+| Feature suite'e TestCase bağlanır. Unit testler (eklenirse) Pest default
+| base class'ı kullanır — Laravel boot gerekmez.
+|
+| Feature/FileManager ve Feature/Settings testleri DatabaseTestCase ile
+| çalışır: SQLite in-memory + migration + RefreshDatabase sağlar.
+| Diğer Feature testleri (BackwardCompat) DB gerektirmediğinden
+| hafif TestCase'i kullanmaya devam eder.
 |
 */
 
-uses(TestCase::class)->in('Feature');
+// DB gerektiren test dizinleri
+uses(DatabaseTestCase::class)->in('Feature/FileManager');
+uses(DatabaseTestCase::class)->in('Feature/Settings');
+
+// DB gerektirmeyen diğer Feature testleri
+uses(TestCase::class)->in('Feature/BackwardCompat');

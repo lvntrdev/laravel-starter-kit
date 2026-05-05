@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [13.5.2] - 2026-05-05
+## [13.5.1] - 2026-05-05
 
 ### Fixed
 
@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`sk:install --without-ai-skill`** — `stubs/.claude/skills/` AI skill yayınını atla (Claude Code skill bundle kullanmayan consumer'lar için).
 - **`.gitattributes`** — Composer arşivi `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` vb. development dosyalarını dışlıyor; arşiv boyutu küçüldü.
 - **`.npmignore`** — NPM paketi `__tests__/`, `*.spec.*`, `*.test.*` dosyalarını dışlıyor (root + subdirectory; npm 11 davranışıyla uyumlu).
+- **Disk-genel depolama kotası (`storage_quota_mb`).** Admin Settings > File Manager panelinden MB cinsinden tek kota değeri tanımlanır (default 10240 MB / 10 GB). Kota, tüm context'leri (`user`, `global`, özel morph map'ler) ve çöp kutusunu (`withTrashed`) kapsayan disk-genel tek toplam bütçeyi temsil eder.
+- **Upload kota aşım validasyonu.** `UploadFileRequest::withValidator()` kota kontrolü ekler; kota aşıldığında 422 döner ve kullanıcıya `errors.quota_exceeded` anahtarıyla çok dilli hata mesajı gösterilir.
 
 ### Removed
 
@@ -39,7 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **`sk:publish` primary publish komutu olarak konumlandırıldı.** Granular interactive flow + namespace rewrite desteği. `vendor:publish --tag=starter-kit-*` BC için kalır ama `sk:publish` öne çıkar (docs/install.md, docs/artisan-commands.md).
-- **`StarterKitServiceProvider::registerCommands` yorumu güncellendi.** v13.5.2 itibariyle "domain commands single source" ifadesi gerçeği yansıtıyor (stub'lar silindi).
+- **`StarterKitServiceProvider::registerCommands` yorumu güncellendi.** v13.5.1 itibariyle "domain commands single source" ifadesi gerçeği yansıtıyor (stub'lar silindi).
+- **`ResolvesMediaModel::computeStorageUsed()` imzası değişti (internal trait).** Parametre almaz hale geldi; artık `Media::withTrashed()->sum('size')` ile disk-genel toplam döndürür. Önceki davranış: `model_type` + `model_id` filtreli per-context hesaplama. Host uygulamalar bu trait'i extend edip `computeStorageUsed($context)` çağırıyorsa parametre kaldırılmalı: `grep -rn "computeStorageUsed" app/`.
+- **`FolderContentsQuery`, `FavoritesContentsQuery`, `TrashContentsQuery`** — `stats.storage_quota` alanı byte cinsinden eklendi.
+- **`FileManager.vue`** — `STORAGE_QUOTA_BYTES` hardcoded sabiti kaldırıldı; `quotaBytes` computed değeri `stats.storage_quota`'dan okunuyor. Kota sıfır veya tanımsızsa sidebar `v-if="quotaBytes > 0"` ile gizlenir.
 
 ### Backward Compatibility Guarantees
 
@@ -50,9 +55,15 @@ Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
   - `App\Http\Responses\ApiResponse` import'u alias üzerinden vendor sınıfına resolve edilir; code değişikliği gerekmez.
 - **Vendor `PermissionEnum` kullanımı yok**, bu silme BC kırmaz. Tüm consumer'lar zaten `App\Enums\PermissionEnum` kullanır (stub resmi konum).
 - **`sk:publish` ve `vendor:publish` davranışları** consumer projesinin npm/composer tarafına dokunmaz; düzeltmeler pure bug fix.
+- **`ResolvesMediaModel`** internal trait olduğu için public package API kırılmaz. Trait'i doğrudan extend eden host uygulamalar imza değişikliğinden etkilenir (yukarıdaki Changed notuna bakın).
+- **`FolderStats.storage_quota`** TypeScript arayüzünde optional (`storage_quota?: number`) — eski response'lara karşı güvenli.
+- **DB schema değişikliği yoktur**; migration gerekmez. `storage_quota_mb` ayarı seeder çalıştırılmadan da config default'una (10240 MB) düşer.
 - v13.5.0 BC garantileri korunmaktadır.
 
 ### Upgrade
+
+Aşağıdaki stub'lar güncellendi; `php artisan sk:update` ile alınabilir:
+`_03_SettingSeeder`, `FileManagerSettingsDTO`, `SettingsDefaultsQuery`, `UpdateFileManagerSettingsRequest`, `SettingsServiceProvider`, `FileManagerTab.vue`, `lang/{en,tr}/sk-setting.php`, `lang/{en,tr}/sk-file-manager.php`, `lang/{en,tr}/validation.php`.
 
 ```bash
 composer update lvntr/laravel-starter-kit

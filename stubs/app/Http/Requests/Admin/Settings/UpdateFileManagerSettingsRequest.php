@@ -34,6 +34,7 @@ class UpdateFileManagerSettingsRequest extends FormRequest
     {
         return [
             'max_size_mb' => ['required', 'integer', 'min:1', 'max:1024'],
+            'storage_quota_mb' => ['required', 'integer', 'min:1', 'max:1048576'],
             'accepted_mimes' => ['required', 'array', 'min:1'],
             'accepted_mimes.*' => [
                 'string',

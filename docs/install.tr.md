@@ -1,0 +1,283 @@
+# Kurulum
+
+> **Aktif Geliştirme Uyarısı**
+>
+> Bu depo (repository) sürekli bir değişim içerisindedir. Projenin stabilitesi henüz tam olarak sağlanmamıştır. Kullanırken lütfen aşağıdaki noktaları göz önünde bulundurun:
+>
+> 1. **Kod Değişiklikleri:** Ana dizin yapısı veya çekirdek sınıflar radikal şekilde değişebilir.
+> 2. **Güncelleme Süreci:** Güncellemeler her zaman otomatik bir geçiş (migration) sunmayabilir. Güncelleme sonrası README veya CHANGELOG dosyalarını kontrol ederek elle müdahale etmeniz gerekebilir.
+> 3. **Risk:** Yapılan değişiklikler mevcut projenizde veri kaybına veya hatalara yol açabilir.
+
+Bu rehber, sıfır bir proje için önerilen kurulum akışını anlatır.
+
+> **Boş bir Laravel kurulumundan başlayın.** Bu paketi kurmadan önce `php artisan install:inertia`, `install:api`, Breeze, Jetstream veya başka bir starter preset **çalıştırmayın**. Preset'ler bu starter kit'in de yayınladığı controller, route, sayfa ve layout'ları oluşturur — installer bunları tespit edemediği için kit'in kendi dosyalarının yanında yetim "ölü kod" olarak kalırlar.
+>
+> Önerilen akış:
+>
+> ```bash
+> composer create-project laravel/laravel my-app
+> cd my-app
+> composer require lvntr/laravel-starter-kit:^13.0
+> php artisan sk:install
+> ```
+
+## Gereksinimler
+
+| Gereksinim | Sürüm           |
+| ---------- | --------------- |
+| PHP        | 8.4+            |
+| Laravel    | 13              |
+| Node.js    | 18+             |
+| Veritabanı | MySQL / MariaDB |
+
+## 1. Projeyi Hazırlayın
+
+Başlamadan önce projede çalışan bir veritabanı bağlantısı ve geçerli bir `.env` dosyası olduğundan emin olun. Temel ayarları önceden girin:
+
+```env
+APP_NAME="Uygulamam"
+APP_URL=https://uygulamam.test
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=uygulamam
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### Dikkat Edilmesi Gereken Env Değişkenleri
+
+Installer, yeni kurulumların gözden geçirmesi gereken birkaç anahtar taşıyan başlangıç `.env.example` yazar:
+
+```env
+# Log seviyesi — local dev için 'debug' uygundur; production 'error' veya 'warning' göndermeli.
+LOG_LEVEL=error
+
+# Cloudflare Turnstile (bot / captcha). TURNSTILE_ENABLED=false iken
+# `turnstile` middleware'i no-op olduğu için lokal olarak anahtarları boş bırakmak güvenli.
+TURNSTILE_ENABLED=false
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
+# Session sertleştirme — ikisinin de default'u 'true'. Production'da açık tutun.
+SESSION_ENCRYPT=true
+SESSION_SECURE_COOKIE=true
+
+# Passport OAuth2 anahtarları — production için önerilen desen, anahtarları
+# storage/oauth-*.key dosyalarına commit etmek yerine env üzerinden yüklemek.
+# Bir kez `php artisan passport:keys` çalıştırın, üretilen string'leri bu env
+# değişkenlerine taşıyın, sonra dosyaları silin.
+# PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+# PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+```
+
+## 2. Paketi Ekleyin
+
+```bash
+composer require lvntr/laravel-starter-kit:^13.0
+```
+
+## 3. Kurulum Komutunu Çalıştırın
+
+```bash
+php artisan sk:install
+```
+
+Sihirbaz her adımda sizinle interaktif olarak ilerler:
+
+| Adım | Ne yapar                                                                                             |
+| ---- | ---------------------------------------------------------------------------------------------------- |
+| 1    | Veritabanı bağlantısını yapılandırır (sürücü, host, port, veritabanı, kimlik bilgileri)              |
+| 2    | Uygulama iskeletini yayınlar (Controller, Model, Route, Vue sayfaları, Enum, Provider, vb.)          |
+| 3    | `package.json` bağımlılıklarını birleştirir                                                          |
+| 4    | Çakışan varsayılan Laravel dosyalarını siler (`vite.config.js`, `welcome.blade.php`, vb.)            |
+| 5    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, `media-library.php`)      |
+| 6    | Uygulama ayarlarını, filesystem disk'lerini, media library'yi ve `bootstrap/app.php`'yi yapılandırır |
+| 7    | Service provider'ları kaydeder                                                                       |
+| 8    | Composer autoload'u yeniden oluşturur                                                                |
+| 9    | Veritabanı migration'larını çalıştırır                                                               |
+| 10   | Seeder'ları çalıştırır (Roller, Yetkiler, Tanımlar, Ayarlar)                                         |
+| 11   | Passport şifreleme anahtarlarını oluşturur                                                           |
+| 12   | Varsayılan admin kullanıcısı oluşturur (`admin@demo.com` / `password`)                               |
+| 13   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
+
+### Yararlı Flag'ler
+
+```bash
+php artisan sk:install --force
+php artisan sk:install --no-interaction
+php artisan sk:install --without-ai-skill
+```
+
+- `--force` mevcut yayınlanabilir dosyaların üzerine yazar
+- `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder
+- `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
+
+## 4. Frontend Asset'lerini Derleyin
+
+Kurulum sırasında asset adımını atladıysanız şunları çalıştırın:
+
+```bash
+npm install
+npm run build
+```
+
+Lokal geliştirme için:
+
+```bash
+composer dev
+```
+
+## 5. Kurulumu Doğrulayın
+
+Kurulumdan sonra şu alanları kontrol edin:
+
+- web giriş ekranı (`admin@demo.com` / `password` ile giriş yapın)
+- register ve forgot-password sayfaları; etkinse Turnstile widget'ı
+- dashboard erişimi
+- kullanıcı ve rol yönetimi sayfaları
+- profil güvenliği sayfası (şifre, 2FA, tarayıcı oturumları, avatar)
+- ayarlar sayfasındaki sekmeler: General, Auth, Mail, Storage, File Manager, Turnstile
+- dosya yöneticisi
+- `/api/v1/auth/login` ve `/api/v1/auth/me`
+
+## 6. İsteğe Bağlı Yayınlama
+
+Paket birçok varlığı varsayılan olarak kendi içinde tutar. Proje seviyesinde özelleştirme gerektiğinde yayınlayın:
+
+```bash
+php artisan sk:publish
+php artisan sk:publish --tag=components
+php artisan sk:publish --tag=filemanager
+php artisan sk:publish --tag=lang
+php artisan sk:publish --tag=config
+```
+
+## Veritabanını Sıfırlama (site:install)
+
+Geliştirme sırasında `site:install` komutu tüm tabloları silip sıfırdan kurar:
+
+```bash
+php artisan site:install
+```
+
+Bu komut:
+
+1. Onay için hedef veritabanı ve ortam detaylarını gösterir
+2. `migrate:fresh` çalıştırır (tüm tabloları silip migration'ları tekrar çalıştırır)
+3. Tüm seeder'ları çalıştırır (`database/seeders/` altındaki `_` ile başlayan dosyalar)
+4. Passport anahtarlarını oluşturur
+5. Varsayılan admin kullanıcısını oluşturur
+
+**Güvenlik korumaları:**
+
+- Sadece `local` ve `setup` ortamlarında çalışır
+- `prod` veya `production` içeren ortamlarda kalıcı olarak engellenir
+- Devam etmeden önce açık onay gerektirir
+
+> **Not:** `site:install` bir stub dosyası olarak yayınlanır. Özelleştirirseniz (örneğin, özel seeder eklerseniz veya admin bilgilerini değiştirirseniz), `sk:update` komutu değişikliklerinizi tespit eder ve güncelleme sırasında bu dosyayı atlar.
+
+## Paketi Güncelleme
+
+Yeni bir sürüm yayınlandığında:
+
+```bash
+# 1. Composer paketini güncelleyin
+composer update lvntr/laravel-starter-kit
+
+# 2. Uygulama dosyalarını senkronize edin
+php artisan sk:update
+```
+
+Güncelleme komutu, paket güncellemelerini özelleştirmelerinizle güvenli şekilde birleştirmek için hash tabanlı izleme sistemi kullanır:
+
+| Dosya kategorisi                                                                                                          | Davranış                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Runtime (vendor)** — `Domain/Shared/`, Trait'ler, Middleware, helper'lar, `ApiResponse`, FileManager katmanı            | `vendor/` altında çalışır — `composer update` ile otomatik güncellenir; `sk:update` kopyalamaz       |
+| **Hash takipli stub'lar** — auth/layout Vue bileşenleri, user/rol/ayar domain iskeleti                                    | Paket sürümü değiştiğinde diff bildirimi yapılır; lokal hash hâlâ eşleşiyorsa uygulanır              |
+| **Kullanıcı tarafından değiştirilebilir dosyalar** (Controller, Model, Sayfa, Route, `SiteInstallCommand`)                | Sadece son kurulum/güncellemeden beri değiştirmediyseniz güncellenir                                 |
+| **Asla güncellenmeyen dosyalar** (`config/permission-resources.php`)                                                      | Bir kez kurulur, bir daha dokunulmaz                                                                 |
+| **Sizin özel domain'leriniz**                                                                                             | Asla dokunulmaz                                                                                      |
+| **Paketten gelen yeni dosyalar**                                                                                          | Otomatik olarak eklenir                                                                              |
+| **Kullanım dışı dosyalar**                                                                                                | Otomatik olarak silinir                                                                              |
+
+```bash
+# Hiçbir değişiklik yapmadan nelerin değişeceğini önizleyin
+php artisan sk:update --dry-run
+
+# Her şeyi zorla güncelle (özelleştirmelerinizin üzerine yazar)
+php artisan sk:update --force
+```
+
+## Laravel 12'den Yükseltme
+
+Mevcut bir Starter Kit projeniz Laravel 12 üzerindeyse:
+
+```bash
+# 1. composer.json'da Laravel 13 gereksinimini güncelleyin
+composer require laravel/framework:^13.0 lvntr/laravel-starter-kit:^13.0 -W
+
+# 2. Yükseltme sihirbazını çalıştırın
+php artisan sk:upgrade
+```
+
+Yükseltme komutu Laravel 13+, Starter Kit v13+, PHP 8.4+ doğrular; stub'ları senkronize eder; cache'leri temizler; yeni migration'ları çalıştırır (isteğe bağlı); rolleri ve yetkileri yeniden seed'ler (isteğe bağlı); ve frontend'i yeniden derler.
+
+```bash
+php artisan sk:upgrade --force       # onay istemlerini atla
+php artisan sk:upgrade --skip-build  # npm install / npm run build adımını atla
+```
+
+## Tüm Mevcut Komutlar
+
+| Komut              | Açıklama                                                        |
+| ------------------ | --------------------------------------------------------------- |
+| `sk:install`       | Tam kurulum sihirbazı                                           |
+| `sk:update`        | Kullanıcı değişikliklerini koruyarak paket dosyalarını güncelle |
+| `sk:upgrade`       | Önceki Laravel sürümünden yükseltme                             |
+| `sk:publish`       | Özelleştirme için isteğe bağlı varlıkları yayınla               |
+| `site:install`     | Veritabanını sıfırla ve varsayılan verilerle yeniden kur        |
+| `make:sk-domain`   | İnteraktif olarak eksiksiz bir DDD domain'i oluştur             |
+| `remove:sk-domain` | Bir domain'i ve tüm dosyalarını kaldır                          |
+| `env:sync`         | `.env` anahtarlarını `.env.example` ile senkronize et           |
+
+## Sorun Giderme
+
+**Kurulum sonrası Vite manifest hatası:**
+
+```bash
+npm run build
+# veya dev sunucusunu başlatın
+npm run dev
+```
+
+**Frontend değişiklikleri yansımıyorsa:**
+
+```bash
+npm run dev
+# veya yeniden derleyin
+npm run build
+```
+
+**Kurulum sonrası sınıflar bulunamıyorsa:**
+
+```bash
+composer dump-autoload
+```
+
+**Passport anahtarları eksikse:**
+
+```bash
+php artisan passport:keys --force
+```
+
+**Deploy sonrası `php artisan tinker` bulunamıyorsa:**
+
+`laravel/tinker` artık `require-dev` altında — production build'leri `composer install --no-dev` ile çalıştığında Tinker kurulmaz. Bu bilinçli bir tercih. Sunucuda tinker'a ihtiyacın varsa `composer require laravel/tinker` (require-dev dışında) ile açıkça kur.
+
+İlgili dökümanlar:
+
+- [update.tr.md](./update.tr.md)
+- [artisan-commands.tr.md](./artisan-commands.tr.md)
+- [ui-components.tr.md](./ui-components.tr.md)

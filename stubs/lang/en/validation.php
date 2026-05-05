@@ -254,6 +254,7 @@ return [
         'spaces_bucket' => 'Spaces Bucket',
         'current_password' => 'Current Password',
         'max_size_mb' => 'Max Upload Size (MB)',
+        'storage_quota_mb' => 'Storage Quota (MB)',
         'accepted_mimes' => 'Accepted File Types',
         'allow_video' => 'Allow Video Uploads',
         'allow_audio' => 'Allow Audio Uploads',

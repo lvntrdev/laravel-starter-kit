@@ -73,6 +73,10 @@ return [
     'file_manager' => [
         'title' => 'Dosya Yöneticisi Ayarları',
         'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
+        'storage_quota' => [
+            'label' => 'Depolama Kotası (MB)',
+            'help' => 'Tüm context\'leri ve çöp kutusunu kapsayan tek toplam kota.',
+        ],
         'mime_categories' => [
             'images' => 'Görseller',
             'documents' => 'Dokümanlar',

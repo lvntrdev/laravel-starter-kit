@@ -148,6 +148,7 @@ return [
         'upload_invalid_type' => ':attribute yüklenemedi: bu dosya tipine izin verilmiyor. İzinli tipler: :types.',
         'upload_too_large' => ':attribute yüklenemedi: dosya çok büyük (en fazla :max).',
         'upload_invalid_file' => ':attribute yüklenemedi: geçersiz dosya.',
+        'quota_exceeded' => 'Yükleme reddedildi: depolama kotası aşıldı (kullanılan: :used MB, gelen: :incoming MB, kota: :quota MB).',
         'too_large' => 'Dosya çok büyük — sunucu yükleme limitini aşıyor.',
         'copy_failed' => 'Dosya çoğaltılamadı.',
         'invalid_favoritable_type' => 'Geçersiz favori öğe tipi.',

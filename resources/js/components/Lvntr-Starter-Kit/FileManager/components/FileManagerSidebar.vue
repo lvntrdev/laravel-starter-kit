@@ -121,8 +121,9 @@
     <aside
         class="fm-sidebar flex h-full w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r border-surface-200 bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900"
     >
-        <!-- Storage usage card -->
+        <!-- Storage usage card — sadece kota tanımlıyken göster -->
         <div
+            v-if="quotaBytes > 0"
             class="flex flex-col items-center gap-3 rounded-2xl border border-surface-200 bg-gradient-to-br from-primary-50 to-surface-0 p-4 text-center dark:border-surface-700 dark:from-primary-950/30 dark:to-surface-900"
         >
             <div class="relative h-28 w-28">

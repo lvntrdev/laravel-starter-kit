@@ -172,10 +172,9 @@
         return latest;
     });
 
-    // Storage quota — hardcoded 10 GB until a per-owner quota setting is wired up.
-    const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
     // Use storage_used (all collections) when available; fall back to current-view total_size.
     const usedBytes = computed(() => fm.contents.stats.storage_used ?? fm.contents.stats.total_size);
+    const quotaBytes = computed(() => fm.contents.stats.storage_quota ?? 0);
 
     function humanSize(bytes: number): string {
         if (!bytes) return '0 B';
@@ -1146,7 +1145,7 @@
                 :current-folder-id="fm.currentFolderId.value"
                 :quick-view="quickView"
                 :used-bytes="usedBytes"
-                :quota-bytes="STORAGE_QUOTA_BYTES"
+                :quota-bytes="quotaBytes"
                 :readonly="readonly"
                 :enable-trash="enableTrash"
                 @select-quick="onSelectQuick"

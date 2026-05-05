@@ -53,7 +53,8 @@
                 aws_endpoint: string | null;
             };
             file_manager: {
-                max_size_kb: number;
+                max_size_mb: number;
+                storage_quota_mb: number;
                 accepted_mimes: string[];
                 allow_video: boolean;
                 allow_audio: boolean;

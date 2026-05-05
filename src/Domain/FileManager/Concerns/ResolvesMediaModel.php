@@ -2,7 +2,6 @@
 
 namespace Lvntr\StarterKit\Domain\FileManager\Concerns;
 
-use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -31,21 +30,27 @@ trait ResolvesMediaModel
     }
 
     /**
-     * Total bytes consumed by ALL media belonging to this context owner,
-     * across every collection (file manager, avatars, form uploads, etc.).
-     * Used for the storage-usage indicator in the sidebar.
+     * Total bytes consumed by ALL media in the system, across every owner /
+     * collection / context, including soft-deleted (trash) entries —
+     * represents true disk usage for quota accounting.
      */
-    protected function computeStorageUsed(FileManagerContextDTO $context): int
+    protected function computeStorageUsed(): int
     {
         $mediaModel = $this->mediaModel();
 
         /** @var object{s: int|string}|null $row */
-        $row = $mediaModel::query()
-            ->where('model_type', $context->ownerType)
-            ->where('model_id', $context->ownerId)
+        $row = $mediaModel::withTrashed()
             ->selectRaw('coalesce(sum(size), 0) as s')
             ->first();
 
         return $row ? (int) $row->s : 0;
+    }
+
+    /**
+     * Maximum allowed storage in bytes, read from config.
+     */
+    protected function storageQuotaBytes(): int
+    {
+        return (int) config('file-manager.settings.storage_quota_mb', 10240) * 1024 * 1024;
     }
 }

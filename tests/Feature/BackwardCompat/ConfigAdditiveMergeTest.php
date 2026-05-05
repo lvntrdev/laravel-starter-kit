@@ -37,14 +37,17 @@ it('ships every documented file-manager.php key', function (): void {
     expect($config['models'])->toHaveKey('favorite');
     expect($config['models'])->toHaveKey('global_bucket');
 
-    // Upload settings introduced in Task 6 — UploadFileRequest reads these.
-    expect($config['settings'])->toHaveKey('max_size_kb');
+    // Upload settings — UploadFileRequest reads these.
+    // Note: renamed max_size_kb → max_size_mb in v13.6.0.
+    expect($config['settings'])->toHaveKey('max_size_mb');
+    expect($config['settings'])->toHaveKey('storage_quota_mb');
     expect($config['settings'])->toHaveKey('accepted_mimes');
     expect($config['settings'])->toHaveKey('allow_video');
     expect($config['settings'])->toHaveKey('allow_audio');
 
     // Default values — pin the contract for fresh installs.
-    expect($config['settings']['max_size_kb'])->toBe(10240);
+    expect($config['settings']['max_size_mb'])->toBe(10);
+    expect($config['settings']['storage_quota_mb'])->toBe(10240);
     expect($config['settings']['accepted_mimes'])->toBeNull();
     expect($config['settings']['allow_video'])->toBeFalse();
     expect($config['settings']['allow_audio'])->toBeFalse();
@@ -88,7 +91,8 @@ it('merges file-manager config into the runtime container', function (): void {
     expect(config('file-manager.models.folder'))->not->toBeNull();
     expect(config('file-manager.models.favorite'))->not->toBeNull();
     expect(config('file-manager.models.global_bucket'))->not->toBeNull();
-    expect(config('file-manager.settings.max_size_kb'))->toBe(10240);
+    expect(config('file-manager.settings.max_size_mb'))->toBe(10);
+    expect(config('file-manager.settings.storage_quota_mb'))->toBe(10240);
 });
 
 it('merges starter-kit config into the runtime container', function (): void {

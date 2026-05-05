@@ -42,11 +42,13 @@ return [
     | populate these via their SettingsServiceProvider by writing DB-stored
     | values into config('file-manager.settings.*') at boot time.
     |
-    | max_size_mb      — Maximum allowed upload size in megabytes (default 10 MB).
-    | accepted_mimes   — Array of accepted MIME types, or null to use built-in
-    |                    defaults. Overridden by admin settings at runtime.
-    | allow_video      — Whether video MIME types are accepted.
-    | allow_audio      — Whether audio MIME types are accepted.
+    | max_size_mb        — Maximum allowed upload size in megabytes (default 10 MB).
+    | accepted_mimes     — Array of accepted MIME types, or null to use built-in
+    |                      defaults. Overridden by admin settings at runtime.
+    | allow_video        — Whether video MIME types are accepted.
+    | allow_audio        — Whether audio MIME types are accepted.
+    | storage_quota_mb   — MB cinsinden, tüm Media kayıtları üzerinde tek bir
+    |                      disk-genel kota (default 10 GB = 10240 MB).
     |
     */
 
@@ -55,6 +57,7 @@ return [
         'accepted_mimes' => null,
         'allow_video' => false,
         'allow_audio' => false,
+        'storage_quota_mb' => 10240,
     ],
 
 ];

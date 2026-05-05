@@ -21,7 +21,7 @@ class FavoritesContentsQuery
      *     folder: null,
      *     folders: array<int, array<string, mixed>>,
      *     files: array<int, array<string, mixed>>,
-     *     stats: array{file_count: int, total_size: int, storage_used: int},
+     *     stats: array{file_count: int, total_size: int, storage_used: int, storage_quota: int},
      * }
      */
     public function execute(FileManagerContextDTO $context): array
@@ -96,7 +96,8 @@ class FavoritesContentsQuery
             'stats' => [
                 'file_count' => $mediaModels->count(),
                 'total_size' => (int) $mediaModels->sum('size'),
-                'storage_used' => $this->computeStorageUsed($context),
+                'storage_used' => $this->computeStorageUsed(),
+                'storage_quota' => $this->storageQuotaBytes(),
             ],
         ];
     }

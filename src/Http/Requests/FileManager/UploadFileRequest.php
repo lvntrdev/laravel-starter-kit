@@ -2,8 +2,13 @@
 
 namespace Lvntr\StarterKit\Http\Requests\FileManager;
 
+use Illuminate\Validation\Validator;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
+
 class UploadFileRequest extends FileManagerRequest
 {
+    use ResolvesMediaModel;
+
     /**
      * Baseline MIME list used when no settings are configured yet,
      * so the uploader never crashes with "mimetypes:" on a fresh install.
@@ -103,6 +108,54 @@ class UploadFileRequest extends FileManagerRequest
             'files.*.file' => trans('sk-file-manager.errors.upload_invalid_file'),
             'files.*.required' => trans('sk-file-manager.errors.upload_invalid_file'),
         ];
+    }
+
+    /**
+     * Kota kontrolü: mevcut disk kullanımı + gelen dosyalar toplamı kotayı
+     * aşıyorsa `files` alanına validation hatası ekle.
+     *
+     * withTrashed dahil toplam kullanım, gerçek disk doluluk.
+     */
+    protected function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $files = $this->file('files');
+            if (! is_array($files) || $files === []) {
+                return;
+            }
+
+            $incoming = 0;
+            foreach ($files as $file) {
+                if ($file === null) {
+                    continue;
+                }
+                $incoming += (int) $file->getSize();
+            }
+
+            $current = $this->computeStorageUsed();
+            $quota   = $this->storageQuotaBytes();
+
+            if ($current + $incoming > $quota) {
+                $validator->errors()->add('files', trans('sk-file-manager.errors.quota_exceeded', [
+                    'used'     => $this->mb($current),
+                    'incoming' => $this->mb($incoming),
+                    'quota'    => $this->mb($quota),
+                ]));
+            }
+        });
+    }
+
+    /**
+     * Byte değerini kullanıcıya gösterilecek MB string'ine çevirir.
+     * 10 MB altı için 1 ondalık basamak, üstü için tam sayıya yuvarlar.
+     */
+    private function mb(int $bytes): string
+    {
+        $mb = $bytes / (1024 * 1024);
+
+        return $mb < 10
+            ? number_format($mb, 1)
+            : (string) (int) round($mb);
     }
 
     protected function humanMaxSize(): string

@@ -156,6 +156,9 @@ class SettingsServiceProvider extends ServiceProvider
             if (isset($fileManager['max_size_mb'])) {
                 config(['file-manager.settings.max_size_mb' => (int) $fileManager['max_size_mb']]);
             }
+            if (isset($fileManager['storage_quota_mb'])) {
+                config(['file-manager.settings.storage_quota_mb' => (int) $fileManager['storage_quota_mb']]);
+            }
             if (isset($fileManager['accepted_mimes'])) {
                 $mimes = $fileManager['accepted_mimes'];
                 if (is_string($mimes)) {
