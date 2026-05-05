@@ -12,3 +12,13 @@ composer.lock
 *.swp
 *.swo
 .DS_Store
+CLAUDE.local.md
+.claude/settings.local.json
+plan-docs/
+.claude
+.agents
+.cursor
+AGENTS.md
+CLAUDE.md
+.ai
+package-audit-notes/

@@ -5,7 +5,7 @@ namespace App\Domain\Logs\Actions;
 use App\Domain\Logs\DTOs\DeleteLogFilesDTO;
 use App\Domain\Logs\Events\LogFilesDeleted;
 use App\Domain\Logs\Queries\LogFileQuery;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\File;
 
 /**

@@ -3,7 +3,7 @@
 namespace App\Domain\Auth\Actions;
 
 use App\Domain\Auth\DTOs\LoginDTO;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

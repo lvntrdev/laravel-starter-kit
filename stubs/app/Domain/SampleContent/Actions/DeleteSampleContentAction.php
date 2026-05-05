@@ -3,7 +3,7 @@
 namespace App\Domain\SampleContent\Actions;
 
 use App\Domain\SampleContent\Events\SampleContentDeleted;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\SampleContent;
 
 /**

@@ -2,7 +2,7 @@
 
 namespace App\Domain\User\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Domain\User\Events\UserDeleted;
 use App\Models\User;
 

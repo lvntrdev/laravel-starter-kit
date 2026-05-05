@@ -3,7 +3,7 @@
 namespace App\Domain\Role\Actions;
 
 use App\Domain\Role\Events\RoleDeleted;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Enums\RoleEnum;
 use App\Models\Role;
 

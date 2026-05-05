@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Domain\FileManager\Support\ContextRegistry;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;

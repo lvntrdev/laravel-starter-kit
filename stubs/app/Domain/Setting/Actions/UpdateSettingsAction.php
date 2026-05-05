@@ -2,8 +2,8 @@
 
 namespace App\Domain\Setting\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
-use App\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 use App\Models\Setting;
 
 /**

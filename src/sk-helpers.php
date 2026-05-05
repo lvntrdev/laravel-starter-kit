@@ -1,6 +1,6 @@
 <?php
 
-use App\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

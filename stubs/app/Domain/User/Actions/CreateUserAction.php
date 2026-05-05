@@ -2,7 +2,7 @@
 
 namespace App\Domain\User\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Domain\User\DTOs\UserDTO;
 use App\Domain\User\Events\UserCreated;
 use App\Models\User;

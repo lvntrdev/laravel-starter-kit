@@ -3,7 +3,7 @@
 namespace App\Domain\ApiRoute\Actions;
 
 use App\Domain\ApiRoute\Support\OpenApiExporter;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Exceptions\ApiException;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;

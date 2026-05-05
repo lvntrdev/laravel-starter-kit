@@ -2,7 +2,7 @@
 
 namespace App\Domain\User\DTOs;
 
-use App\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 
 /**
  * Data Transfer Object for creating or updating a user.

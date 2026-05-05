@@ -2,7 +2,7 @@
 
 namespace App\Domain\Role\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Database\Seeders\_01_RolePermissionSeeder;
 use Illuminate\Support\Facades\Artisan;
 

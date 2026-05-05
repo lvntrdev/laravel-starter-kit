@@ -2,7 +2,7 @@
 
 namespace App\Domain\Setting\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\Mail;
 
 /**

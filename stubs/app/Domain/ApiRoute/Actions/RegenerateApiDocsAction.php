@@ -2,7 +2,7 @@
 
 namespace App\Domain\ApiRoute\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\Artisan;
 
 /**

@@ -4,7 +4,7 @@ namespace App\Domain\SampleContent\Actions;
 
 use App\Domain\SampleContent\DTOs\SampleContentDTO;
 use App\Domain\SampleContent\Events\SampleContentCreated;
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\SampleContent;
 
 /**

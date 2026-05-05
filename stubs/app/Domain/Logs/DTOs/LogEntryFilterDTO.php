@@ -2,7 +2,7 @@
 
 namespace App\Domain\Logs\DTOs;
 
-use App\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 use Carbon\Carbon;
 
 /**

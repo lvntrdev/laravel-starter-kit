@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use App\Models\Definition;
 use Illuminate\Database\Seeder;
 

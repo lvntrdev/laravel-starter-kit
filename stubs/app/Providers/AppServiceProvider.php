@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Domain\FileManager\Support\ContextRegistry;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use App\Listeners\UpdateLastLogin;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Illuminate\Auth\Events\Login;

@@ -2,7 +2,7 @@
 
 namespace App\Domain\Auth\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 
 /**

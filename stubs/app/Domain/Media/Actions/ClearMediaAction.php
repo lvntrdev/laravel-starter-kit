@@ -2,7 +2,7 @@
 
 namespace App\Domain\Media\Actions;
 
-use App\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Database\Eloquent\Model;
 
 /**

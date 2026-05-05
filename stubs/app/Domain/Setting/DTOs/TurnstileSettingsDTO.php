@@ -2,7 +2,7 @@
 
 namespace App\Domain\Setting\DTOs;
 
-use App\Domain\Shared\DTOs\BaseDTO;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 
 /**
  * Data Transfer Object for turnstile settings.
