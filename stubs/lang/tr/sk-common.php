@@ -25,6 +25,10 @@ return [
     'hide_password' => 'Şifreyi gizle',
     'error' => 'Hata',
 
+    'confirmation' => 'Onay',
+    'confirm_delete_header' => 'Silme Onayı',
+    'confirm_delete_message' => 'Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+
     'placeholder' => [
         'select_role' => 'Rol Seçin',
         'select_status' => 'Durum Seçin',

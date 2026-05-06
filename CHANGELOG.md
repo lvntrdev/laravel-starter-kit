@@ -5,7 +5,36 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.5.2] - 2026-05-06
+
+### Added
+
+- **`Admin/Settings` — `SecurityTab.vue`** Authentication ve Cloudflare Turnstile bölümlerini tek sekmede birleştirir. Eski `AuthTab.vue` ve `TurnstileTab.vue` stub'ları kaldırıldı.
+- **`Admin/Settings/components/StorageQuotaCard.vue`** — Disk-genel depolama kotası kullanımını progress bar ile gösteren yeni card component'i.
+- **`SettingsDefaultsQuery`** artık Inertia payload'ında `storage_usage` (`used_bytes`, `quota_bytes`) döndürür.
+- i18n (`sk-setting`): `security.auth_section_title`, `security.turnstile_section_title`, `storage.usage_card_title`, `storage.usage_label`, `storage.unlimited`, `file_manager.video_label`, `file_manager.audio_label`, `file_manager.video_hint`, `file_manager.audio_hint` key'leri eklendi.
+- i18n (`sk-file-manager`): `labels.filter.all`, `labels.filter.image`, `labels.filter.video`, `labels.filter.pdf`, `labels.filter.audio`, `labels.filter.archive` — FileManager filtre pill'leri için i18n key'leri eklendi.
+- i18n (`sk-common`): `confirmation`, `confirm_delete_header`, `confirm_delete_message` — `useConfirm` composable için i18n key'leri eklendi.
+
+### Changed
+
+- **`sk-setting.tabs.auth`** label "Security" / "Güvenlik Ayarları" olarak güncellendi.
+- **`sk-setting.tab_descriptions.auth`** "Registration, 2FA, verification and CAPTCHA" olarak güncellendi.
+- **File Manager tab** — Video/Audio yüklemeleri ToggleFeatureCard yerine Images ile aynı checkbox-grid tasarımına dönüştü.
+- **FileManager bileşenlerinde minimum metin boyutu `text-lg` (14 px) olarak standardize edildi.** `FileManager.vue`, `FileGrid.vue`, `FileManagerSidebar.vue`, `FileManagerStats.vue` içindeki tüm küçük metin sınıfları (`text-xs`, `text-sm`, `text-[11px]` vb.) kaldırıldı.
+- **`useConfirm` composable** — sabit İngilizce string'ler `trans()` çağrılarına dönüştürüldü; `confirmDelete` başlık ve mesajı artık `sk-common` key'lerinden geliyor.
+- **`Admin/Files/Index.vue`** — `<FileManager>` çevresindeki gereksiz sarıcı `<div>` kaldırıldı.
+
+### Fixed
+
+- **`TrashContentsQuery`** — Çöp kutusu artık yalnızca kök seviyedeki silinmiş öğeleri listeler. Üst klasörü de çöp kutusunda olan alt klasör ve dosyalar ayrı öğe olarak görünüyordu; bu da tekil ve toplu geri yüklemede "Cannot restore: the parent folder is also in trash" hatasına yol açıyordu. Kök filtreleme, cascade geri yüklemenin her zaman ağacın tepesinden başlamasını sağlar.
+
+### Removed
+
+- **`Admin/Settings/components/AuthTab.vue`** — içeriği `SecurityTab.vue`'a taşındı. `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
+- **`Admin/Settings/components/TurnstileTab.vue`** — içeriği `SecurityTab.vue`'a taşındı. `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
+- **`sk-setting.tabs.turnstile`**, **`sk-setting.tab_descriptions.turnstile`** i18n key'leri kaldırıldı.
+- **`sk-setting.file_manager.media_cards.*`** i18n key grubu kaldırıldı (eski ToggleFeatureCard render'ına aitti; artık kullanılmıyor).
 
 ## [13.5.1] - 2026-05-05
 

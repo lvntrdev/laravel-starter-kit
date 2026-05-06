@@ -6,25 +6,33 @@
     import { trans } from 'laravel-vue-i18n';
 
     interface Props {
-        settings: {
+        authSettings: {
             registration: boolean;
             email_verification: boolean;
             two_factor: boolean;
             password_reset: boolean;
         };
+        turnstileSettings: {
+            enabled: boolean;
+            site_key: string | null;
+            secret_key: null;
+            secret_key_is_set: boolean;
+        };
     }
 
     const props = defineProps<Props>();
-    const { confirmAction } = useConfirm();
-    const formRef = ref<InstanceType<typeof SkForm>>();
 
-    const formConfig = computed(() =>
+    /* ── Authentication section ── */
+    const { confirmAction } = useConfirm();
+    const authFormRef = ref<InstanceType<typeof SkForm>>();
+
+    const authFormConfig = computed(() =>
         FB.form()
             .layout('vertical')
             .cols(1)
             .cardTitle('sk-setting.auth.title')
             .cardSubtitle('sk-setting.auth.subtitle')
-            .initialData(props.settings)
+            .initialData(props.authSettings)
             .submit({
                 url: adminSettings.update.auth.url(),
                 method: 'put',
@@ -44,7 +52,7 @@
      * show a warning that all users' 2FA will be revoked.
      */
     watch(
-        () => formRef.value?.currentValues?.two_factor,
+        () => authFormRef.value?.currentValues?.two_factor,
         (newVal, oldVal) => {
             if (oldVal === true && newVal === false) {
                 confirmAction({
@@ -57,14 +65,50 @@
                         // User confirmed — value stays false, they can submit normally
                     },
                     onReject: () => {
-                        formRef.value?.setValue('two_factor', true);
+                        authFormRef.value?.setValue('two_factor', true);
                     },
                 });
             }
         },
     );
+
+    /* ── Cloudflare Turnstile section ── */
+    const secretKeyPlaceholder = computed(() => (props.turnstileSettings.secret_key_is_set ? '••••••••' : ''));
+
+    const turnstileFormConfig = computed(() =>
+        FB.form()
+            .layout('vertical')
+            .cols(1)
+            .cardTitle('sk-setting.turnstile.title')
+            .cardSubtitle('sk-setting.turnstile.subtitle')
+            .initialData({
+                enabled: props.turnstileSettings.enabled,
+                site_key: props.turnstileSettings.site_key ?? '',
+                // Never prefill stored secret — backend preserves it when
+                // this field is submitted empty.
+                secret_key: '',
+            })
+            .submit({
+                url: adminSettings.update.turnstile.url(),
+                method: 'put',
+                preserveScroll: true,
+            })
+            .addFields(
+                FB.toggleSwitch().key('enabled').hint(trans('sk-setting.turnstile.enabled_hint')),
+                FB.inputText().key('site_key').label('sk-setting.turnstile.site_key_label'),
+                FB.password()
+                    .key('secret_key')
+                    .label('sk-setting.turnstile.secret_key_label')
+                    .toggleMask()
+                    .placeholder(secretKeyPlaceholder.value),
+            )
+            .build(),
+    );
 </script>
 
 <template>
-    <SkForm ref="formRef" :config="formConfig" />
+    <div class="space-y-6">
+        <SkForm ref="authFormRef" :config="authFormConfig" />
+        <SkForm :config="turnstileFormConfig" />
+    </div>
 </template>

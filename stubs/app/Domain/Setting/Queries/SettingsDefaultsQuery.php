@@ -4,12 +4,15 @@ namespace App\Domain\Setting\Queries;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Storage;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 
 /**
  * Query: Resolve settings with config fallbacks for each group.
  */
 class SettingsDefaultsQuery
 {
+    use ResolvesMediaModel;
+
     /**
      * Get all settings groups with defaults.
      *
@@ -26,6 +29,10 @@ class SettingsDefaultsQuery
             'turnstile' => $this->turnstile(),
             'postman' => $this->postman(),
             'apidog' => $this->apidog(),
+            'storage_usage' => [
+                'used_bytes' => $this->computeStorageUsed(),
+                'quota_bytes' => $this->storageQuotaBytes(),
+            ],
         ];
     }
 

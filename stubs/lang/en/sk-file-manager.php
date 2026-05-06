@@ -90,6 +90,15 @@ return [
         'folders_section' => 'Folders',
         'no_results' => 'No items match your search.',
 
+        'filter' => [
+            'all' => 'All',
+            'image' => 'Image',
+            'video' => 'Video',
+            'pdf' => 'PDF',
+            'audio' => 'Audio',
+            'archive' => 'Archive',
+        ],
+
         'sidebar' => [
             'storage_usage' => 'Storage Usage',
             'storage_used_of' => ':used / :total',

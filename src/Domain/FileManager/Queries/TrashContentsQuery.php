@@ -30,11 +30,23 @@ class TrashContentsQuery
         /** @var class-string<Model> $folderModel */
         $folderModel = config('file-manager.models.folder', 'App\\Models\\FileFolder');
 
-        $folderModels = $folderModel::onlyTrashed()
+        $allTrashedFolders = $folderModel::onlyTrashed()
             ->where('owner_type', $context->ownerType)
             ->where('owner_id', $context->ownerId)
             ->orderBy('deleted_at', 'desc')
             ->get();
+
+        // Collect all trashed folder IDs so we can filter out nested children.
+        // A folder whose parent is also trashed cannot be restored independently —
+        // restoring the parent cascades down. Showing children separately is confusing
+        // and triggers the "restore_parent_trashed" error on every attempt.
+        $trashedFolderIds = $allTrashedFolders->map(fn (Model $f) => (string) $f->getKey())->flip()->all();
+
+        $folderModels = $allTrashedFolders->filter(function (Model $folder) use ($trashedFolderIds) {
+            $parentId = $folder->getAttribute('parent_id');
+
+            return $parentId === null || ! isset($trashedFolderIds[(string) $parentId]);
+        })->values();
 
         $folders = $folderModels
             ->map(fn (Model $folder) => [
@@ -50,12 +62,18 @@ class TrashContentsQuery
             ->all();
 
         $mediaModel = $this->mediaModel();
-        $mediaModels = $mediaModel::onlyTrashed()
+        $allTrashedMedia = $mediaModel::onlyTrashed()
             ->where('model_type', $context->ownerType)
             ->where('model_id', $context->ownerId)
             ->where('collection_name', 'files')
             ->orderBy('deleted_at', 'desc')
             ->get();
+
+        // Hide files whose parent folder is also in trash — the folder restore will
+        // cascade-restore them automatically.
+        $mediaModels = $allTrashedMedia->filter(function (Media $media) use ($trashedFolderIds) {
+            return $media->folder_id === null || ! isset($trashedFolderIds[(string) $media->folder_id]);
+        })->values();
 
         $files = $mediaModels
             ->map(function (Media $media) {

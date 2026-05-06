@@ -84,16 +84,16 @@
     function paletteFor(mime: string): Palette {
         if (mime.startsWith('image/')) {
             return {
-                preview: 'bg-slate-900',
+                preview: 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/40 dark:to-emerald-950/20',
                 icon: 'pi pi-image',
-                iconColor: 'text-pink-400',
-                badge: 'bg-pink-500',
-                iconClass: 'text-pink-500',
+                iconColor: 'text-emerald-600',
+                badge: 'bg-emerald-500',
+                iconClass: 'text-emerald-500',
             };
         }
         if (mime === 'application/pdf') {
             return {
-                preview: 'bg-rose-50 dark:bg-rose-950/40',
+                preview: 'bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-950/40 dark:to-red-950/20',
                 icon: 'pi pi-file-pdf',
                 iconColor: 'text-rose-500',
                 badge: 'bg-rose-500',
@@ -102,25 +102,25 @@
         }
         if (mime.startsWith('video/')) {
             return {
-                preview: 'bg-slate-800',
+                preview: 'bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-950 dark:to-black',
                 icon: 'pi pi-video',
                 iconColor: 'text-white',
-                badge: 'bg-purple-500',
-                iconClass: 'text-purple-500',
+                badge: 'bg-violet-500',
+                iconClass: 'text-violet-500',
             };
         }
         if (mime.startsWith('audio/')) {
             return {
-                preview: 'bg-amber-50 dark:bg-amber-950/40',
+                preview: 'bg-gradient-to-br from-pink-50 to-fuchsia-100 dark:from-pink-950/40 dark:to-fuchsia-950/20',
                 icon: 'pi pi-volume-up',
-                iconColor: 'text-amber-500',
-                badge: 'bg-amber-500',
-                iconClass: 'text-amber-500',
+                iconColor: 'text-pink-500',
+                badge: 'bg-pink-500',
+                iconClass: 'text-pink-500',
             };
         }
         if (mime.includes('word')) {
             return {
-                preview: 'bg-blue-50 dark:bg-blue-950/40',
+                preview: 'bg-gradient-to-br from-blue-50 to-sky-100 dark:from-blue-950/40 dark:to-sky-950/20',
                 icon: 'pi pi-file-word',
                 iconColor: 'text-blue-500',
                 badge: 'bg-blue-500',
@@ -129,7 +129,7 @@
         }
         if (mime.includes('excel') || mime.includes('spreadsheet')) {
             return {
-                preview: 'bg-emerald-50 dark:bg-emerald-950/40',
+                preview: 'bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-950/40 dark:to-teal-950/20',
                 icon: 'pi pi-file-excel',
                 iconColor: 'text-emerald-500',
                 badge: 'bg-emerald-500',
@@ -138,16 +138,16 @@
         }
         if (mime.includes('zip') || mime.includes('compressed') || mime.includes('archive')) {
             return {
-                preview: 'bg-amber-100 dark:bg-amber-950/40',
+                preview: 'bg-gradient-to-br from-indigo-50 to-violet-100 dark:from-indigo-950/40 dark:to-violet-950/20',
                 icon: 'pi pi-box',
-                iconColor: 'text-amber-600',
-                badge: 'bg-amber-600',
-                iconClass: 'text-amber-600',
+                iconColor: 'text-indigo-600',
+                badge: 'bg-indigo-500',
+                iconClass: 'text-indigo-500',
             };
         }
         if (mime.startsWith('text/')) {
             return {
-                preview: 'bg-slate-50 dark:bg-slate-900',
+                preview: 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800',
                 icon: 'pi pi-file-edit',
                 iconColor: 'text-slate-500',
                 badge: 'bg-slate-500',
@@ -155,7 +155,7 @@
             };
         }
         return {
-            preview: 'bg-slate-50 dark:bg-slate-900',
+            preview: 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800',
             icon: 'pi pi-file',
             iconColor: 'text-slate-500',
             badge: 'bg-slate-500',
@@ -353,7 +353,7 @@
 <template>
     <div
         ref="gridRef"
-        class="fm-file-grid relative h-full w-full overflow-auto p-5"
+        class="fm-file-grid relative w-full"
         @mousedown="onGridMouseDown"
         @contextmenu="onGridContextMenu"
     >
@@ -400,11 +400,26 @@
         </div>
 
         <template v-else-if="viewMode === 'grid'">
+            <!-- Folders section -->
+            <template v-if="folders.length > 0">
+                <div class="mb-3 flex flex-wrap items-center gap-3">
+                    <div class="flex min-w-0 flex-col">
+                        <h3 class="text-[15px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
+                            {{ trans('sk-file-manager.labels.folders_section') }}
+                        </h3>
+                        <span class="text-lg text-surface-400 dark:text-surface-500">
+                            {{ folders.length }} {{ trans('sk-file-manager.labels.sidebar.folders').toLowerCase() }}
+                        </span>
+                    </div>
+                    <div class="ml-auto flex flex-wrap items-center gap-2">
+                        <slot name="folders-actions" />
+                    </div>
+                </div>
+
             <!-- Folders -->
             <div
-                v-if="folders.length > 0"
-                class="mb-5 grid gap-4"
-                style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))"
+                class="mb-5 grid gap-2.5"
+                style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr))"
             >
                 <div
                     v-for="folder in folders"
@@ -413,7 +428,7 @@
                     tabindex="0"
                     :draggable="!props.readonly"
                     :data-fm-key="`folder:${folder.id}`"
-                    class="fm-tile fm-folder-tile group relative flex flex-col gap-3 rounded-2xl p-5 text-left transition-all"
+                    class="fm-tile fm-folder-tile group relative flex flex-col gap-2 rounded-[6px] border border-surface-200/60 p-3 text-left shadow-sm transition-all dark:border-surface-700/60"
                     :class="[
                         isSelected('folder', folder.id)
                             ? 'bg-primary-100 ring-2 ring-primary-400 dark:bg-primary-950/50'
@@ -480,31 +495,47 @@
 
                     <!-- Icon square -->
                     <div
-                        class="flex h-14 w-14 items-center justify-center rounded-xl bg-white/70 dark:bg-surface-900/60"
+                        class="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/80 dark:bg-surface-900/60"
                     >
                         <i
                             class="pi pi-folder-open"
                             :class="folderPalette(folder.id).icon"
-                            style="font-size: 1.75rem"
+                            style="font-size: 1.05rem"
                         />
                     </div>
 
                     <div class="min-w-0">
-                        <div class="truncate font-semibold" :title="folder.name">
+                        <div class="truncate text-lg font-semibold tracking-tight" :title="folder.name">
                             {{ folder.name }}
                         </div>
-                        <div class="mt-0.5 text-surface-500 dark:text-surface-400">
+                        <div class="mt-0.5 text-lg text-surface-500 dark:text-surface-400">
                             {{ folder.file_count ?? 0 }} files · {{ humanSize(folder.total_size ?? 0) }}
                         </div>
                     </div>
                 </div>
             </div>
+            </template>
+
+            <!-- Files section -->
+            <template v-if="files.length > 0 || pending.length > 0">
+                <div class="mb-3 flex flex-wrap items-center gap-3">
+                    <div class="flex min-w-0 flex-col">
+                        <h3 class="text-[15px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
+                            {{ trans('sk-file-manager.labels.files_section') }}
+                        </h3>
+                        <span class="text-lg text-surface-400 dark:text-surface-500">
+                            {{ files.length + pending.length }} {{ trans('sk-file-manager.labels.stats.item_count', { count: '' }).trim() || 'öge' }}
+                        </span>
+                    </div>
+                    <div class="ml-auto flex flex-wrap items-center gap-2">
+                        <slot name="files-actions" />
+                    </div>
+                </div>
 
             <!-- Files + pending uploads -->
             <div
-                v-if="files.length > 0 || pending.length > 0"
-                class="grid gap-4"
-                style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))"
+                class="grid gap-3"
+                style="grid-template-columns: repeat(auto-fill, minmax(190px, 1fr))"
             >
                 <div
                     v-for="file in files"
@@ -513,7 +544,7 @@
                     tabindex="0"
                     :draggable="!props.readonly"
                     :data-fm-key="`file:${file.id}`"
-                    class="fm-tile fm-file-tile group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all"
+                    class="fm-tile fm-file-tile group relative flex flex-col overflow-hidden rounded-[6px] border text-left shadow-sm transition-all"
                     :class="[
                         isSelected('file', file.id)
                             ? 'border-primary-500 ring-2 ring-primary-200 dark:ring-primary-800'
@@ -529,7 +560,8 @@
                 >
                     <!-- Preview area -->
                     <div
-                        class="fm-preview relative flex h-32 items-center justify-center overflow-hidden"
+                        class="fm-preview relative flex items-center justify-center overflow-hidden"
+                        style="aspect-ratio: 16/11"
                         :class="paletteFor(file.mime_type).preview"
                     >
                         <img
@@ -539,16 +571,20 @@
                             class="h-full w-full object-cover"
                         >
                         <template v-else>
-                            <i
-                                class="pi"
-                                :class="[paletteFor(file.mime_type).icon, paletteFor(file.mime_type).iconColor]"
-                                style="font-size: 2.75rem"
-                            />
+                            <span
+                                class="flex h-12 w-12 items-center justify-center rounded-[6px] bg-white/90 shadow-sm dark:bg-surface-900/80"
+                            >
+                                <i
+                                    class="pi"
+                                    :class="[paletteFor(file.mime_type).icon, paletteFor(file.mime_type).iconClass]"
+                                    style="font-size: 1.5rem"
+                                />
+                            </span>
                             <span
                                 v-if="isVideo(file.mime_type)"
-                                class="absolute flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm"
+                                class="absolute flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-md"
                             >
-                                <i class="pi pi-play text-white" style="font-size: 1.2rem" />
+                                <i class="pi pi-play text-surface-900" style="font-size: 1rem" />
                             </span>
                         </template>
 
@@ -601,28 +637,33 @@
                     </div>
 
                     <!-- Info bar -->
-                    <div class="flex items-center gap-2.5 bg-surface-0 px-3 py-2.5 dark:bg-surface-900">
-                        <i
-                            class="pi shrink-0"
-                            :class="[paletteFor(file.mime_type).icon, paletteFor(file.mime_type).iconClass]"
-                            style="font-size: 1rem"
-                        />
+                    <div class="flex items-center gap-2 border-t border-surface-200 bg-surface-0 px-2.5 py-2 dark:border-surface-700 dark:bg-surface-900">
+                        <span
+                            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px]"
+                            :class="paletteFor(file.mime_type).preview"
+                        >
+                            <i
+                                class="pi"
+                                :class="[paletteFor(file.mime_type).icon, paletteFor(file.mime_type).iconClass]"
+                                style="font-size: 0.78rem"
+                            />
+                        </span>
                         <div class="min-w-0 flex-1">
-                            <div class="truncate font-medium" :title="file.file_name">
+                            <div class="truncate text-lg font-semibold tracking-tight" :title="file.file_name">
                                 {{ file.file_name }}
                             </div>
-                            <div class="text-surface-500 dark:text-surface-400">
-                                {{ humanSize(file.size) }}
-                                <span v-if="file.created_at" class="mx-0.5">·</span>
+                            <div class="flex items-center gap-1 text-lg text-surface-400 dark:text-surface-500">
+                                <span>{{ humanSize(file.size) }}</span>
+                                <span v-if="file.created_at" class="inline-block h-[3px] w-[3px] rounded-full bg-current opacity-50" />
                                 <span v-if="file.created_at">{{ relativeDate(file.created_at) }}</span>
                             </div>
                         </div>
                         <button
                             type="button"
-                            class="shrink-0 rounded p-1 text-surface-400 opacity-0 transition-opacity hover:bg-surface-100 hover:text-surface-700 group-hover:opacity-100 dark:hover:bg-surface-800 dark:hover:text-surface-200"
+                            class="shrink-0 rounded-[4px] p-1 text-surface-400 opacity-0 transition-opacity hover:bg-surface-100 hover:text-surface-700 group-hover:opacity-100 dark:hover:bg-surface-800 dark:hover:text-surface-200"
                             @click.stop="emit('download-file', file)"
                         >
-                            <i class="pi pi-download" style="font-size: 0.9rem" />
+                            <i class="pi pi-download" style="font-size: 0.85rem" />
                         </button>
                     </div>
                 </div>
@@ -695,6 +736,7 @@
                     </div>
                 </div>
             </div>
+            </template>
         </template>
 
         <!-- List view -->
@@ -859,12 +901,9 @@
         user-select: none;
     }
     .fm-folder-tile {
-        min-height: 130px;
+        min-height: 110px;
     }
     .fm-pending-tile {
         cursor: default;
-    }
-    .fm-file-tile {
-        min-height: 190px;
     }
 </style>

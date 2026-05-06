@@ -2,6 +2,44 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-06 -v.13.5.2
+
+### Yama sürüm — Ayarlar güvenlik sekmesi birleştirmesi, FileManager geri yükleme düzeltmesi ve i18n iyileştirmeleri
+
+Ayarlar paneli Kimlik Doğrulama ve Turnstile sekmelerini tek **Güvenlik** sekmesinde birleştirdi; disk kullanımını görselleştiren bir Depolama Kotası kartı eklendi. File Manager çöp kutusu geri yükleme hatası giderildi: çöp kutusu artık yalnızca kök seviyedeki silinmiş öğeleri gösteriyor, böylece tekil ve toplu geri yükleme işlemleri "parent in trash" hatasıyla karşılaşmıyor. Tüm File Manager bileşenlerindeki metin boyutları `text-lg` (14 px) olarak standardize edildi, onay diyalogları `trans()` üzerinden çevrildi ve filtre pill etiketleri i18n'e geçirildi. Mevcut uygulamalar `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm run build` çalıştırmalı.
+
+#### Added
+
+- **`SecurityTab.vue`** Kimlik doğrulama ve Cloudflare Turnstile ayarlarını tek sekmede birleştirir; kaldırılan `AuthTab.vue` ve `TurnstileTab.vue` stub'larının yerini alır.
+- **`StorageQuotaCard.vue`** Ayarlar panelinde disk-genel depolama kotası kullanımını progress bar ile gösterir.
+- **`SettingsDefaultsQuery`** artık Inertia payload'ında `storage_usage` (`used_bytes`, `quota_bytes`) döndürür.
+- **i18n key'leri eklendi** — `sk-setting` (güvenlik/depolama bölüm etiketleri), `sk-file-manager` (filtre pill etiketleri: `all`, `image`, `video`, `pdf`, `audio`, `archive`) ve `sk-common` (onay diyalog string'leri).
+
+#### Fixed
+
+- **Çöp kutusu geri yükleme hatası.** `TrashContentsQuery` artık yalnızca kök seviyedeki silinmiş öğeleri döndürüyor. Üst klasörü de çöp kutusunda olan öğeler bağımsız öğe olarak listeleniyordu ve tekil/toplu geri yüklemede "Cannot restore: the parent folder is also in trash" hatasına yol açıyordu. Kök filtresiyle geri yükleme işlemleri her zaman ağacın tepesinden başlar.
+
+#### Changed
+
+- **FileManager minimum metin boyutu** `text-lg` (14 px) olarak `FileManager.vue`, `FileGrid.vue`, `FileManagerSidebar.vue` ve `FileManagerStats.vue` genelinde standardize edildi.
+- **`useConfirm` composable** — onay diyalog string'leri yeni `sk-common` çeviri key'lerini kullanan `trans()` çağrılarına taşındı.
+- **`Admin/Files/Index.vue`** sadeleştirildi — gereksiz sarıcı `<div>` kaldırıldı.
+- **File Manager sekmesi** — Video/Audio yükleme toggle'ları artık görsel açıdan Images ile aynı checkbox-grid tasarımını kullanıyor.
+
+#### Removed
+
+- **`AuthTab.vue`** ve **`TurnstileTab.vue`** stub'ları — içerik `SecurityTab.vue`'a taşındı. `sk:update`, `DEPRECATED_PATHS` üzerinden otomatik temizler.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+---
+
 ## 2026-05-05 -v.13.5.0
 
 ### Major sürüm — Vendor-first runtime ve frontend UI lib taşıması

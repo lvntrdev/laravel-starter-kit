@@ -82,18 +82,18 @@
 </script>
 
 <template>
-    <div class="fm-stats grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr))">
+    <div class="fm-stats grid gap-2.5" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
         <div
             v-for="card in cards"
             :key="card.label"
-            class="flex items-center gap-3 rounded-2xl border border-surface-200 bg-surface-0 px-4 py-3 transition-shadow hover:shadow-sm dark:border-surface-700 dark:bg-surface-900"
+            class="flex items-center gap-2.5 rounded-[6px] border border-surface-200 bg-surface-0 px-3 py-2.5 transition-all hover:-translate-y-px hover:border-surface-300 hover:shadow-sm dark:border-surface-700 dark:bg-surface-900 dark:hover:border-surface-600"
         >
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" :class="card.bgClass">
-                <i :class="[card.icon, card.iconClass]" style="font-size: 1.1rem" />
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px]" :class="card.bgClass">
+                <i :class="[card.icon, card.iconClass]" style="font-size: 0.9rem" />
             </span>
-            <div class="flex min-w-0 flex-col">
-                <span class="text-base font-medium text-surface-500 dark:text-surface-400">{{ card.label }}</span>
-                <span class="truncate text-base font-semibold text-surface-900 dark:text-surface-100">
+            <div class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-lg font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500">{{ card.label }}</span>
+                <span class="truncate text-lg font-bold leading-none text-surface-900 dark:text-surface-100">
                     {{ card.value }}
                 </span>
             </div>

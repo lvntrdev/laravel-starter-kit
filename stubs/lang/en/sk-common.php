@@ -25,6 +25,10 @@ return [
     'hide_password' => 'Hide password',
     'error' => 'Error',
 
+    'confirmation' => 'Confirmation',
+    'confirm_delete_header' => 'Delete Confirmation',
+    'confirm_delete_message' => 'Are you sure you want to delete this record? This action cannot be undone.',
+
     'placeholder' => [
         'select_role' => 'Select Role',
         'select_status' => 'Select Status',

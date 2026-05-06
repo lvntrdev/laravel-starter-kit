@@ -6,8 +6,6 @@
     import Button from 'primevue/button';
     import ContextMenu from 'primevue/contextmenu';
     import Dialog from 'primevue/dialog';
-    import IconField from 'primevue/iconfield';
-    import InputIcon from 'primevue/inputicon';
     import InputText from 'primevue/inputtext';
     import ProgressSpinner from 'primevue/progressspinner';
     import Tooltip from 'primevue/tooltip';
@@ -17,7 +15,7 @@
     // reference instead of a dynamic `resolveDirective('tooltip')` call —
     // avoids the "resolveDirective imported but never used" warning in consumer builds.
     const vTooltip = Tooltip;
-    import { computed, onMounted, ref } from 'vue';
+    import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
     import FilePreviewModal, { suggestedPreviewWidth } from '../ui/FilePreviewModal.vue';
     import Breadcrumb from './components/Breadcrumb.vue';
     import FileDetailsDialog from './components/FileDetailsDialog.vue';
@@ -40,7 +38,7 @@
         contextId: null,
         readonly: false,
         enableTrash: true,
-        height: '600px',
+        height: 'auto',
     });
 
     const toast = useToast();
@@ -123,10 +121,68 @@
         return fm.contents.folders.filter((f) => f.name.toLowerCase().includes(q));
     });
 
-    const filteredFiles = computed<FileItem[]>(() => {
+    const searchFilteredFiles = computed<FileItem[]>(() => {
         const q = searchQuery.value.trim().toLowerCase();
         if (!q) return fm.contents.files;
         return fm.contents.files.filter((f) => f.file_name.toLowerCase().includes(q));
+    });
+
+    // ── File-type filter (Tümü / Görsel / Video / PDF / Ses / Arşiv) ──
+    type FileTypeFilter = 'all' | 'image' | 'video' | 'pdf' | 'audio' | 'archive';
+
+    const fileTypeFilter = ref<FileTypeFilter>('all');
+
+    function fileCategoryOf(mime: string): Exclude<FileTypeFilter, 'all'> | null {
+        if (mime.startsWith('image/')) return 'image';
+        if (mime.startsWith('video/')) return 'video';
+        if (mime === 'application/pdf') return 'pdf';
+        if (mime.startsWith('audio/')) return 'audio';
+        if (
+            mime.includes('zip') ||
+            mime.includes('compressed') ||
+            mime.includes('archive') ||
+            mime === 'application/x-tar' ||
+            mime === 'application/gzip'
+        ) {
+            return 'archive';
+        }
+        return null;
+    }
+
+    const filteredFiles = computed<FileItem[]>(() => {
+        const list = searchFilteredFiles.value;
+        if (fileTypeFilter.value === 'all') return list;
+        return list.filter((f) => fileCategoryOf(f.mime_type) === fileTypeFilter.value);
+    });
+
+    interface FilterPill {
+        key: FileTypeFilter;
+        label: string;
+        count: number;
+    }
+
+    const filterPills = computed<FilterPill[]>(() => {
+        const counts: Record<FileTypeFilter, number> = {
+            all: 0,
+            image: 0,
+            video: 0,
+            pdf: 0,
+            audio: 0,
+            archive: 0,
+        };
+        for (const f of searchFilteredFiles.value) {
+            counts.all++;
+            const cat = fileCategoryOf(f.mime_type);
+            if (cat) counts[cat]++;
+        }
+        return [
+            { key: 'all', label: trans('sk-file-manager.labels.filter.all'), count: counts.all },
+            { key: 'image', label: trans('sk-file-manager.labels.filter.image'), count: counts.image },
+            { key: 'video', label: trans('sk-file-manager.labels.filter.video'), count: counts.video },
+            { key: 'pdf', label: trans('sk-file-manager.labels.filter.pdf'), count: counts.pdf },
+            { key: 'audio', label: trans('sk-file-manager.labels.filter.audio'), count: counts.audio },
+            { key: 'archive', label: trans('sk-file-manager.labels.filter.archive'), count: counts.archive },
+        ];
     });
 
     async function onSelectQuick(view: QuickView): Promise<void> {
@@ -170,6 +226,20 @@
             if (!latest || f.created_at > latest) latest = f.created_at;
         }
         return latest;
+    });
+
+    const favoriteCount = computed(() => {
+        if (quickView.value === 'favorites') {
+            return fm.contents.folders.length + fm.contents.files.length;
+        }
+        let count = 0;
+        for (const f of fm.contents.folders) {
+            if (f.is_favorited === true) count++;
+        }
+        for (const f of fm.contents.files) {
+            if (f.is_favorited === true) count++;
+        }
+        return count;
     });
 
     // Use storage_used (all collections) when available; fall back to current-view total_size.
@@ -1097,6 +1167,80 @@
         trans('sk-file-manager.labels.selected_count', { count: String(fm.selectionCount.value) }),
     );
 
+    const hasSelectedFiles = computed(() => fm.selectedItems.value.some((it) => it.type === 'file'));
+
+    function bulkDownload(): void {
+        const fileItems = collectSelectedSources().filter((s) => s.type === 'file');
+        if (fileItems.length === 0) {
+            toast.add({
+                severity: 'info',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.coming_soon'),
+                life: 2500,
+            });
+            return;
+        }
+        for (const src of fileItems) {
+            const file = fileItemById(src.id);
+            if (file) downloadFile(file);
+        }
+    }
+
+    function bulkShare(): void {
+        const fileItems = collectSelectedSources().filter((s) => s.type === 'file');
+        if (fileItems.length === 0) {
+            toast.add({
+                severity: 'info',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.coming_soon'),
+                life: 2500,
+            });
+            return;
+        }
+        if (fileItems.length === 1) {
+            const file = fileItemById(fileItems[0].id);
+            if (file) shareFile(file);
+            return;
+        }
+        toast.add({
+            severity: 'info',
+            summary: '',
+            group: 'bc',
+            detail: trans('sk-file-manager.coming_soon'),
+            life: 2500,
+        });
+    }
+
+    function bulkMove(): void {
+        if (fm.selectionCount.value === 0) return;
+        openMoveDialog(collectSelectedSources());
+    }
+
+    async function bulkRestore(): Promise<void> {
+        if (fm.selectionCount.value === 0) return;
+        const items = collectSelectedSources();
+        try {
+            await runCancellableBulk(
+                trans('sk-file-manager.labels.restoring'),
+                items,
+                null,
+                (item) => fm.restoreItem(item.type, item.id),
+            );
+            toast.add({
+                severity: 'success',
+                summary: '',
+                group: 'bc',
+                detail: trans('sk-file-manager.item_restored'),
+                life: 2500,
+            });
+            fm.clearSelection();
+        } catch {
+            /* useApi interceptor tarafından yönetilir */
+        }
+    }
+
     const visiblePending = computed(() =>
         fm.pendingUploads.value.filter((p) => (p.folderId ?? null) === (fm.currentFolderId.value ?? null)),
     );
@@ -1117,29 +1261,18 @@
 
 <template>
     <div
-        class="fm-root relative flex flex-col overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
-        :style="{ height }"
+        class="fm-root relative"
+        :style="height === 'auto' ? {} : height.endsWith('%') ? { height } : { minHeight: height }"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="onDrop"
     >
-        <!-- Top bar: search -->
+        <!-- fm-cols: sidebar 240 + content-wrap 1fr -->
         <div
-            class="flex items-center justify-end gap-3 border-b border-surface-200 bg-surface-0 px-4 py-3 dark:border-surface-700 dark:bg-surface-900"
+            class="fm-cols-grid"
+            style="display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 1rem; align-items: start"
         >
-            <IconField icon-position="left" class="w-full max-w-sm">
-                <InputIcon class="pi pi-search" />
-                <InputText
-                    v-model="searchQuery"
-                    type="text"
-                    :placeholder="trans('sk-file-manager.labels.search_placeholder')"
-                    class="w-full"
-                />
-            </IconField>
-        </div>
-
-        <!-- Body: sidebar + main -->
-        <div class="flex min-h-0 flex-1">
+            <!-- Sidebar standalone card -->
             <FileManagerSidebar
                 :tree="fm.tree.value"
                 :current-folder-id="fm.currentFolderId.value"
@@ -1153,138 +1286,35 @@
                 @new-folder="openNewFolder"
             />
 
-            <section
-                class="fm-main flex min-w-0 flex-1 flex-col"
-                :class="{ 'bg-primary-50/50 dark:bg-primary-950/20': isDropping }"
-            >
-                <!-- Stats -->
+            <!-- Right column: stats + content panel -->
+            <div class="flex min-w-0 flex-col gap-4">
+                <!-- Stats grid (5 tiles) -->
+                <FileManagerStats
+                    :file-count="fm.contents.stats.file_count"
+                    :total-size="fm.contents.stats.total_size"
+                    :folder-count="folderTotalCount"
+                    :favorite-count="favoriteCount"
+                    :last-upload-at="lastUploadAt"
+                />
+
+                <!-- Content panel: single white card with folders + files sections -->
                 <div
-                    class="border-b border-surface-200 bg-surface-50/40 px-5 py-4 dark:border-surface-700 dark:bg-surface-950/30"
+                    class="fm-content-panel relative flex min-w-0 flex-col gap-3 rounded-[6px] border border-surface-200 bg-surface-0 p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900"
+                    :class="{ 'border-primary-300 bg-primary-50/20 dark:bg-primary-950/10': isDropping }"
                 >
-                    <FileManagerStats
-                        :file-count="fm.contents.stats.file_count"
-                        :total-size="fm.contents.stats.total_size"
-                        :folder-count="folderTotalCount"
-                        :favorite-count="0"
-                        :last-upload-at="lastUploadAt"
-                    />
-                </div>
-
-                <!-- Header: title + view toggle + upload -->
-                <header
-                    class="flex flex-wrap items-center gap-3 border-b border-surface-200 px-5 py-3 dark:border-surface-700"
-                >
-                    <div class="flex min-w-0 flex-1 items-center gap-2">
-                        <i class="pi pi-folder-open text-primary-500" style="font-size: 1.4rem" />
-                        <h2 class="truncate text-xl font-semibold" :title="currentFolderName">
-                            {{ currentFolderName }}
-                        </h2>
-                        <span
-                            v-if="searchQuery.trim()"
-                            class="ml-2 rounded-full bg-surface-100 px-2 py-0.5 text-base font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300"
-                        >
-                            {{ filteredFolders.length + filteredFiles.length }}
-                        </span>
-                    </div>
-
+                    <!-- Breadcrumb -->
                     <div
-                        class="inline-flex overflow-hidden rounded-lg border border-surface-200 dark:border-surface-700"
+                        v-if="showBreadcrumb"
+                        class="flex-shrink-0 rounded-[6px] border border-surface-200 bg-surface-50 px-3 py-1.5 dark:border-surface-700 dark:bg-surface-950"
                     >
-                        <button
-                            v-tooltip.bottom="trans('sk-file-manager.labels.view_grid')"
-                            type="button"
-                            class="px-3 py-1.5 transition-colors"
-                            :class="
-                                viewMode === 'grid'
-                                    ? 'bg-primary-500 text-white'
-                                    : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
-                            "
-                            :aria-pressed="viewMode === 'grid'"
-                            @click="setViewMode('grid')"
-                        >
-                            <i class="pi pi-th-large" style="font-size: 0.95rem" />
-                        </button>
-                        <button
-                            v-tooltip.bottom="trans('sk-file-manager.labels.view_list')"
-                            type="button"
-                            class="px-3 py-1.5 transition-colors"
-                            :class="
-                                viewMode === 'list'
-                                    ? 'bg-primary-500 text-white'
-                                    : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
-                            "
-                            :aria-pressed="viewMode === 'list'"
-                            @click="setViewMode('list')"
-                        >
-                            <i class="pi pi-list" style="font-size: 0.95rem" />
-                        </button>
+                        <Breadcrumb
+                            :trail="fm.breadcrumb.value"
+                            :root-label="trans('sk-file-manager.labels.root')"
+                            @navigate="(id) => fm.loadContents(id)"
+                        />
                     </div>
 
-                    <Button
-                        v-if="quickView === 'trash'"
-                        severity="danger"
-                        icon="pi pi-trash"
-                        :label="trans('sk-file-manager.labels.empty_trash')"
-                        :disabled="readonly || (fm.contents.folders.length === 0 && fm.contents.files.length === 0)"
-                        @click="confirmEmptyTrash"
-                    />
-
-                    <Button
-                        v-else
-                        :icon="uploading ? 'pi pi-spin pi-spinner' : 'pi pi-cloud-upload'"
-                        :label="trans('sk-file-manager.labels.upload_new')"
-                        :disabled="readonly || uploading || quickView === 'favorites'"
-                        @click="triggerUpload"
-                    />
-
-                    <input
-                        ref="fileInput"
-                        type="file"
-                        multiple
-                        class="hidden"
-                        :accept="acceptedMimes?.join(',')"
-                        @change="onFileChange"
-                    >
-                </header>
-
-                <!-- Breadcrumb -->
-                <div
-                    v-if="showBreadcrumb"
-                    class="border-b border-surface-200 bg-surface-50 px-5 py-2 dark:border-surface-700 dark:bg-surface-950"
-                >
-                    <Breadcrumb
-                        :trail="fm.breadcrumb.value"
-                        :root-label="trans('sk-file-manager.labels.root')"
-                        @navigate="(id) => fm.loadContents(id)"
-                    />
-                </div>
-
-                <!-- Selection bar -->
-                <div
-                    v-if="fm.selectionCount.value > 0"
-                    class="flex items-center justify-end gap-2 border-b border-surface-200 bg-primary-50/40 px-5 py-2 dark:border-surface-700 dark:bg-primary-950/20"
-                >
-                    <span class="font-medium text-primary-600 dark:text-primary-300">{{ bulkLabel }}</span>
-                    <Button
-                        size="small"
-                        severity="secondary"
-                        text
-                        icon="pi pi-times"
-                        :label="trans('sk-file-manager.labels.close')"
-                        @click="fm.clearSelection"
-                    />
-                    <Button
-                        size="small"
-                        severity="danger"
-                        icon="pi pi-trash"
-                        :label="trans('sk-file-manager.labels.delete_selected')"
-                        :disabled="readonly"
-                        @click="confirmBulkDelete"
-                    />
-                </div>
-
-                <div class="relative flex-1 overflow-hidden">
-                    <!-- Favoriler empty state -->
+                    <!-- Favorites empty state -->
                     <div
                         v-if="
                             quickView === 'favorites' &&
@@ -1292,18 +1322,18 @@
                                 fm.contents.files.length === 0 &&
                                 !fm.loading.contents
                         "
-                        class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+                        class="flex min-h-[400px] flex-col items-center justify-center gap-3 p-8 text-center"
                     >
                         <i class="pi pi-star text-5xl text-amber-400" />
                         <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.favorites_empty_title') }}
                         </h3>
-                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
+                        <p class="max-w-md text-lg text-surface-500 dark:text-surface-400">
                             {{ trans('sk-file-manager.favorites_empty_subtitle') }}
                         </p>
                     </div>
 
-                    <!-- Çöp kutusu empty state -->
+                    <!-- Trash empty state -->
                     <div
                         v-else-if="
                             quickView === 'trash' &&
@@ -1311,55 +1341,174 @@
                                 fm.contents.files.length === 0 &&
                                 !fm.loading.contents
                         "
-                        class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+                        class="flex min-h-[400px] flex-col items-center justify-center gap-3 p-8 text-center"
                     >
                         <i class="pi pi-trash text-5xl text-amber-400" />
                         <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.trash_empty_title') }}
                         </h3>
-                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
+                        <p class="max-w-md text-lg text-surface-500 dark:text-surface-400">
                             {{ trans('sk-file-manager.trash_empty_subtitle') }}
                         </p>
                     </div>
 
-                    <FileGrid
-                        v-else
-                        :folders="filteredFolders"
-                        :files="filteredFiles"
-                        :pending="visiblePending"
-                        :loading="fm.loading.contents"
-                        :empty-label="trans('sk-file-manager.labels.no_results')"
-                        :search-active="searchQuery.trim().length > 0"
-                        :readonly="readonly"
-                        :is-selected="fm.isSelected"
-                        :view-mode="viewMode"
-                        :current-view="quickView"
-                        @open-folder="(id) => fm.loadContents(id)"
-                        @open-file="openFileFromGrid"
-                        @context-folder="showFolderMenu"
-                        @context-file="showFileMenu"
-                        @context-empty="showEmptyMenu"
-                        @download-file="downloadFile"
-                        @toggle-select="onToggleSelect"
-                        @set-selection="(keys) => fm.setSelection(keys)"
-                        @clear-selection="fm.clearSelection"
-                        @dismiss-pending="(id) => fm.dismissPending(id)"
-                        @drop-on-folder="(targetId) => handleDropOnFolder(targetId)"
-                        @internal-drag-start="onInternalDragStart"
-                        @check-toggle="(type, id) => fm.toggleSelect(type, id)"
-                        @upload="triggerUpload"
-                        @toggle-folder-favorite="toggleFolderFavorite"
-                        @toggle-file-favorite="toggleFileFavorite"
-                    />
+                    <template v-else>
+                        <!-- Toolbar: filter pills left, search + actions + view toggle right -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Filter pills (left side) -->
+                            <div
+                                v-if="searchFilteredFiles.length > 0 && quickView !== 'trash'"
+                                class="flex flex-wrap items-center gap-1.5"
+                            >
+                                <button
+                                    v-for="pill in filterPills"
+                                    :key="pill.key"
+                                    type="button"
+                                    class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-lg font-semibold transition-colors"
+                                    :class="
+                                        fileTypeFilter === pill.key
+                                            ? 'border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
+                                            : 'border-surface-200 bg-surface-0 text-surface-600 hover:border-surface-300 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300 dark:hover:bg-surface-800'
+                                    "
+                                    @click="fileTypeFilter = pill.key"
+                                >
+                                    <span>{{ pill.label }}</span>
+                                    <span
+                                        class="rounded-full px-1.5 text-lg font-bold leading-tight"
+                                        :class="
+                                            fileTypeFilter === pill.key
+                                                ? 'bg-primary-500/15 text-primary-700 dark:text-primary-200'
+                                                : 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400'
+                                        "
+                                    >
+                                        {{ pill.count }}
+                                    </span>
+                                </button>
+                            </div>
+
+                            <!-- Right side: search + upload + view toggle (always visible) -->
+                            <div class="ml-auto flex flex-wrap items-center gap-2">
+                                <div class="relative w-full max-w-xs sm:w-60">
+                                    <i
+                                        class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-surface-400"
+                                        style="font-size: 0.78rem"
+                                    />
+                                    <InputText
+                                        v-model="searchQuery"
+                                        type="text"
+                                        size="small"
+                                        class="w-full !pl-9"
+                                        :placeholder="trans('sk-file-manager.labels.search_placeholder')"
+                                    />
+                                </div>
+                                <Button
+                                    v-if="!readonly && quickView !== 'trash'"
+                                    size="small"
+                                    severity="secondary"
+                                    icon="pi pi-folder-plus"
+                                    :label="trans('sk-file-manager.labels.new_folder')"
+                                    :disabled="quickView === 'favorites'"
+                                    @click="openNewFolder"
+                                />
+                                <Button
+                                    v-if="quickView !== 'trash'"
+                                    size="small"
+                                    :icon="uploading ? 'pi pi-spin pi-spinner' : 'pi pi-cloud-upload'"
+                                    :label="trans('sk-file-manager.labels.upload_new')"
+                                    :disabled="readonly || uploading || quickView === 'favorites'"
+                                    @click="triggerUpload"
+                                />
+                                <Button
+                                    v-if="quickView === 'trash'"
+                                    size="small"
+                                    severity="danger"
+                                    icon="pi pi-trash"
+                                    :label="trans('sk-file-manager.labels.empty_trash')"
+                                    :disabled="readonly || (fm.contents.folders.length === 0 && fm.contents.files.length === 0)"
+                                    @click="confirmEmptyTrash"
+                                />
+                                <div
+                                    class="inline-flex overflow-hidden rounded-[6px] border border-surface-200 dark:border-surface-700"
+                                >
+                                    <button
+                                        v-tooltip.bottom="trans('sk-file-manager.labels.view_grid')"
+                                        type="button"
+                                        class="px-2.5 py-1.5 transition-colors"
+                                        :class="
+                                            viewMode === 'grid'
+                                                ? 'bg-primary-500 text-white'
+                                                : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
+                                        "
+                                        :aria-pressed="viewMode === 'grid'"
+                                        @click="setViewMode('grid')"
+                                    >
+                                        <i class="pi pi-th-large" style="font-size: 0.85rem" />
+                                    </button>
+                                    <button
+                                        v-tooltip.bottom="trans('sk-file-manager.labels.view_list')"
+                                        type="button"
+                                        class="px-2.5 py-1.5 transition-colors"
+                                        :class="
+                                            viewMode === 'list'
+                                                ? 'bg-primary-500 text-white'
+                                                : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
+                                        "
+                                        :aria-pressed="viewMode === 'list'"
+                                        @click="setViewMode('list')"
+                                    >
+                                        <i class="pi pi-list" style="font-size: 0.85rem" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <FileGrid
+                            :folders="filteredFolders"
+                            :files="filteredFiles"
+                            :pending="visiblePending"
+                            :loading="fm.loading.contents"
+                            :empty-label="trans('sk-file-manager.labels.no_results')"
+                            :search-active="searchQuery.trim().length > 0"
+                            :readonly="readonly"
+                            :is-selected="fm.isSelected"
+                            :view-mode="viewMode"
+                            :current-view="quickView"
+                            @open-folder="(id) => fm.loadContents(id)"
+                            @open-file="openFileFromGrid"
+                            @context-folder="showFolderMenu"
+                            @context-file="showFileMenu"
+                            @context-empty="showEmptyMenu"
+                            @download-file="downloadFile"
+                            @toggle-select="onToggleSelect"
+                            @set-selection="(keys) => fm.setSelection(keys)"
+                            @clear-selection="fm.clearSelection"
+                            @dismiss-pending="(id) => fm.dismissPending(id)"
+                            @drop-on-folder="(targetId) => handleDropOnFolder(targetId)"
+                            @internal-drag-start="onInternalDragStart"
+                            @check-toggle="(type, id) => fm.toggleSelect(type, id)"
+                            @upload="triggerUpload"
+                            @toggle-folder-favorite="toggleFolderFavorite"
+                            @toggle-file-favorite="toggleFileFavorite"
+                        />
+                    </template>
 
                     <div
                         v-if="fm.loading.contents"
-                        class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-surface-900/50"
+                        class="absolute inset-0 z-20 flex items-center justify-center rounded-[6px] bg-white/50 dark:bg-surface-900/50"
                     >
                         <ProgressSpinner style="width: 32px; height: 32px" stroke-width="4" />
                     </div>
                 </div>
-            </section>
+            </div>
+
+            <input
+                ref="fileInput"
+                type="file"
+                multiple
+                class="hidden"
+                :accept="acceptedMimes?.join(',')"
+                @change="onFileChange"
+            >
         </div>
 
         <!-- Full-area drop zone overlay -->
@@ -1368,7 +1517,7 @@
             class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-primary-500/10 backdrop-blur-sm"
         >
             <div
-                class="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-primary-400 bg-surface-0/95 px-10 py-8 text-primary-700 shadow-xl dark:border-primary-500 dark:bg-surface-900/95 dark:text-primary-200"
+                class="flex flex-col items-center gap-3 rounded-[6px] border-2 border-dashed border-primary-400 bg-surface-0/95 px-10 py-8 text-primary-700 shadow-xl dark:border-primary-500 dark:bg-surface-900/95 dark:text-primary-200"
             >
                 <i class="pi pi-cloud-upload" style="font-size: 3.5rem" />
                 <span class="text-lg font-semibold">{{ trans('sk-file-manager.labels.drop_files_here') }}</span>
@@ -1381,7 +1530,7 @@
             class="absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
         >
             <div
-                class="flex w-88 max-w-[90%] flex-col gap-3 rounded-2xl bg-surface-0 p-6 shadow-2xl dark:bg-surface-900"
+                class="flex w-88 max-w-[90%] flex-col gap-3 rounded-[6px] bg-surface-0 p-6 shadow-2xl dark:bg-surface-900"
             >
                 <div class="flex items-center gap-3">
                     <i class="pi pi-spin pi-spinner shrink-0 text-primary-500" style="font-size: 1.4rem" />
@@ -1468,6 +1617,103 @@
                 <Button icon="pi pi-check" :label="trans('sk-file-manager.labels.move')" @click="submitMove" />
             </template>
         </Dialog>
+
+        <!-- Floating bulk-action bar (bottom, dark pill) -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition duration-200 ease-out"
+                leave-active-class="transition duration-150 ease-in"
+                enter-from-class="opacity-0 translate-y-4"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 translate-y-4"
+            >
+                <div
+                    v-if="fm.selectionCount.value > 0"
+                    class="fm-bulk-bar fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+                >
+                    <div
+                        class="flex items-center gap-1 rounded-full bg-slate-900 p-1.5 text-white shadow-2xl ring-1 ring-white/10 dark:bg-slate-950"
+                    >
+                        <span class="px-3 text-[13px] font-semibold tracking-tight">
+                            {{ bulkLabel }}
+                        </span>
+                        <span class="mx-1 h-5 w-px bg-white/15" />
+
+                        <!-- Çöp kutusu: sadece Geri Yükle + Kalıcı Sil -->
+                        <template v-if="quickView === 'trash'">
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                @click="bulkRestore"
+                            >
+                                <i class="pi pi-undo" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.restore') }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-rose-300 transition-colors hover:bg-rose-500/15 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                                :disabled="readonly"
+                                @click="confirmBulkDelete"
+                            >
+                                <i class="pi pi-trash" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.permanently_delete') }}</span>
+                            </button>
+                        </template>
+
+                        <!-- Normal görünüm: İndir + Paylaş + Taşı + Sil -->
+                        <template v-else>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                :disabled="!hasSelectedFiles"
+                                @click="bulkDownload"
+                            >
+                                <i class="pi pi-download" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.download') }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                :disabled="!hasSelectedFiles"
+                                @click="bulkShare"
+                            >
+                                <i class="pi pi-share-alt" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.share') }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                :disabled="readonly"
+                                @click="bulkMove"
+                            >
+                                <i class="pi pi-arrow-right-arrow-left" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.move') }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-rose-300 transition-colors hover:bg-rose-500/15 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                                :disabled="readonly"
+                                @click="confirmBulkDelete"
+                            >
+                                <i class="pi pi-trash" style="font-size: 0.85rem" />
+                                <span>{{ trans('sk-file-manager.labels.delete') }}</span>
+                            </button>
+                        </template>
+
+                        <span class="mx-1 h-5 w-px bg-white/15" />
+                        <button
+                            type="button"
+                            class="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                            :aria-label="trans('sk-file-manager.labels.close')"
+                            @click="fm.clearSelection"
+                        >
+                            <i class="pi pi-times" style="font-size: 0.85rem" />
+                        </button>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 

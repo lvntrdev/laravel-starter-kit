@@ -2,6 +2,44 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-06 -v.13.5.2
+
+### Patch release — Settings security consolidation, FileManager restore fix and i18n improvements
+
+Settings now consolidates Auth and Turnstile into a single **Security** tab and adds a Storage Quota card that visualises disk usage. The File Manager trash restore bug is fixed: the trash view now only shows root-level deleted items so single and bulk restore always succeed without the "parent in trash" error. All File Manager component text sizes are standardised to `text-lg` (14 px), confirmation dialogs are translated via `trans()`, and filter pill labels are internationalised. Existing apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm run build`.
+
+#### Added
+
+- **`SecurityTab.vue`** consolidates Authentication and Cloudflare Turnstile settings into one tab, replacing the removed `AuthTab.vue` and `TurnstileTab.vue` stubs.
+- **`StorageQuotaCard.vue`** displays disk-wide storage quota usage as a progress bar in the Settings panel.
+- **`SettingsDefaultsQuery`** now includes `storage_usage` (`used_bytes`, `quota_bytes`) in the Inertia payload.
+- **i18n keys** added in `sk-setting` (security/storage section labels), `sk-file-manager` (filter pill labels: `all`, `image`, `video`, `pdf`, `audio`, `archive`) and `sk-common` (confirmation dialog strings).
+
+#### Fixed
+
+- **Trash restore bug.** `TrashContentsQuery` now only returns root-level trashed items. Items whose parent folder was also in trash were listed as independent items, making both single and bulk restore fail with "Cannot restore: the parent folder is also in trash". Root-level filtering ensures restore operations always start from the top of the tree.
+
+#### Changed
+
+- **FileManager minimum text size** standardised to `text-lg` (14 px) across `FileManager.vue`, `FileGrid.vue`, `FileManagerSidebar.vue` and `FileManagerStats.vue`.
+- **`useConfirm` composable** confirmation strings moved to `trans()` calls using new `sk-common` translation keys.
+- **`Admin/Files/Index.vue`** simplified — unnecessary wrapper `<div>` removed.
+- **File Manager tab** — Video/Audio upload toggles now use the same checkbox-grid layout as Images.
+
+#### Removed
+
+- **`AuthTab.vue`** and **`TurnstileTab.vue`** stubs — content merged into `SecurityTab.vue`. `sk:update` cleans them up automatically via `DEPRECATED_PATHS`.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+---
+
 ## 2026-05-05 -v.13.5.0
 
 ### Major release — Vendor-first runtime and frontend UI lib

@@ -6,21 +6,19 @@ return [
 
     'tabs' => [
         'general' => 'Genel',
-        'auth' => 'Kimlik Doğrulama',
+        'auth' => 'Güvenlik Ayarları',
         'mail' => 'E-posta',
         'storage' => 'Depolama',
         'file_manager' => 'Dosya Yöneticisi',
-        'turnstile' => 'Güvenlik',
         'api_clients' => 'API İstemcileri',
     ],
 
     'tab_descriptions' => [
         'general' => 'Uygulama adı, dil ve logo',
-        'auth' => 'Kayıt, 2FA ve e-posta doğrulama',
+        'auth' => 'Kayıt, 2FA, e-posta doğrulama ve CAPTCHA',
         'mail' => 'SMTP ve gönderen ayarları',
         'storage' => 'S3, Spaces ve yerel disk',
         'file_manager' => 'Yükleme boyutu ve dosya türleri',
-        'turnstile' => 'Cloudflare Turnstile CAPTCHA',
         'api_clients' => 'Postman ve Apidog entegrasyonu',
     ],
 
@@ -35,6 +33,11 @@ return [
         'logo_remove_confirm' => 'Uygulama logosunu kaldırmak istediğinizden emin misiniz?',
         'welcome_message_placeholder' => 'Kısa bir hoş geldin mesajı yazın…',
         'welcome_message_hint' => 'Yönetim panelinin ana sayfasında gösterilir. Temel biçimlendirme ve görsel desteği vardır.',
+    ],
+
+    'security' => [
+        'auth_section_title' => 'Kimlik Doğrulama',
+        'turnstile_section_title' => 'Cloudflare Turnstile',
     ],
 
     'auth' => [
@@ -67,12 +70,20 @@ return [
         'spaces_subtitle' => 'DigitalOcean Spaces kimlik bilgilerini ve ayarlarını yapılandırın.',
         's3_title' => 'Amazon S3',
         's3_subtitle' => 'AWS S3 kimlik bilgilerini ve ayarlarını yapılandırın.',
-
+        'usage_card_title' => 'Depolama Kullanımı',
+        'usage_label' => ':used / :total kullanıldı (%:percent)',
+        'unlimited' => 'sınırsız',
     ],
 
     'file_manager' => [
         'title' => 'Dosya Yöneticisi Ayarları',
         'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
+        'media_section_title' => 'Medya',
+        'archive_section_title' => 'Arşiv',
+        'video_label' => 'Video Yüklemeleri',
+        'audio_label' => 'Ses Yüklemeleri',
+        'video_hint' => 'MP4, WebM, MOV, MKV, AVI ve OGG video yüklemelerine izin ver',
+        'audio_hint' => 'MP3, WAV, OGG ve WebM ses dosyalarına izin ver',
         'storage_quota' => [
             'label' => 'Depolama Kotası (GB)',
             'help' => 'Tüm context\'leri ve çöp kutusunu kapsayan tek toplam kota.',
@@ -81,16 +92,6 @@ return [
             'images' => 'Görseller',
             'documents' => 'Dokümanlar',
             'archive' => 'Arşiv',
-        ],
-        'media_cards' => [
-            'video' => [
-                'label' => 'Video yükleme',
-                'description' => 'MP4, WebM, MOV, MKV, AVI ve OGG video formatlarına izin ver.',
-            ],
-            'audio' => [
-                'label' => 'Ses yükleme',
-                'description' => 'MP3, WAV, OGG ve WebM ses formatlarına izin ver.',
-            ],
         ],
     ],
 

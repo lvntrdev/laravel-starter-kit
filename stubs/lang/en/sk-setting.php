@@ -6,21 +6,19 @@ return [
 
     'tabs' => [
         'general' => 'General',
-        'auth' => 'Authentication',
+        'auth' => 'Security',
         'mail' => 'Mail',
         'storage' => 'Storage',
         'file_manager' => 'File Manager',
-        'turnstile' => 'Security',
         'api_clients' => 'API Clients',
     ],
 
     'tab_descriptions' => [
         'general' => 'App name, language and logo',
-        'auth' => 'Registration, 2FA and verification',
+        'auth' => 'Registration, 2FA, verification and CAPTCHA',
         'mail' => 'SMTP and sender settings',
         'storage' => 'S3, Spaces and local disk',
         'file_manager' => 'Upload sizes and file types',
-        'turnstile' => 'Cloudflare Turnstile CAPTCHA',
         'api_clients' => 'Postman and Apidog integration',
     ],
 
@@ -35,6 +33,11 @@ return [
         'logo_remove_confirm' => 'Are you sure you want to remove the application logo?',
         'welcome_message_placeholder' => 'Write a short welcome message…',
         'welcome_message_hint' => 'Shown on the admin dashboard. Supports basic formatting and images.',
+    ],
+
+    'security' => [
+        'auth_section_title' => 'Authentication',
+        'turnstile_section_title' => 'Cloudflare Turnstile',
     ],
 
     'auth' => [
@@ -67,12 +70,20 @@ return [
         'spaces_subtitle' => 'Configure DigitalOcean Spaces credentials and settings.',
         's3_title' => 'Amazon S3',
         's3_subtitle' => 'Configure AWS S3 credentials and settings.',
-
+        'usage_card_title' => 'Storage Usage',
+        'usage_label' => ':used / :total used (:percent%)',
+        'unlimited' => 'unlimited',
     ],
 
     'file_manager' => [
         'title' => 'File Manager Settings',
         'subtitle' => 'Configure upload size and accepted file types.',
+        'media_section_title' => 'Media',
+        'archive_section_title' => 'Archive',
+        'video_label' => 'Video Uploads',
+        'audio_label' => 'Audio Uploads',
+        'video_hint' => 'Allow MP4, WebM, MOV, MKV, AVI and OGG videos',
+        'audio_hint' => 'Allow MP3, WAV, OGG and WebM audio files',
         'storage_quota' => [
             'label' => 'Storage Quota (GB)',
             'help' => 'Single combined quota covering all contexts and trash.',
@@ -81,16 +92,6 @@ return [
             'images' => 'Images',
             'documents' => 'Documents',
             'archive' => 'Archive',
-        ],
-        'media_cards' => [
-            'video' => [
-                'label' => 'Video uploads',
-                'description' => 'Allow MP4, WebM, MOV, MKV, AVI and OGG videos.',
-            ],
-            'audio' => [
-                'label' => 'Audio uploads',
-                'description' => 'Allow MP3, WAV, OGG and WebM audio files.',
-            ],
         ],
     ],
 

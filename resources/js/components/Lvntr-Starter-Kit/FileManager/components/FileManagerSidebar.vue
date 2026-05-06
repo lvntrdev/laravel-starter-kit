@@ -119,79 +119,39 @@
 
 <template>
     <aside
-        class="fm-sidebar flex h-full w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r border-surface-200 bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900"
+        class="fm-sidebar flex h-full flex-col gap-4 overflow-y-auto rounded-[6px] border border-surface-200 bg-surface-0 p-3 shadow-sm dark:border-surface-700 dark:bg-surface-900"
     >
-        <!-- Storage usage card — sadece kota tanımlıyken göster -->
-        <div
-            v-if="quotaBytes > 0"
-            class="flex flex-col items-center gap-3 rounded-2xl border border-surface-200 bg-gradient-to-br from-primary-50 to-surface-0 p-4 text-center dark:border-surface-700 dark:from-primary-950/30 dark:to-surface-900"
-        >
-            <div class="relative h-28 w-28">
-                <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
-                    <circle
-                        cx="50"
-                        cy="50"
-                        :r="radius"
-                        fill="none"
-                        class="stroke-surface-200 dark:stroke-surface-700"
-                        stroke-width="10"
-                    />
-                    <circle
-                        cx="50"
-                        cy="50"
-                        :r="radius"
-                        fill="none"
-                        :class="usageStroke"
-                        stroke-width="10"
-                        stroke-linecap="round"
-                        :stroke-dasharray="circumference"
-                        :stroke-dashoffset="dashOffset"
-                        class="transition-[stroke-dashoffset] duration-500 ease-out"
-                    />
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-2xl font-bold text-surface-900 dark:text-surface-100"> {{ usagePercent }}% </span>
-                </div>
-            </div>
-            <div class="flex flex-col gap-0.5">
-                <span class="font-semibold text-surface-900 dark:text-surface-100">
-                    {{ trans('sk-file-manager.labels.sidebar.storage_usage') }}
-                </span>
-                <span class="text-base text-surface-500 dark:text-surface-400">{{ usageLabel }}</span>
-            </div>
-        </div>
-
         <!-- Quick access -->
-        <div class="flex flex-col gap-1.5">
-            <h3 class="px-2 text-base font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+        <div class="flex flex-col gap-0.5">
+            <h3 class="px-2 pb-1 text-lg font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
                 {{ trans('sk-file-manager.labels.sidebar.quick_access') }}
             </h3>
             <button
                 v-for="item in quickItems"
                 :key="item.key"
                 type="button"
-                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-medium transition-all"
+                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-lg font-medium transition-colors"
                 :class="
                     quickView === item.key && currentFolderId === null
-                        ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:ring-primary-900'
-                        : 'text-surface-700 hover:bg-surface-100 dark:text-surface-200 dark:hover:bg-surface-800'
+                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
+                        : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
                 "
                 @click="emit('select-quick', item.key)"
             >
                 <span
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105"
+                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px]"
                     :class="item.bgClass"
                 >
-                    <i :class="[item.icon, item.iconClass]" style="font-size: 0.95rem" />
+                    <i :class="[item.icon, item.iconClass]" style="font-size: 0.78rem" />
                 </span>
                 <span class="truncate">{{ item.label }}</span>
             </button>
         </div>
 
         <!-- Folders -->
-        <div class="flex min-h-0 flex-col gap-1.5">
-            <div class="flex items-center justify-between px-2">
-                <h3 class="text-base font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
+        <div class="flex min-h-0 flex-col gap-0.5">
+            <div class="flex items-center justify-between px-2 pb-1">
+                <h3 class="text-lg font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
                     {{ trans('sk-file-manager.labels.sidebar.folders') }}
                 </h3>
                 <Button
@@ -200,14 +160,14 @@
                     rounded
                     size="small"
                     icon="pi pi-plus"
-                    class="!h-7 !w-7 !p-0"
+                    class="!h-6 !w-6 !p-0"
                     :aria-label="trans('sk-file-manager.labels.sidebar.add_folder')"
                     :disabled="readonly"
                     @click="emit('new-folder')"
                 />
             </div>
 
-            <div v-if="tree.length === 0" class="px-2 py-3 text-base text-surface-400 dark:text-surface-500">
+            <div v-if="tree.length === 0" class="px-2 py-2 text-lg text-surface-400 dark:text-surface-500">
                 {{ trans('sk-file-manager.labels.sidebar.no_folders') }}
             </div>
 
@@ -216,27 +176,52 @@
                 v-else
                 :key="folder.id"
                 type="button"
-                class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-medium transition-all"
+                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-lg font-medium transition-colors"
                 :class="
                     currentFolderId === folder.id
-                        ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:ring-primary-900'
-                        : 'text-surface-700 hover:bg-surface-100 dark:text-surface-200 dark:hover:bg-surface-800'
+                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
+                        : 'text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800'
                 "
                 @click="emit('select-folder', folder.id)"
             >
-                <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full" :class="dotColor(folder.id)" />
+                <span class="inline-block h-2 w-2 shrink-0 rounded-full" :class="dotColor(folder.id)" />
                 <span class="truncate" :title="folder.name">{{ folder.name }}</span>
             </button>
 
             <button
                 type="button"
-                class="mt-1 flex items-center gap-2 rounded-xl border border-dashed border-surface-300 px-3 py-2.5 text-base font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
+                class="mt-1 flex items-center gap-2 rounded-[6px] border border-dashed border-surface-300 px-2.5 py-2 text-lg font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
                 :disabled="readonly"
                 @click="emit('new-folder')"
             >
-                <i class="pi pi-plus" style="font-size: 0.85rem" />
+                <i class="pi pi-plus" style="font-size: 0.75rem" />
                 <span>{{ trans('sk-file-manager.labels.sidebar.add_folder') }}</span>
             </button>
+        </div>
+
+        <!-- Storage usage — horizontal bar, only when quota is defined -->
+        <div
+            v-if="quotaBytes > 0"
+            class="mt-auto rounded-[6px] border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800/40"
+        >
+            <div class="mb-2 flex items-center justify-between">
+                <span class="text-lg font-semibold text-surface-700 dark:text-surface-200">
+                    {{ trans('sk-file-manager.labels.sidebar.storage_usage') }}
+                </span>
+                <span class="text-lg font-bold" :class="usagePercent >= 90 ? 'text-rose-500' : usagePercent >= 70 ? 'text-amber-500' : 'text-primary-500'">
+                    {{ usagePercent }}%
+                </span>
+            </div>
+            <div class="h-1.5 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
+                <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="usagePercent >= 90 ? 'bg-rose-500' : usagePercent >= 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-primary-500 to-violet-400'"
+                    :style="{ width: usagePercent + '%' }"
+                />
+            </div>
+            <div class="mt-1.5 flex justify-between text-lg text-surface-400 dark:text-surface-500">
+                <span>{{ trans('sk-file-manager.labels.sidebar.storage_used_of', { used: humanSize(usedBytes), total: humanSize(quotaBytes) }) }}</span>
+            </div>
         </div>
     </aside>
 </template>

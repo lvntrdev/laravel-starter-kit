@@ -2,12 +2,12 @@
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { TB } from '@lvntr/components/TabBuilder/core';
     import ApiClientsTab from './components/ApiClientsTab.vue';
-    import AuthTab from './components/AuthTab.vue';
     import FileManagerTab from './components/FileManagerTab.vue';
     import GeneralTab from './components/GeneralTab.vue';
     import MailTab from './components/MailTab.vue';
+    import SecurityTab from './components/SecurityTab.vue';
+    import StorageQuotaCard from './components/StorageQuotaCard.vue';
     import StorageTab from './components/StorageTab.vue';
-    import TurnstileTab from './components/TurnstileTab.vue';
 
     interface Props {
         settings: {
@@ -76,6 +76,10 @@
                 access_token: null;
                 access_token_is_set: boolean;
             };
+            storage_usage: {
+                used_bytes: number;
+                quota_bytes: number;
+            };
         };
         timezones: string[];
         availableLanguages: Record<string, string>;
@@ -117,12 +121,6 @@
                 .icon('pi pi-folder')
                 .iconColor('teal'),
             TB.item()
-                .key('turnstile')
-                .label('sk-setting.tabs.turnstile')
-                .description('sk-setting.tab_descriptions.turnstile')
-                .icon('pi pi-shield')
-                .iconColor('red'),
-            TB.item()
                 .key('api_clients')
                 .label('sk-setting.tabs.api_clients')
                 .description('sk-setting.tab_descriptions.api_clients')
@@ -135,6 +133,10 @@
 <template>
     <AdminLayout :title="$t('sk-setting.title')" :subtitle="$t('sk-setting.subtitle')">
         <SkTabs :config="tabConfig">
+            <template #sidebar-footer>
+                <StorageQuotaCard :usage="props.settings.storage_usage" />
+            </template>
+
             <template #general>
                 <GeneralTab
                     :settings="props.settings.general"
@@ -144,7 +146,7 @@
             </template>
 
             <template #auth>
-                <AuthTab :settings="props.settings.auth" />
+                <SecurityTab :auth-settings="props.settings.auth" :turnstile-settings="props.settings.turnstile" />
             </template>
 
             <template #mail>
@@ -157,10 +159,6 @@
 
             <template #file_manager>
                 <FileManagerTab :settings="props.settings.file_manager" />
-            </template>
-
-            <template #turnstile>
-                <TurnstileTab :settings="props.settings.turnstile" />
             </template>
 
             <template #api_clients>

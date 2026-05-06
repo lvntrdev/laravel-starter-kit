@@ -90,6 +90,8 @@ class UpdateCommand extends Command
         'app/Console/Commands/MakeDomainCommand.php',
         'app/Console/Commands/RemoveDomainCommand.php',
         'app/Http/Responses/ApiResponse.php',
+        'resources/js/pages/Admin/Settings/components/AuthTab.vue',
+        'resources/js/pages/Admin/Settings/components/TurnstileTab.vue',
     ];
 
     /** @var list<string> */

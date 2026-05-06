@@ -90,13 +90,22 @@ return [
         'folders_section' => 'Klasörler',
         'no_results' => 'Aramanızla eşleşen bir öğe bulunamadı.',
 
+        'filter' => [
+            'all' => 'Tümü',
+            'image' => 'Görsel',
+            'video' => 'Video',
+            'pdf' => 'PDF',
+            'audio' => 'Ses',
+            'archive' => 'Arşiv',
+        ],
+
         'sidebar' => [
             'storage_usage' => 'Depolama Kullanımı',
             'storage_used_of' => ':used / :total',
             'quick_access' => 'Hızlı Erişim',
             'all_files' => 'Tüm Dosyalar',
             'recent' => 'Son Yüklenenler',
-            'favorites' => 'Beğenilenler',
+            'favorites' => 'Favoriler',
             'trash' => 'Çöp Kutusu',
             'folders' => 'Klasörler',
             'add_folder' => 'Yeni Klasör',
@@ -107,7 +116,7 @@ return [
             'total_files' => 'Toplam Dosya',
             'total_size' => 'Toplam Boyut',
             'folder_count' => 'Klasör Sayısı',
-            'favorites' => 'Sık Kullanılanlar',
+            'favorites' => 'Favoriler',
             'recent_upload' => 'Son Yüklenen',
             'item_count' => ':count öge',
             'never_uploaded' => 'Henüz yok',
