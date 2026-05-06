@@ -1310,6 +1310,7 @@ class InstallCommand extends Command
 
             if ($skipped) {
                 $hashes[$relativePath] = '__skipped__';
+
                 continue;
             }
 

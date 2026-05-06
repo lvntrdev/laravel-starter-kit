@@ -2,11 +2,11 @@
 
 namespace App\Domain\Auth\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Fortify;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Complete the API two-factor challenge issued by LoginUserAction.

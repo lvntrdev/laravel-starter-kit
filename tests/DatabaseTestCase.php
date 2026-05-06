@@ -2,11 +2,14 @@
 
 namespace Lvntr\StarterKit\Tests;
 
-use Illuminate\Foundation\Application;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Lvntr\StarterKit\StarterKitServiceProvider;
+use Lvntr\StarterKit\Tests\Stubs\TestFileFavorite;
+use Lvntr\StarterKit\Tests\Stubs\TestFileFolder;
+use Lvntr\StarterKit\Tests\Stubs\TestMedia;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Spatie\MediaLibrary\MediaLibraryServiceProvider;
 
@@ -42,17 +45,17 @@ abstract class DatabaseTestCase extends Orchestra
         // SQLite in-memory
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
 
         // Test Media modeli — App namespace gerektirmez
-        $app['config']->set('media-library.media_model', \Lvntr\StarterKit\Tests\Stubs\TestMedia::class);
+        $app['config']->set('media-library.media_model', TestMedia::class);
 
         // Test stub model binding'leri — App\Models\* namespace gerektirmez
-        $app['config']->set('file-manager.models.folder', \Lvntr\StarterKit\Tests\Stubs\TestFileFolder::class);
-        $app['config']->set('file-manager.models.favorite', \Lvntr\StarterKit\Tests\Stubs\TestFileFavorite::class);
+        $app['config']->set('file-manager.models.folder', TestFileFolder::class);
+        $app['config']->set('file-manager.models.favorite', TestFileFavorite::class);
 
         // file-manager config defaults
         $app['config']->set('file-manager.settings.storage_quota_gb', 10);
@@ -62,8 +65,8 @@ abstract class DatabaseTestCase extends Orchestra
         $app['config']->set('media-library.disk_name', 'public');
         $app['config']->set('filesystems.disks.public', [
             'driver' => 'local',
-            'root'   => storage_path('app/public'),
-            'url'    => '/storage',
+            'root' => storage_path('app/public'),
+            'url' => '/storage',
         ]);
 
         // Encryption key (Cache/session ihtiyacı için)
@@ -73,7 +76,7 @@ abstract class DatabaseTestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         // 1. settings tablosu
-        Schema::create('settings', function (\Illuminate\Database\Schema\Blueprint $table): void {
+        Schema::create('settings', function (Blueprint $table): void {
             $table->id();
             $table->string('group')->index();
             $table->string('key');
@@ -84,7 +87,7 @@ abstract class DatabaseTestCase extends Orchestra
         });
 
         // 2. media tablosu (Spatie stub şeması + deleted_at)
-        Schema::create('media', function (\Illuminate\Database\Schema\Blueprint $table): void {
+        Schema::create('media', function (Blueprint $table): void {
             $table->id();
             $table->morphs('model');
             $table->uuid()->nullable()->unique();

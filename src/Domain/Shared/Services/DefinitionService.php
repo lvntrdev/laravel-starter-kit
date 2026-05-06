@@ -57,13 +57,13 @@ class DefinitionService
                 ->get()
                 ->groupBy('key')
                 ->map(fn ($items) => $items->map(fn ($d) => [
-                    'value'       => $d->value,
-                    'label'       => $d->label,
-                    'order'       => $d->order,
-                    'severity'    => $d->severity,
-                    'icon'        => $d->icon,
+                    'value' => $d->value,
+                    'label' => $d->label,
+                    'order' => $d->order,
+                    'severity' => $d->severity,
+                    'icon' => $d->icon,
                     'explanation' => $d->explanation,
-                    'visibility'  => $d->visibility,
+                    'visibility' => $d->visibility,
                 ])->values()->all())
                 ->all();
         });

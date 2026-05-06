@@ -2,8 +2,8 @@
 
 namespace App\Domain\Logs\DTOs;
 
-use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 use Carbon\Carbon;
+use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 
 /**
  * One parsed log entry. Multiline stack traces are joined into `stack`.

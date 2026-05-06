@@ -2,8 +2,8 @@
 
 namespace App\Domain\Media\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Database\Eloquent\Model;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Clear all files from a media collection.

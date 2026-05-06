@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use App\Listeners\UpdateLastLogin;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 
 class AppServiceProvider extends ServiceProvider
 {

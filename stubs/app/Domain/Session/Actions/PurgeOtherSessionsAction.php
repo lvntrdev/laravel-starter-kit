@@ -2,11 +2,11 @@
 
 namespace App\Domain\Session\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Delete all other browser sessions for the authenticated user.

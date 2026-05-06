@@ -3,10 +3,10 @@
 namespace App\Domain\Auth\Actions;
 
 use App\Domain\Auth\DTOs\RegisterDTO;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Laravel\Fortify\Features;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Register a new user via API.

@@ -2,12 +2,12 @@
 
 namespace App\Domain\User\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Domain\User\DTOs\UserDTO;
 use App\Domain\User\Events\UserCreated;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Create a new user.

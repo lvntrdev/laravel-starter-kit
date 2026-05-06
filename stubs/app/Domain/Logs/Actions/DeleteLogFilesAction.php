@@ -5,8 +5,8 @@ namespace App\Domain\Logs\Actions;
 use App\Domain\Logs\DTOs\DeleteLogFilesDTO;
 use App\Domain\Logs\Events\LogFilesDeleted;
 use App\Domain\Logs\Queries\LogFileQuery;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\File;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Bulk delete files in storage/logs/.

@@ -4,8 +4,8 @@ namespace App\Domain\SampleContent\Actions;
 
 use App\Domain\SampleContent\DTOs\SampleContentDTO;
 use App\Domain\SampleContent\Events\SampleContentUpdated;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\SampleContent;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Update an existing sample_content.

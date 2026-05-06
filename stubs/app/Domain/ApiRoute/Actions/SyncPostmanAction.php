@@ -3,10 +3,10 @@
 namespace App\Domain\ApiRoute\Actions;
 
 use App\Domain\ApiRoute\Support\OpenApiExporter;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Exceptions\ApiException;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Export the Scramble OpenAPI document and push it to Postman as

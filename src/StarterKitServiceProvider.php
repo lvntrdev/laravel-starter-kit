@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 use Laravel\Passport\Passport;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
@@ -150,6 +151,22 @@ class StarterKitServiceProvider extends ServiceProvider
         $router->aliasMiddleware('check.resource.permission', CheckResourcePermission::class);
 
         $this->registerRoutes();
+        $this->shareInertiaData();
+    }
+
+    /**
+     * Share file-manager settings with Inertia so Vue components can read them
+     * without explicit prop passing.
+     */
+    private function shareInertiaData(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('fileManagerSettings', fn () => [
+            'enable_trash' => (bool) config('file-manager.settings.enable_trash', true),
+        ]);
     }
 
     /**

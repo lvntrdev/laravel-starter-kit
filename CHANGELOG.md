@@ -5,6 +5,23 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.3] - 2026-05-06
+
+### Fixed
+
+- **`DeleteFolderAction`** — Alt klasörler query-builder `forceDelete()` ile silindiğinde Eloquent `forceDeleted` event'i tetiklenmiyordu. `FileFolder` modelindeki `forceDeleted` gözlemcisi (favori kayıtlarını temizler) yalnızca root klasör için çalışıyor, alt klasörler için `file_favorites` orphan kalıyordu. Model bazlı iterasyona geçildi; artık tüm alt klasörler için event tetikleniyor.
+
+### Security
+
+- **`dedoc/scramble`** `^0.13.22`'ye yükseltildi (RCE sınıfı advisory giderildi).
+- **`phpseclib/phpseclib`** `3.0.52`'ye güncellendi (DoS advisory; `laravel/passport` üzerinden transitive).
+
+### Added
+
+- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri eklendi.
+
+---
+
 ## [13.5.2] - 2026-05-06
 
 ### Added

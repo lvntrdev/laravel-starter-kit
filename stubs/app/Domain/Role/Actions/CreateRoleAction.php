@@ -4,10 +4,10 @@ namespace App\Domain\Role\Actions;
 
 use App\Domain\Role\DTOs\RoleDTO;
 use App\Domain\Role\Events\RoleCreated;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Create a new role with permissions.

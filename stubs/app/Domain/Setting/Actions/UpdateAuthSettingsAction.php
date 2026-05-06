@@ -3,10 +3,10 @@
 namespace App\Domain\Setting\Actions;
 
 use App\Domain\Setting\DTOs\AuthSettingsDTO;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Update authentication settings.

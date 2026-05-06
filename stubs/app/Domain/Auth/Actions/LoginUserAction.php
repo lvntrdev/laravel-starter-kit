@@ -3,12 +3,12 @@
 namespace App\Domain\Auth\Actions;
 
 use App\Domain\Auth\DTOs\LoginDTO;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Features;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Authenticate a user via API credentials.

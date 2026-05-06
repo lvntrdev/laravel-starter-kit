@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use App\Models\Definition;
 use Illuminate\Database\Seeder;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 
 class _02_DefinitionSeeder extends Seeder
 {

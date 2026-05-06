@@ -21,8 +21,9 @@
 |
 */
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
+use Illuminate\Support\Str;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Domain\FileManager\Queries\FavoritesContentsQuery;
 use Lvntr\StarterKit\Domain\FileManager\Queries\FolderContentsQuery;
@@ -40,33 +41,31 @@ use Lvntr\StarterKit\Tests\Stubs\TestMedia;
  * bu testler dosya sistemi değil, boyut toplamı hesabını test ediyor.
  *
  * @param  string  $modelType  model_type (morph alias veya FQCN)
- * @param  string  $modelId
- * @param  int     $sizeBytes
- * @param  bool    $trashed    true ise deleted_at = now()
- * @return int  eklenen satır id'si
+ * @param  bool  $trashed  true ise deleted_at = now()
+ * @return int eklenen satır id'si
  */
 function insertMediaRow(string $modelType, string $modelId, int $sizeBytes, bool $trashed = false): int
 {
     return DB::table('media')->insertGetId([
-        'model_type'           => $modelType,
-        'model_id'             => $modelId,
-        'uuid'                 => \Illuminate\Support\Str::uuid()->toString(),
-        'collection_name'      => 'files',
-        'name'                 => 'test-file-'.\Illuminate\Support\Str::random(6),
-        'file_name'            => 'test.pdf',
-        'mime_type'            => 'application/pdf',
-        'disk'                 => 'public',
-        'conversions_disk'     => null,
-        'size'                 => $sizeBytes,
-        'manipulations'        => '[]',
-        'custom_properties'    => '[]',
+        'model_type' => $modelType,
+        'model_id' => $modelId,
+        'uuid' => Str::uuid()->toString(),
+        'collection_name' => 'files',
+        'name' => 'test-file-'.Str::random(6),
+        'file_name' => 'test.pdf',
+        'mime_type' => 'application/pdf',
+        'disk' => 'public',
+        'conversions_disk' => null,
+        'size' => $sizeBytes,
+        'manipulations' => '[]',
+        'custom_properties' => '[]',
         'generated_conversions' => '[]',
-        'responsive_images'    => '[]',
-        'order_column'         => null,
-        'folder_id'            => null,
-        'created_at'           => now(),
-        'updated_at'           => now(),
-        'deleted_at'           => $trashed ? now() : null,
+        'responsive_images' => '[]',
+        'order_column' => null,
+        'folder_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+        'deleted_at' => $trashed ? now() : null,
     ]);
 }
 
@@ -160,8 +159,8 @@ it('quota calculation: current + incoming exceeds quota', function (): void {
     // 700 MB mevcut kullanım
     insertMediaRow('user', '1', 700 * 1024 * 1024);
 
-    $current  = $helper->getStorageUsed();       // 734003200 bytes
-    $quota    = $helper->getQuotaBytes();         // 1 * 1024^3 = 1073741824
+    $current = $helper->getStorageUsed();       // 734003200 bytes
+    $quota = $helper->getQuotaBytes();         // 1 * 1024^3 = 1073741824
     $incoming = 400 * 1024 * 1024;               // 419430400 bytes — toplam > 1 GB
 
     expect($current + $incoming)->toBeGreaterThan($quota);
@@ -175,8 +174,8 @@ it('quota calculation: current + incoming within quota is allowed', function ():
     // 300 MB mevcut kullanım
     insertMediaRow('user', '1', 300 * 1024 * 1024);
 
-    $current  = $helper->getStorageUsed();
-    $quota    = $helper->getQuotaBytes();
+    $current = $helper->getStorageUsed();
+    $quota = $helper->getQuotaBytes();
     $incoming = 200 * 1024 * 1024; // 500 MB toplam < 1 GB
 
     expect($current + $incoming)->toBeLessThanOrEqual($quota);
@@ -220,11 +219,11 @@ it('FolderContentsQuery stats includes storage_quota key', function (): void {
 it('stats.storage_quota equals storageQuotaBytes() helper value', function (): void {
     config(['file-manager.settings.storage_quota_gb' => 5]);
 
-    $helper     = new StorageQuoteHelper;
-    $expected   = $helper->getQuotaBytes(); // 5 * 1024 * 1024 * 1024
+    $helper = new StorageQuoteHelper;
+    $expected = $helper->getQuotaBytes(); // 5 * 1024 * 1024 * 1024
 
     $context = makeTestContext('user', 'test-user-4');
-    $result  = (new FavoritesContentsQuery)->execute($context);
+    $result = (new FavoritesContentsQuery)->execute($context);
 
     expect($result['stats']['storage_quota'])->toBe($expected);
 });
@@ -259,7 +258,8 @@ it('storageQuotaBytes correctly converts GB to bytes', function (): void {
 function makeTestContext(string $context, string $ownerId): FileManagerContextDTO
 {
     // Minimal Eloquent model stub — gerçek tabloya ihtiyaç yok
-    $owner = new class extends \Illuminate\Database\Eloquent\Model {
+    $owner = new class extends Model
+    {
         protected $table = 'test_owners_virtual';
 
         protected $keyType = 'string';

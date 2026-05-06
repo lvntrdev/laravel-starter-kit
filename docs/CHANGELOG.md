@@ -2,6 +2,25 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-06 — v13.5.3
+
+### Patch release — Security updates, DeleteFolderAction event fix, CI improvements
+
+#### Fixed
+
+- **`DeleteFolderAction`** — descendant folders were permanently deleted via a query-builder `forceDelete()` call, which skipped Eloquent model events. The `forceDeleted` observer in `FileFolder` (responsible for cleaning up `file_favorites`) never fired for sub-folders, leaving orphan favorite records. Changed to model-level iteration so every `forceDeleted` event is dispatched correctly.
+
+#### Security
+
+- **`dedoc/scramble`** bumped from `^0.13` to `^0.13.22` to address a reported RCE-class advisory (GHSA fixed in v0.13.22).
+- **`phpseclib/phpseclib`** updated from `3.0.51` to `3.0.52` to address a high-severity DoS advisory (transitive via `laravel/passport`).
+
+#### Added
+
+- `composer test` (`vendor/bin/pest tests/Feature`) and `composer lint` (`vendor/bin/pint --test`) scripts are now available for contributors.
+
+---
+
 ## 2026-05-06 -v.13.5.2
 
 ### Patch release — Settings security consolidation, FileManager restore fix and i18n improvements
@@ -14,6 +33,7 @@ Settings now consolidates Auth and Turnstile into a single **Security** tab and 
 - **`StorageQuotaCard.vue`** displays disk-wide storage quota usage as a progress bar in the Settings panel.
 - **`SettingsDefaultsQuery`** now includes `storage_usage` (`used_bytes`, `quota_bytes`) in the Inertia payload.
 - **i18n keys** added in `sk-setting` (security/storage section labels), `sk-file-manager` (filter pill labels: `all`, `image`, `video`, `pdf`, `audio`, `archive`) and `sk-common` (confirmation dialog strings).
+- **`config('file-manager.settings.enable_trash')`** — new config key that controls soft-delete vs hard-delete for the entire FileManager. `true` (default) sends deleted files and folders to Trash; `false` permanently deletes immediately. Both `DeleteFileAction` and `DeleteFolderAction` read the config at delete time. The value is shared automatically via Inertia (`fileManagerSettings.enable_trash`) so the Vue component falls back to the config without needing the `:enable-trash` prop — the prop can still be passed to override per-instance.
 
 #### Fixed
 

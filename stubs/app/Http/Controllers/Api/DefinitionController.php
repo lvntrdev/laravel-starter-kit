@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
+use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 
 class DefinitionController extends Controller
 {

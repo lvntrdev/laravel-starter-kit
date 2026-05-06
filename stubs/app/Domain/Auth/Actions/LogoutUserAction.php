@@ -2,8 +2,8 @@
 
 namespace App\Domain\Auth\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\User;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Revoke the current API access token for a user.

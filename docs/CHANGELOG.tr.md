@@ -2,6 +2,25 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-06 — v13.5.3
+
+### Yama sürümü — Güvenlik güncellemeleri, DeleteFolderAction event düzeltmesi, CI iyileştirmeleri
+
+#### Düzeltmeler
+
+- **`DeleteFolderAction`** — alt klasörler, Eloquent model event'lerini atlayan query-builder `forceDelete()` çağrısıyla kalıcı siliniyordu. `FileFolder` model'indeki `forceDeleted` gözlemcisi (favori kayıtlarını temizlemekten sorumlu) alt klasörler için hiç tetiklenmiyordu; bu da `file_favorites` tablosunda sahipsiz kayıtlar bırakıyordu. Model bazlı iterasyona geçildi, artık her `forceDeleted` event'i doğru şekilde tetikleniyor.
+
+#### Güvenlik
+
+- **`dedoc/scramble`** `^0.13`'ten `^0.13.22`'ye yükseltildi — v0.13.22'de giderilen RCE sınıfı advisory (GHSA) için.
+- **`phpseclib/phpseclib`** `3.0.51`'den `3.0.52`'ye güncellendi — `laravel/passport` üzerinden gelen yüksek önem dereceli DoS advisory için.
+
+#### Eklenenler
+
+- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri katkıda bulunanlar için kullanılabilir hale getirildi.
+
+---
+
 ## 2026-05-06 -v.13.5.2
 
 ### Yama sürüm — Ayarlar güvenlik sekmesi birleştirmesi, FileManager geri yükleme düzeltmesi ve i18n iyileştirmeleri
@@ -14,6 +33,7 @@ Ayarlar paneli Kimlik Doğrulama ve Turnstile sekmelerini tek **Güvenlik** sekm
 - **`StorageQuotaCard.vue`** Ayarlar panelinde disk-genel depolama kotası kullanımını progress bar ile gösterir.
 - **`SettingsDefaultsQuery`** artık Inertia payload'ında `storage_usage` (`used_bytes`, `quota_bytes`) döndürür.
 - **i18n key'leri eklendi** — `sk-setting` (güvenlik/depolama bölüm etiketleri), `sk-file-manager` (filtre pill etiketleri: `all`, `image`, `video`, `pdf`, `audio`, `archive`) ve `sk-common` (onay diyalog string'leri).
+- **`config('file-manager.settings.enable_trash')`** — FileManager genelinde soft-delete vs hard-delete davranışını kontrol eden yeni config key'i. `true` (varsayılan) silinen dosya ve klasörleri Çöp Kutusu'na gönderir; `false` anında kalıcı olarak siler. `DeleteFileAction` ve `DeleteFolderAction` silme anında bu config'i okur. Değer Inertia üzerinden otomatik paylaşılır (`fileManagerSettings.enable_trash`); Vue bileşeni `:enable-trash` prop'u verilmediğinde config değerine geri döner. Prop yine de instance bazında override için geçilebilir.
 
 #### Fixed
 

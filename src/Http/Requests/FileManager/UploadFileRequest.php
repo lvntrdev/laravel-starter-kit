@@ -133,13 +133,13 @@ class UploadFileRequest extends FileManagerRequest
             }
 
             $current = $this->computeStorageUsed();
-            $quota   = $this->storageQuotaBytes();
+            $quota = $this->storageQuotaBytes();
 
             if ($current + $incoming > $quota) {
                 $validator->errors()->add('files', trans('sk-file-manager.errors.quota_exceeded', [
-                    'used'     => $this->mb($current),
+                    'used' => $this->mb($current),
                     'incoming' => $this->mb($incoming),
-                    'quota'    => $this->mb($quota),
+                    'quota' => $this->mb($quota),
                 ]));
             }
         });

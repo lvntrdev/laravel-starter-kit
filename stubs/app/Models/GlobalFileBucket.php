@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Lvntr\StarterKit\Traits\HasMediaCollections;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Lvntr\StarterKit\Traits\HasMediaCollections;
 use Spatie\MediaLibrary\HasMedia;
 
 /**

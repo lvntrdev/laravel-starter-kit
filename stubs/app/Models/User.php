@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use Lvntr\StarterKit\Traits\HasActivityLogging;
-use Lvntr\StarterKit\Traits\HasMediaCollections;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -17,6 +15,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Laravel\Passport\Token;
+use Lvntr\StarterKit\Traits\HasActivityLogging;
+use Lvntr\StarterKit\Traits\HasMediaCollections;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\Permission\Traits\HasRoles;
 

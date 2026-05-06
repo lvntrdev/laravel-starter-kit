@@ -24,7 +24,9 @@ class DeleteFolderAction extends FileManagerAction
         /** @var class-string<Model> $folderModel */
         $folderModel = config('file-manager.models.folder', 'App\\Models\\FileFolder');
 
-        DB::transaction(function () use ($context, $folder, $folderModel) {
+        $enableTrash = (bool) config('file-manager.settings.enable_trash', true);
+
+        DB::transaction(function () use ($context, $folder, $folderModel, $enableTrash) {
             $descendantIds = $this->collectDescendantIds($context, $folder, $folderModel);
             $folderIds = [...$descendantIds, (string) $folder->getKey()];
 
@@ -34,13 +36,15 @@ class DeleteFolderAction extends FileManagerAction
                 ->where('collection_name', 'files')
                 ->whereIn('folder_id', $folderIds)
                 ->get()
-                ->each(fn (Media $media) => $media->delete());
+                ->each(fn (Media $media) => $enableTrash ? $media->delete() : $media->forceDelete());
 
             if ($descendantIds !== []) {
-                $folderModel::query()->whereIn('id', $descendantIds)->delete();
+                $enableTrash
+                    ? $folderModel::query()->whereIn('id', $descendantIds)->delete()
+                    : $folderModel::query()->whereIn('id', $descendantIds)->get()->each->forceDelete();
             }
 
-            $folder->delete();
+            $enableTrash ? $folder->delete() : $folder->forceDelete();
         });
     }
 

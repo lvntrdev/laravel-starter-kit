@@ -4,8 +4,8 @@ namespace App\Domain\SampleContent\Actions;
 
 use App\Domain\SampleContent\DTOs\SampleContentDTO;
 use App\Domain\SampleContent\Events\SampleContentCreated;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\SampleContent;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Create a new sample_content.

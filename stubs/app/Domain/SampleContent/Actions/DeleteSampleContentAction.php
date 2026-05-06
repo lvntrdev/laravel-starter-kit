@@ -3,8 +3,8 @@
 namespace App\Domain\SampleContent\Actions;
 
 use App\Domain\SampleContent\Events\SampleContentDeleted;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Models\SampleContent;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Delete a sample_content.

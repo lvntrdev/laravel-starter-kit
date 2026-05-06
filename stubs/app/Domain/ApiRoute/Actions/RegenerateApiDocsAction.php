@@ -2,8 +2,8 @@
 
 namespace App\Domain\ApiRoute\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\Artisan;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Regenerate the Scramble API documentation (OpenAPI export).

@@ -2,9 +2,9 @@
 
 namespace App\Domain\Role\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Database\Seeders\_01_RolePermissionSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Run the RolePermissionSeeder to sync permissions from config.

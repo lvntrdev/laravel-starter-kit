@@ -2,8 +2,8 @@
 
 namespace App\Domain\Setting\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Illuminate\Support\Facades\Mail;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Send a test email using current mail configuration.

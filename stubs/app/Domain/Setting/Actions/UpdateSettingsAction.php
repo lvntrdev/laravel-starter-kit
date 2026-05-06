@@ -2,9 +2,9 @@
 
 namespace App\Domain\Setting\Actions;
 
+use App\Models\Setting;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
-use App\Models\Setting;
 
 /**
  * Action: Update a settings group.

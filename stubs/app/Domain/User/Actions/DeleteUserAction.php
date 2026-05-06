@@ -2,9 +2,9 @@
 
 namespace App\Domain\User\Actions;
 
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Domain\User\Events\UserDeleted;
 use App\Models\User;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Delete a user.

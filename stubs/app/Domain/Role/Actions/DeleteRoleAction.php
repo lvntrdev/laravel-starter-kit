@@ -3,9 +3,9 @@
 namespace App\Domain\Role\Actions;
 
 use App\Domain\Role\Events\RoleDeleted;
-use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use App\Enums\RoleEnum;
 use App\Models\Role;
+use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**
  * Action: Delete a role.
