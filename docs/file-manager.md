@@ -57,7 +57,7 @@ import FileManager from '@lvntr/components/FileManager/FileManager.vue';
 | `context`       | `'user' \| 'global' \| string` | required  | Context key registered with `ContextRegistry` (built-ins: `user`, `global`) |
 | `contextId`     | `string \| null`               | `null`    | Owner primary key — required for contexts whose path contains `{id}`        |
 | `readonly`      | `boolean`                      | `false`   | Disable all mutations (upload/delete/rename/move)                           |
-| `enableTrash`   | `boolean`                      | `true`    | Move deletes to Trash; set false for immediate permanent delete             |
+| `enableTrash`   | `boolean`                      | config    | Move deletes to Trash; falls back to `config('file-manager.settings.enable_trash')` (default `true`). Pass explicitly to override the config value. |
 | `acceptedMimes` | `string[]?`                    | settings  | Override accepted MIME list                                                 |
 | `maxSizeKb`     | `number?`                      | settings  | Override max upload size                                                    |
 | `height`        | `string`                       | `'600px'` | CSS height of the shell; pass `100%` to fill a flex parent                  |
@@ -316,6 +316,22 @@ Moving a file between folders only updates `media.folder_id` in the DB — the f
 | `file_manager.allow_audio`    | `false`                           | Toggle to accept `audio/*` uploads |
 
 Backend validation reads these settings on every upload request — bypassing the frontend mime filter still fails server-side.
+
+### Trash behaviour (`enable_trash`)
+
+The `enable_trash` key in `config/file-manager.php` is the single source of truth for soft-vs-hard delete:
+
+```php
+// config/file-manager.php
+'settings' => [
+    'enable_trash' => true,  // set false for hard deletes everywhere
+],
+```
+
+- **`true` (default)** — delete sends items to Trash (soft-delete). The Trash sidebar entry is visible. Restore and Empty Trash are available.
+- **`false`** — all delete operations permanently remove the item immediately. The Trash sidebar entry is hidden.
+
+Both the backend actions (`DeleteFileAction`, `DeleteFolderAction`) and the Vue component read this value. The config is shared automatically via Inertia shared props (`fileManagerSettings.enable_trash`) so the component does not need the `:enable-trash` prop unless you want to override the config value per-instance.
 
 ## Permissions
 

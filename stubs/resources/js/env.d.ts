@@ -10,6 +10,9 @@ declare module '@inertiajs/core' {
                 user: User | null;
             };
             flash: FlashMessages;
+            fileManagerSettings: {
+                enable_trash: boolean;
+            };
         };
     }
 }

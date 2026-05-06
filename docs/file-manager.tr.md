@@ -57,7 +57,7 @@ Buradaki `vehicle` ya bir morph-map alias'ı, ya convention gereği `App\Models\
 | `context`       | `'user' \| 'global' \| string` | zorunlu    | `ContextRegistry`'e kayıtlı context anahtarı (built-in: `user`, `global`)     |
 | `contextId`     | `string \| null`               | `null`     | Owner primary key — path şablonu `{id}` içeren context'lerde zorunlu          |
 | `readonly`      | `boolean`                      | `false`    | Tüm mutasyonları devre dışı bırakır (yükleme/silme/yeniden adlandırma/taşıma) |
-| `enableTrash`   | `boolean`                      | `true`     | Silmeleri Çöp Kutusu'na taşır; doğrudan kalıcı silme için false verin         |
+| `enableTrash`   | `boolean`                      | config     | Silmeleri Çöp Kutusu'na taşır; `config('file-manager.settings.enable_trash')` değerine (varsayılan `true`) geri döner. Prop açıkça geçilirse config değerini ezer. |
 | `acceptedMimes` | `string[]?`                    | settings   | Kabul edilen MIME listesini override eder                                     |
 | `maxSizeKb`     | `number?`                      | settings   | Maksimum yükleme boyutunu override eder                                       |
 | `height`        | `string`                       | `'600px'`  | Shell'in CSS yüksekliği; flex parent'ı doldurmak için `100%`                  |
@@ -314,6 +314,22 @@ Bir dosyayı başka klasöre taşımak sadece DB'deki `media.folder_id`'yi günc
 | `file_manager.allow_audio`    | `false`                            | `audio/*` yüklemeleri kabul etme toggle'ı |
 
 Backend validation her upload isteğinde bu ayarları okur — frontend mime filtresini atlatmak sunucu tarafında yine reddedilir.
+
+### Çöp kutusu davranışı (`enable_trash`)
+
+`config/file-manager.php` içindeki `enable_trash` anahtarı soft-delete vs hard-delete için tek yetkili kaynaktır:
+
+```php
+// config/file-manager.php
+'settings' => [
+    'enable_trash' => true,  // hard delete için false yapın
+],
+```
+
+- **`true` (varsayılan)** — silme işlemi öğeyi Çöp Kutusu'na gönderir (soft-delete). Sidebar'da Çöp Kutusu girişi görünür. Geri Yükle ve Çöpü Boşalt kullanılabilir.
+- **`false`** — tüm silme işlemleri öğeyi anında kalıcı olarak siler. Sidebar'da Çöp Kutusu girişi gizlenir.
+
+Hem backend action'ları (`DeleteFileAction`, `DeleteFolderAction`) hem de Vue bileşeni bu değeri okur. Config, Inertia shared props (`fileManagerSettings.enable_trash`) aracılığıyla otomatik paylaşılır; component'in `:enable-trash` prop'una ihtiyacı yoktur — yalnızca config değerini instance bazında ezmek istediğinizde geçin.
 
 ## İzinler
 

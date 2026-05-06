@@ -15,6 +15,7 @@
     // reference instead of a dynamic `resolveDirective('tooltip')` call —
     // avoids the "resolveDirective imported but never used" warning in consumer builds.
     const vTooltip = Tooltip;
+    import { usePage } from '@inertiajs/vue3';
     import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
     import FilePreviewModal, { suggestedPreviewWidth } from '../ui/FilePreviewModal.vue';
     import Breadcrumb from './components/Breadcrumb.vue';
@@ -37,9 +38,13 @@
     const props = withDefaults(defineProps<FileManagerProps>(), {
         contextId: null,
         readonly: false,
-        enableTrash: true,
         height: 'auto',
     });
+
+    const page = usePage();
+    const effectiveEnableTrash = computed(
+        () => props.enableTrash ?? page.props.fileManagerSettings?.enable_trash ?? true,
+    );
 
     const toast = useToast();
     const { confirmDelete, confirmAction } = useConfirm();
@@ -925,7 +930,7 @@
 
     function confirmDeleteFolder(folder: FolderSummary): void {
         confirmDelete(async () => {
-            if (props.enableTrash) {
+            if (effectiveEnableTrash.value) {
                 await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFolder(folder.id));
                 toast.add({
                     severity: 'success',
@@ -951,7 +956,7 @@
 
     function confirmDeleteFile(file: FileItem): void {
         confirmDelete(async () => {
-            if (props.enableTrash) {
+            if (effectiveEnableTrash.value) {
                 await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.deleteFile(file.id));
                 toast.add({
                     severity: 'success',
@@ -979,7 +984,7 @@
         if (fm.selectionCount.value === 0) return;
         const inTrash = fm.currentView.value === 'trash';
         confirmDelete(async () => {
-            if (inTrash || !props.enableTrash) {
+            if (inTrash || !effectiveEnableTrash.value) {
                 await runBusy(trans('sk-file-manager.labels.deleting'), () => fm.bulkForceDelete());
                 toast.add({
                     severity: 'success',
@@ -1280,7 +1285,7 @@
                 :used-bytes="usedBytes"
                 :quota-bytes="quotaBytes"
                 :readonly="readonly"
-                :enable-trash="enableTrash"
+                :enable-trash="effectiveEnableTrash"
                 @select-quick="onSelectQuick"
                 @select-folder="onSelectSidebarFolder"
                 @new-folder="openNewFolder"

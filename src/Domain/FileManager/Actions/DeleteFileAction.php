@@ -18,6 +18,8 @@ class DeleteFileAction extends FileManagerAction
             throw new LogicException(__('sk-file-manager.errors.file_out_of_context'));
         }
 
-        $media->delete();
+        config('file-manager.settings.enable_trash', true)
+            ? $media->delete()
+            : $media->forceDelete();
     }
 }

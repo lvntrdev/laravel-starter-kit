@@ -49,6 +49,9 @@ return [
     | allow_audio        — Whether audio MIME types are accepted.
     | storage_quota_gb   — GB cinsinden, tüm Media kayıtları üzerinde tek bir
     |                      disk-genel kota (default 10 GB).
+    | enable_trash       — true: silme işlemi soft-delete (çöp kutusu); false:
+    |                      kalıcı silme (hard delete). Frontend ve backend
+    |                      her ikisi de bu değere uyar.
     |
     */
 
@@ -58,6 +61,7 @@ return [
         'allow_video' => false,
         'allow_audio' => false,
         'storage_quota_gb' => 10,
+        'enable_trash' => true,
     ],
 
 ];
