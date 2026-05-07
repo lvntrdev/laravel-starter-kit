@@ -5,7 +5,7 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.5.5] - 2026-05-07
+## [13.5.5] - 2026-05-08
 
 ### Changed
 
@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`src/Domain/FileManager/Models/ShareRevocation.php`** — `$revoked_by_user_id` PHPDoc tipi `int|null` → `string|null` güncellendi; migration'daki UUID tipiyle uyumlu hale getirildi.
 - **`src/Console/Commands/InstallCommand.php`** — `app/Helpers/custom.php` dosyası yoksa `composer dump-autoload`'dan önce minimal stub (`<?php`) otomatik oluşturuluyor; eksik dosya her artisan çağrısını kırıyordu.
 - **`tests/DatabaseTestCase.php`** — In-memory migration'da `revoked_by_user_id` kolonu `unsignedBigInteger` → `uuid` olarak güncellendi; migration ile test şeması uyumsuzluğu giderildi.
+- **API istemcilerinden `scopes` alanı kaldırıldı.** Native Passport'un `oauth_clients` tablosunda `scopes` kolonu bulunmaz; bu alan `StoreApiClientRequest`, `UpdateApiClientRequest`, `CreateApiClientAction`, `UpdateApiClientAction`, `ApiClientController`, `ApiClientResource`, `ApiClientForm.vue` ve `ApiClientsManageTab.vue` içinde ölü kod olarak duruyordu ve `Column not found: 1054 Unknown column 'scopes'` hatasıyla her oluşturma/güncelleme isteğini kırıyordu. PAT kapsamları (`CreatePersonalAccessTokenAction` içinde `$user->createToken($name, $scopes)`) değişmedi — bunlar `oauth_access_tokens.scopes` kolonuna yazar ve sorunsuz çalışır.
+- **`passport:client --personal` kurulumda otomatik oluşturuluyor.** `sk:install` (`InstallCommand.php`) ve `site:install` (`SiteInstallCommand.php`) artık `passport:keys` sonrasında `passport:client --personal --provider=users` komutunu otomatik olarak çalıştırıyor. Bu adımın eksik olduğu mevcut kurulumlar token oluşturma sırasında `LogicException: Unable to determine authentication provider` hatası alıyordu.
+- **Laravel 11 `api` guard otomatik enjekte ediliyor.** `StarterKitServiceProvider::configurePassport()` metodu artık `auth.guards.api` anahtarının eksik olup olmadığını kontrol ediyor ve yoksa `['driver' => 'passport', 'provider' => 'users']` tanımını runtime'da enjekte ediyor. Laravel 11, varsayılan `auth.php`'den `api` guard'ını kaldırdı; Passport'un `createToken()` metodu kullanıcı provider'ını bulmak için bu guard'a ihtiyaç duyuyor.
+- **Datatable, kayıt oluşturulur oluşturulmaz yenileniyor.** `ApiClientsManageTab.vue` ve `ApiTokensManageTab.vue` içinde `bus.refresh(REFRESH_KEY)` artık `onCreated` callback'i tetiklendiği anda — yani kayıt başarıyla oluşturulduğunda — çağrılıyor. Önceki davranışta yenileme yalnızca `OneTimeSecretModal`'da "Sakladım" butonuna tıklandığında gerçekleşiyordu; kullanıcı modalı X ile kapatırsa tablo güncellenemiyordu.
 
 ### UI
 
@@ -31,9 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 composer update lvntr/laravel-starter-kit
 
 # Etkilenen stub'ları yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
-# useAdminMenu.ts, SystemHealthController.php, ApiClientsManageTab.vue,
-# ApiTokensManageTab.vue, SystemHealthTab.vue
+# useAdminMenu.ts, SystemHealthController.php, SystemHealthTab.vue,
+# ApiClientController.php, ApiTokenController.php, ApiClientForm.vue,
+# ApiClientsManageTab.vue, ApiTokensManageTab.vue, CreateTokenModal.vue,
+# OneTimeSecretModal.vue, api-client-route.php, api-token-route.php
 php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Passport personal access client:** Daha önce hiç çalıştırılmamışsa aşağıdaki komutu manuel olarak çalıştırın:
+
+```bash
+php artisan passport:client --personal --provider=users
 ```
 
 **Migration notu:** `file_manager_share_revocations` tablosunu v13.5.3'te yayınladıysanız `revoked_by_user_id` kolonu `uuid`'e migrate edin:

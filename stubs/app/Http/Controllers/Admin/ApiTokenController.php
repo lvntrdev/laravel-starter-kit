@@ -12,8 +12,6 @@ use App\Http\Responses\DatatableQueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
-use Inertia\Response;
 use Laravel\Passport\Passport;
 use Laravel\Passport\Token;
 
@@ -29,18 +27,6 @@ use Laravel\Passport\Token;
  */
 class ApiTokenController extends Controller
 {
-    /**
-     * PAT listeleme sayfasını göster.
-     */
-    public function index(Request $request): Response
-    {
-        Gate::authorize('viewAny', Token::class);
-
-        return Inertia::render('Admin/ApiTokens/Index', [
-            'availableScopes' => Passport::scopes()->values(),
-        ]);
-    }
-
     /**
      * Token listesini JSON olarak döndür (DataTable için).
      *

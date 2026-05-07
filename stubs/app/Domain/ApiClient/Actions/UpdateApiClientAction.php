@@ -13,18 +13,15 @@ class UpdateApiClientAction
 {
     /**
      * @param  string[]  $redirectUris
-     * @param  string[]  $scopes
      */
     public function execute(
         Client $client,
         string $name,
         array $redirectUris = [],
-        array $scopes = [],
     ): Client {
         $client->forceFill([
             'name' => $name,
             'redirect_uris' => $redirectUris,
-            'scopes' => $scopes,
         ])->save();
 
         return $client->fresh();

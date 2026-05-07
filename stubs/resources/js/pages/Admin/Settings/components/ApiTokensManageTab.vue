@@ -1,14 +1,14 @@
 <script setup lang="ts">
     import { useCan } from '@/composables/useCan';
     import { useConfirm } from '@/composables/useConfirm';
+    import { useDialog } from '@/composables/useDialog';
     import { useRefreshBus } from '@/composables/useRefreshBus';
     import { router } from '@inertiajs/vue3';
     import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
-    import { reactive, ref } from 'vue';
 
-    import OneTimeSecretModal from '@/pages/Admin/ApiClients/components/OneTimeSecretModal.vue';
-    import CreateTokenModal from '@/pages/Admin/ApiTokens/components/CreateTokenModal.vue';
+    import CreateTokenModal from './CreateTokenModal.vue';
+    import OneTimeSecretModal from './OneTimeSecretModal.vue';
     import apiTokens from '@/routes/api-tokens';
 
     interface ScopeOption {
@@ -37,48 +37,11 @@
     const props = defineProps<Props>();
 
     const { confirmDelete } = useConfirm();
+    const dialog = useDialog();
     const bus = useRefreshBus();
     const { can } = useCan();
 
     const REFRESH_KEY = 'api-tokens-table';
-
-    const createModal = ref(false);
-
-    function openCreateModal() {
-        createModal.value = true;
-    }
-
-    function onCreateModalClose() {
-        createModal.value = false;
-    }
-
-    const tokenModal = reactive({
-        visible: false,
-        token: '',
-    });
-
-    function onTokenCreated(accessToken: string) {
-        createModal.value = false;
-        tokenModal.token = accessToken;
-        tokenModal.visible = true;
-    }
-
-    function onTokenModalConfirmed() {
-        tokenModal.visible = false;
-        tokenModal.token = '';
-        bus.refresh(REFRESH_KEY);
-    }
-
-    function revokeToken(token: ApiToken) {
-        confirmDelete(
-            () => {
-                router.delete(apiTokens.destroy.url(token), {
-                    onSuccess: () => bus.refresh(REFRESH_KEY),
-                });
-            },
-            trans('sk-api-tokens.revoke_confirm'),
-        );
-    }
 
     const tableBuilder = DB.table<ApiToken>()
         .route(apiTokens.dtApi.url())
@@ -137,13 +100,39 @@
                 .severity('danger')
                 .tooltip(trans('sk-api-tokens.revoke'))
                 .visible(() => can('api-tokens.delete'))
-                .handle((token) => revokeToken(token)),
+                .handle((token) =>
+                    confirmDelete(
+                        () =>
+                            router.delete(apiTokens.destroy.url(token), {
+                                onSuccess: () => bus.refresh(REFRESH_KEY),
+                            }),
+                        trans('sk-api-tokens.revoke_confirm'),
+                    ),
+                ),
         );
 
     if (can('api-tokens.create')) {
         tableBuilder.create({
             label: 'sk-api-tokens.create',
-            onClick: openCreateModal,
+            onClick: () =>
+                dialog.open(
+                    CreateTokenModal,
+                    {
+                        availableScopes: props.availableScopes,
+                        onCreated: (accessToken: string) => {
+                            bus.refresh(REFRESH_KEY);
+                            dialog.open(
+                                OneTimeSecretModal,
+                                { secret: accessToken, type: 'token', onSuccess: () => dialog.close() },
+                                trans('sk-api-tokens.token_modal.title'),
+                                { width: '560px' },
+                            );
+                        },
+                        onCancel: () => dialog.close(),
+                    },
+                    trans('sk-api-tokens.create'),
+                    { width: '520px' },
+                ),
         });
     }
 
@@ -152,18 +141,4 @@
 
 <template>
     <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
-
-    <CreateTokenModal
-        :visible="createModal"
-        :available-scopes="props.availableScopes"
-        @close="onCreateModalClose"
-        @created="onTokenCreated"
-    />
-
-    <OneTimeSecretModal
-        :visible="tokenModal.visible"
-        :secret="tokenModal.token"
-        type="token"
-        @confirm="onTokenModalConfirmed"
-    />
 </template>

@@ -29,7 +29,6 @@ Route::prefix('api-tokens')
     ->middleware('role:system_admin')
     ->group(function () {
         Route::get('dt', 'dtApi')->name('dtApi');
-        Route::get('/', 'index')->name('index');
 
         // Token üretme: düşük limit (brute-force koruması)
         Route::post('/', 'store')->name('store')->middleware('throttle:10,1');

@@ -27,7 +27,6 @@ Route::prefix('api-clients')
     ->group(function () {
         Route::get('dt', 'dtApi')->name('dtApi');
         Route::get('{client}/data', 'data')->name('data');
-        Route::get('/', 'index')->name('index');
 
         // Yazma işlemleri rate limit'e tabi
         Route::middleware('throttle:30,1')->group(function () {

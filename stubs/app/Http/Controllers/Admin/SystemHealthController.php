@@ -3,48 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
-use Inertia\Response;
 
-/**
- * Admin panel sistem sağlık kontrolü ekranı.
- *
- * sk:doctor komutunu HTTP üzerinden tetikler ve JSON çıktısını
- * Inertia sayfasına prop olarak iletir.
- *
- * Thin per project convention:
- *   - Auth gate → 'system.health.view' permission
- *   - Business logic → sk:doctor Artisan command (Lvntr\StarterKit)
- */
 class SystemHealthController extends Controller
 {
     /**
-     * Sistem sağlık ekranını göster.
+     * sk:doctor komutunu çalıştır.
      *
-     * Yalnızca boş state ile sayfa render edilir (report: null).
-     * sk:doctor çalıştırmaz — ilk açılışta UI donmasını önler.
-     * Frontend onMounted içinde run() POST endpoint'ini çağırarak sonuçları çeker.
+     * JSON isteğinde (Settings tab'ı) raporu doğrudan döner — sayfa navigasyonu olmaz,
+     * tab state korunur. Normal istekte Settings sayfasına redirect yapar.
      */
-    public function index(): Response
-    {
-        Gate::authorize('system.health.view');
-
-        return Inertia::render('Admin/SystemHealth/Index', [
-            'report' => session('doctor_report'),
-        ]);
-    }
-
-    /**
-     * sk:doctor komutunu yeniden çalıştır ve sayfayı güncelle.
-     *
-     * Inertia router.post ile çağrılır; back() ile çağrıldığı sayfaya
-     * (Settings tab'ı veya bağımsız sayfa) dönülür. Doctor raporu flash
-     * üzerinden iletilir; ilgili index() çağrıları onu prop'a aktarır.
-     */
-    public function run(): RedirectResponse
+    public function run(): JsonResponse|RedirectResponse
     {
         Gate::authorize('system.health.view');
 
@@ -54,25 +26,36 @@ class SystemHealthController extends Controller
         $failCount = $summary['fail'] ?? 0;
         $warnCount = $summary['warn'] ?? 0;
 
+        if (request()->wantsJson()) {
+            $type = match (true) {
+                $failCount > 0 => 'error',
+                $warnCount > 0 => 'warning',
+                default => 'success',
+            };
+
+            $message = match ($type) {
+                'error' => __('sk-system-health.run_fail', ['count' => $failCount]),
+                'warning' => __('sk-system-health.run_warn', ['count' => $warnCount]),
+                default => __('sk-system-health.run_ok'),
+            };
+
+            return response()->json(['report' => $report, 'type' => $type, 'message' => $message]);
+        }
+
         session()->flash('doctor_report', $report);
 
         if ($failCount > 0) {
-            return back()->with('error', __('sk-system-health.run_fail', ['count' => $failCount]));
+            return redirect()->route('settings.index')->with('error', __('sk-system-health.run_fail', ['count' => $failCount]));
         }
 
         if ($warnCount > 0) {
-            return back()->with('warning', __('sk-system-health.run_warn', ['count' => $warnCount]));
+            return redirect()->route('settings.index')->with('warning', __('sk-system-health.run_warn', ['count' => $warnCount]));
         }
 
-        return back()->with('success', __('sk-system-health.run_ok'));
+        return redirect()->route('settings.index')->with('success', __('sk-system-health.run_ok'));
     }
 
     /**
-     * sk:doctor --json çalıştır ve çıktıyı dizi olarak döndür.
-     *
-     * Artisan::call HTTP request içinde bloklayıcıdır; check'lerin 2 saniyelik
-     * timeout disiplini DoctorCommand tarafından uygulanır (T1 kapsamı).
-     *
      * @return array<string, mixed>
      */
     private function runDoctorCommand(): array

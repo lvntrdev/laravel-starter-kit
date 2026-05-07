@@ -192,10 +192,13 @@ class InstallCommand extends Command
             });
         }
 
-        // 10. Passport keys
+        // 10. Passport keys + personal access client
         if ($this->confirmStep('Generate Passport encryption keys?')) {
             $this->step('Generating Passport keys', function () {
                 $this->callSilently('passport:keys', ['--force' => true]);
+            });
+            $this->step('Creating Passport personal access client', function () {
+                $this->callSilently('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
             });
         }
 

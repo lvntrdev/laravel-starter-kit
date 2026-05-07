@@ -87,10 +87,14 @@ class SiteInstallCommand extends Command
         // 4. Seeders (roles, permissions, definitions, default settings)
         $this->runSeeders();
 
-        // 5. Passport keys
+        // 5. Passport keys + personal access client
         spin(function () {
             return $this->callSilently('passport:keys', ['--force' => true]) === 0;
         }, 'Installing Passport keys...');
+
+        spin(function () {
+            return $this->callSilently('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]) === 0;
+        }, 'Creating Passport personal access client...');
 
         // 6. Default admin user
         $email = 'admin@demo.com';

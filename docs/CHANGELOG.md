@@ -2,11 +2,11 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-05-07 — v13.5.5
+## 2026-05-08 — v13.5.5
 
-### Patch release — System Health moved to Settings, UUID fix for share revocations, install reliability
+### Patch release — Passport setup fixes, API client scopes removed, Settings tabs, UUID fix
 
-System Health is no longer a standalone admin page — its content is now embedded as a Settings tab (`SystemHealthTab.vue`) rendered with a PrimeVue `Card`. The admin sidebar entry is removed. A migration bug is fixed: `revoked_by_user_id` in `file_manager_share_revocations` was typed as `unsignedBigInteger` but the users table uses UUID primary keys; the column is now correctly declared as `uuid`. `InstallCommand` gains a guard that auto-creates `app/Helpers/custom.php` before `composer dump-autoload` runs, preventing artisan from crashing on fresh installs. The `ApiClientsManageTab` and `ApiTokensManageTab` stubs drop their hand-rolled `<header>` blocks in favour of the `DatatableBuilder` card API (`isCard`, `cardTitle`, `cardSubtitle`, `create()`). `SkDatatable` card caption now has proper body padding so title and subtitle align with the standard Card body rhythm.
+System Health and API client/token management are now embedded as Settings tabs — no more standalone admin pages. A critical bug is fixed: the `scopes` field on OAuth clients never existed in Passport's schema and caused a fatal SQL error on every client create/update. Passport setup now happens fully automatically during `sk:install` and `site:install` (personal access client creation was previously missing). A runtime guard ensures the `api` guard required by Passport is always present even on Laravel 11 where it was removed from the default `auth.php`. Datatable refresh after record creation is now immediate. UUID type fix for the `file_manager_share_revocations` migration, and `InstallCommand` reliability improvements round out the release.
 
 #### Changed
 
@@ -16,6 +16,10 @@ System Health is no longer a standalone admin page — its content is now embedd
 
 #### Fixed
 
+- **API client `scopes` field removed.** The `scopes` column does not exist on `oauth_clients` in native Passport. The field was dead code across `StoreApiClientRequest`, `UpdateApiClientRequest`, `CreateApiClientAction`, `UpdateApiClientAction`, `ApiClientController`, `ApiClientResource`, `ApiClientForm.vue`, and `ApiClientsManageTab.vue`, and caused `Column not found: 1054 Unknown column 'scopes'` on every create/update. PAT scopes (`$user->createToken($name, $scopes)`) are unaffected — they are stored on `oauth_access_tokens.scopes` and continue to work.
+- **`passport:client --personal` now runs automatically during install.** Both `sk:install` and `site:install` now execute `passport:client --personal --provider=users` immediately after `passport:keys`. The missing step caused `LogicException: Unable to determine authentication provider` on token creation in fresh installs.
+- **Laravel 11 `api` guard auto-injected at runtime.** `StarterKitServiceProvider::configurePassport()` now checks for `auth.guards.api` and injects `['driver' => 'passport', 'provider' => 'users']` when absent. Laravel 11 removed this guard from the default `auth.php`; Passport's `createToken()` requires it to resolve the user provider.
+- **Datatable refreshes immediately after record creation.** `ApiClientsManageTab.vue` and `ApiTokensManageTab.vue` now call `bus.refresh(REFRESH_KEY)` as soon as `onCreated` fires (i.e. the moment the API responds with success), instead of waiting for the user to click "I've saved it" in `OneTimeSecretModal`.
 - **`file_manager_share_revocations` migration** — `revoked_by_user_id` column changed from `unsignedBigInteger` to `uuid` to match the UUID primary key on the `users` table. Upgrading from v13.5.3: see the migration note below.
 - **`ShareRevocation` model** — `$revoked_by_user_id` PHPDoc type corrected from `int|null` to `string|null`.
 - **`InstallCommand`** — `app/Helpers/custom.php` is now auto-created (minimal `<?php` stub) when missing, before `composer dump-autoload`. Absence of this file caused every subsequent artisan call to fail on fresh installs.
@@ -32,8 +36,16 @@ composer update lvntr/laravel-starter-kit
 
 # Re-publish affected stubs (warning: customised stubs are overridden — diff first)
 # useAdminMenu.ts, SystemHealthController.php, SystemHealthTab.vue,
-# ApiClientsManageTab.vue, ApiTokensManageTab.vue
+# ApiClientController.php, ApiTokenController.php, ApiClientForm.vue,
+# ApiClientsManageTab.vue, ApiTokensManageTab.vue, CreateTokenModal.vue,
+# OneTimeSecretModal.vue, api-client-route.php, api-token-route.php
 php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Passport personal access client** — if you never ran `passport:client --personal` in a previous install, run it once:
+
+```bash
+php artisan passport:client --personal --provider=users
 ```
 
 **Migration note** — if you published `file_manager_share_revocations` in v13.5.3, run a new migration to fix the column type:
@@ -47,7 +59,7 @@ Schema::table('file_manager_share_revocations', function (Blueprint $table) {
 });
 ```
 
-No new permissions, config keys, or behaviour changes in this release.
+No new permissions or config keys in this release.
 
 ---
 

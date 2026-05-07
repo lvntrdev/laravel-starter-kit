@@ -4,8 +4,12 @@ Admin paneli, Passport OAuth2 istemcilerini ve Personal Access Token'ları yöne
 
 ## Admin Sayfaları
 
-- `/admin/api-clients` — OAuth2 istemcilerini listele, oluştur, güncelle ve sil
-- `/admin/api-tokens` — Personal Access Token'ları listele ve sil; kimliği doğrulanmış kullanıcı için yeni PAT oluştur
+API istemcisi ve token yönetimi, **Settings** sayfasındaki sekmeler olarak sunulmaktadır:
+
+- **Settings → API Clients sekmesi** — OAuth2 istemcilerini listele, oluştur, güncelle ve sil
+- **Settings → API Tokens sekmesi** — Personal Access Token'ları listele ve sil; kimliği doğrulanmış kullanıcı için yeni PAT oluştur
+
+`/admin/api-clients` ve `/admin/api-tokens` route'ları varlığını korumakta, ancak ilgili sekme ön seçimiyle Settings sayfasına yönlendirmektedir.
 
 ## İstemci Türleri
 
@@ -61,4 +65,19 @@ php artisan migrate
 php artisan sk:seed-permissions --fresh
 ```
 
-v13.5.3'te yapılan değişikliklerin tam listesi için [CHANGELOG](./CHANGELOG.tr.md) sayfasına bakın.
+### v13.5.6
+
+- **API istemcilerinden `scopes` alanı kaldırıldı.** `scopes` alanı tüm form, request, action ve resource dosyalarından temizlendi. Native Passport'un `oauth_clients` tablosunda bu kolon hiç olmadı; alan ölü kod olarak kalıyor ve her oluşturma/güncelleme isteğinde `Column not found: 1054 Unknown column 'scopes'` hatasına yol açıyordu. PAT kapsamları etkilenmedi.
+- **Passport personal access client.** `sk:install` ve `site:install` artık `passport:client --personal --provider=users` komutunu otomatik çalıştırmaktadır. Bu adım daha önce hiç çalıştırılmamışsa manuel olarak çalıştırın:
+
+```bash
+php artisan passport:client --personal --provider=users
+```
+
+- **API İstemcileri ve Tokenlar Settings sekmelerine taşındı.** Bağımsız `/admin/api-clients` ve `/admin/api-tokens` sayfaları kaldırıldı. Güncelleme sonrasında etkilenen stub'ları yeniden yayınlayın:
+
+```bash
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+v13.5.3 ve sonrasındaki değişikliklerin tam listesi için [CHANGELOG](./CHANGELOG.tr.md) sayfasına bakın.

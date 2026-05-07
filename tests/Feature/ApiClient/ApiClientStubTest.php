@@ -384,7 +384,7 @@ test('StoreApiClientRequest personal_access grant type içermiyor (O3)', functio
 
 test('ApiClientForm.vue confidential checkbox içermiyor (K3)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/ApiClients/components/ApiClientForm.vue'
+        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/ApiClientForm.vue'
     );
 
     expect($content)->not->toContain('ac_confidential');

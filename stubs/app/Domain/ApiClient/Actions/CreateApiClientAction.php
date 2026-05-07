@@ -21,7 +21,6 @@ class CreateApiClientAction
 
     /**
      * @param  string[]  $redirectUris
-     * @param  string[]  $scopes
      *
      * Güvenlik notu: $confidential parametresi kaldırıldı. Her client zorunlu olarak
      * confidential=true ile oluşturulur. Public (PKCE) client desteği bu UI üzerinden
@@ -31,7 +30,6 @@ class CreateApiClientAction
         string $name,
         string $grantType,
         array $redirectUris = [],
-        array $scopes = [],
     ): Client {
         $client = match ($grantType) {
             'authorization_code' => $this->clients->createAuthorizationCodeGrantClient(
@@ -42,11 +40,6 @@ class CreateApiClientAction
             'client_credentials' => $this->clients->createClientCredentialsGrantClient($name),
             default => throw new \InvalidArgumentException("Geçersiz grant tipi: {$grantType}"),
         };
-
-        // Scope'ları kaydet (Passport v13 — scopes sütunu JSON)
-        if (! empty($scopes)) {
-            $client->forceFill(['scopes' => $scopes])->save();
-        }
 
         // plainSecret sadece bu response'ta mevcut.
         // UYARI: bu değer log'a yazılmamalı.

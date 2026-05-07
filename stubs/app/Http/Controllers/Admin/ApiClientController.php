@@ -14,8 +14,6 @@ use App\Http\Responses\DatatableQueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
-use Inertia\Response;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
 
@@ -32,18 +30,6 @@ use Laravel\Passport\Passport;
  */
 class ApiClientController extends Controller
 {
-    /**
-     * OAuth istemcisi listeleme sayfasını göster.
-     */
-    public function index(Request $request): Response
-    {
-        Gate::authorize('viewAny', Client::class);
-
-        return Inertia::render('Admin/ApiClients/Index', [
-            'availableScopes' => Passport::scopes()->values(),
-        ]);
-    }
-
     /**
      * İstemci listesini JSON olarak döndür (DataTable için).
      */
@@ -75,7 +61,6 @@ class ApiClientController extends Controller
             name: $request->validated('name'),
             grantType: $request->validated('grant_type'),
             redirectUris: $request->validated('redirect_uris', []),
-            scopes: $request->validated('scopes', []),
         );
 
         return to_api(
@@ -111,7 +96,6 @@ class ApiClientController extends Controller
             client: $client,
             name: $request->validated('name'),
             redirectUris: $request->validated('redirect_uris', []),
-            scopes: $request->validated('scopes', []),
         );
 
         return to_api(

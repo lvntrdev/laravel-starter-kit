@@ -53,8 +53,6 @@ class StoreApiClientRequest extends FormRequest
             ],
             // Her URI sadece HTTPS veya localhost http'ye izin verilir (OAuth phishing koruması).
             'redirect_uris.*' => ['string', new HttpsOrLocalhostUrl, 'max:2048'],
-            'scopes' => ['nullable', 'array'],
-            'scopes.*' => ['string', 'max:255'],
             // confidential: kasıtlı olarak kabul edilmiyor.
             // CreateApiClientAction her zaman confidential=true zorlar.
         ];

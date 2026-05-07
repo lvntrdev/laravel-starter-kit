@@ -207,6 +207,16 @@ class StarterKitServiceProvider extends ServiceProvider
             $personalDays = (int) $legacyPersonalMonths * 30;
         }
 
+        // Laravel 11 varsayılan auth.php'de 'api' guard artık yok.
+        // Passport::createToken() guard'ı config'den aradığı için bulamazsa
+        // LogicException fırlatır. Kullanıcı kendi guard'ını tanımlamışsa dokunma.
+        if (! config('auth.guards.api')) {
+            config(['auth.guards.api' => [
+                'driver'   => 'passport',
+                'provider' => 'users',
+            ]]);
+        }
+
         Passport::tokensExpireIn(now()->addMinutes($accessMinutes));
         Passport::refreshTokensExpireIn(now()->addDays($refreshDays));
         Passport::personalAccessTokensExpireIn(now()->addDays($personalDays));

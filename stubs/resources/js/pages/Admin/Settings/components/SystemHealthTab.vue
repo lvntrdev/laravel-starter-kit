@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import systemHealth from '@/routes/system-health';
-    import { router } from '@inertiajs/vue3';
+    import axios from 'axios';
     import { trans } from 'laravel-vue-i18n';
     import { Button, Card } from 'primevue';
     import { useToast } from 'primevue/usetoast';
@@ -45,12 +45,6 @@
             if (val) localReport.value = val;
         },
     );
-
-    onMounted(() => {
-        if (!localReport.value) {
-            runChecks();
-        }
-    });
 
     function formatGeneratedAt(iso: string): string {
         try {
@@ -127,34 +121,40 @@
         },
     ]);
 
-    function runChecks(): void {
+    onMounted(() => {
+        if (!localReport.value) {
+            runChecks();
+        }
+    });
+
+    async function runChecks(): Promise<void> {
         if (running.value) return;
 
         running.value = true;
 
-        router.post(
-            systemHealth.run.url(),
-            {},
-            {
-                preserveState: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    if (props.report) localReport.value = props.report;
-                },
-                onFinish: () => {
-                    running.value = false;
-                },
-                onError: () => {
-                    toast.add({
-                        severity: 'error',
-                        summary: trans('sk-system-health.load_error'),
-                        group: 'bc',
-                        life: 5000,
-                    });
-                    running.value = false;
-                },
-            },
-        );
+        try {
+            const { data } = await axios.post<{ report: DoctorReport; type: string; message: string }>(
+                systemHealth.run.url(),
+            );
+
+            localReport.value = data.report;
+
+            toast.add({
+                severity: data.type === 'error' ? 'error' : data.type === 'warning' ? 'warn' : 'success',
+                summary: data.message,
+                group: 'bc',
+                life: 5000,
+            });
+        } catch {
+            toast.add({
+                severity: 'error',
+                summary: trans('sk-system-health.load_error'),
+                group: 'bc',
+                life: 5000,
+            });
+        } finally {
+            running.value = false;
+        }
     }
 </script>
 

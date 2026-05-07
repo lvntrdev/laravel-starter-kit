@@ -4,8 +4,12 @@ The admin panel provides a UI for managing Passport OAuth2 clients and Personal 
 
 ## Admin Pages
 
-- `/admin/api-clients` — list, create, update, and delete OAuth2 clients
-- `/admin/api-tokens` — list and delete Personal Access Tokens; mint a new PAT for the authenticated user
+API client and token management lives inside the **Settings** page as dedicated tabs:
+
+- **Settings → API Clients tab** — list, create, update, and delete OAuth2 clients
+- **Settings → API Tokens tab** — list and delete Personal Access Tokens; mint a new PAT for the authenticated user
+
+The routes `/admin/api-clients` and `/admin/api-tokens` still exist but redirect to the Settings page with the corresponding tab pre-selected.
 
 ## Client Types
 
@@ -61,4 +65,19 @@ php artisan migrate
 php artisan sk:seed-permissions --fresh
 ```
 
-See the [CHANGELOG](./CHANGELOG.md) for the full list of changes introduced in v13.5.3.
+### v13.5.6
+
+- **Scopes removed from API clients.** The `scopes` field has been removed from all API client forms, requests, actions, and resources. The `oauth_clients` table never had a `scopes` column in native Passport; the field was dead code causing a `Column not found: 1054 Unknown column 'scopes'` error on every create/update. PAT scopes are unaffected.
+- **Passport personal access client.** `sk:install` and `site:install` now run `passport:client --personal --provider=users` automatically. On existing installs where this was never run, execute it manually:
+
+```bash
+php artisan passport:client --personal --provider=users
+```
+
+- **API Clients and Tokens moved to Settings tabs.** The standalone `/admin/api-clients` and `/admin/api-tokens` pages have been removed. Republish the affected stubs after upgrading:
+
+```bash
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+See the [CHANGELOG](./CHANGELOG.md) for the full list of changes introduced in v13.5.3 and later.

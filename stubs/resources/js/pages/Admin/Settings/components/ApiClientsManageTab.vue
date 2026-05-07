@@ -6,16 +6,10 @@
     import { router } from '@inertiajs/vue3';
     import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
-    import { reactive } from 'vue';
 
-    import ApiClientForm from '@/pages/Admin/ApiClients/components/ApiClientForm.vue';
-    import OneTimeSecretModal from '@/pages/Admin/ApiClients/components/OneTimeSecretModal.vue';
+    import ApiClientForm from './ApiClientForm.vue';
+    import OneTimeSecretModal from './OneTimeSecretModal.vue';
     import apiClients from '@/routes/api-clients';
-
-    interface ScopeOption {
-        id: string;
-        description: string;
-    }
 
     interface ApiClient {
         id: string;
@@ -28,80 +22,12 @@
         plain_secret: string | null;
     }
 
-    interface Props {
-        availableScopes: ScopeOption[];
-    }
-
-    const props = defineProps<Props>();
-
     const { confirmDelete } = useConfirm();
     const dialog = useDialog();
     const bus = useRefreshBus();
     const { can } = useCan();
 
     const REFRESH_KEY = 'api-clients-table';
-
-    const secretModal = reactive({
-        visible: false,
-        secret: '',
-    });
-
-    function showSecret(plainSecret: string) {
-        secretModal.secret = plainSecret;
-        secretModal.visible = true;
-    }
-
-    function onSecretConfirmed() {
-        secretModal.visible = false;
-        secretModal.secret = '';
-        bus.refresh(REFRESH_KEY);
-    }
-
-    function openCreateModal() {
-        dialog.open(
-            ApiClientForm,
-            {
-                inDialog: true,
-                availableScopes: props.availableScopes,
-                onCreated: (plainSecret: string) => {
-                    dialog.close();
-                    showSecret(plainSecret);
-                },
-                onCancel: () => dialog.close(),
-            },
-            trans('sk-api-clients.create'),
-            { width: '680px' },
-        );
-    }
-
-    function openEditDialog(client: ApiClient) {
-        dialog.open(
-            ApiClientForm,
-            {
-                clientId: client.id,
-                inDialog: true,
-                availableScopes: props.availableScopes,
-                onSuccess: () => {
-                    dialog.close();
-                    bus.refresh(REFRESH_KEY);
-                },
-                onCancel: () => dialog.close(),
-            },
-            trans('sk-api-clients.edit'),
-            { width: '680px' },
-        );
-    }
-
-    function revokeClient(client: ApiClient) {
-        confirmDelete(
-            () => {
-                router.delete(apiClients.destroy.url(client), {
-                    onSuccess: () => bus.refresh(REFRESH_KEY),
-                });
-            },
-            trans('sk-api-clients.revoke_confirm', { name: client.name }),
-        );
-    }
 
     const tableBuilder = DB.table<ApiClient>()
         .route(apiClients.dtApi.url())
@@ -152,19 +78,52 @@
                 .severity('warn')
                 .tooltip(trans('sk-button.edit'))
                 .visible(() => can('api-clients.update'))
-                .handle((client) => openEditDialog(client)),
+                .handle((client) =>
+                    dialog.open(
+                        ApiClientForm,
+                        { clientId: client.id, inDialog: true },
+                        trans('sk-api-clients.edit'),
+                        { width: '680px', refreshKey: REFRESH_KEY },
+                    ),
+                ),
             DB.action<ApiClient>()
                 .icon('pi pi-ban')
                 .severity('danger')
                 .tooltip(trans('sk-api-clients.revoke'))
                 .visible(() => can('api-clients.delete'))
-                .handle((client) => revokeClient(client)),
+                .handle((client) =>
+                    confirmDelete(
+                        () =>
+                            router.delete(apiClients.destroy.url(client), {
+                                onSuccess: () => bus.refresh(REFRESH_KEY),
+                            }),
+                        trans('sk-api-clients.revoke_confirm', { name: client.name }),
+                    ),
+                ),
         );
 
     if (can('api-clients.create')) {
         tableBuilder.create({
             label: 'sk-api-clients.create',
-            onClick: openCreateModal,
+            onClick: () =>
+                dialog.open(
+                    ApiClientForm,
+                    {
+                        inDialog: true,
+                        onCreated: (plainSecret: string) => {
+                            bus.refresh(REFRESH_KEY);
+                            dialog.open(
+                                OneTimeSecretModal,
+                                { secret: plainSecret, type: 'secret', onSuccess: () => dialog.close() },
+                                trans('sk-api-clients.secret_modal.title'),
+                                { width: '560px' },
+                            );
+                        },
+                        onCancel: () => dialog.close(),
+                    },
+                    trans('sk-api-clients.create'),
+                    { width: '680px' },
+                ),
         });
     }
 
@@ -173,11 +132,4 @@
 
 <template>
     <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
-
-    <OneTimeSecretModal
-        :visible="secretModal.visible"
-        :secret="secretModal.secret"
-        type="secret"
-        @confirm="onSecretConfirmed"
-    />
 </template>

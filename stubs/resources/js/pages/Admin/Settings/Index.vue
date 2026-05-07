@@ -195,7 +195,7 @@
             </template>
 
             <template #api_clients>
-                <ApiClientsManageTab :available-scopes="props.availableScopes" />
+                <ApiClientsManageTab />
             </template>
 
             <template #api_tokens>

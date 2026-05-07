@@ -22,6 +22,5 @@ Route::prefix('system-health')
     ->controller(SystemHealthController::class)
     ->middleware('role:system_admin')
     ->group(function () {
-        Route::get('/', 'index')->name('index');
         Route::post('/run', 'run')->name('run');
     });

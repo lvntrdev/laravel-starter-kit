@@ -40,8 +40,6 @@ class UpdateApiClientRequest extends FormRequest
             ]),
             // Her URI sadece HTTPS veya localhost http'ye izin verilir
             'redirect_uris.*' => ['string', new HttpsOrLocalhostUrl, 'max:2048'],
-            'scopes' => ['nullable', 'array'],
-            'scopes.*' => ['string', 'max:255'],
         ];
     }
 }

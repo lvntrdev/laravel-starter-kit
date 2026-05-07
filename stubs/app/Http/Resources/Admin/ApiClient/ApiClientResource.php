@@ -38,7 +38,6 @@ class ApiClientResource extends JsonResource
             'name' => $this->name,
             'grant_types' => $grantTypes,
             'redirect_uris' => $this->redirect_uris ?? [],
-            'scopes' => $this->scopes ?? [],
             'revoked' => $this->revoked,
             'personal_access_client' => in_array('personal_access', $grantTypes, true),
             'confidential' => $this->secret !== null,
