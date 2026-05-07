@@ -60,6 +60,14 @@ Schema::table('file_manager_share_revocations', function (Blueprint $table) {
 });
 ```
 
+**Eski sayfa dizinlerini temizle:** v13.5.3'ten güncelliyorsanız artık kullanılmayan dizinleri manuel olarak silin:
+
+```bash
+rm -rf resources/js/pages/Admin/ApiClients
+rm -rf resources/js/pages/Admin/ApiTokens
+rm -rf resources/js/pages/Admin/SystemHealth
+```
+
 Bu sürüm yeni izin, config anahtarı veya davranış değişikliği içermiyor; System Health sekmesinin Settings'e taşınması dışında mevcut izin şeması değişmedi.
 
 ---
