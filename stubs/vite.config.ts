@@ -19,6 +19,12 @@ function isWayfinderAvailable(): boolean {
     return existsSync(path.join(__dirname, 'artisan'));
 }
 
+// Vitest spins up a Vite server to transform component files. The
+// laravel-vite-plugin refuses to start its HMR server in CI, which fails
+// vitest. The Laravel/Inertia plugins are not needed for component-level
+// unit tests, so skip them when running under vitest.
+const isVitest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
+
 // NOTE (stubs perspective): When this file is published to a consumer project
 // via `php artisan sk:install`, __dirname resolves to the consumer project root.
 // All alias paths below therefore point to the vendor directory of the consumer.
@@ -47,11 +53,15 @@ export default defineConfig({
 
     plugins: [
         ...(isWayfinderAvailable() ? [wayfinder()] : []),
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.ts'],
-            refresh: true,
-        }),
-        inertia(),
+        ...(isVitest
+            ? []
+            : [
+                laravel({
+                    input: ['resources/css/app.css', 'resources/js/app.ts'],
+                    refresh: true,
+                }),
+                inertia(),
+            ]),
 
         vue(),
         tailwindcss(),
