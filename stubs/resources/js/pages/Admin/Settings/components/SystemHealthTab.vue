@@ -2,7 +2,7 @@
     import systemHealth from '@/routes/system-health';
     import { router } from '@inertiajs/vue3';
     import { trans } from 'laravel-vue-i18n';
-    import { Button } from 'primevue';
+    import { Button, Card } from 'primevue';
     import { useToast } from 'primevue/usetoast';
     import { computed, onMounted, ref, watch } from 'vue';
 
@@ -159,138 +159,138 @@
 </script>
 
 <template>
-    <div class="w-full space-y-5">
-        <header class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
-                    {{ $t('sk-system-health.title') }}
-                </h2>
-                <p class="mt-1 text-base text-surface-500 dark:text-surface-400">
-                    {{ $t('sk-system-health.subtitle') }}
+    <Card>
+        <template #title>
+            <div class="flex items-center justify-between gap-4">
+                <span>{{ $t('sk-system-health.title') }}</span>
+                <Button
+                    :label="running ? $t('sk-system-health.running') : $t('sk-system-health.run_button')"
+                    icon="pi pi-refresh"
+                    :loading="running"
+                    :disabled="running"
+                    size="small"
+                    @click="runChecks"
+                />
+            </div>
+        </template>
+        <template #subtitle>
+            {{ $t('sk-system-health.subtitle') }}
+        </template>
+        <template #content>
+            <div
+                v-if="running && !localReport"
+                class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
+            >
+                <i class="pi pi-spin pi-spinner text-4xl" />
+                <p class="text-base">
+                    {{ $t('sk-system-health.running') }}
                 </p>
             </div>
-            <Button
-                :label="running ? $t('sk-system-health.running') : $t('sk-system-health.run_button')"
-                icon="pi pi-refresh"
-                :loading="running"
-                :disabled="running"
-                @click="runChecks"
-            />
-        </header>
 
-        <div
-            v-if="running && !localReport"
-            class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
-        >
-            <i class="pi pi-spin pi-spinner text-4xl" />
-            <p class="text-base">
-                {{ $t('sk-system-health.running') }}
-            </p>
-        </div>
+            <template v-else>
+                <p
+                    v-if="localReport"
+                    class="mb-4 text-base text-surface-500 dark:text-surface-400"
+                >
+                    <i class="pi pi-clock mr-1" />
+                    {{
+                        $t('sk-system-health.generated_at', {
+                            time: formatGeneratedAt(localReport.generated_at),
+                        })
+                    }}
+                </p>
 
-        <template v-else>
-            <p
-                v-if="localReport"
-                class="text-base text-surface-500 dark:text-surface-400"
-            >
-                <i class="pi pi-clock mr-1" />
-                {{
-                    $t('sk-system-health.generated_at', {
-                        time: formatGeneratedAt(localReport.generated_at),
-                    })
-                }}
-            </p>
+                <section class="mb-4 grid grid-cols-3 gap-4">
+                    <div
+                        v-for="card in summaryCards"
+                        :key="card.key"
+                        class="flex items-center gap-4 rounded-xl border border-surface-200 p-4 dark:border-surface-700"
+                        :class="card.bg"
+                    >
+                        <div
+                            class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-surface-0/60 dark:bg-surface-900/40"
+                        >
+                            <i :class="[card.icon, card.iconColor]" class="text-xl" />
+                        </div>
+                        <div>
+                            <p class="text-base font-medium" :class="card.text">
+                                {{ card.label }}
+                            </p>
+                            <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">
+                                {{ card.value }}
+                            </p>
+                        </div>
+                    </div>
+                </section>
 
-            <section class="grid grid-cols-3 gap-4">
-                <div
-                    v-for="card in summaryCards"
-                    :key="card.key"
-                    class="flex items-center gap-4 rounded-xl border border-surface-200 p-4 dark:border-surface-700"
-                    :class="card.bg"
+                <section
+                    class="overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
                 >
                     <div
-                        class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-surface-0/60 dark:bg-surface-900/40"
+                        v-if="!localReport?.checks || localReport.checks.length === 0"
+                        class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
                     >
-                        <i :class="[card.icon, card.iconColor]" class="text-xl" />
-                    </div>
-                    <div>
-                        <p class="text-base font-medium" :class="card.text">
-                            {{ card.label }}
-                        </p>
-                        <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">
-                            {{ card.value }}
+                        <i class="pi pi-info-circle text-4xl" />
+                        <p class="text-base">
+                            {{ $t('sk-system-health.no_results') }}
                         </p>
                     </div>
-                </div>
-            </section>
 
-            <section
-                class="overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
-            >
-                <div
-                    v-if="!localReport?.checks || localReport.checks.length === 0"
-                    class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
-                >
-                    <i class="pi pi-info-circle text-4xl" />
-                    <p class="text-base">
-                        {{ $t('sk-system-health.no_results') }}
-                    </p>
-                </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="border-b border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50">
+                                <tr class="text-left text-base font-medium uppercase tracking-wider text-surface-500 dark:text-surface-400">
+                                    <th class="w-10 px-4 py-3" />
+                                    <th class="px-4 py-3">
+                                        {{ $t('sk-system-health.col_check') }}
+                                    </th>
+                                    <th class="w-28 px-4 py-3">
+                                        {{ $t('sk-system-health.col_status') }}
+                                    </th>
+                                    <th class="px-4 py-3">
+                                        {{ $t('sk-system-health.col_message') }}
+                                    </th>
+                                    <th class="px-4 py-3">
+                                        {{ $t('sk-system-health.col_hint') }}
+                                    </th>
+                                </tr>
+                            </thead>
 
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="border-b border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50">
-                            <tr class="text-left text-base font-medium uppercase tracking-wider text-surface-500 dark:text-surface-400">
-                                <th class="w-10 px-4 py-3" />
-                                <th class="px-4 py-3">
-                                    {{ $t('sk-system-health.col_check') }}
-                                </th>
-                                <th class="w-28 px-4 py-3">
-                                    {{ $t('sk-system-health.col_status') }}
-                                </th>
-                                <th class="px-4 py-3">
-                                    {{ $t('sk-system-health.col_message') }}
-                                </th>
-                                <th class="px-4 py-3">
-                                    {{ $t('sk-system-health.col_hint') }}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-surface-200 dark:divide-surface-700">
-                            <tr
-                                v-for="check in localReport.checks"
-                                :key="check.name"
-                                :class="rowClass(check.status)"
-                            >
-                                <td class="px-4 py-3">
-                                    <i :class="iconClass(check.status)" class="text-base" />
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span class="text-base font-medium text-surface-900 dark:text-surface-0">
-                                        {{ check.name }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-base font-medium"
-                                        :class="badgeClass(check.status)"
-                                    >
-                                        {{ statusLabel(check.status) }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-base text-surface-700 dark:text-surface-300">
-                                    {{ check.message }}
-                                </td>
-                                <td class="px-4 py-3 text-base text-surface-500 dark:text-surface-400">
-                                    <span v-if="check.hint">{{ check.hint }}</span>
-                                    <span v-else class="text-surface-300 dark:text-surface-600">&mdash;</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                            <tbody class="divide-y divide-surface-200 dark:divide-surface-700">
+                                <tr
+                                    v-for="check in localReport.checks"
+                                    :key="check.name"
+                                    :class="rowClass(check.status)"
+                                >
+                                    <td class="px-4 py-3">
+                                        <i :class="iconClass(check.status)" class="text-base" />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-base font-medium text-surface-900 dark:text-surface-0">
+                                            {{ check.name }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-base font-medium"
+                                            :class="badgeClass(check.status)"
+                                        >
+                                            {{ statusLabel(check.status) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-base text-surface-700 dark:text-surface-300">
+                                        {{ check.message }}
+                                    </td>
+                                    <td class="px-4 py-3 text-base text-surface-500 dark:text-surface-400">
+                                        <span v-if="check.hint">{{ check.hint }}</span>
+                                        <span v-else class="text-surface-300 dark:text-surface-600">&mdash;</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </template>
         </template>
-    </div>
+    </Card>
 </template>

@@ -2,6 +2,55 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-07 — v13.5.5
+
+### Patch release — System Health moved to Settings, UUID fix for share revocations, install reliability
+
+System Health is no longer a standalone admin page — its content is now embedded as a Settings tab (`SystemHealthTab.vue`) rendered with a PrimeVue `Card`. The admin sidebar entry is removed. A migration bug is fixed: `revoked_by_user_id` in `file_manager_share_revocations` was typed as `unsignedBigInteger` but the users table uses UUID primary keys; the column is now correctly declared as `uuid`. `InstallCommand` gains a guard that auto-creates `app/Helpers/custom.php` before `composer dump-autoload` runs, preventing artisan from crashing on fresh installs. The `ApiClientsManageTab` and `ApiTokensManageTab` stubs drop their hand-rolled `<header>` blocks in favour of the `DatatableBuilder` card API (`isCard`, `cardTitle`, `cardSubtitle`, `create()`). `SkDatatable` card caption now has proper body padding so title and subtitle align with the standard Card body rhythm.
+
+#### Changed
+
+- **System Health moved to Settings tab.** The `/admin/system-health` standalone page is replaced by a Settings tab. The `useAdminMenu.ts` sidebar entry and `system-health` route import are removed. `SystemHealthTab.vue` is now wrapped in a PrimeVue `Card` with title, subtitle, and content slots; the refresh button is inlined in the `#title` slot with `size="small"`.
+- **`SystemHealthController@run`** — reverted back to `back()`. The earlier `redirect()->route('admin.system-health.index')` was introduced in v13.5.4 but does not make sense now that System Health lives inside the Settings page.
+- **`ApiClientsManageTab.vue` / `ApiTokensManageTab.vue`** — custom `<header>` block and standalone `Button` import replaced with `isCard(true).cardTitle(...).cardSubtitle(...)` on the table builder; the create action is registered via `tableBuilder.create({ label, onClick })` so the `DatatableBuilder` owns the full card layout.
+
+#### Fixed
+
+- **`file_manager_share_revocations` migration** — `revoked_by_user_id` column changed from `unsignedBigInteger` to `uuid` to match the UUID primary key on the `users` table. Upgrading from v13.5.3: see the migration note below.
+- **`ShareRevocation` model** — `$revoked_by_user_id` PHPDoc type corrected from `int|null` to `string|null`.
+- **`InstallCommand`** — `app/Helpers/custom.php` is now auto-created (minimal `<?php` stub) when missing, before `composer dump-autoload`. Absence of this file caused every subsequent artisan call to fail on fresh installs.
+- **`DatabaseTestCase`** — in-memory `file_manager_share_revocations` schema updated to use `uuid` for `revoked_by_user_id`, matching the fixed migration.
+
+#### UI
+
+- **`SkDatatable`** — in `isCard` mode the `caption` PT slot now receives `padding: var(--p-card-body-padding) var(--p-card-body-padding) 0`, so title and subtitle align with the standard Card body; the table toolbar and content remain edge-to-edge.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# useAdminMenu.ts, SystemHealthController.php, SystemHealthTab.vue,
+# ApiClientsManageTab.vue, ApiTokensManageTab.vue
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Migration note** — if you published `file_manager_share_revocations` in v13.5.3, run a new migration to fix the column type:
+
+```php
+Schema::table('file_manager_share_revocations', function (Blueprint $table) {
+    $table->dropForeign(['revoked_by_user_id']);
+    $table->dropColumn('revoked_by_user_id');
+    $table->uuid('revoked_by_user_id')->nullable()->after('revoked_at');
+    $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
+});
+```
+
+No new permissions, config keys, or behaviour changes in this release.
+
+---
+
 ## 2026-05-07 — v13.5.4
 
 ### Patch release — v13.5.3 follow-up: stub fixes, type alignments and CI pipeline reliability

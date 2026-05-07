@@ -32,7 +32,8 @@ return new class extends Migration
             $table->timestamp('revoked_at');
 
             // Kim revoke etti (nullable: programatik revoke durumunda null olabilir)
-            $table->unsignedBigInteger('revoked_by_user_id')->nullable();
+            // users.id UUID olduğundan uuid() kullanılmalı
+            $table->uuid('revoked_by_user_id')->nullable();
             $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
 
             $table->timestamps();

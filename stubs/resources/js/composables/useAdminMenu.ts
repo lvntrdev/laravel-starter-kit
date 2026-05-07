@@ -2,7 +2,6 @@
 import { useMenuBuilder } from '@/composables/useMenuBuilder';
 import activityLogs from '@/routes/activity-logs';
 import apiRoutes from '@/routes/api-routes';
-import systemHealth from '@/routes/system-health';
 import dashboard from '@/routes/dashboard';
 import files from '@/routes/files';
 import sampleContents from '@/routes/sample-contents';
@@ -68,12 +67,6 @@ export function useAdminMenu() {
             icon: 'pi pi-cog',
             href: settings.index.url(),
             permission: 'settings.read',
-        },
-        {
-            title: 'sk-menu.system_health',
-            icon: 'pi pi-heart',
-            href: systemHealth.index.url(),
-            permission: 'system.health.view',
         },
         {
             title: 'sk-menu.developer',

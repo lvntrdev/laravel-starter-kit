@@ -5,6 +5,53 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.5] - 2026-05-07
+
+### Changed
+
+- **System Health — Settings tab'ına taşındı.** Admin kenar menüsündeki bağımsız "System Health" bağlantısı kaldırıldı; içerik artık Settings sayfasındaki sekme olarak `SystemHealthTab.vue` içinde `PrimeVue Card` ile sunuluyor. Bu değişiklik `useAdminMenu.ts`'teki `system-health` route import'unu ve menü item'ını da kaldırdı.
+- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `run()` metodu `redirect()->route('admin.system-health.index')` yerine `back()` kullanacak şekilde geri alındı; System Health artık Settings sekmesi olduğu için sabit route yönlendirmesi yerine HTTP referer'a güvenmek daha doğru.
+- **`ApiClientsManageTab.vue` & `ApiTokensManageTab.vue`** — Başlık/altyazı ve "Oluştur" butonu, manuel `<header>` bloğundan `DatatableBuilder` API'sine (`isCard(true).cardTitle(...).cardSubtitle(...)` + `tableBuilder.create({...})`) taşındı. `Button` import'u kaldırıldı; tablo artık Card içinde tamamen DB builder tarafından yönetiliyor.
+
+### Fixed
+
+- **`database/migrations/2026_05_06_100000_create_file_manager_share_revocations_table.php`** — `revoked_by_user_id` kolonu `unsignedBigInteger` yerine `uuid` olarak düzeltildi; users tablosu UUID primary key kullandığından tür uyumsuzluğu FK hatasına yol açıyordu.
+- **`src/Domain/FileManager/Models/ShareRevocation.php`** — `$revoked_by_user_id` PHPDoc tipi `int|null` → `string|null` güncellendi; migration'daki UUID tipiyle uyumlu hale getirildi.
+- **`src/Console/Commands/InstallCommand.php`** — `app/Helpers/custom.php` dosyası yoksa `composer dump-autoload`'dan önce minimal stub (`<?php`) otomatik oluşturuluyor; eksik dosya her artisan çağrısını kırıyordu.
+- **`tests/DatabaseTestCase.php`** — In-memory migration'da `revoked_by_user_id` kolonu `unsignedBigInteger` → `uuid` olarak güncellendi; migration ile test şeması uyumsuzluğu giderildi.
+
+### UI
+
+- **`SkDatatable.vue`** — `isCard` modunda `caption` slot'una `var(--p-card-body-padding)` ile yatay/üst padding eklendi; başlık/altyazı standart Card body hizalamasına oturdu, tablo araç çubuğu ise tam genişlikte kalmaya devam ediyor.
+- **`SystemHealthTab.vue`** — İçerik düz `<div>` yerine PrimeVue `Card` ile sarmalandı; "Yenile" butonu artık `title` slot içinde sağa hizalanmış, `size="small"` kullanıyor; özet stat kartları ile kontrol tablosu Card'ın `content` slot'unda yer alıyor.
+
+### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# useAdminMenu.ts, SystemHealthController.php, ApiClientsManageTab.vue,
+# ApiTokensManageTab.vue, SystemHealthTab.vue
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Migration notu:** `file_manager_share_revocations` tablosunu v13.5.3'te yayınladıysanız `revoked_by_user_id` kolonu `uuid`'e migrate edin:
+
+```php
+// Yeni migration oluşturun:
+Schema::table('file_manager_share_revocations', function (Blueprint $table) {
+    $table->dropForeign(['revoked_by_user_id']);
+    $table->dropColumn('revoked_by_user_id');
+    $table->uuid('revoked_by_user_id')->nullable()->after('revoked_at');
+    $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
+});
+```
+
+Bu sürüm yeni izin, config anahtarı veya davranış değişikliği içermiyor; System Health sekmesinin Settings'e taşınması dışında mevcut izin şeması değişmedi.
+
+---
+
 ## [13.5.4] - 2026-05-07
 
 ### Added

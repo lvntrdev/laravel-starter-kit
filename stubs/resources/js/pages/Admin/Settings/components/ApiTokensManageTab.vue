@@ -5,7 +5,6 @@
     import { router } from '@inertiajs/vue3';
     import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
-    import { Button } from 'primevue';
     import { reactive, ref } from 'vue';
 
     import OneTimeSecretModal from '@/pages/Admin/ApiClients/components/OneTimeSecretModal.vue';
@@ -81,8 +80,11 @@
         );
     }
 
-    const tableConfig = DB.table<ApiToken>()
+    const tableBuilder = DB.table<ApiToken>()
         .route(apiTokens.dtApi.url())
+        .isCard(true)
+        .cardTitle('sk-api-tokens.title')
+        .cardSubtitle('sk-api-tokens.subtitle')
         .searchable(true)
         .sortable(true)
         .addColumns(
@@ -136,43 +138,32 @@
                 .tooltip(trans('sk-api-tokens.revoke'))
                 .visible(() => can('api-tokens.delete'))
                 .handle((token) => revokeToken(token)),
-        )
-        .build();
+        );
+
+    if (can('api-tokens.create')) {
+        tableBuilder.create({
+            label: 'sk-api-tokens.create',
+            onClick: openCreateModal,
+        });
+    }
+
+    const tableConfig = tableBuilder.build();
 </script>
 
 <template>
-    <div class="space-y-4">
-        <header class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
-                    {{ $t('sk-api-tokens.title') }}
-                </h2>
-                <p class="mt-1 text-base text-surface-500 dark:text-surface-400">
-                    {{ $t('sk-api-tokens.subtitle') }}
-                </p>
-            </div>
-            <Button
-                v-if="can('api-tokens.create')"
-                :label="$t('sk-api-tokens.create')"
-                icon="pi pi-plus"
-                @click="openCreateModal"
-            />
-        </header>
+    <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
 
-        <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
+    <CreateTokenModal
+        :visible="createModal"
+        :available-scopes="props.availableScopes"
+        @close="onCreateModalClose"
+        @created="onTokenCreated"
+    />
 
-        <CreateTokenModal
-            :visible="createModal"
-            :available-scopes="props.availableScopes"
-            @close="onCreateModalClose"
-            @created="onTokenCreated"
-        />
-
-        <OneTimeSecretModal
-            :visible="tokenModal.visible"
-            :secret="tokenModal.token"
-            type="token"
-            @confirm="onTokenModalConfirmed"
-        />
-    </div>
+    <OneTimeSecretModal
+        :visible="tokenModal.visible"
+        :secret="tokenModal.token"
+        type="token"
+        @confirm="onTokenModalConfirmed"
+    />
 </template>

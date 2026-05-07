@@ -22,7 +22,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property int $media_id
  * @property string $signed_token_hash
  * @property Carbon $revoked_at
- * @property int|null $revoked_by_user_id
+ * @property string|null $revoked_by_user_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */

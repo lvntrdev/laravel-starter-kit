@@ -57,14 +57,14 @@ class SystemHealthController extends Controller
         session()->flash('doctor_report', $report);
 
         if ($failCount > 0) {
-            return redirect()->route('admin.system-health.index')->with('error', __('sk-system-health.run_fail', ['count' => $failCount]));
+            return back()->with('error', __('sk-system-health.run_fail', ['count' => $failCount]));
         }
 
         if ($warnCount > 0) {
-            return redirect()->route('admin.system-health.index')->with('warning', __('sk-system-health.run_warn', ['count' => $warnCount]));
+            return back()->with('warning', __('sk-system-health.run_warn', ['count' => $warnCount]));
         }
 
-        return redirect()->route('admin.system-health.index')->with('success', __('sk-system-health.run_ok'));
+        return back()->with('success', __('sk-system-health.run_ok'));
     }
 
     /**

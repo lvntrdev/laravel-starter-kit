@@ -2,6 +2,55 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-07 — v13.5.5
+
+### Yama sürüm — System Health Settings'e taşındı, paylaşım iptali UUID düzeltmesi, kurulum güvenilirliği
+
+System Health artık bağımsız bir admin sayfası değil; içeriği `SystemHealthTab.vue` içinde PrimeVue `Card` ile sarılmış bir Settings sekmesi olarak sunuluyor. Admin kenar menüsü girişi kaldırıldı. Bir migration hatası düzeltildi: `file_manager_share_revocations` tablosundaki `revoked_by_user_id` kolonu `unsignedBigInteger` olarak tanımlanmıştı ancak users tablosu UUID primary key kullanıyor; kolon artık doğru şekilde `uuid` olarak beyan ediliyor. `InstallCommand`'a `composer dump-autoload` çalışmadan önce `app/Helpers/custom.php` dosyasını otomatik oluşturan bir guard eklendi; bu dosyanın yokluğu temiz kurulumda her artisan çağrısını kırıyordu. `ApiClientsManageTab` ve `ApiTokensManageTab` stub'ları el yapımı `<header>` bloklarını `DatatableBuilder` kart API'si (`isCard`, `cardTitle`, `cardSubtitle`, `create()`) lehine bıraktı. `SkDatatable` kart başlığı artık doğru body padding'ine sahip; başlık ve altyazı standart Card body ritmiyle hizalanıyor.
+
+#### Değişiklikler
+
+- **System Health Settings sekmesine taşındı.** `/admin/system-health` bağımsız sayfası, bir Settings sekmesiyle değiştirildi. `useAdminMenu.ts`'teki kenar menüsü girişi ve `system-health` route import'u kaldırıldı. `SystemHealthTab.vue` artık PrimeVue `Card` içinde title, subtitle ve content slot'larıyla sarılı; yenile butonu `#title` slot'una `size="small"` ile yerleştirildi.
+- **`SystemHealthController@run`** — `back()` kullanımına geri döndürüldü. v13.5.4'te eklenen `redirect()->route('admin.system-health.index')`, System Health artık Settings sayfasının içinde olduğu için anlamsız hale geldi.
+- **`ApiClientsManageTab.vue` / `ApiTokensManageTab.vue`** — özel `<header>` bloğu ve bağımsız `Button` import'u, tablo builder üzerindeki `isCard(true).cardTitle(...).cardSubtitle(...)` ile değiştirildi; create action `tableBuilder.create({ label, onClick })` ile kaydediliyor, tam kart düzeni artık `DatatableBuilder` tarafından yönetiliyor.
+
+#### Düzeltmeler
+
+- **`file_manager_share_revocations` migration** — `revoked_by_user_id` kolonu, `users` tablosundaki UUID primary key ile uyumlu olması için `unsignedBigInteger`'dan `uuid`'e değiştirildi. v13.5.3'ten yükseltiyorsanız aşağıdaki migration notuna bakın.
+- **`ShareRevocation` modeli** — `$revoked_by_user_id` PHPDoc tipi `int|null`'dan `string|null`'a düzeltildi.
+- **`InstallCommand`** — `app/Helpers/custom.php` yoksa `composer dump-autoload`'dan önce otomatik oluşturuluyor (minimal `<?php` stub). Bu dosyanın yokluğu temiz kurulumda sonraki her artisan çağrısını kırıyordu.
+- **`DatabaseTestCase`** — bellek içi `file_manager_share_revocations` şeması, düzeltilen migration ile uyumlu olması için `revoked_by_user_id` alanında `uuid` kullanacak şekilde güncellendi.
+
+#### UI
+
+- **`SkDatatable`** — `isCard` modunda `caption` PT slot'u artık `padding: var(--p-card-body-padding) var(--p-card-body-padding) 0` alıyor; başlık ve altyazı standart Card body hizalamasına oturuyor, tablo araç çubuğu ve içerik tam genişlikte kalmaya devam ediyor.
+
+#### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yeniden yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# useAdminMenu.ts, SystemHealthController.php, SystemHealthTab.vue,
+# ApiClientsManageTab.vue, ApiTokensManageTab.vue
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Migration notu** — `file_manager_share_revocations` tablosunu v13.5.3'te yayınladıysanız kolon tipini düzeltmek için yeni bir migration çalıştırın:
+
+```php
+Schema::table('file_manager_share_revocations', function (Blueprint $table) {
+    $table->dropForeign(['revoked_by_user_id']);
+    $table->dropColumn('revoked_by_user_id');
+    $table->uuid('revoked_by_user_id')->nullable()->after('revoked_at');
+    $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
+});
+```
+
+Bu sürümde yeni izin, config anahtarı veya davranış değişikliği bulunmuyor.
+
+---
+
 ## 2026-05-07 — v13.5.4
 
 ### Yama sürüm — v13.5.3 sonrası stub düzeltmeleri, tip uyumlulukları ve CI pipeline iyileştirmeleri

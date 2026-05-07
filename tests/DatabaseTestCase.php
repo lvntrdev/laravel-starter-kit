@@ -216,7 +216,7 @@ abstract class DatabaseTestCase extends Orchestra
             $table->string('signed_token_hash', 64);
             $table->unique(['media_id', 'signed_token_hash'], 'fm_share_rev_media_token_unique');
             $table->timestamp('revoked_at');
-            $table->unsignedBigInteger('revoked_by_user_id')->nullable();
+            $table->uuid('revoked_by_user_id')->nullable();
             $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });

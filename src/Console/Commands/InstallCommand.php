@@ -1077,6 +1077,14 @@ class InstallCommand extends Command
             $path,
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n",
         );
+
+        // Dosya yoksa minimal stub oluştur — composer dump-autoload'dan ÖNCE
+        // çalıştığı için eksik dosya her artisan çağrısını kırar.
+        $helpersPath = base_path('app/Helpers/custom.php');
+        if (! $this->files->exists($helpersPath)) {
+            $this->files->makeDirectory(dirname($helpersPath), 0755, true, true);
+            $this->files->put($helpersPath, "<?php\n");
+        }
     }
 
     private function injectBootstrapApp(): void

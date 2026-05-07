@@ -699,9 +699,12 @@
         const noPad = { style: 'padding: 0' };
         if (props.config.isCard) {
             // isCard true → Card visible (bg/shadow)
+            // caption (title+subtitle) gets the same padding as a standard Card body;
+            // content stays edge-to-edge so the table toolbar spans full width.
             return {
                 root: {},
                 body: noPad,
+                caption: { style: 'padding: var(--p-card-body-padding) var(--p-card-body-padding) 0' },
                 content: noPad,
             };
         }

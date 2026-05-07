@@ -6,7 +6,6 @@
     import { router } from '@inertiajs/vue3';
     import { DB } from '@lvntr/components/DatatableBuilder/core';
     import { trans } from 'laravel-vue-i18n';
-    import { Button } from 'primevue';
     import { reactive } from 'vue';
 
     import ApiClientForm from '@/pages/Admin/ApiClients/components/ApiClientForm.vue';
@@ -104,8 +103,11 @@
         );
     }
 
-    const tableConfig = DB.table<ApiClient>()
+    const tableBuilder = DB.table<ApiClient>()
         .route(apiClients.dtApi.url())
+        .isCard(true)
+        .cardTitle('sk-api-clients.title')
+        .cardSubtitle('sk-api-clients.subtitle')
         .searchable(true)
         .sortable(true)
         .addColumns(
@@ -157,36 +159,25 @@
                 .tooltip(trans('sk-api-clients.revoke'))
                 .visible(() => can('api-clients.delete'))
                 .handle((client) => revokeClient(client)),
-        )
-        .build();
+        );
+
+    if (can('api-clients.create')) {
+        tableBuilder.create({
+            label: 'sk-api-clients.create',
+            onClick: openCreateModal,
+        });
+    }
+
+    const tableConfig = tableBuilder.build();
 </script>
 
 <template>
-    <div class="space-y-4">
-        <header class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">
-                    {{ $t('sk-api-clients.title') }}
-                </h2>
-                <p class="mt-1 text-base text-surface-500 dark:text-surface-400">
-                    {{ $t('sk-api-clients.subtitle') }}
-                </p>
-            </div>
-            <Button
-                v-if="can('api-clients.create')"
-                :label="$t('sk-api-clients.create')"
-                icon="pi pi-plus"
-                @click="openCreateModal"
-            />
-        </header>
+    <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
 
-        <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
-
-        <OneTimeSecretModal
-            :visible="secretModal.visible"
-            :secret="secretModal.secret"
-            type="secret"
-            @confirm="onSecretConfirmed"
-        />
-    </div>
+    <OneTimeSecretModal
+        :visible="secretModal.visible"
+        :secret="secretModal.secret"
+        type="secret"
+        @confirm="onSecretConfirmed"
+    />
 </template>
