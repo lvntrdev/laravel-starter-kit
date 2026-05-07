@@ -2,6 +2,66 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-07 — v13.5.4
+
+### Patch release — v13.5.3 follow-up: stub fixes, type alignments and CI pipeline reliability
+
+This patch fixes a handful of stub regressions exposed after v13.5.3 (`AdminHeader` `role` typo, missing System Health menu item, `SettingsDefaultsQuery` payload missing `storage_usage`, `SystemHealthController` redirect target, and `trans()` count typing in the Logs pages). The TabBuilder gains a `rose` icon color so the new System Health tab compiles. The CI pipeline is re-ordered so `auto-imports.d.ts` and `components.d.ts` are generated before typecheck, with new guards in `vite.config.ts` for environments without PHP (Wayfinder) or running under Vitest (laravel-vite-plugin HMR check). No new permissions, migrations or config keys.
+
+#### Added
+
+- **TabBuilder — `rose` icon color.** `TabIconColor` accepts `rose`; `_tabs.scss` ships matching `--p-rose-*` light/dark rules. Required by the System Health tab in Settings.
+
+#### Fixed
+
+- **`AdminHeader.vue`** — `page.props.auth?.role` (singular, non-existent) corrected to `roles?.[0]`, matching the `roles: string[]` shared page-prop shape.
+- **`useAdminMenu.ts`** — added missing `import systemHealth from '@/routes/system-health'` and a System Health entry (`permission: 'system.health.view'`). The v13.5.3 page was reachable only by URL.
+- **`SettingsDefaultsQuery.php`** — added `storage_usage` (`used_bytes`, `quota_bytes`) payload via the `ResolvesMediaModel` trait (`computeStorageUsed()` / `storageQuotaBytes()`). Drives the `StorageQuotaCard` shipped in v13.5.2.
+- **`SystemHealthController@run`** — switched from `back()` to `redirect()->route('admin.system-health.index')` (POST → safe GET).
+- **`Admin/Logs/{Index,Show}.vue`** — `trans()`/`$t()` `count` replacement values wrapped in `String(...)`; `laravel-vue-i18n` v2.8 strict types reject raw numbers.
+- **`tsconfig.json`** — added `@lvntr/components/*` path mapping aligned with the Vite alias so `@lvntr/components/FormBuilder/core` and friends resolve under `vue-tsc`.
+- **`env.d.ts`** — typed global `window.turnstile`, plus a `@/routes/*` wildcard module declaration as a fallback when wayfinder hasn't run yet.
+
+#### Build / CI
+
+- **`vite.config.ts`** — `isWayfinderAvailable()` skips the wayfinder plugin when there is no `artisan` (CI / package repo), and an `isVitest` guard skips `laravel-vite-plugin` + `inertia()` during `vitest run` (no more "Vite HMR server in CI" startup error).
+- **GitHub Actions Node job re-ordered** — `npm ci` → vendor symlink → route stub generation → build → typecheck → lint (`continue-on-error`) → test. Build now generates `auto-imports.d.ts` / `components.d.ts` before vue-tsc runs.
+- **`scripts/ci/generate-route-stubs.mjs`** — node-only CI fallback that writes 16 minimal `@/routes/*` stub files; gitignored so host apps still let wayfinder generate the real ones.
+- **Doctor tests** updated to expect the (intentional) English check messages.
+- **`.gitignore`** — wayfinder routes, the CI vendor symlink, and Vite build artefacts (`stubs/public/build/`, `stubs/bootstrap/ssr/`) are now ignored.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# AdminHeader.vue, useAdminMenu.ts, SystemHealthController.php, SettingsDefaultsQuery.php,
+# Logs/{Index,Show}.vue, env.d.ts, tsconfig.json, vite.config.ts
+php artisan vendor:publish --tag=starter-kit-stubs --force
+
+# Re-publish theme files for the new rose tab color
+php artisan vendor:publish --tag=starter-kit-theme --force
+
+npm run build
+```
+
+If you maintain a custom `tsconfig.json`, add the `@lvntr/components/*` mapping (must come before `@lvntr/*`):
+
+```json
+"paths": {
+    "@/*": ["resources/js/*"],
+    "@lvntr/components/*": [
+        "vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*"
+    ],
+    "@lvntr/*": ["vendor/lvntr/laravel-starter-kit/resources/js/*"]
+}
+```
+
+No new permissions, migrations or config keys.
+
+---
+
 ## 2026-05-06 — v13.5.3
 
 ### Release — sk:doctor, System Health, Signed Share Link, Bulk Action API, API Client Admin UI, security updates and bug fixes

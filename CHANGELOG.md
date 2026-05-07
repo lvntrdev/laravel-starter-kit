@@ -5,6 +5,64 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.4] - 2026-05-07
+
+### Added
+
+- **TabBuilder — `rose` icon color.** `TabIconColor` type'ına `rose` eklendi; `_tabs.scss`'e karşılık gelen `--p-rose-*` CSS değişkenleriyle çalışan dark/light kuralları eklendi. Settings sayfasındaki System Health sekmesi (`pi pi-heart-fill` + rose) artık doğru tipte derleniyor.
+
+### Fixed
+
+- **`stubs/resources/js/layouts/components/AdminHeader.vue`** — `page.props.auth?.role` (var olmayan singular alan) `roles?.[0]`'a düzeltildi. Shared page props `roles: string[]` shape'iyle uyumlu hale geldi; vue-tsc strict mode'da kırılım gideriliyor.
+- **`stubs/resources/js/composables/useAdminMenu.ts`** — eksik `import systemHealth from '@/routes/system-health'` ve System Health menü item (`permission: 'system.health.view'`) eklendi. v13.5.3'te eklenen sayfaya admin menüsünden navigasyon yoktu.
+- **`stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php`** — `storage_usage` (`used_bytes`, `quota_bytes`) payload'ı, `ResolvesMediaModel` trait kullanımı ve `computeStorageUsed()` / `storageQuotaBytes()` çağrıları eklendi. v13.5.2'de gelen `StorageQuotaCard` component'i Settings → Storage tab'ında doğru veriyi alıyor.
+- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `run()` metodu `back()` yerine `redirect()->route('admin.system-health.index')` kullanacak şekilde güncellendi. POST sonrası tarayıcı geçmişine güvenli bir GET kaydı bırakır; sayfanın yenilenmesi formu yeniden submit etmez.
+- **`stubs/resources/js/pages/Admin/Logs/{Index,Show}.vue`** — `trans()` ve `$t()` `count` parametreleri `String()` ile sarmalandı. `laravel-vue-i18n` v2.8 strict tipi replacement değerleri için `Record<string, string>` istiyor; `res.deleted.length` gibi number değerler vue-tsc'de `TS2322` üretiyordu.
+- **`stubs/tsconfig.json`** — `@lvntr/components/*` path mapping eklendi (`vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*`); Vite alias'ıyla hizalandı. Önceki tek `@lvntr/*` mapping'i `@lvntr/components/FormBuilder/core` gibi yolları çözümleyemiyor, vue-tsc `TS2307` üretiyordu.
+- **`stubs/resources/js/env.d.ts`** — `window.turnstile` için tipli global Window genişletmesi (`declare global { interface Window { turnstile?: TurnstileInstance } }`), `@/routes/*` için wildcard module declaration (wayfinder dosyaları henüz üretilmediğinde fallback) ve `TurnstileInstance` shape'i eklendi.
+
+### Build / CI
+
+- **`stubs/vite.config.ts`** — `isWayfinderAvailable()` ve `isVitest` guard'ları eklendi.
+  - `artisan` dosyası mevcut değilse wayfinder plugin'i atlanır → PHP olmayan node-only CI job'ında `php artisan wayfinder:generate` crash'i giderildi.
+  - `process.env.VITEST === 'true'` veya `NODE_ENV === 'test'` olduğunda `laravel-vite-plugin` ve `inertia()` atlanır → `vitest run` CI ortamında "You should not run the Vite HMR server in CI" hatası giderildi.
+- **`.github/workflows/ci.yml` Node job yeniden sıralandı:** `npm ci` → vendor symlink (`stubs/vendor/lvntr/laravel-starter-kit` → repo root) → route stubs → `npm run build` → `npm run typecheck` → lint (continue-on-error) → `npm run test`. Build artık typecheck'ten önce; `auto-imports.d.ts` ve `components.d.ts` zamanında üretiliyor.
+- **`scripts/ci/generate-route-stubs.mjs`** eklendi — Wayfinder PHP gerektirdiği için node-only CI'da `stubs/resources/js/routes/*.ts` dosyaları ephemeral üretilir (16 route modülü için minimal `r(url)` stub'ları). Çıktı dizini `.gitignore`'lı; host app'lerin gerçek `npm run dev` çalıştırması wayfinder dosyalarını üretir.
+- **`tests/Feature/Doctor/{DatabaseConnection,MailDriver,RedisConnection}CheckTest.php`** — İngilizce mesaj beklentilerine güncellendi (Doctor check çıktıları İngilizce kalmaya devam ediyor; v13.5.3'te kasıtlı çevrilmişti, testlerdeki Türkçe beklentiler sürüm öncesi taslak değerleriydi).
+- **`.gitignore`** — `stubs/resources/js/routes/` (wayfinder her host app'te yeniden üretir, paket içine commit edilmez), `stubs/vendor/` (CI-only symlink), `stubs/public/build/` ve `stubs/bootstrap/ssr/` (Vite build artifact'ları) eklendi.
+
+### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# AdminHeader.vue, useAdminMenu.ts, SystemHealthController.php, SettingsDefaultsQuery.php,
+# Logs/{Index,Show}.vue, env.d.ts, tsconfig.json, vite.config.ts
+php artisan vendor:publish --tag=starter-kit-stubs --force
+
+# Yeni rose tab color CSS'ini içeren tema dosyalarını yayınla
+php artisan vendor:publish --tag=starter-kit-theme --force
+
+npm run build
+```
+
+`tsconfig.json`'unu özelleştirdiyseniz `@lvntr/components/*` path mapping'ini manuel ekleyin (Vite alias'ıyla hizalı):
+
+```json
+"paths": {
+    "@/*": ["resources/js/*"],
+    "@lvntr/components/*": [
+        "vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*"
+    ],
+    "@lvntr/*": ["vendor/lvntr/laravel-starter-kit/resources/js/*"]
+}
+```
+
+Bu sürüm yeni izin, migration veya config anahtarı eklemiyor; davranış değişikliği yok.
+
+---
+
 ## [13.5.3] - 2026-05-06
 
 ### Added
