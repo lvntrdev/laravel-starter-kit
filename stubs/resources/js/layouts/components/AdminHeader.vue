@@ -21,7 +21,7 @@
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user as User | undefined);
-    const role = computed(() => (page.props.auth?.role as string) ?? '');
+    const role = computed(() => (page.props.auth?.roles?.[0] as string) ?? '');
     const isLocal = computed(() => page.props.appEnv === 'local');
     const isDebug = computed(() => page.props.appDebug === true);
 

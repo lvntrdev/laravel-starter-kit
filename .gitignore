@@ -2,6 +2,13 @@ LOCAL.md
 /vendor/
 /node_modules/
 /stubs/node_modules/
+# Wayfinder generates these per host app — never ship to consumers.
+/stubs/resources/js/routes/
+# CI-only symlink for @lvntr/* alias resolution; never committed.
+/stubs/vendor/
+# Vite build artifacts — produced by `npm run build` in CI and locally.
+/stubs/public/build/
+/stubs/bootstrap/ssr/
 /stubs/.claude/*
 !/stubs/.claude/skills/
 /stubs/.cursor/

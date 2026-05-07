@@ -10,6 +10,14 @@ import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import path from 'path';
+import { existsSync } from 'fs';
+
+// Wayfinder requires both PHP and an artisan file to generate routes.
+// In CI (node-only job) or in the package repo itself, artisan does not
+// exist, so we skip wayfinder to keep the build non-fatal.
+function isWayfinderAvailable(): boolean {
+    return existsSync(path.join(__dirname, 'artisan'));
+}
 
 // NOTE (stubs perspective): When this file is published to a consumer project
 // via `php artisan sk:install`, __dirname resolves to the consumer project root.
@@ -38,7 +46,7 @@ export default defineConfig({
     },
 
     plugins: [
-        wayfinder(),
+        ...(isWayfinderAvailable() ? [wayfinder()] : []),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,

@@ -17,7 +17,7 @@ test('cache driver redis değilse warn döner', function () {
     $report = $check->run();
 
     expect($report->status)->toBe(DoctorStatus::Warn)
-        ->and($report->message)->toContain('Redis kullanmıyor')
+        ->and($report->message)->toContain('Cache or session is not using Redis')
         ->and($report->hint)->not->toBeEmpty();
 });
 

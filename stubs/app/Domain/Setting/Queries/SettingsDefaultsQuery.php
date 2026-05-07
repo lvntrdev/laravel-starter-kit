@@ -4,12 +4,15 @@ namespace App\Domain\Setting\Queries;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Storage;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 
 /**
  * Query: Resolve settings with config fallbacks for each group.
  */
 class SettingsDefaultsQuery
 {
+    use ResolvesMediaModel;
+
     /**
      * Get all settings groups with defaults.
      *
@@ -26,6 +29,7 @@ class SettingsDefaultsQuery
             'turnstile' => $this->turnstile(),
             'postman' => $this->postman(),
             'apidog' => $this->apidog(),
+            'storage_usage' => $this->storageUsage(),
         ];
     }
 
@@ -192,6 +196,17 @@ class SettingsDefaultsQuery
             'aws_bucket' => $stored['aws_bucket'] ?? config('filesystems.disks.s3.bucket'),
             'aws_url' => $stored['aws_url'] ?? config('filesystems.disks.s3.url'),
             'aws_endpoint' => $stored['aws_endpoint'] ?? config('filesystems.disks.s3.endpoint'),
+        ];
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function storageUsage(): array
+    {
+        return [
+            'used_bytes' => $this->computeStorageUsed(),
+            'quota_bytes' => $this->storageQuotaBytes(),
         ];
     }
 

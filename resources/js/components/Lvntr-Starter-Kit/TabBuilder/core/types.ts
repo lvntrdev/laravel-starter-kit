@@ -9,6 +9,7 @@ export type TabIconColor =
     | 'purple'
     | 'teal'
     | 'red'
+    | 'rose'
     | 'indigo'
     | 'slate'
     | 'pink'

@@ -16,7 +16,7 @@ test('geçerli DB bağlantısında ok döner', function () {
 
     // DatabaseTestCase SQLite in-memory kullanır — bağlantı başarılı olmalı.
     expect($report->status)->toBe(DoctorStatus::Ok)
-        ->and($report->message)->toContain('Bağlantı başarılı');
+        ->and($report->message)->toContain('Connection successful');
 });
 
 test('geçersiz bağlantıda fail döner', function () {

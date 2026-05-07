@@ -14,6 +14,9 @@
             "@/*": [
                 "resources/js/*"
             ],
+            "@lvntr/components/*": [
+                "vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*"
+            ],
             "@lvntr/*": [
                 "vendor/lvntr/laravel-starter-kit/resources/js/*"
             ]

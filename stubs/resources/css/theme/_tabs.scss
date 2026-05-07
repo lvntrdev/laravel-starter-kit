@@ -178,6 +178,15 @@
     color: var(--p-red-300);
 }
 
+.sk-vtab__icon-tile--rose {
+    background: color-mix(in srgb, var(--p-rose-500) 14%, transparent);
+    color: var(--p-rose-600);
+}
+:root.dark .sk-vtab__icon-tile--rose {
+    background: color-mix(in srgb, var(--p-rose-400) 18%, transparent);
+    color: var(--p-rose-300);
+}
+
 .sk-vtab__icon-tile--indigo {
     background: color-mix(in srgb, var(--p-indigo-500) 14%, transparent);
     color: var(--p-indigo-600);

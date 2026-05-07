@@ -47,7 +47,7 @@ test('smtp host tanımlı değilse fail döner', function () {
     $report = $check->run();
 
     expect($report->status)->toBe(DoctorStatus::Fail)
-        ->and($report->message)->toContain('host tanımlı değil');
+        ->and($report->message)->toContain('SMTP host is not configured');
 });
 
 test('smtp bağlantısı başarısızsa fail döner', function () {

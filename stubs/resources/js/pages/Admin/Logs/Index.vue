@@ -48,7 +48,7 @@
             if (res.deleted.length > 0) {
                 toast.add({
                     severity: 'success',
-                    summary: trans('sk-log.deleted_count', { count: res.deleted.length }),
+                    summary: trans('sk-log.deleted_count', { count: String(res.deleted.length) }),
                     group: 'bc',
                     life: 3000,
                 });
@@ -59,7 +59,7 @@
                     .join('\n');
                 toast.add({
                     severity: 'error',
-                    summary: trans('sk-log.failed_count', { count: res.failed.length }),
+                    summary: trans('sk-log.failed_count', { count: String(res.failed.length) }),
                     detail: reasons,
                     group: 'bc',
                     life: 6000,

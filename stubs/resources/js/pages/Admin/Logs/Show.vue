@@ -202,7 +202,7 @@
 
             <div class="bg-white dark:bg-slate-800 rounded">
                 <div class="px-4 py-2 text-xs text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                    {{ $t('sk-log.showing_n_entries', { count: visibleCount }) }}
+                    {{ $t('sk-log.showing_n_entries', { count: String(visibleCount) }) }}
                 </div>
 
                 <div v-if="entries.length === 0 && !loading" class="p-6 text-center text-slate-500">
