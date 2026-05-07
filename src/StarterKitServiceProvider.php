@@ -212,7 +212,7 @@ class StarterKitServiceProvider extends ServiceProvider
         // LogicException fırlatır. Kullanıcı kendi guard'ını tanımlamışsa dokunma.
         if (! config('auth.guards.api')) {
             config(['auth.guards.api' => [
-                'driver'   => 'passport',
+                'driver' => 'passport',
                 'provider' => 'users',
             ]]);
         }
