@@ -193,6 +193,9 @@ Tüm uçlar `context` ve `context_id` parametrelerini GET/DELETE'te query string
 | POST   | `/file-manager/files/{media}/copy`                   | Dosya çoğalt (`target_folder_id`)                                     |
 | DELETE | `/file-manager/files/{media}`                        | Tekli dosya silme                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Zorla indirme                                                         |
+| POST   | `/file-manager/share`                                | HMAC imzalı paylaşım bağlantısı oluştur (`media_id`, `ttl_hours?`)   |
+| POST   | `/file-manager/share/revoke`                         | Paylaşım bağlantısını iptal et (`token`)                              |
+| GET    | `/file-manager/share/{media}?expires=&signature=`    | İmzayı doğrula ve dosyaya erişim ver                                  |
 
 ### Upload parametreleri
 
@@ -315,6 +318,19 @@ Bir dosyayı başka klasöre taşımak sadece DB'deki `media.folder_id`'yi günc
 
 Backend validation her upload isteğinde bu ayarları okur — frontend mime filtresini atlatmak sunucu tarafında yine reddedilir.
 
+### İmzalı Paylaşım Bağlantıları (`share`)
+
+Kimlik doğrulaması gerektirmeksizin dosyaya süreli erişim sağlayan HMAC-SHA256 imzalı bağlantılar. `config('file-manager.share.enabled')` değerinin `true` olması gerekir.
+
+| Anahtar             | Tip  | Varsayılan | Açıklama                                              |
+| ------------------- | ---- | ---------- | ----------------------------------------------------- |
+| `enabled`           | bool | `false`    | Paylaşım bağlantısı özelliğini etkinleştirir          |
+| `default_ttl_hours` | int  | `24`       | Varsayılan bağlantı geçerlilik süresi (saat)          |
+| `max_ttl_hours`     | int  | `720`      | İzin verilen maksimum geçerlilik süresi (30 gün)      |
+| `allow_revoke`      | bool | `true`     | Süresi dolmadan bağlantı iptaline izin verir          |
+
+İptal edilen token'lar `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile saklanır. Token doğrulaması oluşturulduğu `media_id` ile karşılaştırılır — farklı bir media kaydına karşı aynı token geçerli sayılmaz.
+
 ### Çöp kutusu davranışı (`enable_trash`)
 
 `config/file-manager.php` içindeki `enable_trash` anahtarı soft-delete vs hard-delete için tek yetkili kaynaktır:
@@ -346,6 +362,11 @@ Built-in kurallar:
 - **Özel kayıtlar** — sizin `authorize` closure'unuz ne döndürürse
 
 `files` kaynağı `create / read / update / delete` yetenekleriyle seed edilir; bu yetkileri Roller panelinden rollere atayın. Özel context'ler için policy yazın veya register sırasında permission tabanlı bir closure geçin.
+
+Paylaşım bağlantısı işlemleri iki ayrı izin kullanır:
+
+- `share-media` — imzalı paylaşım bağlantısı oluşturma (`POST /file-manager/share`)
+- `revoke-share-media` — süresi dolmadan bağlantı iptali (`POST /file-manager/share/revoke`)
 
 ## İlgili Yapı
 

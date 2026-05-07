@@ -265,6 +265,10 @@ return [
         'access_token' => 'Access Token',
         'project_id' => 'Project ID',
         'collection_id' => 'Collection ID',
+        'redirect_uris' => 'Redirect URIs',
+        'grant_type' => 'Grant Type',
+        'scopes' => 'Scopes',
+        'confidential' => 'Confidential',
     ],
 
 ];

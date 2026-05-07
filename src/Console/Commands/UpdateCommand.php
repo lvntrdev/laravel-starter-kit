@@ -68,6 +68,7 @@ class UpdateCommand extends Command
      */
     private const NEVER_UPDATE_PATHS = [
         'config/permission-resources.php',
+        'node_modules/',
     ];
 
     /**
@@ -116,8 +117,8 @@ class UpdateCommand extends Command
         $this->newLine();
         $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Updater (v13.5.x)</>');
         $this->newLine();
-        $this->line('  <fg=gray>v13.5.0+: paket runtime vendor/lvntr/laravel-starter-kit\'te çalışır.</>');
-        $this->line('  <fg=gray>composer update yeterli; runtime dosyalar app\'e kopyalanmaz.</>');
+        $this->line('  <fg=gray>v13.5.0+: package runtime runs from vendor/lvntr/laravel-starter-kit.</>');
+        $this->line('  <fg=gray>composer update is enough; runtime files are not copied to your app.</>');
         $this->newLine();
 
         $force = (bool) $this->option('force');
@@ -387,6 +388,10 @@ class UpdateCommand extends Command
             $relativePath = $file->getRelativePathname();
             $targetPath = base_path($relativePath);
 
+            if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
             if ($this->files->exists($targetPath)) {
                 continue;
             }
@@ -524,6 +529,10 @@ class UpdateCommand extends Command
             $relativePath = $file->getRelativePathname();
             $targetPath = base_path($relativePath);
 
+            if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
             if (! $this->files->exists($targetPath)) {
                 // File was deleted by user, explicitly skipped at install, or never installed.
                 // Preserve the original sentinel so addNewFiles/updateModifiableFiles respect
@@ -588,6 +597,11 @@ class UpdateCommand extends Command
         // runs do not restore the file — even after storage/ is cleared or re-deployed.
         foreach ($this->files->allFiles($stubsPath, true) as $file) {
             $relativePath = str_replace('\\', '/', $file->getRelativePathname());
+
+            if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
             $existing = $hashes[$relativePath] ?? null;
 
             if ($existing === null || $existing === '__deleted__' || $existing === '__skipped__') {
@@ -919,7 +933,7 @@ PHP;
         }
 
         $this->newLine();
-        $this->components->warn('v13.5.0+: paket runtime vendor\'da çalışır. Aşağıdaki dosyalar app\'te hâlâ mevcut:');
+        $this->components->warn('v13.5.0+: package runtime runs from vendor. The following files still exist in your app:');
         $this->newLine();
 
         foreach ($present as $path) {
@@ -927,8 +941,8 @@ PHP;
         }
 
         $this->newLine();
-        $this->line('  <fg=gray>Bu dosyaları silmek opsiyonel; vendor sürümleri öncelik alır.</>');
-        $this->line('  <fg=gray>Ayrıntı için: docs/migrate-existing-project-to-vendor.tr.md</>');
+        $this->line('  <fg=gray>Deleting these files is optional; vendor copies take precedence.</>');
+        $this->line('  <fg=gray>See: docs/migrate-existing-project-to-vendor.md</>');
         $this->newLine();
     }
 

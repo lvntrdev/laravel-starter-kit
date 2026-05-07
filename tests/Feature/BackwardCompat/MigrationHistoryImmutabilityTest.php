@@ -74,6 +74,7 @@ it('does not contain unexpected migration files in the vendor directory', functi
         '2026_04_13_100000_create_global_file_buckets_table.php',
         '2026_04_13_100100_create_file_folders_table.php',
         '2026_05_02_092853_create_file_favorites_table.php',
+        '2026_05_06_100000_create_file_manager_share_revocations_table.php',
     ];
 
     $actual = collect(scandir($migrationDir))

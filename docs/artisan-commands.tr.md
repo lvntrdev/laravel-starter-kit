@@ -6,6 +6,7 @@ Bu döküman starter kit için komut referansıdır. DDD ile ilgili mimari notla
 
 | Komut                                     | Amaç                                                             |
 | ----------------------------------------- | ---------------------------------------------------------------- |
+| `php artisan sk:doctor`                   | Ortam sağlık kontrollerini çalıştırır ve sorunları raporlar      |
 | `php artisan sk:install`                  | Starter kit'i projeye kurar                                      |
 | `php artisan sk:update`                   | Kurulu kit dosyalarını güvenli şekilde günceller                 |
 | `php artisan sk:upgrade`                  | Eski starter-kit/Laravel ana sürümünü güncel hatta yükseltir     |
@@ -19,6 +20,29 @@ Bu döküman starter kit için komut referansıdır. DDD ile ilgili mimari notla
 | `php artisan postman:sync`                | Scramble OpenAPI spec'ini Postman'a gönderir                     |
 | `php artisan apidog:sync`                 | Scramble OpenAPI spec'ini Apidog'a gönderir                      |
 | `php artisan file-manager:purge-trash`    | Eski Dosya Yöneticisi çöpünü kalıcı olarak siler                 |
+
+## `sk:doctor`
+
+12 ortam sağlık kontrolü çalıştırır ve her birinin sonucunu raporlar.
+
+```bash
+php artisan sk:doctor
+php artisan sk:doctor --json
+php artisan sk:doctor --only=database,redis
+```
+
+Kapsanan kontroller: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule çalışması, mail driver, npm build artifact'ları, config cache ve FileManager disk bağlantısı.
+
+- `--json` tablo yerine makine okunabilir JSON çıktı üretir
+- `--only=<kontroller>` virgülle ayrılmış seçili kontrolleri çalıştırır (örn. `--only=database,redis`)
+
+Çıkış kodları:
+
+| Kod | Anlam                                   |
+| --- | --------------------------------------- |
+| `0` | Tüm kontroller başarılı                 |
+| `1` | En az bir kontrol WARN döndürdü         |
+| `2` | En az bir kontrol FAIL döndürdü         |
 
 ## `sk:install`
 
@@ -77,11 +101,40 @@ php artisan sk:publish --tag=config
 Starter kit yapısına uygun yeni bir domain oluşturur.
 
 ```bash
-php artisan make:sk-domain Product
+# Sadece domain (geriye dönük uyumlu)
+php artisan make:sk-domain Article
+
+# Namespace'li
 php artisan make:sk-domain Store/Product
+
+# Temel seçenekler
 php artisan make:sk-domain Product --admin --api --events --fields="name:string,price:decimal"
 php artisan make:sk-domain Product --from-migration=2026_03_21_create_products_table.php
+
+# Opt-in ekstralar — tekil flag'ler
+php artisan make:sk-domain Article --with-policy --with-factory
+
+# Opt-in ekstralar — toplu syntax
+php artisan make:sk-domain Article --with=policy,factory,test
+
+# İlişki scaffold'ı
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment"
+
+# Tam
+php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
+
+Opt-in flag'ler (v2):
+
+| Flag | Ne üretir |
+| ---- | --------- |
+| `--with-policy` | Policy sınıfı |
+| `--with-factory` | Factory |
+| `--with-seeder` | Seeder |
+| `--with-test` | Feature test |
+| `--with-relations` | İlişki scaffold'ı (`--relations` ile birlikte kullanılır) |
+| `--with=policy,factory,test` | Toplu syntax — birden fazla opt-in tek flag'de |
+| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Scaffold için ilişki tanımları |
 
 Action, DTO, Query, Request, Route ve Vue ekranı gibi paket konvansiyonlarını hızlıca kurmak istediğinizde kullanın.
 

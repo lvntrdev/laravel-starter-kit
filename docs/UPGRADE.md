@@ -4,6 +4,61 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v13.5.0 → v13.5.3
+
+### Summary
+
+This release adds `sk:doctor` / System Health dashboard, Signed Share Links for File Manager, Bulk Action API hardening, and the API Client UI. New migrations, config keys, and permissions are required.
+
+### Upgrade steps
+
+**1. Update the package:**
+
+```bash
+composer update lvntr/laravel-starter-kit
+```
+
+**2. Publish and run new migrations:**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan migrate
+```
+
+New migration: `file_manager_share_revocations` table (required for Signed Share Link revocation).
+
+**3. Update File Manager config (new `share.*` keys):**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-config --force
+```
+
+The following keys are added to `config/file-manager.php`: `share.enabled`, `share.default_ttl_hours`, `share.max_ttl_hours`, `share.allow_revoke`. Existing keys are not affected.
+
+**4. Publish new stubs (caution: customised stubs will be overwritten — diff first):**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**5. Seed new permissions and reset the cache:**
+
+```bash
+php artisan db:seed --class=PermissionResourcesSeeder
+php artisan permission:cache-reset
+```
+
+New permissions: `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`
+
+### Behaviour changes
+
+- **Passport client UI** — `confidential=false` authorization-code clients can no longer be created through the UI. Existing DB records are not affected.
+- **Personal Access Token mint** — the `user_id` body field has been removed. To mint a PAT on behalf of another user, use an artisan command.
+- **`AppServiceProvider` stub** — remove the duplicate Passport scope / `Gate::before` block if present; `StarterKitServiceProvider` continues to register them.
+- **`BulkActionRequest`** — IDs are now validated as `string|min:1|max:64`. Existing integer-only bulk actions are not affected.
+
+---
+
 ## v13.4.x → v13.5.0
 
 ### Summary

@@ -65,3 +65,50 @@ Tipik akış:
 
 Domain yapısı scaffolding komutlarıyla desteklenir, ancak komut referansı [artisan-commands.tr.md](./artisan-commands.tr.md) içinde tutulur. Bu dosya özellikle DDD anlatımını komut dökümanından ayrı tutmak için vardır.
 
+### `make:sk-domain` v2 opt-in flag'leri
+
+Komutun flag'siz çağrılması v13.5.x davranışını korur (geriye dönük uyumlu).
+
+**Tek tek flag'ler:**
+
+| Flag | Üretilen dosya |
+| --- | --- |
+| `--with-policy` | Policy sınıfı |
+| `--with-factory` | Factory |
+| `--with-seeder` | Seeder |
+| `--with-test` | Feature test |
+| `--with-relations` | İlişki scaffold'ı (`--relations` ile birlikte kullanılır) |
+
+**Toplu syntax** — birden fazla opt-in'i tek flag ile:
+
+```bash
+php artisan make:sk-domain Article --with=policy,factory,test
+```
+
+**İlişki syntax'ı:**
+
+```bash
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
+```
+
+Desteklenen ilişki türleri: `belongsTo`, `hasMany`, `hasOne`, `belongsToMany`, `morphTo`, `morphMany`.
+
+**Örnekler:**
+
+```bash
+# Sadece domain — v13.5.x davranışı, geriye dönük uyumlu
+php artisan make:sk-domain Article
+
+# Policy ve factory ile
+php artisan make:sk-domain Article --with-policy --with-factory
+
+# Toplu syntax
+php artisan make:sk-domain Article --with=policy,factory,test
+
+# İlişkilerle
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment"
+
+# Tam
+php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
+```
+

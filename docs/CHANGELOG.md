@@ -4,20 +4,69 @@ Newly added features and improvements to the starter kit are listed here.
 
 ## 2026-05-06 — v13.5.3
 
-### Patch release — Security updates, DeleteFolderAction event fix, CI improvements
+### Release — sk:doctor, System Health, Signed Share Link, Bulk Action API, API Client Admin UI, security updates and bug fixes
+
+This release adds the `sk:doctor` health-check command and its System Health admin page, HMAC-signed file share links, a cross-page Bulk Action API for the DatatableBuilder, the Domain Generator v2 opt-in flags, and a full Passport API Client & Token admin UI. It also includes security dependency bumps, event-dispatch fixes for nested folder deletes, Inertia flash response fixes for bulk controllers, and UUID/ULID bulk-action ID support. Existing apps should run the upgrade steps below.
+
+#### Added
+
+- **`sk:doctor` artisan command** — system health check covering 12 control points: PHP extensions, database connection, Redis, Passport keys, storage symlink, writable directories, queue driver, schedule run, mail driver, npm build artifacts, config cache, FileManager disk connection. Machine-readable output via `--json`; selective checks via `--only=database,redis,...`. Exit codes: `0` OK, `1` WARN, `2` FAIL.
+- **Admin Panel — System Health page** (`/admin/system-health`) — visualises `sk:doctor` output with per-check status badges and a manual refresh button. Access permission: `system.health.view`.
+- **File Manager — Signed Share Link** — HMAC-signed public access URLs. `POST /file-manager/share` creates a link with a TTL; `POST /file-manager/share/revoke` revokes it; `GET /file-manager/share/{media}?expires&signature` validates. Config keys: `file-manager.share.enabled`, `default_ttl_hours` (default 24), `max_ttl_hours` (default 720), `allow_revoke`. Revocations tracked in `file_manager_share_revocations` with a `(media_id, signed_token_hash)` composite unique index. New permissions: `share-media`, `revoke-share-media`.
+- **DatatableBuilder — Bulk Action API** — `BulkAction` interface and `BulkActionDispatcher` for cross-page bulk operations. `SkDatatable` supports `select_all_filtered` mode (with filter snapshot) and cross-page selection. Request payload: `{action, ids, select_all_filtered, filter_snapshot}`; response: `{processed, skipped, failed, message}`. Shipped stubs: `BulkDeleteUserAction` (rank-aware) and `BulkDeleteRoleAction` (guards against system roles).
+- **Domain Generator v2 (`make:sk-domain`) — opt-in flags** — `--with-policy`, `--with-factory`, `--with-seeder`, `--with-test`, `--with-relations` individually or combined as `--with=policy,factory,test`. `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` generates relationship scaffolding automatically. Flag-free invocation preserves v13.5.x behaviour (backward compatible).
+- **API Client & Token Admin UI** — admin interface for Passport authorization_code and client_credentials grants and Personal Access Tokens (`/admin/api-clients`, `/admin/api-tokens`). Client secrets and PATs are shown in plaintext only once on creation (`Cache-Control: no-store`); `OneTimeSecretModal` cannot be dismissed. New permissions: `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`. New validation rule: `HttpsOrLocalhostUrl` (RFC 8252 §8.3 — HTTPS only, localhost HTTP exception).
+- **CI Workflow (GitHub Actions)** — PHP test (`pest`), lint (`pint`), and Node 22 build/typecheck/lint jobs. Concurrent runs on the same branch/PR are cancelled via `concurrency: cancel-in-progress`.
+- `composer test` (`vendor/bin/pest tests/Feature`) and `composer lint` (`vendor/bin/pint --test`) scripts added for contributors.
 
 #### Fixed
 
 - **`DeleteFolderAction`** — descendant folders were permanently deleted via a query-builder `forceDelete()` call, which skipped Eloquent model events. The `forceDeleted` observer in `FileFolder` (responsible for cleaning up `file_favorites`) never fired for sub-folders, leaving orphan favorite records. Changed to model-level iteration so every `forceDeleted` event is dispatched correctly.
+- **`sk:update` — `node_modules/` filtered from stubs scan.** `node_modules/` added to `NEVER_UPDATE_PATHS`; `isNeverUpdate()` check applied to all loops in `updateModifiableFiles`, `addNewFiles`, `migrateHashRegistry` and `updateHashRegistry`. In symlinked (path-repository) setups, `stubs/node_modules/` was leaking into the candidate file list.
+- **`sk:doctor` and `sk:update` console output translated to English.** All user-facing messages, tips and table headers in `DoctorCommand`, `UpdateCommand` and the 12 `DoctorCheck` classes are now in English; PHP code comments are unchanged.
+- **Bulk action controllers — Inertia flash response.** `UserBulkController` and `RoleBulkController` now return `back()->with('success'/'error', ...)` instead of `ApiResponse` (JSON). The previous JSON response was breaking Inertia's `onSuccess`/`onError` flow and rendering raw JSON on screen; success/error messages now reach `SkFlash`/`useFlash` via `HandleInertiaRequests` flash sharing.
+- **Bulk action validation — UUID/ULID/integer ID support.** `BulkActionRequest::rules()` updated: `ids.*` rule changed from `integer` to `string|min:1|max:64`; `prepareForValidation()` casts all incoming IDs to string. The previous `integer` rule caused "The ids.0 field must be an integer" for models using `HasUuids` (User, FileBucket, FileFolder, etc.). The new rule supports integer auto-increment, UUID (36 chars) and ULID (26 chars) primary keys in a single payload schema.
 
 #### Security
 
 - **`dedoc/scramble`** bumped from `^0.13` to `^0.13.22` to address a reported RCE-class advisory (GHSA fixed in v0.13.22).
 - **`phpseclib/phpseclib`** updated from `3.0.51` to `3.0.52` to address a high-severity DoS advisory (transitive via `laravel/passport`).
+- **Signed Share Link — cross-media token hijack protection.** `(media_id, signed_token_hash)` composite unique index prevents a token from being valid for a different media record.
+- **Personal Access Token — privilege escalation guard.** `user_id` body field is rejected; tokens are always minted for the authenticated user.
+- **Passport client `confidential` enforcement.** Only `confidential=true` clients can be created via the API Client UI; authorization_code grant requires min:1 redirect URIs with HTTPS. Existing DB records are unaffected.
 
-#### Added
+#### Changed
 
-- `composer test` (`vendor/bin/pest tests/Feature`) and `composer lint` (`vendor/bin/pint --test`) scripts are now available for contributors.
+- **`StarterKitServiceProvider`** — Passport scope and `Gate::before` registrations consolidated to a single source; duplicate registrations removed from the `AppServiceProvider` stub.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Publish and run new migrations
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan migrate
+
+# Publish updated file-manager config (new share.* keys)
+php artisan vendor:publish --tag=starter-kit-config --force
+
+# Publish new admin page and controller stubs
+# WARNING: customised stubs will be overridden — diff first
+php artisan vendor:publish --tag=starter-kit-stubs --force
+
+# Add new permissions and reset permission cache
+php artisan db:seed --class=PermissionResourcesSeeder
+php artisan permission:cache-reset
+```
+
+**New permissions:** `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`.
+
+**Behaviour changes:**
+
+- `confidential=false` authorization_code Passport clients can no longer be created via the UI. Existing DB records are unaffected.
+- Personal Access Token minting: `user_id` body field removed; to mint a PAT for another user use an artisan command or a custom action.
+- If your `AppServiceProvider` stub has duplicate Passport scope / `Gate::before` blocks, remove them — `StarterKitServiceProvider` handles this now.
 
 ---
 
@@ -57,6 +106,53 @@ composer update lvntr/laravel-starter-kit
 php artisan sk:update
 npm run build
 ```
+
+---
+
+## 2026-05-05 -v.13.5.1
+
+### Patch release — NPM exports fix, sk:publish improvements, storage quota and upload validation
+
+NPM package `main` and `exports` paths are corrected to match the actual file structure. Individual `sk:publish` tags now work correctly. Storage quota is configurable in GB from Admin Settings > File Manager, and upload requests now return a localised error when the quota is exceeded. Existing apps should run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build`.
+
+#### Fixed
+
+- **NPM package `main` and `exports` paths** now reflect the actual file structure (`resources/js/components/Lvntr-Starter-Kit/...`). FileManager export added.
+- **`sk:publish` individual tags** (`form`, `datatable`, `tabs`, `skeleton`, `ui`) had broken source paths referencing the old structure; corrected with the `Lvntr-Starter-Kit/` segment.
+- **`vendor:publish --tag=starter-kit-components` nested path bug** resolved. Was producing `resources/js/components/Lvntr-Starter-Kit/Lvntr-Starter-Kit/...`; now publishes directly to `resources/js/components/Lvntr-Starter-Kit/`.
+- **`vendor:publish --tag=starter-kit-file-manager-components`** is now active. Source path pointed to the old directory name (`file-manager`); realigned with the actual directory (`Lvntr-Starter-Kit/FileManager`).
+- **`index.ts` barrel** — 9 missing component exports added: `EditorInput`, `EditorImagePicker`, `EditorColorPalette`, `TranslatableInput`, `ImageLightbox`, `FilePreviewModal`, `ToggleFeatureCard`, `MimePickerField`, `SkTag`.
+
+#### Added
+
+- **`sk:publish --tag=filemanager`** — new tag for publishing the FileManager UI separately.
+- **`sk:install --without-ai-skill`** — skip AI skill publishing (`stubs/.claude/skills/`) for consumers that don't use the Claude Code skill bundle.
+- **`.gitattributes`** — Composer archive now excludes `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` and other development-only paths; smaller archive size.
+- **`.npmignore`** — NPM package excludes `__tests__/`, `*.spec.*`, `*.test.*` (root and subdirectories; compatible with npm 11 behavior).
+- **Disk-wide storage quota (`storage_quota_gb`).** A single quota in GB can be set from Admin Settings > File Manager (default 10 GB). Covers all contexts (`user`, `global`, custom morph map entries) including trash (`withTrashed`).
+- **Upload quota validation.** `UploadFileRequest::withValidator()` adds a quota check; when exceeded the request returns HTTP 422 with a localised `errors.quota_exceeded` message.
+
+#### Removed
+
+- **Duplicate domain commands removed from stubs:** `EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`. They continue to run from vendor as the single source. `sk:update` cleans them up in existing consumer projects via `DEPRECATED_PATHS`.
+- **`App\Http\Responses\ApiResponse.php` stub removed.** A `StarterKitServiceProvider` alias guard maps `App\Http\Responses\ApiResponse` → `Lvntr\StarterKit\Http\Responses\ApiResponse` once the consumer file is deleted; existing `use App\Http\Responses\ApiResponse;` imports continue to work unchanged.
+- **`Lvntr\StarterKit\Enums\PermissionEnum` removed from vendor.** Canonical location is `App\Enums\PermissionEnum` (under stubs). No vendor references existed (confirmed by grep). If your code imports this namespace directly, update it to `App\Enums\PermissionEnum`.
+
+#### Changed
+
+- **`sk:publish` is now the primary publish command.** Granular interactive flow with namespace rewrite support. `vendor:publish --tag=starter-kit-*` is kept for backward compatibility but `sk:publish` is now the recommended path in install and command docs.
+- **`ResolvesMediaModel::computeStorageUsed()` signature changed (internal trait).** No longer accepts a parameter; returns the disk-wide total via `Media::withTrashed()->sum('size')`. Previous behavior was per-context (`model_type` + `model_id` filtered). If your app extends this trait and calls `computeStorageUsed($context)`, remove the argument.
+- **`FolderContentsQuery`, `FavoritesContentsQuery`, `TrashContentsQuery`** — `stats.storage_quota` field added (bytes).
+- **`FileManager.vue`** — hardcoded `STORAGE_QUOTA_BYTES` constant removed; `quotaBytes` is now computed from `stats.storage_quota`. The quota sidebar hides (`v-if="quotaBytes > 0"`) when quota is zero or undefined.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update` output will list 4 paths under "Removed" — this is expected.
 
 ---
 

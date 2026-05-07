@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\FileManager\ShareController;
 use Lvntr\StarterKit\Http\Controllers\FileManagerController;
 
 /*
@@ -62,3 +63,42 @@ Route::prefix('file-manager')
         Route::delete('files/{media}', 'deleteFile')->name('files.destroy');
         Route::get('files/{media}/download', 'download')->name('files.download');
     });
+
+/*
+|--------------------------------------------------------------------------
+| FileManager Share Routes
+|--------------------------------------------------------------------------
+|
+| config('file-manager.share.enabled') false ise bu grup hiç register
+| edilmez. Böylece feature flag ile tamamen kapatılabilir.
+|
+| GET  file-manager/share/{media} — public endpoint; signed middleware ile
+|                                   korunur, auth gerektirmez.
+| POST file-manager/share          — link üret; auth gerekli.
+| POST file-manager/share/revoke   — revoke et; auth gerekli.
+|
+*/
+
+if (config('file-manager.share.enabled', true)) {
+    // Public: signed URL ile korunan serve endpoint'i — auth gerektirmez.
+    //
+    // K1 (security): withoutMiddleware(['auth', 'verified']) ile outer auth
+    // grubundan muaf tutulur. Bu sayede FileManager::routes() herhangi bir
+    // auth middleware wrapper içinde çağrılsa bile anonymous kullanıcılar
+    // signed URL ile bu endpoint'e erişebilir. Endpoint yalnızca `signed`
+    // (imza doğrulaması) ve `throttle:60,1` (rate limit) ile korunur.
+    Route::get('file-manager/share/{media}', [ShareController::class, 'show'])
+        ->name('file-manager.share.show')
+        ->middleware(['signed', 'throttle:60,1'])
+        ->withoutMiddleware(['auth', 'verified', 'auth:sanctum', 'auth:api']);
+
+    // Auth gerekli: link üretme ve revoke.
+    Route::prefix('file-manager/share')
+        ->name('file-manager.share.')
+        ->controller(ShareController::class)
+        ->middleware('throttle:30,1')
+        ->group(function (): void {
+            Route::post('/', 'store')->name('store');
+            Route::post('/revoke', 'revoke')->name('revoke');
+        });
+}

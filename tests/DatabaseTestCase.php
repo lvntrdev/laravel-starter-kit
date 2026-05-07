@@ -17,11 +17,17 @@ use Spatie\MediaLibrary\MediaLibraryServiceProvider;
  * DB-aware TestCase: SQLite in-memory veritabanı ile çalışır.
  *
  * Hangi tabloları oluşturduğu:
- *   - settings          (stub migration'dan alınan şema)
- *   - media             (Spatie stub + deleted_at soft-delete kolonu)
- *   - file_folders      (vendor migration)
- *   - file_favorites    (vendor migration)
- *   - global_file_buckets (vendor migration)
+ *   - settings                         (stub migration'dan alınan şema)
+ *   - users                            (file_manager_share_revocations FK için)
+ *   - media                            (Spatie stub + deleted_at soft-delete kolonu)
+ *   - global_file_buckets              (vendor migration)
+ *   - file_folders                     (vendor migration)
+ *   - file_favorites                   (vendor migration)
+ *   - file_manager_share_revocations   (vendor migration — T4 share feature)
+ *
+ * Tablolar Schema builder ile inline oluşturulur (loadMigrationsFrom yerine).
+ * Bu yaklaşım Testbench-core'un kendi fixture migration'larının (dedupe_receipts
+ * vb.) migrate:fresh sırasında yanlışlıkla çalışmasını engeller.
  *
  * media-library config'inde media_model olarak
  * Lvntr\StarterKit\Tests\Stubs\TestMedia bind edilir; bu model
@@ -31,6 +37,38 @@ use Spatie\MediaLibrary\MediaLibraryServiceProvider;
 abstract class DatabaseTestCase extends Orchestra
 {
     use RefreshDatabase;
+
+    /**
+     * artisan migrate:fresh yerine doğrudan Schema builder ile tabloları kurar.
+     *
+     * RefreshDatabase::migrateDatabases() normalde 'artisan migrate:fresh'
+     * çalıştırır; Testbench-core 'workbench.install = true' (default) ile
+     * kendi fixture migration dizinini (duplicate dedupe_receipts içeren)
+     * migrator'a ekliyor ve hata üretir.
+     *
+     * Bu override: fresh çalıştırmadan önce mevcut tabloları drop eder
+     * (IN MEMORY SQLite — her test process yeni connection açmadığından
+     * RefreshDatabase tabloları test arası rollback ile yönetir, ancak
+     * migrate:fresh yerine Schema::drop kullanmak daha güvenli).
+     */
+    protected function migrateDatabases(): void
+    {
+        // SQLite in-memory: her test RefreshDatabase ile transaction
+        // rollback yapıyor, bu yüzden burada drop gerekmez.
+        // Ancak ilk çalıştırmada tablolar yoktur.
+        // Schema builder idempotent değildir — "table already exists" hatasını
+        // önlemek için mevcut tabloları önce drop et.
+        Schema::dropIfExists('file_manager_share_revocations');
+        Schema::dropIfExists('file_favorites');
+        Schema::dropIfExists('file_folders');
+        Schema::dropIfExists('global_file_buckets');
+        Schema::dropIfExists('media');
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('settings');
+
+        // Ardından tabloları sıfırdan oluştur.
+        $this->defineDatabaseMigrations();
+    }
 
     protected function getPackageProviders($app): array
     {
@@ -71,10 +109,20 @@ abstract class DatabaseTestCase extends Orchestra
 
         // Encryption key (Cache/session ihtiyacı için)
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
+        // StarterKitServiceProvider::registerMigrations() kapatılır.
+        // Tablolar defineDatabaseMigrations() içinde Schema builder ile
+        // inline oluşturulacak — çift migration çakışmasını önler.
+        $app['config']->set('starter-kit.run_migrations', false);
     }
 
     protected function defineDatabaseMigrations(): void
     {
+        // Tablolar Schema builder ile inline oluşturulur.
+        // loadMigrationsFrom() kullanılmaz — bu yaklaşım Testbench-core'un
+        // fixture migration'larının (dedupe_receipts vb.) migrate:fresh
+        // sırasında çalışmasını önler.
+
         // 1. settings tablosu
         Schema::create('settings', function (Blueprint $table): void {
             $table->id();
@@ -86,7 +134,17 @@ abstract class DatabaseTestCase extends Orchestra
             $table->unique(['group', 'key']);
         });
 
-        // 2. media tablosu (Spatie stub şeması + deleted_at)
+        // 2. users tablosu — file_manager_share_revocations.revoked_by_user_id
+        //    ve file_folders.created_by FK'leri için gerekli.
+        Schema::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->timestamps();
+        });
+
+        // 3. media tablosu (Spatie stub şeması + deleted_at soft-delete kolonu)
         Schema::create('media', function (Blueprint $table): void {
             $table->id();
             $table->morphs('model');
@@ -108,9 +166,59 @@ abstract class DatabaseTestCase extends Orchestra
             $table->softDeletes(); // consumer Media modeli SoftDeletes kullanıyor
         });
 
-        // 3. Vendor package migration'ları
-        $this->loadMigrationsFrom(
-            dirname(__DIR__).'/database/migrations'
-        );
+        // 4. global_file_buckets tablosu
+        Schema::create('global_file_buckets', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('name')->default('default');
+            $table->timestamps();
+        });
+
+        // 5. file_folders tablosu
+        Schema::create('file_folders', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('parent_id')->nullable()->index();
+            $table->string('name');
+            $table->string('owner_type')->nullable();
+            $table->uuid('owner_id')->nullable();
+            $table->uuid('created_by')->nullable()->index();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['owner_type', 'owner_id']);
+            $table->unique(['owner_type', 'owner_id', 'parent_id', 'name'], 'file_folders_owner_parent_name_unique');
+
+            $table->foreign('parent_id')->references('id')->on('file_folders')->cascadeOnDelete();
+        });
+
+        // 6. file_favorites tablosu
+        Schema::create('file_favorites', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('owner_type');
+            $table->uuid('owner_id');
+            $table->string('favoritable_type', 16); // 'folder' | 'file'
+            $table->string('favoritable_id'); // folder UUID or media integer id (stored as string)
+            $table->timestamp('created_at')->useCurrent();
+
+            $table->unique(
+                ['owner_type', 'owner_id', 'favoritable_type', 'favoritable_id'],
+                'file_favorites_unique',
+            );
+            $table->index(['owner_type', 'owner_id'], 'file_favorites_owner_idx');
+        });
+
+        // 7. file_manager_share_revocations tablosu (T4 share feature — K2 fix ile)
+        Schema::create('file_manager_share_revocations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->unsignedBigInteger('media_id');
+            $table->foreign('media_id')->references('id')->on('media')->cascadeOnDelete();
+            // K2 (security): Composite unique (media_id, signed_token_hash)
+            $table->string('signed_token_hash', 64);
+            $table->unique(['media_id', 'signed_token_hash'], 'fm_share_rev_media_token_unique');
+            $table->timestamp('revoked_at');
+            $table->unsignedBigInteger('revoked_by_user_id')->nullable();
+            $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
+            $table->timestamps();
+        });
     }
 }

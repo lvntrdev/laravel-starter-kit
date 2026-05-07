@@ -1,0 +1,226 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Lvntr\StarterKit\Console\Commands;
+
+use Illuminate\Console\Command;
+use Lvntr\StarterKit\Console\Doctor\Checks\ConfigCacheCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\DatabaseConnectionCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\FileManagerDiskCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\LogChannelCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\LogStackCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\MailDriverCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\NpmBuildArtifactsCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\PassportKeysCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\PhpExtensionsCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\QueueDriverCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\RedisConnectionCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\StorageSymlinkCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\WritableDirectoriesCheck;
+use Lvntr\StarterKit\Console\Doctor\DoctorCheck;
+use Lvntr\StarterKit\Console\Doctor\DoctorReport;
+use Lvntr\StarterKit\Console\Doctor\DoctorStatus;
+use Symfony\Component\Console\Helper\TableStyle;
+
+class DoctorCommand extends Command
+{
+    protected $signature = 'sk:doctor
+        {--json : Output results as JSON (for admin UI)}
+        {--only= : Comma-separated check names to run (e.g. database,redis)}';
+
+    protected $description = 'Check the Starter Kit installation: PHP extensions, DB, Redis, Passport, queue, and more.';
+
+    /**
+     * sk:doctor exit code şeması (plan gereği):
+     *   0  — tüm checkler ok (Command::SUCCESS)
+     *   1  — en az bir warn var, fail yok
+     *   2  — en az bir fail var
+     *
+     * Not: Laravel Command::FAILURE = 1 olup plan şemasındaki "fail = 2"
+     * ile örtüşmez. Bu nedenle EXIT_FAIL sabiti ayrı tanımlandı.
+     */
+    private const EXIT_WARN = 1;
+
+    private const EXIT_FAIL = 2;
+
+    public function handle(): int
+    {
+        $checks = $this->buildChecks();
+        $reports = $this->runChecks($checks);
+
+        if ($this->option('json')) {
+            return $this->outputJson($reports);
+        }
+
+        return $this->outputTable($reports);
+    }
+
+    /** @return list<DoctorCheck> */
+    private function buildChecks(): array
+    {
+        $all = [
+            new PhpExtensionsCheck,
+            new DatabaseConnectionCheck,
+            new RedisConnectionCheck,
+            new PassportKeysCheck,
+            new StorageSymlinkCheck,
+            new WritableDirectoriesCheck,
+            new LogChannelCheck,
+            new LogStackCheck,
+            new QueueDriverCheck,
+            new ScheduleConfiguredCheck,
+            new MailDriverCheck,
+            new NpmBuildArtifactsCheck,
+            new ConfigCacheCheck,
+            new FileManagerDiskCheck,
+        ];
+
+        $only = $this->option('only');
+
+        if ($only === null || $only === '') {
+            return $all;
+        }
+
+        $selected = array_map('trim', explode(',', (string) $only));
+
+        return array_filter(
+            $all,
+            fn (DoctorCheck $check) => in_array(
+                strtolower(str_replace(' ', '-', $check->name())),
+                array_map('strtolower', $selected),
+                true
+            )
+        );
+    }
+
+    /**
+     * @param  list<DoctorCheck>  $checks
+     * @return list<DoctorReport>
+     */
+    private function runChecks(array $checks): array
+    {
+        $reports = [];
+
+        foreach ($checks as $check) {
+            $reports[] = $check->run();
+        }
+
+        return $reports;
+    }
+
+    /**
+     * @param  list<DoctorReport>  $reports
+     */
+    private function outputTable(array $reports): int
+    {
+        $this->newLine();
+        $this->line('  <fg=blue;options=bold>Starter Kit — System Check</>');
+        $this->newLine();
+
+        $tableStyle = new TableStyle;
+        $tableStyle->setCellHeaderFormat('<options=bold>%s</>');
+
+        $rows = array_map(function (DoctorReport $report) {
+            return [
+                $this->formatStatus($report->status),
+                $report->name,
+                $report->message,
+                $report->hint !== '' ? '<fg=gray>'.$report->hint.'</>' : '',
+            ];
+        }, $reports);
+
+        $this->table(
+            ['Status', 'Check', 'Message', 'Hint'],
+            $rows
+        );
+
+        $this->newLine();
+        $this->printSummary($reports);
+        $this->newLine();
+
+        return $this->resolveExitCode($reports);
+    }
+
+    /**
+     * @param  list<DoctorReport>  $reports
+     */
+    private function outputJson(array $reports): int
+    {
+        $data = [
+            'version' => 1,
+            'generated_at' => now()->toISOString(),
+            'summary' => $this->buildSummary($reports),
+            'checks' => array_map(fn (DoctorReport $r) => $r->toArray(), $reports),
+        ];
+
+        $this->line(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return $this->resolveExitCode($reports);
+    }
+
+    private function formatStatus(DoctorStatus $status): string
+    {
+        return match ($status) {
+            DoctorStatus::Ok => '<fg=green>  OK  </>',
+            DoctorStatus::Warn => '<fg=yellow> WARN </>',
+            DoctorStatus::Fail => '<fg=red> FAIL </>',
+        };
+    }
+
+    /** @param list<DoctorReport> $reports */
+    private function printSummary(array $reports): void
+    {
+        $summary = $this->buildSummary($reports);
+
+        $okColor = $summary['ok'] > 0 ? 'green' : 'gray';
+        $warnColor = $summary['warn'] > 0 ? 'yellow' : 'gray';
+        $failColor = $summary['fail'] > 0 ? 'red' : 'gray';
+
+        $this->line(sprintf(
+            '  <fg=%s>%d OK</> · <fg=%s>%d warning(s)</> · <fg=%s>%d error(s)</>',
+            $okColor,
+            $summary['ok'],
+            $warnColor,
+            $summary['warn'],
+            $failColor,
+            $summary['fail']
+        ));
+    }
+
+    /**
+     * @param  list<DoctorReport>  $reports
+     * @return array{ok: int, warn: int, fail: int, total: int}
+     */
+    private function buildSummary(array $reports): array
+    {
+        $ok = count(array_filter($reports, fn (DoctorReport $r) => $r->isOk()));
+        $warn = count(array_filter($reports, fn (DoctorReport $r) => $r->isWarn()));
+        $fail = count(array_filter($reports, fn (DoctorReport $r) => $r->isFail()));
+
+        return [
+            'ok' => $ok,
+            'warn' => $warn,
+            'fail' => $fail,
+            'total' => count($reports),
+        ];
+    }
+
+    /** @param list<DoctorReport> $reports */
+    private function resolveExitCode(array $reports): int
+    {
+        $hasFail = array_filter($reports, fn (DoctorReport $r) => $r->isFail()) !== [];
+        $hasWarn = array_filter($reports, fn (DoctorReport $r) => $r->isWarn()) !== [];
+
+        if ($hasFail) {
+            return self::EXIT_FAIL; // 2
+        }
+
+        if ($hasWarn) {
+            return self::EXIT_WARN; // 1
+        }
+
+        return Command::SUCCESS; // 0
+    }
+}

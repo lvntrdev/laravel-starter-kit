@@ -8,9 +8,11 @@ use App\Domain\Role\Queries\RoleSelectOptionsQuery;
 use App\Domain\User\Actions\CreateUserAction;
 use App\Domain\User\Actions\DeleteUserAction;
 use App\Domain\User\Actions\UpdateUserAction;
+use App\Domain\User\BulkActions\BulkDeleteUserAction;
 use App\Domain\User\DTOs\UserDTO;
 use App\Domain\User\Queries\UserDatatableQuery;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkActionRequest;
 use App\Http\Requests\Admin\User\StoreUserRequest;
 use App\Http\Requests\Admin\User\UpdateUserRequest;
 use App\Http\Requests\UploadAvatarRequest;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lvntr\StarterKit\Http\Bulk\BulkActionDispatcher;
 
 /**
  * Admin panel user management controller.
@@ -151,5 +154,35 @@ class UserController extends Controller
         $action->execute($user, 'avatar');
 
         return to_api(status: 204);
+    }
+
+    /**
+     * Handle a bulk action on user records.
+     *
+     * POST /admin/users/bulk
+     * Route name: users.bulk
+     */
+    public function bulk(BulkActionRequest $request, BulkDeleteUserAction $bulkDelete): RedirectResponse
+    {
+        $dispatcher = new BulkActionDispatcher;
+        $dispatcher->register($bulkDelete);
+
+        $actionKey = $request->validated('action');
+
+        if (! $dispatcher->has($actionKey)) {
+            return back()->with('error', __('sk-bulk.unsupported_action', ['action' => $actionKey]));
+        }
+
+        $ids = $request->validated('ids');
+        $actor = $request->user();
+
+        $items = User::query()
+            ->whereIn('id', $ids)
+            ->with('roles')
+            ->get();
+
+        $result = $dispatcher->dispatch($actor, $actionKey, $items);
+
+        return back()->with('success', $result['message']);
     }
 }

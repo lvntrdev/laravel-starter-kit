@@ -1,6 +1,7 @@
 LOCAL.md
 /vendor/
 /node_modules/
+/stubs/node_modules/
 /stubs/.claude/*
 !/stubs/.claude/skills/
 /stubs/.cursor/

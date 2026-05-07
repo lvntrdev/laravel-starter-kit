@@ -16,3 +16,5 @@ export { useCan } from './useCan';
 export { useDefinition } from './useDefinition';
 export type { EnumItem, DefinitionKey, DefinitionFilter } from './useDefinition';
 export { usePageLoading } from './usePageLoading';
+export { useDatatableSelection } from './useDatatableSelection';
+export type { BulkSelectionMode, BulkActionResult, BulkActionPayload } from './useDatatableSelection';

@@ -10,6 +10,7 @@
         FilterConfig,
         FilterOption,
     } from './core';
+    import type { UseDatatableSelectionReturn } from './selection';
     import { trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
     import Ripple from 'primevue/ripple';
@@ -26,12 +27,19 @@
         config: DataTableConfig<any>;
         /** Register this table in the refresh bus under the given key. */
         refreshKey?: string;
+        /**
+         * Optional selection state from useDatatableSelection().
+         * When provided, a checkbox column is shown and row selection is enabled.
+         * When omitted, the table behaves exactly as before (no regression).
+         */
+        selection?: UseDatatableSelectionReturn;
     }
 
     const props = defineProps<Props>();
 
     const emit = defineEmits<{
-        load: [data: unknown[]];
+        /** Fired after each successful data fetch. Carries the current page rows and total filtered count. */
+        load: [data: unknown[], total: number];
     }>();
 
     const api = useApi();
@@ -410,7 +418,7 @@
             };
 
             syncState();
-            emit('load', response.data);
+            emit('load', response.data, response.total);
         } finally {
             loading.value = false;
         }
@@ -533,8 +541,13 @@
     const hasMenuActions = computed(() => props.config.menuActions.length > 0);
     const showIdColumn = computed(() => props.config.idColumn?.visible !== false);
     const idKey = computed(() => props.config.idColumn?.key ?? 'id');
+    const hasSelection = computed(() => !!props.selection);
     const colspan = computed(
-        () => props.config.columns.length + (showIdColumn.value ? 1 : 0) + (hasActions.value ? 1 : 0),
+        () =>
+            props.config.columns.length +
+            (showIdColumn.value ? 1 : 0) +
+            (hasActions.value ? 1 : 0) +
+            (hasSelection.value ? 1 : 0),
     );
 
     // ── ID Popover ────────────────────────────────────────────────────────────
@@ -678,7 +691,7 @@
 
     const slots = useSlots();
 
-    defineExpose({ refresh: fetchData });
+    defineExpose({ refresh: fetchData, pageData: data, total: computed(() => meta.value.total) });
 
     // ── Card passthrough ─────────────────────────────────────────────────────────
 
@@ -924,6 +937,16 @@
                     <table class="sk-dt__table">
                         <thead class="sk-dt__thead">
                             <tr>
+                                <!-- Selection checkbox column header -->
+                                <th v-if="hasSelection" class="sk-dt__th sk-dt__th--checkbox">
+                                    <Checkbox
+                                        :model-value="selection!.isPageFullySelected(data)"
+                                        :indeterminate="selection!.isPagePartiallySelected(data)"
+                                        binary
+                                        @update:model-value="(val) => selection!.togglePageSelection(data, val)"
+                                    />
+                                </th>
+
                                 <!-- Built-in ID column header -->
                                 <th
                                     v-if="showIdColumn"
@@ -976,7 +999,21 @@
 
                             <template v-else>
                                 <!-- Rows -->
-                                <tr v-for="(row, rowIndex) in data" :key="rowIndex" class="sk-dt__row">
+                                <tr
+                                    v-for="(row, rowIndex) in data"
+                                    :key="rowIndex"
+                                    class="sk-dt__row"
+                                    :class="{ 'sk-dt__row--selected': hasSelection && selection!.isRowSelected(row) }"
+                                >
+                                    <!-- Selection checkbox cell -->
+                                    <td v-if="hasSelection" class="sk-dt__td sk-dt__td--checkbox">
+                                        <Checkbox
+                                            :model-value="selection!.isRowSelected(row)"
+                                            binary
+                                            @update:model-value="() => selection!.toggleRow(row)"
+                                        />
+                                    </td>
+
                                     <!-- Built-in ID cell -->
                                     <td v-if="showIdColumn" class="sk-dt__td sk-dt__td--sticky sk-dt__td--id">
                                         <button

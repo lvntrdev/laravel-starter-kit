@@ -69,6 +69,15 @@ API tarafında Passport kullanılır:
 - `two-factor-challenge`, API 2FA akışını `code` veya `recovery_code` ile tamamlar ve başarı durumunda `{ user, token }` döner
 - istemciler, her başarılı auth yanıtında token beklemek yerine `requires_verification` ve `requires_two_factor` alanlarına göre dallanmalıdır
 
+## API İstemcileri ve Token'lar
+
+Admin paneli, Passport OAuth2 istemcilerini ve Personal Access Token'ları (PAT) yönetmek için bir arayüz sunar:
+
+- `/admin/api-clients` — OAuth2 istemcilerini listele, oluştur, güncelle ve sil
+- `/admin/api-tokens` — Personal Access Token'ları yönet
+
+İstemci secret'ları ve PAT değerleri yalnızca oluşturma anında dismiss edilemeyen bir modal içinde bir kez gösterilir; plaintext olarak hiçbir zaman saklanmaz. Ayrıntılı belge için bkz. [API İstemcileri ve Token'lar](./api-clients.tr.md).
+
 ## Notlar
 
 - tarayıcı tarafındaki auth deneyimi için Fortify kullanın

@@ -53,14 +53,18 @@ It is designed for teams who want to skip re-building the same admin screens on 
     - Dashboard
     - Activity Logs (browsable, filterable)
     - Settings panel (General / Auth / Mail / Storage / File Manager)
-    - File Manager with pluggable contexts
+    - File Manager with pluggable contexts and signed share links
+    - API Clients & Personal Access Token management
+    - System Health dashboard
     - API Routes explorer
     - Definitions (DB-backed enums used across forms and tables)
 - **Developer Tooling**
     - DDD-style domain layer (Actions / DTOs / Queries / Events / Listeners)
     - FormBuilder, DatatableBuilder, TabBuilder fluent APIs (including [Translatable Fields](./docs/translatable-fields.md))
-    - Domain scaffolding via `make:sk-domain`
+    - Domain scaffolding via `make:sk-domain` with opt-in flag support
+    - Datatable bulk actions with cross-page selection
     - Safe upgrade flow via `sk:update` (hash-tracked, preserves your edits)
+    - System health check via `sk:doctor`
     - Light & Dark themes
 
 ## How to use it?
@@ -109,6 +113,149 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 - [Upgrading between versions](docs/UPGRADE_.md)
 - [Changelog](./CHANGELOG.md)
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `php artisan sk:install` | Full installation: migrations, seeders, Passport keys, admin user, frontend build |
+| `php artisan sk:update` | Pull updated stubs (hash-tracked, preserves your edits) |
+| `php artisan sk:publish [--tag=...]` | Publish specific asset groups (components, config, stubs, migrations) |
+| `php artisan make:sk-domain Foo` | Scaffold a new DDD domain |
+| `php artisan sk:doctor` | Run system health checks |
+
+### `sk:doctor` — System Health
+
+Runs 12 checks and reports: PHP extensions, database, Redis, Passport keys, storage symlink, writable directories, queue driver, schedule, mail driver, npm build artifacts, config cache, FileManager disk.
+
+```bash
+# Human-readable output
+php artisan sk:doctor
+
+# JSON output (CI-friendly)
+php artisan sk:doctor --json
+
+# Run only specific checks
+php artisan sk:doctor --only=database,redis,passport-keys
+```
+
+Exit codes: `0` OK, `1` WARN (non-critical), `2` FAIL (action required).
+
+The `/admin/system-health` admin page runs these checks on demand. Permission required: `system.health.view`.
+
+### `make:sk-domain` — Domain Generator
+
+```bash
+# Minimal scaffold (unchanged from previous versions)
+php artisan make:sk-domain Post
+
+# Opt-in extras individually
+php artisan make:sk-domain Post --with-policy --with-test --with-factory
+
+# Opt-in extras as a comma list
+php artisan make:sk-domain Post --with=policy,factory,seeder,test
+
+# With relationship scaffolding
+php artisan make:sk-domain Comment --with-relations \
+  --relations="belongsTo:Post,morphTo:commentable"
+```
+
+Flag reference:
+
+| Flag | Generates |
+|---|---|
+| `--with-policy` | `PostPolicy` registered in `AuthServiceProvider` |
+| `--with-factory` | `PostFactory` |
+| `--with-seeder` | `PostSeeder` |
+| `--with-test` | Pest feature test stub |
+| `--with-relations` | Relation methods in model + migration foreign keys |
+| `--with=a,b,c` | Shorthand for multiple `--with-*` flags |
+| `--relations="..."` | Relation definitions (implies `--with-relations`) |
+
+## File Manager
+
+### Signed Share Links
+
+Generate time-limited, publicly accessible URLs for private files.
+
+```bash
+# Config keys in config/file-manager.php
+file-manager.share.enabled          # true/false
+file-manager.share.default_ttl_hours # default: 24
+file-manager.share.max_ttl_hours    # default: 720
+file-manager.share.allow_revoke     # true/false
+```
+
+**Create a share link:**
+```
+POST /file-manager/share
+{ "media_id": 42, "ttl_hours": 48 }
+
+→ { "url": "https://...?expires=...&signature=...", "expires_at": "..." }
+```
+
+**Revoke a share link:**
+```
+POST /file-manager/share/revoke
+{ "media_id": 42, "signed_token_hash": "..." }
+```
+
+**Access a shared file:**
+```
+GET /file-manager/share/{media}?expires=...&signature=...
+```
+
+Permissions: `share-media`, `revoke-share-media`.
+
+## Datatable Bulk Actions
+
+`SkDatatable` supports cross-page selection and bulk operations via the `BulkAction` interface and `BulkActionDispatcher`.
+
+**Request payload:**
+```json
+{
+  "action": "bulk-delete-users",
+  "ids": [1, 2, 3],
+  "select_all_filtered": false,
+  "filter_snapshot": { "search": "...", "role": "editor" }
+}
+```
+
+**Response:**
+```json
+{ "processed": 3, "skipped": 0, "failed": 0, "message": "3 users deleted." }
+```
+
+When `select_all_filtered: true`, the action receives the filter snapshot and resolves affected records server-side — no client-side ID enumeration required.
+
+Built-in stub examples available via `php artisan sk:publish --tag=starter-kit-stubs`:
+- `BulkDeleteUserAction` — rank-aware; prevents self-deletion
+- `BulkDeleteRoleAction` — skips system-protected roles
+
+## API Clients & Tokens
+
+Admin routes: `/admin/api-clients`, `/admin/api-tokens`.
+
+Supports Passport `authorization_code` and `client_credentials` grants, and Personal Access Tokens.
+
+Permissions:
+
+| Permission | Scope |
+|---|---|
+| `api-clients.create` | Create OAuth clients |
+| `api-clients.read` | List / view clients |
+| `api-clients.update` | Edit client name / redirect URIs |
+| `api-clients.delete` | Delete clients |
+| `api-tokens.create` | Mint Personal Access Tokens |
+| `api-tokens.read` | List tokens |
+| `api-tokens.delete` | Revoke tokens |
+
+**Security notes:**
+
+- Client secret and token plaintext are shown exactly once at creation via `OneTimeSecretModal` (cannot be dismissed without copying). Subsequent views show only masked values.
+- `redirect_uris` must use HTTPS. `localhost` and `127.0.0.1` are allowed with HTTP (RFC 8252 §8.3). Enforced by `HttpsOrLocalhostUrl` validation rule.
+- All clients are created as `confidential = true`. Public (non-confidential) clients cannot be created through the UI.
+- Personal Access Tokens are always minted for the currently authenticated admin; `user_id` in the request body is rejected.
 
 ## License
 

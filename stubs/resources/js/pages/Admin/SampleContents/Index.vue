@@ -68,7 +68,7 @@
                 .label(trans('sample-contents.fields.created_at'))
                 .key('created_at')
                 .render((row) =>
-                    new Date(row.created_at).toLocaleDateString('tr-TR', {
+                    new Date(row.created_at).toLocaleDateString(document.documentElement.lang || 'en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',

@@ -4,6 +4,61 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v13.5.0 → v13.5.3
+
+### Özet
+
+Bu sürümde `sk:doctor` / System Health paneli, File Manager için İmzalı Paylaşım Bağlantıları (Signed Share Link), Bulk Action API sertleştirmesi ve API İstemci UI eklendi. Yeni migration, config key ve permission adımları zorunludur.
+
+### Yükseltme Adımları
+
+**1. Paketi güncelleyin:**
+
+```bash
+composer update lvntr/laravel-starter-kit
+```
+
+**2. Yeni migration'ları yayınlayın ve çalıştırın:**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan migrate
+```
+
+Yeni migration: `file_manager_share_revocations` tablosu (İmzalı Paylaşım Bağlantısı iptali için zorunlu).
+
+**3. File Manager config'ini güncelleyin (yeni `share.*` key'leri):**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-config --force
+```
+
+`config/file-manager.php` dosyasına şu key'ler eklenir: `share.enabled`, `share.default_ttl_hours`, `share.max_ttl_hours`, `share.allow_revoke`. Mevcut key'ler etkilenmez.
+
+**4. Yeni stub'ları yayınlayın (DİKKAT: özelleştirilmiş stub'lar override edilir, önce diff alın):**
+
+```bash
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**5. Yeni izinleri seed'leyin ve cache'i temizleyin:**
+
+```bash
+php artisan db:seed --class=PermissionResourcesSeeder
+php artisan permission:cache-reset
+```
+
+Yeni izinler: `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`
+
+### Davranış Değişiklikleri
+
+- **Passport istemci UI** — `confidential=false` olan authorization-code client'ları artık UI üzerinden oluşturulamaz. Mevcut DB kayıtları etkilenmez.
+- **Personal Access Token mint** — `user_id` body alanı kaldırıldı. Başkası adına PAT oluşturmak için artisan komutunu kullanın.
+- **`AppServiceProvider` stub** — varsa duplicate Passport scope / `Gate::before` bloğunu kaldırın; `StarterKitServiceProvider` bunları kaydetmeye devam eder.
+- **`BulkActionRequest`** — ID'ler artık `string|min:1|max:64` kuralıyla doğrulanıyor. Mevcut integer-only bulk action'lar etkilenmez.
+
+---
+
 ## v13.4.x → v13.5.0
 
 ### Özet

@@ -358,3 +358,31 @@
 .sk-dt-id-popover__value {
     @apply font-mono text-slate-700 dark:text-slate-200;
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BULK SELECTION
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Checkbox column — narrow, centered */
+.sk-dt__th--checkbox,
+.sk-dt__td--checkbox {
+    @apply w-12 px-3 text-center;
+}
+
+/* Selected row highlight */
+.sk-dt__row--selected {
+    @apply bg-primary-50/60 dark:bg-primary-900/20;
+
+    &:hover {
+        @apply bg-primary-50 dark:bg-primary-900/30;
+    }
+}
+
+/* Bulk action toolbar — rendered inside the #toolbar slot */
+.sk-dt-bulk-toolbar {
+    @apply flex flex-wrap items-center gap-2;
+}
+
+.sk-dt-bulk-toolbar__count {
+    @apply font-semibold text-base text-slate-700 dark:text-slate-300 mr-1;
+}

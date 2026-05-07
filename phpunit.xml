@@ -22,5 +22,8 @@
         <env name="APP_ENV" value="testing"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Testbench-core'un kendi fixture migration'larını (dedupe_receipts vb.)
+             otomatik yüklememesi için. Tablolar DatabaseTestCase içinde inline oluşturulur. -->
+        <env name="TESTBENCH_WITHOUT_DEFAULT_MIGRATIONS" value="true"/>
     </php>
 </phpunit>

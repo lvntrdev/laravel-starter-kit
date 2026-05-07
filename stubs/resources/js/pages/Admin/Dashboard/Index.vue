@@ -13,7 +13,7 @@
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
 
-    const currentDate = new Date().toLocaleDateString('en-US', {
+    const currentDate = new Date().toLocaleDateString(document.documentElement.lang || 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',

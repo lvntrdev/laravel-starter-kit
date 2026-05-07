@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Passport\Passport;
 
 /**
  * Admin panel settings controller.
@@ -48,12 +49,18 @@ class SettingsController extends Controller
     /**
      * Display the settings page with all groups.
      */
-    public function index(SettingsDefaultsQuery $query): Response
+    public function index(SettingsDefaultsQuery $query, Request $request): Response
     {
+        // OAuth/Token tab'ları ve sistem sağlığı yalnızca system_admin için
+        // render ediliyor; payload'u şişirmemek için diğer rollerde boş gönder.
+        $isSystemAdmin = (bool) $request->user()?->hasRole('system_admin');
+
         return Inertia::render('Admin/Settings/Index', [
             'settings' => $query->all(),
             'timezones' => \DateTimeZone::listIdentifiers(),
             'availableLanguages' => config('app.available_languages', ['en' => 'English']),
+            'availableScopes' => $isSystemAdmin ? Passport::scopes()->values() : [],
+            'healthReport' => $isSystemAdmin ? session('doctor_report') : null,
         ]);
     }
 

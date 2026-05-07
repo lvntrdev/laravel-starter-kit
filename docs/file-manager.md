@@ -193,6 +193,9 @@ All endpoints accept `context` and `context_id` as query string on GET/DELETE or
 | POST   | `/file-manager/files/{media}/copy`                   | Duplicate file (`target_folder_id`)                                 |
 | DELETE | `/file-manager/files/{media}`                        | Delete one file                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Force-download                                                      |
+| POST   | `/file-manager/share`                                | Create an HMAC-signed share link (`media_id`, `ttl_hours?`)         |
+| POST   | `/file-manager/share/revoke`                         | Revoke a share link (`token`)                                       |
+| GET    | `/file-manager/share/{media}?expires=&signature=`    | Validate signature and serve the file                               |
 
 ### Upload parameters
 
@@ -317,6 +320,19 @@ Moving a file between folders only updates `media.folder_id` in the DB — the f
 
 Backend validation reads these settings on every upload request — bypassing the frontend mime filter still fails server-side.
 
+### Signed Share Links (`share`)
+
+HMAC-SHA256 signed links that grant time-limited access to a file without requiring authentication. Requires `config('file-manager.share.enabled')` to be `true`.
+
+| Key                | Type | Default | Description                                      |
+| ------------------ | ---- | ------- | ------------------------------------------------ |
+| `enabled`          | bool | `false` | Enable the share link feature                    |
+| `default_ttl_hours`| int  | `24`    | Default link lifetime in hours                   |
+| `max_ttl_hours`    | int  | `720`   | Maximum allowed lifetime (30 days)               |
+| `allow_revoke`     | bool | `true`  | Allow links to be revoked before expiry          |
+
+Revoked tokens are recorded in the `file_manager_share_revocations` table with a `(media_id, signed_token_hash)` composite unique index. A token is validated against its originating `media_id` — cross-media token reuse is rejected.
+
 ### Trash behaviour (`enable_trash`)
 
 The `enable_trash` key in `config/file-manager.php` is the single source of truth for soft-vs-hard delete:
@@ -348,6 +364,11 @@ Built-in rules:
 - **Custom registrations** — whatever your `authorize` closure returns
 
 The `files` resource is seeded with `create / read / update / delete` abilities; assign these to roles via the Roles admin. For custom contexts, define a policy or pass a permission-based closure when registering.
+
+Share link operations use two dedicated permissions:
+
+- `share-media` — create a signed share link (`POST /file-manager/share`)
+- `revoke-share-media` — revoke a share link before expiry (`POST /file-manager/share/revoke`)
 
 ## Related Stack
 

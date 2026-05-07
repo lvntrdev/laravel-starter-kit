@@ -4,20 +4,69 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ## 2026-05-06 — v13.5.3
 
-### Yama sürümü — Güvenlik güncellemeleri, DeleteFolderAction event düzeltmesi, CI iyileştirmeleri
+### Sürüm — sk:doctor, System Health, Signed Share Link, Bulk Action API, API Client Admin UI, güvenlik güncellemeleri ve hata düzeltmeleri
+
+Bu sürüm `sk:doctor` sağlık kontrol komutunu ve System Health admin sayfasını, HMAC imzalı dosya paylaşım bağlantılarını, DatatableBuilder için cross-page Bulk Action API'sini, Domain Generator v2 opt-in flag'lerini ve tam Passport API Client & Token admin arayüzünü ekliyor. Güvenlik bağımlılık güncellemeleri, iç içe klasör silme için event-dispatch düzeltmeleri, bulk controller'lar için Inertia flash response düzeltmeleri ve UUID/ULID bulk-action ID desteği de bu sürüme dahildir. Mevcut uygulamalar aşağıdaki yükseltme adımlarını uygulamalı.
+
+#### Eklenenler
+
+- **`sk:doctor` artisan komutu** — 12 kontrol noktasını kapsayan sistem sağlık denetimi: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule çalışması, mail driver, npm build artifact'ları, config cache, FileManager disk bağlantısı. `--json` ile makine okunabilir çıktı; `--only=database,redis,...` ile seçili kontroller çalıştırılabilir. Exit kodları: `0` OK, `1` WARN, `2` FAIL.
+- **Admin Panel — System Health sayfası** (`/admin/system-health`) — `sk:doctor` çıktısını UI'da görselleştirir; kontrol başına durum rozeti ve manuel yenile butonu. Erişim izni: `system.health.view`.
+- **File Manager — Signed Share Link** — HMAC imzalı genel erişim URL'leri. `POST /file-manager/share` ile TTL belirterek paylaşım oluşturulur; `POST /file-manager/share/revoke` ile iptal edilir; `GET /file-manager/share/{media}?expires&signature` ile doğrulama yapılır. Config anahtarları: `file-manager.share.enabled`, `default_ttl_hours` (varsayılan 24), `max_ttl_hours` (varsayılan 720), `allow_revoke`. Token iptali `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile yönetilir. Yeni izinler: `share-media`, `revoke-share-media`.
+- **DatatableBuilder — Bulk Action API** — `BulkAction` interface ve `BulkActionDispatcher` ile sayfa sınırını aşan toplu işlem desteği. `SkDatatable`, `select_all_filtered` modunu (filtre snapshot ile) ve cross-page seçimi destekler. Request payload: `{action, ids, select_all_filtered, filter_snapshot}`; response: `{processed, skipped, failed, message}`. Stub örnekleri: `BulkDeleteUserAction` (rank-aware) ve `BulkDeleteRoleAction` (sistem rollerine karşı koruma).
+- **Domain Generator v2 (`make:sk-domain`) — opt-in flag'ler** — `--with-policy`, `--with-factory`, `--with-seeder`, `--with-test`, `--with-relations` tek tek ya da `--with=policy,factory,test` toplu syntax ile kullanılabilir. `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` ile ilişki scaffold'ı otomatik üretilir. Flag'siz çağrım v13.5.x davranışını korur (geriye dönük uyumlu).
+- **API Client & Token Admin UI** — Passport authorization_code ve client_credentials grant'leri ile Personal Access Token yönetimi için admin arayüzü (`/admin/api-clients`, `/admin/api-tokens`). Client secret ve PAT plaintext yalnızca oluşturma response'unda bir kez gösterilir (`Cache-Control: no-store`); `OneTimeSecretModal` dismiss edilemez. Yeni izinler: `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`. Yeni validation rule: `HttpsOrLocalhostUrl` (RFC 8252 §8.3 — yalnızca HTTPS, localhost istisnası ile HTTP).
+- **CI Workflow (GitHub Actions)** — PHP test (`pest`), lint (`pint`), Node 22 build/typecheck/lint job'ları. Aynı branch/PR'da eş zamanlı çalışan job'lar `concurrency: cancel-in-progress` ile iptal edilir.
+- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri katkıda bulunanlar için eklendi.
 
 #### Düzeltmeler
 
-- **`DeleteFolderAction`** — alt klasörler, Eloquent model event'lerini atlayan query-builder `forceDelete()` çağrısıyla kalıcı siliniyordu. `FileFolder` model'indeki `forceDeleted` gözlemcisi (favori kayıtlarını temizlemekten sorumlu) alt klasörler için hiç tetiklenmiyordu; bu da `file_favorites` tablosunda sahipsiz kayıtlar bırakıyordu. Model bazlı iterasyona geçildi, artık her `forceDeleted` event'i doğru şekilde tetikleniyor.
+- **`DeleteFolderAction`** — alt klasörler, Eloquent model event'lerini atlayan query-builder `forceDelete()` çağrısıyla kalıcı siliniyordu. `FileFolder` modelindeki `forceDeleted` gözlemcisi (favori kayıtlarını temizlemekten sorumlu) alt klasörler için hiç tetiklenmiyordu; bu da `file_favorites` tablosunda sahipsiz kayıtlar bırakıyordu. Model bazlı iterasyona geçildi, artık her `forceDeleted` event'i doğru şekilde tetikleniyor.
+- **`sk:update` — `node_modules/` stubs taramasından filtrelendi.** `NEVER_UPDATE_PATHS` sabitine `node_modules/` eklendi; `isNeverUpdate()` kontrolü `updateModifiableFiles`, `addNewFiles`, `migrateHashRegistry` ve `updateHashRegistry` döngülerinin tamamına uygulandı. Sembolik link (path repository) ortamında `stubs/node_modules/` varlığı aday dosya listesine sızıyordu.
+- **`sk:doctor` ve `sk:update` console çıktısı İngilizceye çevrildi.** `DoctorCommand`, `UpdateCommand` ve 12 `DoctorCheck` sınıfındaki tüm kullanıcıya gösterilen mesajlar, ipuçları ve tablo başlıkları İngilizce; PHP kod yorumları değiştirilmedi.
+- **Bulk action controller'lar — Inertia flash response.** `UserBulkController` ve `RoleBulkController` artık `ApiResponse` (JSON) yerine `back()->with('success'/'error', ...)` döndürüyor. Önceki JSON response Inertia'nın `onSuccess`/`onError` akışını kırıyor, ham JSON'u ekrana basıyordu; başarı/hata mesajları artık `HandleInertiaRequests` flash paylaşımı üzerinden `SkFlash`/`useFlash` bileşenine ulaşıyor.
+- **Bulk action validasyonu — UUID/ULID/integer ID desteği.** `BulkActionRequest::rules()` güncellendi: `ids.*` kuralı `integer`'dan `string|min:1|max:64`'e değiştirildi; `prepareForValidation()` tüm ID'leri string'e cast ediyor. Önceki `integer` kuralı `HasUuids` kullanan modellerde (User, FileBucket, FileFolder vb.) "The ids.0 field must be an integer" hatasına yol açıyordu. Yeni kural integer auto-increment, UUID (36 karakter) ve ULID (26 karakter) primary key'leri tek payload şemasında destekler.
 
 #### Güvenlik
 
 - **`dedoc/scramble`** `^0.13`'ten `^0.13.22`'ye yükseltildi — v0.13.22'de giderilen RCE sınıfı advisory (GHSA) için.
 - **`phpseclib/phpseclib`** `3.0.51`'den `3.0.52`'ye güncellendi — `laravel/passport` üzerinden gelen yüksek önem dereceli DoS advisory için.
+- **Signed Share Link — cross-media token hijack koruması.** `(media_id, signed_token_hash)` composite unique index, bir token'ın farklı media kayıtlarında geçerli sayılmasını engeller.
+- **Personal Access Token — privilege escalation guard.** `user_id` body alanı kabul edilmez; token her zaman kimliği doğrulanmış kullanıcı için mint edilir.
+- **Passport client `confidential` zorunluluğu.** API Client UI üzerinden yalnızca `confidential=true` client oluşturulabilir; authorization_code grant için min:1 redirect URI ve HTTPS zorunlu. Mevcut DB kayıtları etkilenmez.
 
-#### Eklenenler
+#### Değişiklikler
 
-- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri katkıda bulunanlar için kullanılabilir hale getirildi.
+- **`StarterKitServiceProvider`** — Passport scope ve `Gate::before` kayıtları tek kaynak haline getirildi; `AppServiceProvider` stub'ından duplicate kayıtlar kaldırıldı.
+
+#### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Yeni migration'ları yayınla ve çalıştır
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan migrate
+
+# Yeni share.* anahtarlarını içeren file-manager config'ini yayınla
+php artisan vendor:publish --tag=starter-kit-config --force
+
+# Yeni admin sayfa ve controller stub'larını yayınla
+# DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın
+php artisan vendor:publish --tag=starter-kit-stubs --force
+
+# Yeni izinleri ekle ve permission cache'ini temizle
+php artisan db:seed --class=PermissionResourcesSeeder
+php artisan permission:cache-reset
+```
+
+**Yeni izinler:** `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`.
+
+**Davranış değişiklikleri:**
+
+- `confidential=false` ile authorization_code Passport client'ları UI üzerinden artık oluşturulamaz. Mevcut DB kayıtları etkilenmez.
+- Personal Access Token mint: `user_id` body alanı kaldırıldı; admin başka kullanıcı adına PAT oluşturmak istiyorsa artisan komutu veya özel action kullanılmalıdır.
+- `AppServiceProvider` stub'ında duplicate Passport scope / `Gate::before` bloğu varsa silinmeli; `StarterKitServiceProvider` üzerinden çalışmaya devam eder.
 
 ---
 
@@ -57,6 +106,53 @@ composer update lvntr/laravel-starter-kit
 php artisan sk:update
 npm run build
 ```
+
+---
+
+## 2026-05-05 -v.13.5.1
+
+### Yama sürüm — NPM exports düzeltmesi, sk:publish iyileştirmeleri, depolama kotası ve yükleme validasyonu
+
+NPM paketi `main` ve `exports` path'leri gerçek dosya yapısıyla eşleştirildi. `sk:publish` bireysel tag'leri artık doğru çalışıyor. Admin Settings > File Manager panelinden GB cinsinden depolama kotası ayarlanabilir; kota aşıldığında yükleme istekleri yerelleştirilmiş hata ile 422 döndürür. Mevcut uygulamalar `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` çalıştırmalı.
+
+#### Fixed
+
+- **NPM paketi `main` ve `exports` path'leri** artık gerçek dosya yapısını yansıtıyor (`resources/js/components/Lvntr-Starter-Kit/...`). FileManager export'u eklendi.
+- **`sk:publish` bireysel tag'leri** (`form`, `datatable`, `tabs`, `skeleton`, `ui`) eski yapıya göre kırık source path'lere sahipti; `Lvntr-Starter-Kit/` segment'i ile düzeltildi.
+- **`vendor:publish --tag=starter-kit-components` iç içe path bug'ı** giderildi. Önceki: `resources/js/components/Lvntr-Starter-Kit/Lvntr-Starter-Kit/...`. Şimdi: doğrudan `resources/js/components/Lvntr-Starter-Kit/`.
+- **`vendor:publish --tag=starter-kit-file-manager-components`** artık aktif. Source path eski dizin adına işaret ediyordu (`file-manager`); gerçek dizin yapısıyla (`Lvntr-Starter-Kit/FileManager`) hizalandı.
+- **`index.ts` barrel'da eksik 9 component export eklendi:** `EditorInput`, `EditorImagePicker`, `EditorColorPalette`, `TranslatableInput`, `ImageLightbox`, `FilePreviewModal`, `ToggleFeatureCard`, `MimePickerField`, `SkTag`.
+
+#### Added
+
+- **`sk:publish --tag=filemanager`** — FileManager UI'ını ayrıca yayınlamak için yeni tag.
+- **`sk:install --without-ai-skill`** — Claude Code skill bundle kullanmayan consumer'lar için `stubs/.claude/skills/` yayınını atla.
+- **`.gitattributes`** — Composer arşivi artık `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` vb. geliştirme dosyalarını dışlıyor; arşiv boyutu küçüldü.
+- **`.npmignore`** — NPM paketi `__tests__/`, `*.spec.*`, `*.test.*` dosyalarını dışlıyor (root ve alt dizinler; npm 11 davranışıyla uyumlu).
+- **Disk-genel depolama kotası (`storage_quota_gb`).** Admin Settings > File Manager panelinden GB cinsinden tek kota değeri tanımlanır (varsayılan 10 GB). Tüm context'leri (`user`, `global`, özel morph map girişleri) ve çöp kutusunu (`withTrashed`) kapsar.
+- **Upload kota validasyonu.** `UploadFileRequest::withValidator()` kota kontrolü ekler; kota aşıldığında HTTP 422 ve yerelleştirilmiş `errors.quota_exceeded` mesajı döner.
+
+#### Removed
+
+- **Stub'dan duplike vendor-owned domain command'ları silindi:** `EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`. Vendor'dan tek kaynak olarak çalışmaya devam eder. `sk:update` mevcut consumer projelerde `DEPRECATED_PATHS` ile otomatik temizler.
+- **`App\Http\Responses\ApiResponse.php` stub'ı silindi.** `StarterKitServiceProvider` alias guard'ı (`App\Http\Responses\ApiResponse` → `Lvntr\StarterKit\Http\Responses\ApiResponse`) consumer dosyası silindikten sonra otomatik devreye girer; mevcut `use App\Http\Responses\ApiResponse;` import'ları değişmeden çalışır.
+- **`Lvntr\StarterKit\Enums\PermissionEnum` vendor'dan silindi.** Resmi konum `App\Enums\PermissionEnum` (stubs altında). Vendor'da referans yoktu (grep onayladı). Kodunuz doğrudan bu namespace'i import ediyorsa `App\Enums\PermissionEnum`'a güncelleyin.
+
+#### Changed
+
+- **`sk:publish` primary publish komutu olarak konumlandırıldı.** Granular interactive flow ve namespace rewrite desteği. `vendor:publish --tag=starter-kit-*` BC için korunur; `sk:publish` artık install ve komut dokümantasyonunda öne çıkar.
+- **`ResolvesMediaModel::computeStorageUsed()` imzası değişti (internal trait).** Parametre almaz hale geldi; `Media::withTrashed()->sum('size')` ile disk-genel toplam döndürür. Önceki davranış `model_type` + `model_id` filtreli per-context hesaplamaydı. Bu trait'i extend edip `computeStorageUsed($context)` çağırıyorsanız parametreyi kaldırın.
+- **`FolderContentsQuery`, `FavoritesContentsQuery`, `TrashContentsQuery`** — `stats.storage_quota` alanı byte cinsinden eklendi.
+- **`FileManager.vue`** — `STORAGE_QUOTA_BYTES` hardcoded sabiti kaldırıldı; `quotaBytes` computed değeri `stats.storage_quota`'dan okunuyor. Kota sıfır veya tanımsızsa sidebar `v-if="quotaBytes > 0"` ile gizlenir.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update` çıktısında "Removed" listesinde 4 path görünecek — bu beklenen davranış.
 
 ---
 

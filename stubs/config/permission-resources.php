@@ -38,6 +38,8 @@ return [
         'api-routes' => ['read', 'update'],
         'files' => ['create', 'read', 'update', 'delete'],
         'sample-contents' => ['create', 'read', 'update', 'delete'],
+        'api-clients' => ['create', 'read', 'update', 'delete'],
+        'api-tokens' => ['create', 'read', 'delete'],
     ],
 
     /*
@@ -82,6 +84,7 @@ return [
 
     'custom_permissions' => [
         'api-docs.read',
+        'system.health.view',
     ],
 
     /*
@@ -100,7 +103,8 @@ return [
         'users' => ['users'],
         // 'users' => ['users', 'users:student', 'users:guardian', 'users:personal'],
         'system' => ['roles', 'settings', 'files', 'sample-contents'],
-        'developer' => ['activity-logs', 'api-routes', 'api-docs'],
+        'developer' => ['activity-logs', 'api-routes', 'api-docs', 'system.health'],
+        'api' => ['api-clients', 'api-tokens'],
     ],
 
     /*
@@ -185,6 +189,9 @@ return [
             'files' => ['en' => 'Files', 'tr' => 'Dosyalar'],
             'sample-contents' => ['en' => 'Sample Contents', 'tr' => 'Örnek İçerikler'],
             'api-docs' => ['en' => 'API Docs', 'tr' => 'API Dökümanları'],
+            'system.health' => ['en' => 'System Health', 'tr' => 'Sistem Sağlığı'],
+            'api-clients' => ['en' => 'API Clients', 'tr' => 'API İstemcileri'],
+            'api-tokens' => ['en' => 'API Tokens', 'tr' => 'API Tokenleri'],
             'dashboard' => ['en' => 'Dashboard', 'tr' => 'Dashboard'],
             // 'users:student' => ['en' => 'Users → Student', 'tr' => 'Kullanıcılar → Öğrenci'],
             // 'users:guardian' => ['en' => 'Users → Guardian', 'tr' => 'Kullanıcılar → Veli'],

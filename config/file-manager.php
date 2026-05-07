@@ -64,4 +64,25 @@ return [
         'enable_trash' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | FileManager Signed Share Link Ayarları
+    |--------------------------------------------------------------------------
+    |
+    | enabled          — false ise share route grubu hiç register edilmez.
+    | default_ttl_hours — Link oluşturulurken expires_in_hours belirtilmezse
+    |                      kullanılan varsayılan süre (saat cinsinden).
+    | max_ttl_hours    — CreateShareLinkRequest'te kabul edilen maksimum TTL.
+    |                     720 = 30 gün.
+    | allow_revoke     — false ise revoke endpoint'i 403 döner.
+    |
+    */
+
+    'share' => [
+        'enabled' => true,
+        'default_ttl_hours' => 24,
+        'max_ttl_hours' => 720,
+        'allow_revoke' => true,
+    ],
+
 ];

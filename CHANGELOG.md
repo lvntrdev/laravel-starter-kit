@@ -7,18 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.5.3] - 2026-05-06
 
+### Added
+
+- **`sk:doctor` artisan komutu** — 12 kontrol noktasını kapsayan sistem sağlık denetimi: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule çalışması, mail driver, npm build artifact'ları, config cache, FileManager disk bağlantısı. `--json` flag'i ile makine okunabilir çıktı, `--only=database,redis,...` flag'i ile seçili kontroller çalıştırılabilir. Exit kodu: `0` OK, `1` WARN, `2` FAIL.
+- **Admin Panel — System Health sayfası** (`/admin/system-health`) — `sk:doctor` çıktısını UI'da görselleştirir; kontrol başına durum rozeti ve manuel yenile butonu. Erişim izni: `system.health.view`.
+- **File Manager — Signed Share Link** — HMAC imzalı genel erişim URL'leri. `POST /file-manager/share` ile TTL belirterek paylaşım oluşturulur; `POST /file-manager/share/revoke` ile iptal edilir; `GET /file-manager/share/{media}?expires&signature` ile doğrulama yapılır. Config anahtarları: `file-manager.share.enabled`, `default_ttl_hours` (varsayılan 24), `max_ttl_hours` (varsayılan 720), `allow_revoke`. Token iptali `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile yönetilir. Yeni izinler: `share-media`, `revoke-share-media`.
+- **DatatableBuilder — Bulk Action API** — `BulkAction` interface ve `BulkActionDispatcher` ile sayfa sınırını aşan toplu işlem desteği. `SkDatatable` bileşeni, `select_all_filtered` modunu (filtre snapshot ile) ve cross-page seçimi destekler. Request payload: `{action, ids, select_all_filtered, filter_snapshot}`; response: `{processed, skipped, failed, message}`. Stub örnekleri: `BulkDeleteUserAction` (rank-aware) ve `BulkDeleteRoleAction` (sistem rollerine karşı koruma).
+- **Domain Generator v2 (`make:sk-domain`) — opt-in flag'ler** — `--with-policy`, `--with-factory`, `--with-seeder`, `--with-test`, `--with-relations` tek tek flag veya `--with=policy,factory,test` toplu syntax ile kullanılabilir. `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` ile ilişki scaffold'ı otomatik üretilir. Flag'siz çağrım v13.5.x davranışını korur (backward compatible).
+- **API Client & Token Admin UI** — Passport authorization_code ve client_credentials grant'leri ile Personal Access Token yönetimi için admin arayüzü (`/admin/api-clients`, `/admin/api-tokens`). Client secret ve Personal Access Token plaintext yalnızca oluşturma response'unda bir kez gösterilir (`Cache-Control: no-store`); `OneTimeSecretModal` dismiss edilemez. Yeni izinler: `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`. Yeni validation rule: `HttpsOrLocalhostUrl` (RFC 8252 §8.3 — yalnızca HTTPS, localhost istisnası ile HTTP).
+- **CI Workflow (GitHub Actions)** — PHP test (`pest`), lint (`pint`), Node 22 build/typecheck/lint job'ları. Aynı branch/PR'da paralel çalışan job'lar `concurrency: cancel-in-progress` ile önceki çalıştırmayı iptal eder.
+- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri eklendi.
+
 ### Fixed
 
 - **`DeleteFolderAction`** — Alt klasörler query-builder `forceDelete()` ile silindiğinde Eloquent `forceDeleted` event'i tetiklenmiyordu. `FileFolder` modelindeki `forceDeleted` gözlemcisi (favori kayıtlarını temizler) yalnızca root klasör için çalışıyor, alt klasörler için `file_favorites` orphan kalıyordu. Model bazlı iterasyona geçildi; artık tüm alt klasörler için event tetikleniyor.
+- **`sk:update` — `node_modules/` stubs taramasından filtrelendi.** `NEVER_UPDATE_PATHS` sabitine `node_modules/` eklendi; `updateModifiableFiles`, `addNewFiles`, `migrateHashRegistry` ve `updateHashRegistry` döngülerinin tamamına `isNeverUpdate()` kontrolü eklendi. Sembolik link (path repository) ortamında `stubs/node_modules/` varlığı "seçilecek dosyalar" listesine sızıyordu.
+- **`sk:doctor` ve `sk:update` — console çıktısı İngilizceye çevrildi.** `DoctorCommand`, `UpdateCommand`, 12 adet `DoctorCheck` sınıfında kullanıcıya gösterilen tüm mesajlar, ipuçları ve tablo başlıkları İngilizceye çevrildi; PHP kod yorumları değiştirilmedi.
+- **Bulk action controller — Inertia flash response.** `UserBulkController` ve `RoleBulkController` `ApiResponse` (JSON) yerine `back()->with('success'/'error', ...)` döndürecek şekilde güncellendi. Önceki JSON response Inertia'nın `onSuccess`/`onError` akışını kırıyor, ham JSON'u ekrana basıyordu; şimdi başarı/hata mesajları `HandleInertiaRequests` flash paylaşımı üzerinden `SkFlash`/`useFlash` bileşenine ulaşıyor.
+- **Bulk action validation — UUID/ULID/integer ID desteği.** `BulkActionRequest::rules()` içinde `ids.*` kuralı `integer` yerine `string|min:1|max:64` olarak güncellendi; `prepareForValidation()` tüm gelen ID'leri string'e cast ediyor. Önceki `integer` kuralı `HasUuids` kullanan modellerde (User, FileBucket, FileFolder vb.) "The ids.0 field must be an integer" hatası üretiyordu. Yeni kural integer auto-increment, UUID (36 char) ve ULID (26 char) primary key'leri tek payload şemasında destekler; `whereIn('id', $ids)` sorguları her iki tipte de çalışır.
 
 ### Security
 
 - **`dedoc/scramble`** `^0.13.22`'ye yükseltildi (RCE sınıfı advisory giderildi).
 - **`phpseclib/phpseclib`** `3.0.52`'ye güncellendi (DoS advisory; `laravel/passport` üzerinden transitive).
+- **Signed Share Link — cross-media token hijack koruması.** `(media_id, signed_token_hash)` composite unique index, bir token'ın farklı media kayıtlarında geçerli sayılmasını engeller.
+- **Personal Access Token — privilege escalation guard.** `user_id` body alanı kabul edilmez; token her zaman kimliği doğrulanmış kullanıcı için mint edilir.
+- **Passport client `confidential` zorunluluğu.** API Client UI üzerinden yalnızca `confidential=true` client oluşturulabilir; authorization_code grant için `redirect_uris` min:1 + HTTPS zorunluluğu getirildi. Mevcut DB kayıtları değişmez.
 
-### Added
+### Changed
 
-- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri eklendi.
+- **`StarterKitServiceProvider`** — Passport scope ve `Gate::before` kayıtları tek kaynak haline getirildi; `AppServiceProvider` stub'ından duplicate kayıtlar kaldırıldı.
+
+### Upgrade
+
+Host uygulamalarda `composer update` sonrası aşağıdaki adımlar uygulanmalıdır:
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Yeni migration'ları yayınla ve çalıştır
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan migrate
+
+# Yeni share.* anahtarlarını içeren file-manager config'ini yayınla
+php artisan vendor:publish --tag=starter-kit-config --force
+
+# Yeni admin sayfa ve controller stub'larını yayınla
+# DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın
+php artisan vendor:publish --tag=starter-kit-stubs --force
+
+# Yeni izinleri ekle ve permission cache'ini temizle
+php artisan db:seed --class=PermissionResourcesSeeder
+php artisan permission:cache-reset
+```
+
+**Yeni izinler:** `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`.
+
+**Davranış değişiklikleri:**
+
+- `confidential=false` ile authorization_code Passport client'ları UI üzerinden artık oluşturulamaz. Mevcut DB kayıtları etkilenmez.
+- Personal Access Token mint: `user_id` body alanı kaldırıldı; admin başka kullanıcı adına PAT oluşturmak istiyorsa artisan komutu veya özel action kullanılmalıdır.
+- `AppServiceProvider` stub'ında duplicate Passport scope / `Gate::before` bloğu varsa silinmeli; `StarterKitServiceProvider` üzerinden çalışmaya devam eder.
 
 ---
 

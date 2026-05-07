@@ -5,6 +5,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build && vite build --ssr",
+        "typecheck": "vue-tsc --noEmit",
+        "lint": "eslint resources --ext .ts,.vue,.js",
         "test": "vitest run",
         "ai:doctor": "~/.claude/bin/ai-kit doctor",
         "ai:diff": "~/.claude/bin/ai-kit diff",

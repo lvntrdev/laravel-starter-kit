@@ -36,7 +36,14 @@ class MakeDomainCommand extends Command
         {--vue= : Vue page generation: none, empty, or full}
         {--vue-fields : Include model fields in DataTable columns and FormBuilder}
         {--no-vue-fields : Skip model fields in Vue components (only id)}
-        {--from-migration= : Parse fields from existing migration file (e.g. 2026_03_21_create_products_table.php)}';
+        {--from-migration= : Parse fields from existing migration file (e.g. 2026_03_21_create_products_table.php)}
+        {--with-policy : Generate a Policy class (opt-in)}
+        {--with-factory : Generate a ModelFactory class (opt-in)}
+        {--with-seeder : Generate a Seeder class (opt-in)}
+        {--with-test : Generate a Pest feature test file (opt-in)}
+        {--with-relations : Interactively define Eloquent relations (opt-in)}
+        {--relations= : Comma-separated relations, e.g. "belongsTo:User,hasMany:Comment,morphTo:commentable"}
+        {--with= : Comma-separated shorthand for multiple opt-in flags (e.g. policy,factory,test,seeder,relations)}';
 
     protected $description = 'Scaffold a complete domain interactively (Model, DTO, Actions, Events, Controllers, Routes)';
 
@@ -82,6 +89,27 @@ class MakeDomainCommand extends Command
     /** Whether domain is being created from an existing migration */
     private bool $fromMigration = false;
 
+    // ── Opt-in flags (v2) ────────────────────────────────────────────────
+
+    private bool $withPolicy = false;
+
+    private bool $withFactory = false;
+
+    private bool $withSeeder = false;
+
+    private bool $withTest = false;
+
+    private bool $withRelations = false;
+
+    /**
+     * Parsed relation definitions.
+     *
+     * Each item: ['type' => 'belongsTo'|'hasMany'|'morphTo', 'related' => 'ModelName', 'name' => 'method_name']
+     *
+     * @var list<array{type: string, related: string, name: string}>
+     */
+    private array $relations = [];
+
     /** Available field types for the interactive prompt */
     private const FIELD_TYPES = [
         'string',
@@ -120,6 +148,11 @@ class MakeDomainCommand extends Command
         }
 
         $this->askLayers();
+        $this->resolveOptInFlags();
+
+        if ($this->withRelations) {
+            $this->askRelations();
+        }
 
         if (! $this->showSummaryAndConfirm()) {
             return self::SUCCESS;
@@ -170,6 +203,27 @@ class MakeDomainCommand extends Command
                 $this->createDatatableQuery();
                 $this->createAdminResource();
             }
+        }
+
+        // ── Opt-in extras (v2) ───────────────────────────────────────────
+        if ($this->withPolicy) {
+            $this->createPolicy();
+        }
+
+        if ($this->withFactory) {
+            $this->createFactory();
+        }
+
+        if ($this->withSeeder) {
+            $this->createSeeder();
+        }
+
+        if ($this->withTest) {
+            $this->createTest();
+        }
+
+        if ($this->relations !== []) {
+            $this->applyRelations();
         }
 
         $this->newLine();
@@ -493,6 +547,18 @@ class MakeDomainCommand extends Command
         $this->info('└─────────────────────────────────────┘');
 
         $this->newLine();
+
+        $optInExtras = collect([
+            $this->withPolicy ? 'policy' : null,
+            $this->withFactory ? 'factory' : null,
+            $this->withSeeder ? 'seeder' : null,
+            $this->withTest ? 'test' : null,
+        ])->filter()->implode(', ');
+
+        $relationsDisplay = $this->relations !== []
+            ? collect($this->relations)->map(fn ($r) => "{$r['type']}:{$r['related']}")->implode(', ')
+            : 'none';
+
         $this->table(['Setting', 'Value'], [
             ['Domain', $this->domainPath],
             ['Plural', $this->dnPlural],
@@ -504,6 +570,8 @@ class MakeDomainCommand extends Command
             ['Soft Deletes', $this->withSoftDeletes ? '✅ Yes' : '❌ No'],
             ['Vue Pages', $this->vueMode === 'none' ? '❌ No' : '✅ '.ucfirst($this->vueMode)],
             ...($this->vueMode === 'full' ? [['Vue Fields', $this->withVueFields ? '✅ Yes' : '❌ No']] : []),
+            ['Opt-in extras', $optInExtras !== '' ? "✅ {$optInExtras}" : '❌ none'],
+            ['Relations', $relationsDisplay],
         ]);
 
         if (! $this->confirm('Proceed with this configuration?', true)) {
@@ -529,6 +597,226 @@ class MakeDomainCommand extends Command
         }
 
         return $this->confirm($question, true);
+    }
+
+    /**
+     * Resolve opt-in flags from --with-* options and --with= shorthand.
+     * Called after askLayers(). Default for every flag is false — no prompt.
+     */
+    private function resolveOptInFlags(): void
+    {
+        // --with=policy,factory,test,seeder,relations shorthand
+        $withShorthand = $this->option('with');
+
+        if ($withShorthand) {
+            $parts = array_map('trim', explode(',', (string) $withShorthand));
+
+            foreach ($parts as $part) {
+                match ($part) {
+                    'policy' => $this->withPolicy = true,
+                    'factory' => $this->withFactory = true,
+                    'seeder' => $this->withSeeder = true,
+                    'test' => $this->withTest = true,
+                    'relations' => $this->withRelations = true,
+                    default => null,
+                };
+            }
+        }
+
+        // Individual --with-* flags override shorthand (additive)
+        if ($this->option('with-policy')) {
+            $this->withPolicy = true;
+        }
+
+        if ($this->option('with-factory')) {
+            $this->withFactory = true;
+        }
+
+        if ($this->option('with-seeder')) {
+            $this->withSeeder = true;
+        }
+
+        if ($this->option('with-test')) {
+            $this->withTest = true;
+        }
+
+        // --relations= (non-interactive) implies --with-relations
+        if ($this->option('relations') || $this->option('with-relations')) {
+            $this->withRelations = true;
+        }
+    }
+
+    /**
+     * Parse or interactively collect relation definitions.
+     *
+     * Supported types: belongsTo, hasMany, morphTo
+     * --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
+     */
+    private function askRelations(): void
+    {
+        $raw = $this->option('relations');
+
+        if ($raw) {
+            $this->relations = $this->parseRelationsString((string) $raw);
+
+            return;
+        }
+
+        $this->newLine();
+        $this->info('🔗 Relation definition — leave empty to finish');
+        $this->line('   Supported types: belongsTo, hasMany, morphTo');
+        $this->line('   Example: belongsTo User  →  adds belongsTo relation + foreignId migration column');
+        $this->newLine();
+
+        $index = 1;
+        $seenRelated = [];
+
+        while (true) {
+            $type = $this->choice(
+                "   Relation {$index} — type (empty = done)",
+                ['done', 'belongsTo', 'hasMany', 'morphTo'],
+                0
+            );
+
+            if ($type === 'done') {
+                break;
+            }
+
+            if ($type === 'morphTo') {
+                // morphTo has no explicit "related" model — ask for method name
+                $name = $this->ask("   Relation {$index} — morph method name (e.g. commentable)", 'morphable');
+                $name = Str::snake(trim((string) $name));
+
+                $this->relations[] = [
+                    'type' => 'morphTo',
+                    'related' => '',
+                    'name' => $name,
+                ];
+            } else {
+                $related = $this->ask("   Relation {$index} — related Model name (StudlyCase, e.g. User)");
+
+                if (! $related || trim($related) === '') {
+                    $this->warn('   Skipped: related model name is required.');
+
+                    continue;
+                }
+
+                $related = Str::studly(trim($related));
+
+                // Circular dependency guard: A → B → A
+                if ($related === $this->dn) {
+                    $this->error("   Skipped: circular self-reference ({$this->dn} → {$this->dn}) is not supported.");
+
+                    continue;
+                }
+
+                $name = Str::snake($related);
+
+                if ($type === 'hasMany') {
+                    $name = Str::plural($name);
+                }
+
+                // Duplicate guard
+                $key = "{$type}:{$related}";
+
+                if (in_array($key, $seenRelated, true)) {
+                    $this->warn("   Skipped: duplicate relation {$type} {$related}.");
+
+                    continue;
+                }
+
+                $seenRelated[] = $key;
+
+                $this->relations[] = [
+                    'type' => $type,
+                    'related' => $related,
+                    'name' => $name,
+                ];
+            }
+
+            $index++;
+        }
+
+        if ($this->relations !== []) {
+            $this->newLine();
+            $this->table(
+                ['#', 'Type', 'Related', 'Method'],
+                collect($this->relations)->map(fn ($r, $i) => [$i + 1, $r['type'], $r['related'] ?: '(morph)', $r['name']])->all()
+            );
+        }
+    }
+
+    /**
+     * Parse --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
+     *
+     * @return list<array{type: string, related: string, name: string}>
+     */
+    private function parseRelationsString(string $raw): array
+    {
+        $relations = [];
+        $seenRelated = [];
+
+        foreach (explode(',', $raw) as $entry) {
+            $parts = explode(':', trim($entry), 2);
+
+            if (count($parts) < 2) {
+                $this->warn("  ⚠  Skipped invalid relation '{$entry}' — expected type:Related format.");
+
+                continue;
+            }
+
+            $type = strtolower(trim($parts[0]));
+            $related = trim($parts[1]);
+
+            if (! in_array($type, ['belongsto', 'hasmany', 'morphto'], true)) {
+                $this->warn("  ⚠  Skipped unknown relation type '{$type}' in '{$entry}'.");
+
+                continue;
+            }
+
+            // Normalize type casing
+            $type = match ($type) {
+                'belongsto' => 'belongsTo',
+                'hasmany' => 'hasMany',
+                'morphto' => 'morphTo',
+                default => $type,
+            };
+
+            if ($type === 'morphTo') {
+                $name = Str::snake($related);
+                $relations[] = ['type' => 'morphTo', 'related' => '', 'name' => $name];
+
+                continue;
+            }
+
+            $related = Str::studly($related);
+
+            if ($related === $this->dn) {
+                $this->warn("  ⚠  Skipped circular self-reference: {$this->dn} → {$this->dn}.");
+
+                continue;
+            }
+
+            $key = "{$type}:{$related}";
+
+            if (in_array($key, $seenRelated, true)) {
+                $this->warn("  ⚠  Skipped duplicate relation: {$type} {$related}.");
+
+                continue;
+            }
+
+            $seenRelated[] = $key;
+
+            $name = Str::snake($related);
+
+            if ($type === 'hasMany') {
+                $name = Str::plural($name);
+            }
+
+            $relations[] = ['type' => $type, 'related' => $related, 'name' => $name];
+        }
+
+        return $relations;
     }
 
     /**
@@ -2163,6 +2451,377 @@ PHP);
         };
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // OPT-IN GENERATORS (v2)
+    // ══════════════════════════════════════════════════════════════════════
+
+    private function createPolicy(): void
+    {
+        $dir = app_path('Policies');
+        $path = "{$dir}/{$this->dn}Policy.php";
+        $modelClass = $this->modelClass();
+        $modelNamespace = "App\\Models\\{$this->domainNamespace}";
+
+        $stub = <<<PHP
+<?php
+
+namespace App\Policies;
+
+use App\Models\User;
+use {$modelNamespace};
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class {$this->dn}Policy
+{
+    use HandlesAuthorization;
+
+    public function viewAny(User \$user): bool
+    {
+        return \$user->can('{$this->dnPSnake}.view');
+    }
+
+    public function view(User \$user, {$this->dn} \${$this->dnSnake}): bool
+    {
+        return \$user->can('{$this->dnPSnake}.view');
+    }
+
+    public function create(User \$user): bool
+    {
+        return \$user->can('{$this->dnPSnake}.create');
+    }
+
+    public function update(User \$user, {$this->dn} \${$this->dnSnake}): bool
+    {
+        return \$user->can('{$this->dnPSnake}.update');
+    }
+
+    public function delete(User \$user, {$this->dn} \${$this->dnSnake}): bool
+    {
+        return \$user->can('{$this->dnPSnake}.delete');
+    }
+}
+PHP;
+
+        $this->putFile($path, $stub);
+        $this->line("  ✓ Policy: <info>app/Policies/{$this->dn}Policy.php</info>");
+    }
+
+    private function createFactory(): void
+    {
+        $path = database_path("factories/{$this->domainPath}Factory.php");
+        $modelNamespace = "App\\Models\\{$this->domainNamespace}";
+
+        $fakeFields = collect($this->fields)
+            ->map(fn ($f) => "            '{$f['name']}' => {$this->fakeExpression($f)},")
+            ->implode("\n");
+
+        $stub = <<<PHP
+<?php
+
+namespace Database\Factories;
+
+use {$modelNamespace};
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<{$this->dn}>
+ */
+class {$this->domainPath}Factory extends Factory
+{
+    protected \$model = {$this->dn}::class;
+
+    /** @return array<string, mixed> */
+    public function definition(): array
+    {
+        return [
+{$fakeFields}
+        ];
+    }
+}
+PHP;
+
+        // make:model -f already generated a default factory; --with-factory
+        // overwrites it with a field-aware version.
+        $dir = dirname($path);
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($path, $stub);
+        $this->line("  ✓ Factory: <info>database/factories/{$this->domainPath}Factory.php</info>");
+    }
+
+    private function createSeeder(): void
+    {
+        $path = database_path("seeders/{$this->dn}Seeder.php");
+        $modelNamespace = "App\\Models\\{$this->domainNamespace}";
+
+        $stub = <<<PHP
+<?php
+
+namespace Database\Seeders;
+
+use {$modelNamespace};
+use Illuminate\Database\Seeder;
+
+class {$this->dn}Seeder extends Seeder
+{
+    public function run(): void
+    {
+        {$this->dn}::factory()->count(10)->create();
+    }
+}
+PHP;
+
+        $this->putFile($path, $stub);
+        $this->line("  ✓ Seeder: <info>database/seeders/{$this->dn}Seeder.php</info>");
+    }
+
+    private function createTest(): void
+    {
+        $path = base_path("tests/Feature/{$this->domainPath}Test.php");
+        $modelNamespace = "App\\Models\\{$this->domainNamespace}";
+
+        $v = $this->dnSnake;
+        $rn = $this->dnPSnake;
+
+        $stub = <<<PHP
+<?php
+
+use {$modelNamespace};
+
+it('can create a {$v}', function () {
+    \${$v} = {$this->dn}::factory()->create();
+
+    expect(\${$v})->toBeInstanceOf({$this->dn}::class);
+    expect(\${$v}->id)->not->toBeNull();
+});
+
+it('can update a {$v}', function () {
+    \${$v} = {$this->dn}::factory()->create();
+
+    // TODO: update and assert changed field
+    expect(\${$v})->toBeInstanceOf({$this->dn}::class);
+});
+
+it('can delete a {$v}', function () {
+    \${$v} = {$this->dn}::factory()->create();
+    \$id = \${$v}->id;
+
+    \${$v}->delete();
+
+    expect({$this->dn}::find(\$id))->toBeNull();
+});
+PHP;
+
+        $this->putFile($path, $stub);
+        $this->line("  ✓ Test: <info>tests/Feature/{$this->domainPath}Test.php</info>");
+    }
+
+    /**
+     * Apply relation methods to the generated model and (for belongsTo) add FK
+     * columns to the migration file.
+     */
+    private function applyRelations(): void
+    {
+        $this->applyRelationsToModel();
+        $this->applyRelationsToMigration();
+    }
+
+    private function applyRelationsToModel(): void
+    {
+        $modelPath = $this->modelPath();
+
+        if (! file_exists($modelPath)) {
+            $this->warn('  ⏭  Model file not found — cannot inject relations.');
+
+            return;
+        }
+
+        $content = file_get_contents($modelPath);
+        $methods = [];
+        $imports = [];
+
+        foreach ($this->relations as $rel) {
+            [$method, $import] = $this->buildRelationMethod($rel);
+            $methods[] = $method;
+            $imports[] = $import;
+        }
+
+        // Add missing use imports before the class declaration
+        foreach (array_unique(array_filter($imports)) as $import) {
+            if (! str_contains($content, $import)) {
+                $content = preg_replace(
+                    '/(use Illuminate\\\\Database\\\\Eloquent\\\\Model;)/',
+                    "use Illuminate\\Database\\Eloquent\\Model;\n{$import}",
+                    $content,
+                    1
+                ) ?? $content;
+            }
+        }
+
+        // Append relation methods before the final closing brace
+        $methodsBlock = "\n".implode("\n\n", $methods)."\n";
+        $content = preg_replace('/\}\s*$/', $methodsBlock."}\n", $content) ?? $content;
+
+        file_put_contents($modelPath, $content);
+        $this->line('  ✓ Relations injected into: <info>app/Models/'.str_replace(app_path('Models/').'/', '', $modelPath).'</info>');
+    }
+
+    /**
+     * Build a single Eloquent relation method and its required import.
+     *
+     * @param  array{type: string, related: string, name: string}  $rel
+     * @return array{string, string} [methodCode, importStatement]
+     */
+    private function buildRelationMethod(array $rel): array
+    {
+        $type = $rel['type'];
+        $related = $rel['related'];
+        $name = $rel['name'];
+
+        return match ($type) {
+            'belongsTo' => [
+                <<<PHP
+    public function {$name}(): \\Illuminate\\Database\\Eloquent\\Relations\\BelongsTo
+    {
+        return \$this->belongsTo({$related}::class);
+    }
+PHP,
+                'use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;',
+            ],
+            'hasMany' => [
+                <<<PHP
+    public function {$name}(): \\Illuminate\\Database\\Eloquent\\Relations\\HasMany
+    {
+        return \$this->hasMany({$related}::class);
+    }
+PHP,
+                'use Illuminate\\Database\\Eloquent\\Relations\\HasMany;',
+            ],
+            'morphTo' => [
+                <<<PHP
+    public function {$name}(): \\Illuminate\\Database\\Eloquent\\Relations\\MorphTo
+    {
+        return \$this->morphTo();
+    }
+PHP,
+                'use Illuminate\\Database\\Eloquent\\Relations\\MorphTo;',
+            ],
+            default => ['', ''],
+        };
+    }
+
+    /**
+     * Add FK columns and morph columns to the generated migration file.
+     * Only belongsTo adds a foreignId column. hasMany does not (FK is on the other side).
+     * morphTo adds a morphs() column pair.
+     */
+    private function applyRelationsToMigration(): void
+    {
+        if ($this->fromMigration) {
+            return; // migration was pre-existing — do not touch it
+        }
+
+        $pattern = database_path('migrations/*_create_'.$this->dnPSnake.'_table.php');
+        $files = glob($pattern);
+
+        if (empty($files)) {
+            return;
+        }
+
+        $migPath = end($files);
+        $content = file_get_contents($migPath);
+        $extra = '';
+
+        foreach ($this->relations as $rel) {
+            if ($rel['type'] === 'belongsTo') {
+                $fkColumn = Str::snake($rel['related']).'_id';
+                $line = "            \$table->foreignId('{$fkColumn}')->constrained()->cascadeOnDelete();";
+
+                if (! str_contains($content, $line)) {
+                    $extra .= "{$line}\n";
+                }
+            } elseif ($rel['type'] === 'morphTo') {
+                $morphName = $rel['name'];
+                $line = "            \$table->morphs('{$morphName}');";
+
+                if (! str_contains($content, $line)) {
+                    $extra .= "{$line}\n";
+                }
+            }
+            // hasMany: FK is on the related model's table — no column here
+        }
+
+        if ($extra === '') {
+            return;
+        }
+
+        // Insert before $table->timestamps();
+        $content = preg_replace(
+            '/(\s+\$table->timestamps\(\);)/',
+            "\n{$extra}$1",
+            $content,
+            1
+        ) ?? $content;
+
+        file_put_contents($migPath, $content);
+        $this->line('  ✓ Migration updated with relation columns.');
+    }
+
+    /**
+     * Return a Faker expression for a field.
+     *
+     * @param  array{name: string, type: string}  $field
+     */
+    private function fakeExpression(array $field): string
+    {
+        $name = $field['name'];
+        $type = $field['type'];
+
+        // Named field heuristics
+        if ($name === 'name') {
+            return 'fake()->name()';
+        }
+
+        if ($name === 'email') {
+            return 'fake()->unique()->safeEmail()';
+        }
+
+        if ($name === 'title') {
+            return 'fake()->sentence()';
+        }
+
+        if ($name === 'description' || $name === 'body' || $name === 'content') {
+            return 'fake()->paragraph()';
+        }
+
+        if ($name === 'phone' || $name === 'phone_number') {
+            return 'fake()->phoneNumber()';
+        }
+
+        if (str_ends_with($name, '_url') || $name === 'url') {
+            return 'fake()->url()';
+        }
+
+        if (str_ends_with($name, '_at')) {
+            return 'fake()->dateTime()';
+        }
+
+        // Type-based fallback
+        return match ($type) {
+            'integer', 'bigInteger', 'unsignedBigInteger' => 'fake()->numberBetween(1, 1000)',
+            'float', 'decimal' => 'fake()->randomFloat(2, 0, 999)',
+            'boolean' => 'fake()->boolean()',
+            'text', 'longText' => 'fake()->paragraphs(2, true)',
+            'json' => '[]',
+            'date' => 'fake()->date()',
+            'dateTime', 'timestamp' => 'fake()->dateTime()',
+            default => 'fake()->word()',
+        };
+    }
+
     /** @return array<int, array{string, string}> */
     private function getFileSummaryTable(): array
     {
@@ -2200,6 +2859,27 @@ PHP);
             $rows[] = ['Vue Pages', "resources/js/pages/{$this->inertiaPagePath('')} (Index, Create, Edit, Form)"];
             $rows[] = ['DatatableQuery', "app/Domain/{$this->domainPath}/Queries/{$this->dn}DatatableQuery.php"];
             $rows[] = ['Admin Resource', "app/Http/Resources/Admin/{$this->domainPath}/{$this->dn}Resource.php"];
+        }
+
+        // Opt-in extras (v2)
+        if ($this->withPolicy) {
+            $rows[] = ['Policy', "app/Policies/{$this->dn}Policy.php"];
+        }
+
+        if ($this->withFactory) {
+            $rows[] = ['Factory', "database/factories/{$this->domainPath}Factory.php (explicit)"];
+        }
+
+        if ($this->withSeeder) {
+            $rows[] = ['Seeder', "database/seeders/{$this->dn}Seeder.php"];
+        }
+
+        if ($this->withTest) {
+            $rows[] = ['Test', "tests/Feature/{$this->domainPath}Test.php"];
+        }
+
+        if ($this->relations !== []) {
+            $rows[] = ['Relations', collect($this->relations)->map(fn ($r) => "{$r['type']}:{$r['related']}")->implode(', ')];
         }
 
         return $rows;

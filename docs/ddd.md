@@ -65,3 +65,50 @@ Typical flow:
 
 The domain structure is supported by scaffolding commands, but the command reference lives in [artisan-commands.md](./artisan-commands.md). This file exists specifically to keep DDD guidance separate from command documentation.
 
+### `make:sk-domain` v2 opt-in flags
+
+Calling the command without any flags preserves the v13.5.x behavior (backward compatible).
+
+**Individual flags:**
+
+| Flag | What it generates |
+| --- | --- |
+| `--with-policy` | Policy class |
+| `--with-factory` | Factory |
+| `--with-seeder` | Seeder |
+| `--with-test` | Feature test |
+| `--with-relations` | Relation scaffold (use together with `--relations`) |
+
+**Bulk syntax** — pass multiple opt-ins in one flag:
+
+```bash
+php artisan make:sk-domain Article --with=policy,factory,test
+```
+
+**Relations syntax:**
+
+```bash
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
+```
+
+Supported relation types: `belongsTo`, `hasMany`, `hasOne`, `belongsToMany`, `morphTo`, `morphMany`.
+
+**Examples:**
+
+```bash
+# Domain only — v13.5.x behavior, backward compatible
+php artisan make:sk-domain Article
+
+# Policy and factory
+php artisan make:sk-domain Article --with-policy --with-factory
+
+# Bulk syntax
+php artisan make:sk-domain Article --with=policy,factory,test
+
+# With relations
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment"
+
+# Full
+php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
+```
+

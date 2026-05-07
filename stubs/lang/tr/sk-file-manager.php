@@ -137,6 +137,42 @@ return [
         ],
     ],
 
+    'share' => [
+        'modal_title' => 'Paylaş: :name',
+        'ttl_label' => 'Link geçerlilik süresi',
+        'ttl_hours_suffix' => 'saat',
+        'generate' => 'Link Üret',
+        'regenerate' => 'Yeni Link Üret',
+        'generating' => 'Üretiliyor…',
+        'revoke' => 'İptal Et',
+        'revoking' => 'İptal ediliyor…',
+        'revoked' => 'Paylaşım linki iptal edildi.',
+        'copy' => 'Kopyala',
+        'link_copied' => 'Paylaşım linki panoya kopyalandı.',
+        'copy_failed_manual' => 'Otomatik kopyalanamadı. Lütfen linki elle kopyalayın.',
+        'expires_at' => 'Son geçerlilik: :date',
+        'drawer_title' => 'Aktif Paylaşım Linkleri',
+        'drawer_empty' => 'Bu oturumda oluşturulan paylaşım linki yok.',
+        'drawer_session_note' => 'Bu oturumda oluşturulan linkler gösterilmektedir. Sayfayı yenilediğinizde liste sıfırlanır.',
+        'column_link' => 'Link',
+        'column_expires' => 'Son Geçerlilik',
+        'status_expired' => 'Süresi Doldu',
+        'status_active' => 'Aktif',
+
+        'ttl' => [
+            '1h' => '1 saat',
+            '24h' => '24 saat',
+            '7d' => '7 gün',
+            'custom' => 'Özel…',
+        ],
+
+        'errors' => [
+            'summary' => 'Paylaşım Hatası',
+            'create_failed' => 'Paylaşım linki oluşturulamadı.',
+            'revoke_failed' => 'Paylaşım linki iptal edilemedi.',
+        ],
+    ],
+
     'confirm' => [
         'permanent_delete_title' => 'Kalıcı olarak silinsin mi?',
         'permanent_delete_message' => 'Bu işlem geri alınamaz. Dosya depolamadan silinir.',

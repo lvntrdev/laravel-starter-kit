@@ -40,6 +40,7 @@
     const props = defineProps<Props>();
     const api = useApi({ toast: false });
     const toast = useToast();
+    const pageLocale = document.documentElement.lang || 'en-US';
 
     const LEVEL_OPTIONS = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'];
 
@@ -159,7 +160,7 @@
             <div class="bg-white dark:bg-slate-800 rounded p-4 flex flex-wrap gap-4 items-center text-sm">
                 <span class="font-mono text-slate-500">{{ file.path }}</span>
                 <span>{{ formatSize(file.size_bytes) }}</span>
-                <span>{{ new Date(file.modified_at).toLocaleString('tr-TR') }}</span>
+                <span>{{ new Date(file.modified_at).toLocaleString(pageLocale) }}</span>
                 <span v-if="file.is_active" class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
                     {{ $t('sk-log.active_yes') }}
                 </span>
@@ -220,7 +221,7 @@
                                 {{ entry.level }}
                             </span>
                             <span v-if="!entry.is_raw" class="font-mono text-xs text-slate-500 shrink-0">
-                                {{ new Date(entry.timestamp).toLocaleTimeString('tr-TR') }}
+                                {{ new Date(entry.timestamp).toLocaleTimeString(pageLocale) }}
                             </span>
                             <span class="flex-1 truncate font-mono text-sm">{{ entry.message }}</span>
                             <i :class="['pi', isExpanded(idx) ? 'pi-chevron-down' : 'pi-chevron-right']" />

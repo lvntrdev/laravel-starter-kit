@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Laravel\Passport\Passport;
+use Lvntr\StarterKit\Domain\FileManager\Policies\MediaPolicy;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
@@ -29,6 +30,7 @@ use Lvntr\StarterKit\Facades\FileManager as FileManagerFacade;
 use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
 use Lvntr\StarterKit\Http\Middleware\SecurityHeaders;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StarterKitServiceProvider extends ServiceProvider
 {
@@ -127,6 +129,7 @@ class StarterKitServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configurePassport();
         $this->configureGates();
+        $this->configurePolicies();
         $this->configureRateLimiting();
         $this->configureScramble();
         $this->registerCommands();
@@ -242,6 +245,48 @@ class StarterKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * FileManager domain share gate'lerini register eder.
+     *
+     * K4 (security): Gate::policy(Media::class, MediaPolicy::class) kaldırıldı.
+     * Policy-based kayıt tüm Media abilities'i (view, delete, update, ...) zorunlu
+     * yapar ve MediaPolicy sadece share/revokeShare tanımladığından diğer abilities
+     * için false dönüyor — consumer uygulamalarda sessiz erişim regression'ı yaratır.
+     *
+     * Yerine flat gate tanımları kullanılır. MediaPolicy class'ı internal kullanım için
+     * hâlâ mevcuttur; ancak artık Gate'e register edilmez. Flat gate'ler yalnızca
+     * kendi ability adlarını etkiler, başka Media abilities'e dokunmaz.
+     *
+     * Gate::before ile admin kullanıcılar zaten tüm gate'leri atlatır;
+     * bu tanımlar non-admin kullanıcılar için ownership'i zorlar.
+     */
+    private function configurePolicies(): void
+    {
+        if (! config('file-manager.share.enabled', true)) {
+            return;
+        }
+
+        $policy = new MediaPolicy;
+
+        Gate::define('share-media', function ($user, Media $media) use ($policy): bool {
+            // $user null → guest isteği; auth middleware bunu yakalamış olmalı
+            // ama gate seviyesinde de güvenli bir şekilde reddediyoruz.
+            if ($user === null) {
+                return false;
+            }
+
+            return $policy->share($user, $media);
+        });
+
+        Gate::define('revoke-share-media', function ($user, Media $media) use ($policy): bool {
+            if ($user === null) {
+                return false;
+            }
+
+            return $policy->revokeShare($user, $media);
+        });
+    }
+
+    /**
      * Configure rate limiters.
      */
     private function configureRateLimiting(): void
@@ -276,6 +321,10 @@ class StarterKitServiceProvider extends ServiceProvider
      */
     private function registerCommands(): void
     {
+        // DoctorCommand is registered unconditionally so that Artisan::call('sk:doctor')
+        // works from web requests (e.g. SystemHealthController::run).
+        $this->commands([Console\Commands\DoctorCommand::class]);
+
         if ($this->app->runningInConsole()) {
             $commands = [
                 Console\Commands\InstallCommand::class,
@@ -440,6 +489,10 @@ class StarterKitServiceProvider extends ServiceProvider
         // Fresh install fallback: mount under the standard web auth stack so
         // the FileManager UI works out of the box without requiring a stub
         // route file in the consumer app.
+        //
+        // K1 (security): The public share/show endpoint uses withoutMiddleware()
+        // inside the route file to strip auth+verified from the outer group.
+        // No special handling needed here — the route file is self-contained.
         Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
             FileManagerFacade::routes();
         });

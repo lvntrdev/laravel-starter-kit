@@ -8,6 +8,7 @@ Route::prefix('users')->name('users.')->controller(UserController::class)->group
     Route::get('{user}/data', 'data')->name('data');
     Route::post('{user}/avatar', 'uploadAvatar')->name('uploadAvatar');
     Route::delete('{user}/avatar', 'deleteAvatar')->name('deleteAvatar');
+    Route::post('bulk', 'bulk')->name('bulk');
 });
 
 Route::resource('users', UserController::class)->except(['show']);

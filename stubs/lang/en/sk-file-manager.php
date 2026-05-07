@@ -137,6 +137,42 @@ return [
         ],
     ],
 
+    'share' => [
+        'modal_title' => 'Share: :name',
+        'ttl_label' => 'Link valid for',
+        'ttl_hours_suffix' => 'hours',
+        'generate' => 'Generate Link',
+        'regenerate' => 'Generate New Link',
+        'generating' => 'Generating…',
+        'revoke' => 'Revoke',
+        'revoking' => 'Revoking…',
+        'revoked' => 'Share link revoked.',
+        'copy' => 'Copy',
+        'link_copied' => 'Share link copied to clipboard.',
+        'copy_failed_manual' => 'Could not copy automatically. Please copy the link manually.',
+        'expires_at' => 'Expires: :date',
+        'drawer_title' => 'Active Share Links',
+        'drawer_empty' => 'No share links created in this session.',
+        'drawer_session_note' => 'Links created in this session are shown. Refresh the page to clear this list.',
+        'column_link' => 'Link',
+        'column_expires' => 'Expires',
+        'status_expired' => 'Expired',
+        'status_active' => 'Active',
+
+        'ttl' => [
+            '1h' => '1 hour',
+            '24h' => '24 hours',
+            '7d' => '7 days',
+            'custom' => 'Custom…',
+        ],
+
+        'errors' => [
+            'summary' => 'Share Error',
+            'create_failed' => 'Failed to generate share link.',
+            'revoke_failed' => 'Failed to revoke share link.',
+        ],
+    ],
+
     'confirm' => [
         'permanent_delete_title' => 'Delete permanently?',
         'permanent_delete_message' => 'This action cannot be undone. The file will be removed from storage.',

@@ -24,3 +24,12 @@ uses(DatabaseTestCase::class)->in('Feature/Settings');
 
 // DB gerektirmeyen diğer Feature testleri
 uses(TestCase::class)->in('Feature/BackwardCompat');
+
+// Doctor testleri: DB gerektirmiyor, basit TestCase yeterli
+uses(TestCase::class)->in('Feature/Doctor');
+
+// Bulk action testleri: DB gerektirmiyor, mock tabanlı
+uses(TestCase::class)->in('Feature/Bulk');
+
+// Generator testleri: DB gerektirmiyor, basit TestCase yeterli
+uses(TestCase::class)->in('Feature/Generator');

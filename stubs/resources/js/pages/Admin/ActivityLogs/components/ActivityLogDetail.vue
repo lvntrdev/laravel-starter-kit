@@ -29,6 +29,8 @@
         cancel: [];
     }>();
 
+    const pageLocale = document.documentElement.lang || 'en-US';
+
     function modelShortName(fqcn: string | null): string {
         if (!fqcn) return '—';
         const parts = fqcn.split('\\');
@@ -108,7 +110,7 @@
                 }}</span>
                 <span class="mt-1 block text-sm text-surface-800 dark:text-surface-200">
                     {{
-                        new Date(data.created_at).toLocaleDateString('tr-TR', {
+                        new Date(data.created_at).toLocaleDateString(pageLocale, {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',

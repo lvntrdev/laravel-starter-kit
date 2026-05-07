@@ -36,7 +36,7 @@
 
     function formatLocal(iso: string): string {
         const date = new Date(iso);
-        return date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+        return date.toLocaleString(document.documentElement.lang || 'en-US', { dateStyle: 'short', timeStyle: 'short' });
     }
 
     async function deleteSingle(file: LogFileRow) {

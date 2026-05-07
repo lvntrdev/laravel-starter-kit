@@ -1,0 +1,16 @@
+<?php
+
+return [
+    // FormRequest validation messages
+    'ids_required' => 'At least one item must be selected.',
+    'ids_min' => 'At least one item must be selected.',
+    'ids_max' => 'A maximum of 500 items can be processed at once.',
+    'action_required' => 'A bulk action must be specified.',
+
+    // Dispatcher messages
+    'unsupported_action' => 'Unsupported bulk action: :action.',
+    'no_authorized_items' => 'You are not authorized to perform this action on any of the selected items.',
+
+    // Result message
+    'result' => ':processed item(s) processed, :skipped skipped, :failed failed.',
+];

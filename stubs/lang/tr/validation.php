@@ -255,6 +255,10 @@ return [
         'access_token' => 'Erişim Tokeni',
         'project_id' => 'Proje ID',
         'collection_id' => 'Koleksiyon ID',
+        'redirect_uris' => 'Yönlendirme Adresleri',
+        'grant_type' => 'İzin Türü',
+        'scopes' => 'Kapsamlar',
+        'confidential' => 'Gizli İstemci',
     ],
 
 ];

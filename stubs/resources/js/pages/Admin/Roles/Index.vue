@@ -3,6 +3,7 @@
     import { useCan } from '@/composables/useCan';
     import { useConfirm } from '@/composables/useConfirm';
     import { useRefreshBus } from '@/composables/useRefreshBus';
+    import { useDatatableSelection } from '@/composables/useDatatableSelection';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import roles from '@/routes/roles';
     import { Link, router } from '@inertiajs/vue3';
@@ -26,7 +27,7 @@
 
     const props = defineProps<Props>();
 
-    const { confirmDelete } = useConfirm();
+    const { confirmDelete, confirmAction } = useConfirm();
     const bus = useRefreshBus();
     const { can } = useCan();
 
@@ -40,6 +41,14 @@
         if (props.isSystemAdmin) return true;
         return role.sort_order > props.userMinSortOrder;
     }
+
+    // ── Bulk Selection ─────────────────────────────────────────────────────────────
+
+    const selection = useDatatableSelection({
+        bulkUrl: roles.bulk.url(),
+        idKey: 'id',
+        onSuccess: () => bus.refresh(REFRESH_KEY),
+    });
 
     // ── Sync Permissions ───────────────────────────────────────────────────────────
 
@@ -71,6 +80,32 @@
         );
     }
 
+    // ── Bulk Delete ───────────────────────────────────────────────────────────────
+
+    const activeFilterSnapshot = ref<Record<string, unknown>>({});
+
+    function confirmBulkDelete(totalFiltered: number) {
+        if (!selection.hasSelection.value) return;
+
+        const isAllMode = selection.isAllFilteredMode.value;
+        const count = selection.selectedCount.value;
+
+        const message = isAllMode
+            ? trans('sk-datatable.bulk_delete_confirm_all', { total: String(totalFiltered) })
+            : trans('sk-datatable.bulk_delete_confirm', { count: String(count) });
+
+        confirmAction({
+            header: trans('sk-datatable.bulk_delete_header'),
+            message,
+            icon: 'pi pi-trash',
+            acceptLabel: trans('sk-button.delete'),
+            acceptClass: 'p-button-danger',
+            onAccept: () => {
+                selection.executeBulkAction('delete', activeFilterSnapshot.value);
+            },
+        });
+    }
+
     // ── SkDatatable ─────────────────────────────────────────────────────────────────
 
     const tableConfig = DB.table<Role>()
@@ -95,7 +130,7 @@
                 .label(trans('sk-common.created_at'))
                 .key('created_at')
                 .render((role) =>
-                    new Date(role.created_at).toLocaleDateString('tr-TR', {
+                    new Date(role.created_at).toLocaleDateString(document.documentElement.lang || 'en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
@@ -119,6 +154,19 @@
                 .handle((role) => deleteRole(role)),
         )
         .build();
+
+    // ── Table ref for total count access ──────────────────────────────────────────
+    const totalFiltered = ref(0);
+
+    function onTableLoad(_data: unknown[], total: number) {
+        totalFiltered.value = total;
+        const params = new URLSearchParams(window.location.search);
+        const snapshot: Record<string, unknown> = {};
+        params.forEach((val, key) => {
+            snapshot[key] = val;
+        });
+        activeFilterSnapshot.value = snapshot;
+    }
 </script>
 
 <template>
@@ -137,6 +185,58 @@
                 <Button :label="$t('sk-role.create')" icon="pi pi-plus" />
             </Link>
         </template>
-        <SkDatatable :config="tableConfig" :refresh-key="REFRESH_KEY" />
+
+        <SkDatatable
+            :config="tableConfig"
+            :refresh-key="REFRESH_KEY"
+            :selection="selection"
+            @load="onTableLoad"
+        >
+            <!-- Bulk action toolbar — shown only when rows are selected -->
+            <template v-if="selection.hasSelection.value || selection.isAllFilteredMode.value" #toolbar>
+                <div class="sk-dt-bulk-toolbar">
+                    <span class="sk-dt-bulk-toolbar__count">
+                        <template v-if="selection.isAllFilteredMode.value">
+                            {{
+                                $t('sk-datatable.bulk_selected_all_filtered', {
+                                    count: String(selection.selectedCount.value),
+                                })
+                            }}
+                        </template>
+                        <template v-else>
+                            {{ $t('sk-datatable.bulk_selected', { count: String(selection.selectedCount.value) }) }}
+                        </template>
+                    </span>
+
+                    <Button
+                        v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
+                        :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
+                        size="small"
+                        severity="secondary"
+                        variant="text"
+                        @click="selection.selectAllFiltered()"
+                    />
+
+                    <Button
+                        v-if="can('roles.delete')"
+                        :label="$t('sk-datatable.bulk_delete')"
+                        icon="pi pi-trash"
+                        size="small"
+                        severity="danger"
+                        :loading="selection.submitting.value"
+                        @click="confirmBulkDelete(totalFiltered)"
+                    />
+
+                    <Button
+                        :label="$t('sk-datatable.bulk_clear_selection')"
+                        size="small"
+                        severity="secondary"
+                        variant="outlined"
+                        icon="pi pi-times"
+                        @click="selection.clearSelection()"
+                    />
+                </div>
+            </template>
+        </SkDatatable>
     </AdminLayout>
 </template>

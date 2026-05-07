@@ -6,6 +6,10 @@ on:
     tags: ['v*']
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint (PHP ${{ matrix.php }})
@@ -80,3 +84,44 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/pest tests/Feature
+
+  node:
+    name: Node (Frontend Quality)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            stubs/node_modules
+          key: node-22-${{ hashFiles('stubs/package-lock.json') }}
+          restore-keys: node-22-
+
+      - name: Install dependencies
+        working-directory: stubs
+        run: npm ci
+
+      - name: Typecheck (vue-tsc)
+        working-directory: stubs
+        run: npm run typecheck --if-present
+
+      - name: Lint (ESLint)
+        working-directory: stubs
+        run: npm run lint --if-present
+
+      - name: Build (Vite)
+        working-directory: stubs
+        run: npm run build
+
+      - name: Test (Vitest)
+        working-directory: stubs
+        run: npm run test --if-present

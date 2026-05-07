@@ -16,6 +16,11 @@ use Lvntr\StarterKit\Facades\FileManager;
 | points to your custom controller. The package ServiceProvider detects
 | whether this file exists and steps aside, so your version always wins.
 |
+| K1 (security): This file is intentionally mounted OUTSIDE the auth+verified
+| middleware group by the orchestrator. The public share/show endpoint is
+| protected only by `signed` + `throttle:60,1`. Auth-required routes
+| declare their own middleware inside the route file.
+|
 */
 
 FileManager::routes();

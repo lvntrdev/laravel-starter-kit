@@ -6,6 +6,7 @@ This document is the command reference for the starter kit. Architectural notes 
 
 | Command                                   | Purpose                                                      |
 | ----------------------------------------- | ------------------------------------------------------------ |
+| `php artisan sk:doctor`                   | Run environment health checks and report any issues          |
 | `php artisan sk:install`                  | Install the starter kit into the project                     |
 | `php artisan sk:update`                   | Update installed kit files safely                            |
 | `php artisan sk:upgrade`                  | Upgrade an older starter-kit/Laravel line to the current one |
@@ -19,6 +20,29 @@ This document is the command reference for the starter kit. Architectural notes 
 | `php artisan postman:sync`                | Push the Scramble OpenAPI spec to Postman                    |
 | `php artisan apidog:sync`                 | Push the Scramble OpenAPI spec to Apidog                     |
 | `php artisan file-manager:purge-trash`    | Permanently delete old File Manager trash                    |
+
+## `sk:doctor`
+
+Runs 12 environment health checks and reports the result of each.
+
+```bash
+php artisan sk:doctor
+php artisan sk:doctor --json
+php artisan sk:doctor --only=database,redis
+```
+
+Checks covered: PHP extensions, database connection, Redis, Passport keys, storage symlink, writable directories, queue driver, scheduler, mail driver, npm build artifacts, config cache, and FileManager disk connection.
+
+- `--json` outputs machine-readable JSON instead of a table
+- `--only=<checks>` runs a comma-separated subset of checks (e.g. `--only=database,redis`)
+
+Exit codes:
+
+| Code | Meaning                          |
+| ---- | -------------------------------- |
+| `0`  | All checks passed                |
+| `1`  | At least one check returned WARN |
+| `2`  | At least one check returned FAIL |
 
 ## `sk:install`
 
@@ -77,11 +101,40 @@ php artisan sk:publish --tag=config
 Creates a new domain with the starter kit structure.
 
 ```bash
-php artisan make:sk-domain Product
+# Bare domain (backward compatible)
+php artisan make:sk-domain Article
+
+# Namespaced
 php artisan make:sk-domain Store/Product
+
+# Core options
 php artisan make:sk-domain Product --admin --api --events --fields="name:string,price:decimal"
 php artisan make:sk-domain Product --from-migration=2026_03_21_create_products_table.php
+
+# Opt-in extras — individual flags
+php artisan make:sk-domain Article --with-policy --with-factory
+
+# Opt-in extras — bulk syntax
+php artisan make:sk-domain Article --with=policy,factory,test
+
+# Relation scaffold
+php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment"
+
+# Full
+php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
+
+Opt-in flags (v2):
+
+| Flag | What it generates |
+| ---- | ----------------- |
+| `--with-policy` | Policy class |
+| `--with-factory` | Factory |
+| `--with-seeder` | Seeder |
+| `--with-test` | Feature test |
+| `--with-relations` | Relation scaffold (use together with `--relations`) |
+| `--with=policy,factory,test` | Bulk syntax — multiple opt-ins in a single flag |
+| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Relation definitions for the scaffold |
 
 Use it when you want the package conventions for actions, DTOs, queries, requests, routes, and Vue screens.
 

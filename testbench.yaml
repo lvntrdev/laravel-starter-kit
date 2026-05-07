@@ -1,0 +1,9 @@
+# Testbench konfigürasyonu
+# workbench.install: false → testbench-core'un kendi migration fixture'larını
+# (laravel/migrations/) otomatik olarak yükleme. Bu dizinde duplicate
+# dedupe_receipts migration dosyaları var ve migrate:fresh sırasında
+# "table already exists" hatasına neden olur.
+# Test tabloları DatabaseTestCase::defineDatabaseMigrations() içinde
+# Schema builder ile inline oluşturulur.
+workbench:
+  install: false

@@ -6,6 +6,7 @@ use App\Domain\Role\Actions\CreateRoleAction;
 use App\Domain\Role\Actions\DeleteRoleAction;
 use App\Domain\Role\Actions\SyncPermissionsAction;
 use App\Domain\Role\Actions\UpdateRoleAction;
+use App\Domain\Role\BulkActions\BulkDeleteRoleAction;
 use App\Domain\Role\DTOs\RoleDTO;
 use App\Domain\Role\Queries\CanManageRoleQuery;
 use App\Domain\Role\Queries\GroupedPermissionsQuery;
@@ -13,6 +14,7 @@ use App\Domain\Role\Queries\RoleDatatableQuery;
 use App\Domain\Role\Queries\UserGrantablePermissionsQuery;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkActionRequest;
 use App\Http\Requests\Admin\Role\StoreRoleRequest;
 use App\Http\Requests\Admin\Role\UpdateRoleRequest;
 use App\Http\Resources\Admin\Role\RoleResource;
@@ -22,6 +24,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lvntr\StarterKit\Http\Bulk\BulkActionDispatcher;
 
 /**
  * Admin panel role management controller.
@@ -165,5 +168,36 @@ class RoleController extends Controller
         return redirect()
             ->route('roles.index')
             ->with('success', __('sk-message.deleted', ['entity' => __('sk-role.role')]));
+    }
+
+    /**
+     * Handle a bulk action on role records.
+     *
+     * POST /admin/roles/bulk
+     * Route name: roles.bulk
+     */
+    public function bulk(BulkActionRequest $request, BulkDeleteRoleAction $bulkDelete): RedirectResponse
+    {
+        $dispatcher = new BulkActionDispatcher;
+        $dispatcher->register($bulkDelete);
+
+        $actionKey = $request->validated('action');
+
+        if (! $dispatcher->has($actionKey)) {
+            return back()->with('error', __('sk-bulk.unsupported_action', ['action' => $actionKey]));
+        }
+
+        $ids = $request->validated('ids');
+        $actor = $request->user();
+
+        $actor->loadMissing('roles');
+
+        $items = Role::query()
+            ->whereIn('id', $ids)
+            ->get();
+
+        $result = $dispatcher->dispatch($actor, $actionKey, $items);
+
+        return back()->with('success', $result['message']);
     }
 }

@@ -3,11 +3,16 @@
 namespace App\Providers;
 
 use App\Listeners\UpdateLastLogin;
+use App\Policies\ApiClientPolicy;
+use App\Policies\ApiTokenPolicy;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Passport\Client;
+use Laravel\Passport\Token;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +36,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(Login::class, UpdateLastLogin::class);
+
+        // ── Policy kayıtları ─────────────────────────────────────────────
+        // Gate::before ve scope tanımları StarterKitServiceProvider'da yapılır.
+        // Bu stub'da yalnızca host-spesifik policy binding'ler yer alır.
+        // Duplicate kayıt boot sırası sebebiyle sessiz override riskine yol açar.
+        Gate::policy(Client::class, ApiClientPolicy::class);
+        Gate::policy(Token::class, ApiTokenPolicy::class);
 
         // Every FormRequest that relies on Password::defaults() picks this
         // policy up automatically. Raises the bar from Laravel's 8-char

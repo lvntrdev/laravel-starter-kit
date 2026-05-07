@@ -10,7 +10,10 @@ return [
         'mail' => 'E-posta',
         'storage' => 'Depolama',
         'file_manager' => 'Dosya Yöneticisi',
+        'api_integrations' => 'API Entegrasyonları',
         'api_clients' => 'API İstemcileri',
+        'api_tokens' => 'API Tokenleri',
+        'system_health' => 'Sistem Sağlığı',
     ],
 
     'tab_descriptions' => [
@@ -19,7 +22,10 @@ return [
         'mail' => 'SMTP ve gönderen ayarları',
         'storage' => 'S3, Spaces ve yerel disk',
         'file_manager' => 'Yükleme boyutu ve dosya türleri',
-        'api_clients' => 'Postman ve Apidog entegrasyonu',
+        'api_integrations' => 'Postman ve Apidog entegrasyonu',
+        'api_clients' => 'OAuth istemcileri yönetimi',
+        'api_tokens' => 'Kişisel erişim token yönetimi',
+        'system_health' => 'Sistem doktoru kontrolleri',
     ],
 
     'general' => [

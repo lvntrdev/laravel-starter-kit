@@ -1,13 +1,27 @@
 <script setup lang="ts">
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { TB } from '@lvntr/components/TabBuilder/core';
+    import ApiClientsManageTab from './components/ApiClientsManageTab.vue';
     import ApiClientsTab from './components/ApiClientsTab.vue';
+    import ApiTokensManageTab from './components/ApiTokensManageTab.vue';
     import FileManagerTab from './components/FileManagerTab.vue';
     import GeneralTab from './components/GeneralTab.vue';
     import MailTab from './components/MailTab.vue';
     import SecurityTab from './components/SecurityTab.vue';
-    import StorageQuotaCard from './components/StorageQuotaCard.vue';
     import StorageTab from './components/StorageTab.vue';
+    import SystemHealthTab from './components/SystemHealthTab.vue';
+
+    interface ScopeOption {
+        id: string;
+        description: string;
+    }
+
+    interface DoctorReport {
+        version: number;
+        generated_at: string;
+        summary: { ok: number; warn: number; fail: number; total: number };
+        checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; message: string; hint: string }>;
+    }
 
     interface Props {
         settings: {
@@ -76,13 +90,11 @@
                 access_token: null;
                 access_token_is_set: boolean;
             };
-            storage_usage: {
-                used_bytes: number;
-                quota_bytes: number;
-            };
         };
         timezones: string[];
         availableLanguages: Record<string, string>;
+        availableScopes: ScopeOption[];
+        healthReport: DoctorReport | null;
     }
 
     const props = defineProps<Props>();
@@ -121,11 +133,32 @@
                 .icon('pi pi-folder')
                 .iconColor('teal'),
             TB.item()
+                .key('api_integrations')
+                .label('sk-setting.tabs.api_integrations')
+                .description('sk-setting.tab_descriptions.api_integrations')
+                .icon('pi pi-code')
+                .iconColor('indigo'),
+            TB.item()
                 .key('api_clients')
                 .label('sk-setting.tabs.api_clients')
                 .description('sk-setting.tab_descriptions.api_clients')
-                .icon('pi pi-code')
-                .iconColor('indigo'),
+                .icon('pi pi-id-card')
+                .iconColor('cyan')
+                .role('system_admin'),
+            TB.item()
+                .key('api_tokens')
+                .label('sk-setting.tabs.api_tokens')
+                .description('sk-setting.tab_descriptions.api_tokens')
+                .icon('pi pi-key')
+                .iconColor('orange')
+                .role('system_admin'),
+            TB.item()
+                .key('system_health')
+                .label('sk-setting.tabs.system_health')
+                .description('sk-setting.tab_descriptions.system_health')
+                .icon('pi pi-heart-fill')
+                .iconColor('rose')
+                .role('system_admin'),
         )
         .build();
 </script>
@@ -133,10 +166,6 @@
 <template>
     <AdminLayout :title="$t('sk-setting.title')" :subtitle="$t('sk-setting.subtitle')">
         <SkTabs :config="tabConfig">
-            <template #sidebar-footer>
-                <StorageQuotaCard :usage="props.settings.storage_usage" />
-            </template>
-
             <template #general>
                 <GeneralTab
                     :settings="props.settings.general"
@@ -161,8 +190,20 @@
                 <FileManagerTab :settings="props.settings.file_manager" />
             </template>
 
-            <template #api_clients>
+            <template #api_integrations>
                 <ApiClientsTab :postman="props.settings.postman" :apidog="props.settings.apidog" />
+            </template>
+
+            <template #api_clients>
+                <ApiClientsManageTab :available-scopes="props.availableScopes" />
+            </template>
+
+            <template #api_tokens>
+                <ApiTokensManageTab :available-scopes="props.availableScopes" />
+            </template>
+
+            <template #system_health>
+                <SystemHealthTab :report="props.healthReport" />
             </template>
         </SkTabs>
     </AdminLayout>

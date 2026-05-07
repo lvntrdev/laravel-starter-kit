@@ -41,6 +41,12 @@
         height: 'auto',
     });
 
+    const emit = defineEmits<{
+        /** Paylaş menüsü tıklandığında dosya bilgisiyle emit edilir.
+         *  Host bileşen (örn. Index.vue) bu event'i dinleyerek ShareLinkModal açar. */
+        share: [file: FileItem];
+    }>();
+
     const page = usePage();
     const effectiveEnableTrash = computed(
         () => props.enableTrash ?? page.props.fileManagerSettings?.enable_trash ?? true,
@@ -477,26 +483,8 @@
         );
     }
 
-    async function shareFile(file: FileItem): Promise<void> {
-        const link = new URL(file.url, window.location.origin).toString();
-        try {
-            await navigator.clipboard.writeText(link);
-            toast.add({
-                severity: 'success',
-                summary: '',
-                group: 'bc',
-                detail: trans('sk-file-manager.link_copied'),
-                life: 2500,
-            });
-        } catch {
-            toast.add({
-                severity: 'info',
-                summary: '',
-                group: 'bc',
-                detail: trans('sk-file-manager.coming_soon'),
-                life: 2500,
-            });
-        }
+    function shareFile(file: FileItem): void {
+        emit('share', file);
     }
 
     function comingSoon(): void {

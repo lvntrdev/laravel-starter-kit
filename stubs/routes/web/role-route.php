@@ -7,6 +7,7 @@ Route::prefix('roles')->name('roles.')->controller(RoleController::class)->group
     Route::get('dt', 'dtApi')->name('dtApi');
     Route::get('{role}/data', 'data')->name('data');
     Route::post('sync-permissions', 'syncPermissions')->name('syncPermissions');
+    Route::post('bulk', 'bulk')->name('bulk');
 });
 
 Route::resource('roles', RoleController::class);

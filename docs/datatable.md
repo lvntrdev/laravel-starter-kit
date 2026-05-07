@@ -165,6 +165,131 @@ Use `DB.menuAction()` for actions inside the three-dot dropdown menu.
 - `visible(fn)`
 - `handle(fn)`
 
+## Bulk Actions
+
+Bulk actions let the user select multiple rows — across pages — and run a single backend operation on all of them. Selection can cover an explicit set of IDs or every row matching the current filter state.
+
+### Frontend
+
+Pass a `bulk-actions` prop to `SkDatatable` with an array of action descriptors. Each descriptor needs at minimum a `label`, an `action` key, and an `icon`:
+
+```vue
+<template>
+    <SkDatatable
+        :config="tableConfig"
+        :bulk-actions="[
+            { label: 'sk-button.delete', action: 'delete', icon: 'pi pi-trash', severity: 'danger' },
+        ]"
+        bulk-action-url="/admin/users/bulk"
+        refresh-key="users-table"
+    />
+</template>
+```
+
+When the user triggers an action, `SkDatatable` posts the following payload:
+
+```json
+{
+    "action": "delete",
+    "ids": ["uuid-1", "uuid-2"],
+    "select_all_filtered": false,
+    "filter_snapshot": {}
+}
+```
+
+When `select_all_filtered` is `true`, `ids` is empty and `filter_snapshot` carries the current filter state so the backend can reconstruct the filtered set.
+
+Selection is preserved across page changes. `onSuccess` and `onError` Inertia router callbacks fire after the backend responds.
+
+### Request Validation
+
+`ids.*` is validated as `string|min:1|max:64`, which covers integer auto-increment keys, UUIDs (36 chars), and ULIDs (26 chars) without a type-specific rule.
+
+### Backend
+
+Implement the `BulkAction` interface:
+
+```php
+interface BulkAction
+{
+    public function handle(Collection $models, array $meta): BulkActionResult;
+}
+```
+
+`BulkActionDispatcher` resolves the right action from the `action` key and passes either the explicit model set (when `ids` is present) or the full filtered set (when `select_all_filtered` is `true`).
+
+`BulkActionResult` carries:
+
+```php
+new BulkActionResult(
+    processed: 12,
+    skipped: 1,
+    failed: 0,
+    message: 'Deleted 12 users.',
+);
+```
+
+The controller returns an Inertia flash response — not a JSON response:
+
+```php
+return back()->with('success', $result->message);
+// or
+return back()->with('error', $result->message);
+```
+
+### Stub Examples
+
+**BulkDeleteUserAction** — skips users with a higher admin rank than the acting user:
+
+```php
+final class BulkDeleteUserAction implements BulkAction
+{
+    public function __construct(private readonly User $actor) {}
+
+    public function handle(Collection $models, array $meta): BulkActionResult
+    {
+        $processed = 0;
+        $skipped   = 0;
+
+        foreach ($models as $user) {
+            if ($user->rank >= $this->actor->rank) {
+                $skipped++;
+                continue;
+            }
+            $user->delete();
+            $processed++;
+        }
+
+        return new BulkActionResult($processed, $skipped, 0);
+    }
+}
+```
+
+**BulkDeleteRoleAction** — protects system roles from deletion:
+
+```php
+final class BulkDeleteRoleAction implements BulkAction
+{
+    public function handle(Collection $models, array $meta): BulkActionResult
+    {
+        $systemRoles = config('permission-resources.system_roles', []);
+        $processed   = 0;
+        $skipped     = 0;
+
+        foreach ($models as $role) {
+            if (in_array($role->name, $systemRoles, true)) {
+                $skipped++;
+                continue;
+            }
+            $role->delete();
+            $processed++;
+        }
+
+        return new BulkActionResult($processed, $skipped, 0);
+    }
+}
+```
+
 ## Custom Cell Slots
 
 `SkDatatable` exposes per-column slots using the `cell-{column.key}` naming pattern. Each slot receives:

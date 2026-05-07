@@ -165,6 +165,131 @@ Satırın içinde doğrudan görünen butonlar için `DB.action()` kullanılır.
 - `visible(fn)`
 - `handle(fn)`
 
+## Toplu Aksiyonlar (Bulk Actions)
+
+Toplu aksiyonlar, kullanıcının birden fazla satırı — sayfa değişse de — seçip tek bir backend işlemi çalıştırmasına olanak tanır. Seçim, belirli bir ID listesini ya da mevcut filtre durumuna uyan tüm satırları kapsayabilir.
+
+### Frontend
+
+`SkDatatable`'a `bulk-actions` prop'u ile aksiyon tanımları dizisi verilir. Her tanımda en az `label`, `action` anahtarı ve `icon` bulunmalıdır:
+
+```vue
+<template>
+    <SkDatatable
+        :config="tableConfig"
+        :bulk-actions="[
+            { label: 'sk-button.delete', action: 'delete', icon: 'pi pi-trash', severity: 'danger' },
+        ]"
+        bulk-action-url="/admin/users/bulk"
+        refresh-key="users-table"
+    />
+</template>
+```
+
+Kullanıcı bir aksiyon tetiklediğinde `SkDatatable` şu payload'u gönderir:
+
+```json
+{
+    "action": "delete",
+    "ids": ["uuid-1", "uuid-2"],
+    "select_all_filtered": false,
+    "filter_snapshot": {}
+}
+```
+
+`select_all_filtered` `true` olduğunda `ids` boş gelir; `filter_snapshot` mevcut filtre durumunu taşır ve backend bu değerden filtrelenmiş kümeyi yeniden oluşturur.
+
+Seçim, sayfa değişikliklerinde korunur. Backend yanıt verdikten sonra `onSuccess` ve `onError` Inertia router callback'leri tetiklenir.
+
+### Request Doğrulama
+
+`ids.*` alanı `string|min:1|max:64` kuralıyla doğrulanır. Bu kural; integer auto-increment anahtarları, UUID (36 karakter) ve ULID (26 karakter) formatlarını tipe özgü ayrı bir kural gerektirmeden karşılar.
+
+### Backend
+
+`BulkAction` interface'ini implemente edin:
+
+```php
+interface BulkAction
+{
+    public function handle(Collection $models, array $meta): BulkActionResult;
+}
+```
+
+`BulkActionDispatcher`, `action` anahtarından doğru action sınıfını çözer; `ids` doluysa belirtilen model kümesini, `select_all_filtered` `true` ise tüm filtrelenmiş kümeyi aktarır.
+
+`BulkActionResult` şu alanları taşır:
+
+```php
+new BulkActionResult(
+    processed: 12,
+    skipped: 1,
+    failed: 0,
+    message: '12 kullanıcı silindi.',
+);
+```
+
+Controller, JSON response değil Inertia flash response döner:
+
+```php
+return back()->with('success', $result->message);
+// veya
+return back()->with('error', $result->message);
+```
+
+### Stub Örnekleri
+
+**BulkDeleteUserAction** — aktif kullanıcının rank'ına eşit veya üstündeki kullanıcıları atlar:
+
+```php
+final class BulkDeleteUserAction implements BulkAction
+{
+    public function __construct(private readonly User $actor) {}
+
+    public function handle(Collection $models, array $meta): BulkActionResult
+    {
+        $processed = 0;
+        $skipped   = 0;
+
+        foreach ($models as $user) {
+            if ($user->rank >= $this->actor->rank) {
+                $skipped++;
+                continue;
+            }
+            $user->delete();
+            $processed++;
+        }
+
+        return new BulkActionResult($processed, $skipped, 0);
+    }
+}
+```
+
+**BulkDeleteRoleAction** — sistem rollerini silme işlemine karşı korur:
+
+```php
+final class BulkDeleteRoleAction implements BulkAction
+{
+    public function handle(Collection $models, array $meta): BulkActionResult
+    {
+        $systemRoles = config('permission-resources.system_roles', []);
+        $processed   = 0;
+        $skipped     = 0;
+
+        foreach ($models as $role) {
+            if (in_array($role->name, $systemRoles, true)) {
+                $skipped++;
+                continue;
+            }
+            $role->delete();
+            $processed++;
+        }
+
+        return new BulkActionResult($processed, $skipped, 0);
+    }
+}
+```
+
 ## Özel Hücre Slot'ları
 
 `SkDatatable`, kolon bazlı slot'ları `cell-{column.key}` isim kalıbı ile dışarı açar. Her slot şu verileri alır:

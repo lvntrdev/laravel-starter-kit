@@ -69,6 +69,15 @@ Passport powers the API side:
 - `two-factor-challenge` completes the API 2FA flow with either `code` or `recovery_code` and returns `{ user, token }` on success
 - clients should branch on `requires_verification` and `requires_two_factor` instead of assuming every successful auth response contains a token
 
+## API Clients & Tokens
+
+The admin panel provides a UI for managing Passport OAuth2 clients and Personal Access Tokens (PATs):
+
+- `/admin/api-clients` — list, create, update, and delete OAuth2 clients
+- `/admin/api-tokens` — manage Personal Access Tokens
+
+Client secrets and PAT values are shown exactly once in a dismissal-blocked modal at creation time and are never stored in plaintext. See [API Clients & Tokens](./api-clients.md) for the full reference.
+
 ## Notes
 
 - use Fortify for the browser-facing auth experience

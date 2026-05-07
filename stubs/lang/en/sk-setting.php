@@ -10,7 +10,10 @@ return [
         'mail' => 'Mail',
         'storage' => 'Storage',
         'file_manager' => 'File Manager',
+        'api_integrations' => 'API Integrations',
         'api_clients' => 'API Clients',
+        'api_tokens' => 'API Tokens',
+        'system_health' => 'System Health',
     ],
 
     'tab_descriptions' => [
@@ -19,7 +22,10 @@ return [
         'mail' => 'SMTP and sender settings',
         'storage' => 'S3, Spaces and local disk',
         'file_manager' => 'Upload sizes and file types',
-        'api_clients' => 'Postman and Apidog integration',
+        'api_integrations' => 'Postman and Apidog integration',
+        'api_clients' => 'OAuth client management',
+        'api_tokens' => 'Personal access token management',
+        'system_health' => 'System doctor checks',
     ],
 
     'general' => [
