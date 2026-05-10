@@ -6,13 +6,13 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ### Yama sürüm — SystemHealthTab'dan axios kaldırıldı, API envelope uyumu, FileManager tip düzeltmesi
 
-`SystemHealthController`, zorunlu `to_api()` yardımcısı yerine `response()->json()` kullanıyordu; bu, `useApi` composable'ının parse edemediği standart dışı bir JSON gövdesi (`success` envelope yok) üretiyordu. Düzeltildi. `SystemHealthTab.vue`, tüm API çağrılarının `useApi` composable üzerinden yapılması gerektiği SK kuralını ihlal ederek doğrudan axios import edip çağırıyordu; `useApi({ toast: false })` ile değiştirildi. `FileManager.vue`'daki bir TypeScript tip hatası da giderildi: vue-tsc child template'lerde `v-if` üzerinden daraltma yapamadığından `@click="busy.onCancel"` ifadesi `(() => void) | null` tipli değer alıyordu; düzeltme isteğe bağlı zincirleme kullanan inline arrow wrapper kullanıyor.
+`SystemHealthController`, zorunlu `to_api()` yardımcısı yerine `response()->json()` kullanıyordu; bu, `useApi` composable'ının parse edemediği standart dışı bir JSON gövdesi (`success` envelope yok) üretiyordu. Düzeltildi. `SystemHealthTab.vue`, tüm API çağrılarının `useApi` composable üzerinden yapılması gerektiği SK kuralını ihlal ederek doğrudan axios import edip çağırıyordu; `useApi({ toast: false })` ile değiştirildi. `FileManager.vue`'daki TypeScript hatası giderildi: `busy` tipi `BusyState | null` ve vue-tsc, event handler içinde `v-if` üzerinden daraltma yapamıyor; çift isteğe bağlı zincirleme `busy?.onCancel?.()` her iki null durumunu çözüyor.
 
 #### Düzeltmeler
 
 - **`SystemHealthController@run`** — `response()->json()` → `to_api([...], $message)` ile değiştirildi; return tipi `ApiResponse|RedirectResponse` olarak güncellendi. Ham JSON yanıtı, `useApi`'nin beklediği standart `{ success, data, message }` envelope'unu atlıyordu ve frontend'de parse hatasına neden oluyordu.
 - **`SystemHealthTab.vue`** — `import axios from 'axios'` kaldırıldı; `useApi({ toast: false })` composable eklendi. `axios.post<...>(url)` → `api.post<...>(url)` ile değiştirildi. Axios'u doğrudan kullanmak SK kuralını ihlal ediyor; tüm API çağrıları `useApi` üzerinden yapılmalı.
-- **`FileManager.vue`** — `@click="busy.onCancel"` → `@click="() => busy.onCancel?.()"` olarak düzeltildi. `BusyState.onCancel` tipi `(() => void) | null`; vue-tsc child template'lerde `v-if="busy.onCancel"` üzerinden daraltma yapamıyor ve null tip geçersiz event handler olarak işaretleniyordu.
+- **`FileManager.vue`** — `@click="busy.onCancel"` → `@click="() => busy?.onCancel?.()"` olarak düzeltildi. `busy` tipi `BusyState | null`, `onCancel` tipi `(() => void) | null`; vue-tsc event handler içinde `v-if` üzerinden hiçbirini daraltamıyor; çift isteğe bağlı zincirleme gerekli.
 
 #### Yükseltme
 

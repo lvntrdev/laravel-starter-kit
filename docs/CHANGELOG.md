@@ -6,13 +6,13 @@ Newly added features and improvements to the starter kit are listed here.
 
 ### Patch release — axios removed from SystemHealthTab, API envelope compliance, FileManager type fix
 
-`SystemHealthController` was using `response()->json()` instead of the required `to_api()` helper, producing a non-standard JSON body that `useApi` could not parse (no `success` envelope). Fixed. `SystemHealthTab.vue` was importing and calling axios directly, violating the SK hard rule that all API calls must go through the `useApi` composable. Replaced with `useApi({ toast: false })`. A TypeScript type error in `FileManager.vue` is also resolved: `@click="busy.onCancel"` received a `(() => void) | null` value because vue-tsc does not narrow through `v-if` in child templates; the fix uses an inline arrow wrapper with optional-chaining.
+`SystemHealthController` was using `response()->json()` instead of the required `to_api()` helper, producing a non-standard JSON body that `useApi` could not parse (no `success` envelope). Fixed. `SystemHealthTab.vue` was importing and calling axios directly, violating the SK hard rule that all API calls must go through the `useApi` composable. Replaced with `useApi({ toast: false })`. A TypeScript type error in `FileManager.vue` is also resolved: `@click` received a `BusyState | null` value; vue-tsc does not narrow `busy` through `v-if` in event handlers; double optional-chaining `busy?.onCancel?.()` resolves both null cases.
 
 #### Fixed
 
 - **`SystemHealthController@run`** — `response()->json()` replaced with `to_api([...], $message)`; return type updated to `ApiResponse|RedirectResponse`. The raw JSON response bypassed the standard `{ success, data, message }` envelope expected by `useApi`, causing the frontend to throw a parse error.
 - **`SystemHealthTab.vue`** — `import axios from 'axios'` removed; `useApi({ toast: false })` composable added. `axios.post<...>(url)` replaced with `api.post<...>(url)`. Using axios directly violates the SK hard rule; all API calls must go through `useApi`.
-- **`FileManager.vue`** — `@click="busy.onCancel"` changed to `@click="() => busy.onCancel?.()"`. `BusyState.onCancel` is typed `(() => void) | null`; vue-tsc does not narrow through `v-if="busy.onCancel"` inside child templates, so the null type was flagged as an invalid event handler.
+- **`FileManager.vue`** — `@click="busy.onCancel"` changed to `@click="() => busy?.onCancel?.()"`. `busy` is `BusyState | null` and `onCancel` is `(() => void) | null`; vue-tsc does not narrow either through `v-if` in event handlers, so double optional-chaining is required.
 
 #### Upgrade
 

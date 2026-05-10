@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `response()->json()` replaced with `to_api([...], $message)`; return type updated from `JsonResponse|RedirectResponse` to `ApiResponse|RedirectResponse`. Using `response()->json()` violated the SK hard rule and produced a non-standard JSON body that `useApi` could not parse (missing `{ success, data, message }` envelope).
 - **`stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue`** — `import axios from 'axios'` removed; `useApi({ toast: false })` composable added. `axios.post<...>(url)` replaced with `api.post<...>(url)`. Direct axios usage violates the SK hard rule; all API calls must go through the `useApi` composable.
-- **`resources/js/components/Lvntr-Starter-Kit/FileManager/FileManager.vue`** — `@click="busy.onCancel"` changed to `@click="() => busy.onCancel?.()"`. `BusyState.onCancel` is typed `(() => void) | null`; vue-tsc does not narrow through `v-if="busy.onCancel"` in child templates, so the null type was flagged as an invalid event handler.
+- **`resources/js/components/Lvntr-Starter-Kit/FileManager/FileManager.vue`** — `@click="busy.onCancel"` changed to `@click="() => busy?.onCancel?.()"`. `BusyState.onCancel` is typed `(() => void) | null` and `busy` itself is `BusyState | null`; vue-tsc does not narrow through `v-if` in child template event handlers, so double optional-chaining is required.
 
 ### Upgrade
 
