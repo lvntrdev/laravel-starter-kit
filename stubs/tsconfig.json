@@ -28,8 +28,6 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.vue",
-        "vendor/lvntr/laravel-starter-kit/resources/js/**/*.ts",
-        "vendor/lvntr/laravel-starter-kit/resources/js/**/*.vue",
         "auto-imports.d.ts",
         "components.d.ts"
     ]
