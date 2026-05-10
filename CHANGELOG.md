@@ -5,36 +5,56 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.5.5] - 2026-05-08
-
-### Changed
-
-- **System Health — Settings tab'ına taşındı.** Admin kenar menüsündeki bağımsız "System Health" bağlantısı kaldırıldı; içerik artık Settings sayfasındaki sekme olarak `SystemHealthTab.vue` içinde `PrimeVue Card` ile sunuluyor. Bu değişiklik `useAdminMenu.ts`'teki `system-health` route import'unu ve menü item'ını da kaldırdı.
-- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `run()` metodu `redirect()->route('admin.system-health.index')` yerine `back()` kullanacak şekilde geri alındı; System Health artık Settings sekmesi olduğu için sabit route yönlendirmesi yerine HTTP referer'a güvenmek daha doğru.
-- **`ApiClientsManageTab.vue` & `ApiTokensManageTab.vue`** — Başlık/altyazı ve "Oluştur" butonu, manuel `<header>` bloğundan `DatatableBuilder` API'sine (`isCard(true).cardTitle(...).cardSubtitle(...)` + `tableBuilder.create({...})`) taşındı. `Button` import'u kaldırıldı; tablo artık Card içinde tamamen DB builder tarafından yönetiliyor.
+## [13.5.6] - 2026-05-10
 
 ### Fixed
 
-- **`database/migrations/2026_05_06_100000_create_file_manager_share_revocations_table.php`** — `revoked_by_user_id` kolonu `unsignedBigInteger` yerine `uuid` olarak düzeltildi; users tablosu UUID primary key kullandığından tür uyumsuzluğu FK hatasına yol açıyordu.
-- **`src/Domain/FileManager/Models/ShareRevocation.php`** — `$revoked_by_user_id` PHPDoc tipi `int|null` → `string|null` güncellendi; migration'daki UUID tipiyle uyumlu hale getirildi.
-- **`src/Console/Commands/InstallCommand.php`** — `app/Helpers/custom.php` dosyası yoksa `composer dump-autoload`'dan önce minimal stub (`<?php`) otomatik oluşturuluyor; eksik dosya her artisan çağrısını kırıyordu.
-- **`tests/DatabaseTestCase.php`** — In-memory migration'da `revoked_by_user_id` kolonu `unsignedBigInteger` → `uuid` olarak güncellendi; migration ile test şeması uyumsuzluğu giderildi.
-- **API istemcilerinden `scopes` alanı kaldırıldı.** Native Passport'un `oauth_clients` tablosunda `scopes` kolonu bulunmaz; bu alan `StoreApiClientRequest`, `UpdateApiClientRequest`, `CreateApiClientAction`, `UpdateApiClientAction`, `ApiClientController`, `ApiClientResource`, `ApiClientForm.vue` ve `ApiClientsManageTab.vue` içinde ölü kod olarak duruyordu ve `Column not found: 1054 Unknown column 'scopes'` hatasıyla her oluşturma/güncelleme isteğini kırıyordu. PAT kapsamları (`CreatePersonalAccessTokenAction` içinde `$user->createToken($name, $scopes)`) değişmedi — bunlar `oauth_access_tokens.scopes` kolonuna yazar ve sorunsuz çalışır.
-- **`passport:client --personal` kurulumda otomatik oluşturuluyor.** `sk:install` (`InstallCommand.php`) ve `site:install` (`SiteInstallCommand.php`) artık `passport:keys` sonrasında `passport:client --personal --provider=users` komutunu otomatik olarak çalıştırıyor. Bu adımın eksik olduğu mevcut kurulumlar token oluşturma sırasında `LogicException: Unable to determine authentication provider` hatası alıyordu.
-- **Laravel 11 `api` guard otomatik enjekte ediliyor.** `StarterKitServiceProvider::configurePassport()` metodu artık `auth.guards.api` anahtarının eksik olup olmadığını kontrol ediyor ve yoksa `['driver' => 'passport', 'provider' => 'users']` tanımını runtime'da enjekte ediyor. Laravel 11, varsayılan `auth.php`'den `api` guard'ını kaldırdı; Passport'un `createToken()` metodu kullanıcı provider'ını bulmak için bu guard'a ihtiyaç duyuyor.
-- **Datatable, kayıt oluşturulur oluşturulmaz yenileniyor.** `ApiClientsManageTab.vue` ve `ApiTokensManageTab.vue` içinde `bus.refresh(REFRESH_KEY)` artık `onCreated` callback'i tetiklendiği anda — yani kayıt başarıyla oluşturulduğunda — çağrılıyor. Önceki davranışta yenileme yalnızca `OneTimeSecretModal`'da "Sakladım" butonuna tıklandığında gerçekleşiyordu; kullanıcı modalı X ile kapatırsa tablo güncellenemiyordu.
+- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `response()->json()` replaced with `to_api([...], $message)`; return type updated from `JsonResponse|RedirectResponse` to `ApiResponse|RedirectResponse`. Using `response()->json()` violated the SK hard rule and produced a non-standard JSON body that `useApi` could not parse (missing `{ success, data, message }` envelope).
+- **`stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue`** — `import axios from 'axios'` removed; `useApi({ toast: false })` composable added. `axios.post<...>(url)` replaced with `api.post<...>(url)`. Direct axios usage violates the SK hard rule; all API calls must go through the `useApi` composable.
+- **`resources/js/components/Lvntr-Starter-Kit/FileManager/FileManager.vue`** — `@click="busy.onCancel"` changed to `@click="() => busy.onCancel?.()"`. `BusyState.onCancel` is typed `(() => void) | null`; vue-tsc does not narrow through `v-if="busy.onCancel"` in child templates, so the null type was flagged as an invalid event handler.
 
-### UI
-
-- **`SkDatatable.vue`** — `isCard` modunda `caption` slot'una `var(--p-card-body-padding)` ile yatay/üst padding eklendi; başlık/altyazı standart Card body hizalamasına oturdu, tablo araç çubuğu ise tam genişlikte kalmaya devam ediyor.
-- **`SystemHealthTab.vue`** — İçerik düz `<div>` yerine PrimeVue `Card` ile sarmalandı; "Yenile" butonu artık `title` slot içinde sağa hizalanmış, `size="small"` kullanıyor; özet stat kartları ile kontrol tablosu Card'ın `content` slot'unda yer alıyor.
-
-### Yükseltme
+### Upgrade
 
 ```bash
 composer update lvntr/laravel-starter-kit
 
-# Etkilenen stub'ları yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# SystemHealthController.php, SystemHealthTab.vue
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+---
+
+## [13.5.5] - 2026-05-08
+
+### Changed
+
+- **System Health moved to Settings tab.** The standalone "System Health" entry in the admin sidebar is removed; the content is now presented as a tab within the Settings page via `SystemHealthTab.vue` wrapped in a PrimeVue Card. This also removed the `system-health` route import and menu item from `useAdminMenu.ts`.
+- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `run()` reverted from `redirect()->route('admin.system-health.index')` back to `back()`; since System Health now lives inside the Settings page, relying on the HTTP referer is more appropriate than a hard-coded route redirect.
+- **`ApiClientsManageTab.vue` & `ApiTokensManageTab.vue`** — title/subtitle and create button migrated from a manual `<header>` block to the DatatableBuilder API (`isCard(true).cardTitle(...).cardSubtitle(...)` + `tableBuilder.create({...})`). `Button` import removed; the table is now fully managed by the DB builder inside the Card.
+
+### Fixed
+
+- **`database/migrations/2026_05_06_100000_create_file_manager_share_revocations_table.php`** — `revoked_by_user_id` column corrected from `unsignedBigInteger` to `uuid`; the users table uses UUID primary keys, so the type mismatch caused an FK error.
+- **`src/Domain/FileManager/Models/ShareRevocation.php`** — `$revoked_by_user_id` PHPDoc type updated from `int|null` to `string|null` to match the migration UUID type.
+- **`src/Console/Commands/InstallCommand.php`** — auto-creates a minimal `app/Helpers/custom.php` stub (`<?php`) when the file is missing, before `composer dump-autoload`; the missing file broke every subsequent artisan call.
+- **`tests/DatabaseTestCase.php`** — in-memory `revoked_by_user_id` column updated from `unsignedBigInteger` to `uuid`; aligns the test schema with the fixed migration.
+- **API client `scopes` field removed.** The `scopes` column does not exist on `oauth_clients` in native Passport. The field was dead code across `StoreApiClientRequest`, `UpdateApiClientRequest`, `CreateApiClientAction`, `UpdateApiClientAction`, `ApiClientController`, `ApiClientResource`, `ApiClientForm.vue` and `ApiClientsManageTab.vue`, and caused `Column not found: 1054 Unknown column 'scopes'` on every create/update. PAT scopes (`$user->createToken($name, $scopes)`) are unaffected — they write to `oauth_access_tokens.scopes` and continue to work.
+- **`passport:client --personal` now runs automatically during install.** Both `sk:install` (`InstallCommand.php`) and `site:install` (`SiteInstallCommand.php`) now execute `passport:client --personal --provider=users` automatically after `passport:keys`. The missing step caused `LogicException: Unable to determine authentication provider` on token creation in fresh installs.
+- **Laravel 11 `api` guard auto-injected at runtime.** `StarterKitServiceProvider::configurePassport()` now checks for `auth.guards.api` and injects `['driver' => 'passport', 'provider' => 'users']` when absent. Laravel 11 removed this guard from the default `auth.php`; Passport's `createToken()` requires it to resolve the user provider.
+- **Datatable refreshes immediately after record creation.** `ApiClientsManageTab.vue` and `ApiTokensManageTab.vue` now call `bus.refresh(REFRESH_KEY)` as soon as the `onCreated` callback fires — i.e. the moment the record is successfully created. Previously, refresh only triggered when the user clicked "I've saved it" in `OneTimeSecretModal`; closing the modal with X left the table stale.
+
+### UI
+
+- **`SkDatatable.vue`** — in `isCard` mode the `caption` slot now receives horizontal/top padding via `var(--p-card-body-padding)`; title and subtitle align with the standard Card body while the toolbar remains full-width.
+- **`SystemHealthTab.vue`** — content wrapped in a PrimeVue `Card`; the refresh button is inlined in the `#title` slot right-aligned with `size="small"`; summary stat cards and check table placed in the Card's `#content` slot.
+
+### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
 # useAdminMenu.ts, SystemHealthController.php, SystemHealthTab.vue,
 # ApiClientController.php, ApiTokenController.php, ApiClientForm.vue,
 # ApiClientsManageTab.vue, ApiTokensManageTab.vue, CreateTokenModal.vue,
@@ -42,16 +62,16 @@ composer update lvntr/laravel-starter-kit
 php artisan vendor:publish --tag=starter-kit-stubs --force
 ```
 
-**Passport personal access client:** Daha önce hiç çalıştırılmamışsa aşağıdaki komutu manuel olarak çalıştırın:
+**Passport personal access client:** If you have never run `passport:client --personal`, do so now:
 
 ```bash
 php artisan passport:client --personal --provider=users
 ```
 
-**Migration notu:** `file_manager_share_revocations` tablosunu v13.5.3'te yayınladıysanız `revoked_by_user_id` kolonu `uuid`'e migrate edin:
+**Migration note:** If you published `file_manager_share_revocations` in v13.5.3, run a new migration to fix the column type:
 
 ```php
-// Yeni migration oluşturun:
+// Create a new migration:
 Schema::table('file_manager_share_revocations', function (Blueprint $table) {
     $table->dropForeign(['revoked_by_user_id']);
     $table->dropColumn('revoked_by_user_id');
@@ -60,7 +80,7 @@ Schema::table('file_manager_share_revocations', function (Blueprint $table) {
 });
 ```
 
-**Eski sayfa dizinlerini temizle:** v13.5.3'ten güncelliyorsanız artık kullanılmayan dizinleri manuel olarak silin:
+**Clean up legacy page directories:** If upgrading from v13.5.3, manually remove the now-unused directories:
 
 ```bash
 rm -rf resources/js/pages/Admin/ApiClients
@@ -68,7 +88,7 @@ rm -rf resources/js/pages/Admin/ApiTokens
 rm -rf resources/js/pages/Admin/SystemHealth
 ```
 
-Bu sürüm yeni izin, config anahtarı veya davranış değişikliği içermiyor; System Health sekmesinin Settings'e taşınması dışında mevcut izin şeması değişmedi.
+This release introduces no new permissions, config keys or behaviour changes; the permission schema is unchanged other than the System Health tab moving into Settings.
 
 ---
 
@@ -76,45 +96,45 @@ Bu sürüm yeni izin, config anahtarı veya davranış değişikliği içermiyor
 
 ### Added
 
-- **TabBuilder — `rose` icon color.** `TabIconColor` type'ına `rose` eklendi; `_tabs.scss`'e karşılık gelen `--p-rose-*` CSS değişkenleriyle çalışan dark/light kuralları eklendi. Settings sayfasındaki System Health sekmesi (`pi pi-heart-fill` + rose) artık doğru tipte derleniyor.
+- **TabBuilder — `rose` icon color.** `TabIconColor` now accepts `rose`; `_tabs.scss` ships matching `--p-rose-*` light/dark rules. Required by the System Health tab (`pi pi-heart-fill` + rose) in Settings.
 
 ### Fixed
 
-- **`stubs/resources/js/layouts/components/AdminHeader.vue`** — `page.props.auth?.role` (var olmayan singular alan) `roles?.[0]`'a düzeltildi. Shared page props `roles: string[]` shape'iyle uyumlu hale geldi; vue-tsc strict mode'da kırılım gideriliyor.
-- **`stubs/resources/js/composables/useAdminMenu.ts`** — eksik `import systemHealth from '@/routes/system-health'` ve System Health menü item (`permission: 'system.health.view'`) eklendi. v13.5.3'te eklenen sayfaya admin menüsünden navigasyon yoktu.
-- **`stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php`** — `storage_usage` (`used_bytes`, `quota_bytes`) payload'ı, `ResolvesMediaModel` trait kullanımı ve `computeStorageUsed()` / `storageQuotaBytes()` çağrıları eklendi. v13.5.2'de gelen `StorageQuotaCard` component'i Settings → Storage tab'ında doğru veriyi alıyor.
-- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — `run()` metodu `back()` yerine `redirect()->route('admin.system-health.index')` kullanacak şekilde güncellendi. POST sonrası tarayıcı geçmişine güvenli bir GET kaydı bırakır; sayfanın yenilenmesi formu yeniden submit etmez.
-- **`stubs/resources/js/pages/Admin/Logs/{Index,Show}.vue`** — `trans()` ve `$t()` `count` parametreleri `String()` ile sarmalandı. `laravel-vue-i18n` v2.8 strict tipi replacement değerleri için `Record<string, string>` istiyor; `res.deleted.length` gibi number değerler vue-tsc'de `TS2322` üretiyordu.
-- **`stubs/tsconfig.json`** — `@lvntr/components/*` path mapping eklendi (`vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*`); Vite alias'ıyla hizalandı. Önceki tek `@lvntr/*` mapping'i `@lvntr/components/FormBuilder/core` gibi yolları çözümleyemiyor, vue-tsc `TS2307` üretiyordu.
-- **`stubs/resources/js/env.d.ts`** — `window.turnstile` için tipli global Window genişletmesi (`declare global { interface Window { turnstile?: TurnstileInstance } }`), `@/routes/*` için wildcard module declaration (wayfinder dosyaları henüz üretilmediğinde fallback) ve `TurnstileInstance` shape'i eklendi.
+- **`stubs/resources/js/layouts/components/AdminHeader.vue`** — `page.props.auth?.role` (singular, non-existent field) corrected to `roles?.[0]`, matching the `roles: string[]` shared page-prop shape; fixes a vue-tsc strict-mode error.
+- **`stubs/resources/js/composables/useAdminMenu.ts`** — added missing `import systemHealth from '@/routes/system-health'` and a System Health menu item (`permission: 'system.health.view'`). The page added in v13.5.3 was unreachable from the admin sidebar.
+- **`stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php`** — added `storage_usage` (`used_bytes`, `quota_bytes`) payload via the `ResolvesMediaModel` trait (`computeStorageUsed()` / `storageQuotaBytes()`). Required by the `StorageQuotaCard` component shipped in v13.5.2 to display correct data in the Settings → Storage tab.
+- **`stubs/app/Http/Controllers/Admin/SystemHealthController.php`** — switched from `back()` to `redirect()->route('admin.system-health.index')`. This leaves a safe GET entry in the browser history after a POST; refreshing the page no longer re-submits the form.
+- **`stubs/resources/js/pages/Admin/Logs/{Index,Show}.vue`** — `trans()` / `$t()` `count` replacement values wrapped in `String(...)`; `laravel-vue-i18n` v2.8 requires `Record<string, string>` for replacements, so raw numbers like `res.deleted.length` produced `TS2322` under vue-tsc.
+- **`stubs/tsconfig.json`** — added `@lvntr/components/*` path mapping (`vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/*`), aligned with the Vite alias. The previous single `@lvntr/*` entry could not resolve paths like `@lvntr/components/FormBuilder/core`, causing `TS2307`.
+- **`stubs/resources/js/env.d.ts`** — added typed global `window.turnstile` (`declare global { interface Window { turnstile?: TurnstileInstance } }`), a `@/routes/*` wildcard module declaration as fallback before wayfinder generates files, and the `TurnstileInstance` shape.
 
 ### Build / CI
 
-- **`stubs/vite.config.ts`** — `isWayfinderAvailable()` ve `isVitest` guard'ları eklendi.
-  - `artisan` dosyası mevcut değilse wayfinder plugin'i atlanır → PHP olmayan node-only CI job'ında `php artisan wayfinder:generate` crash'i giderildi.
-  - `process.env.VITEST === 'true'` veya `NODE_ENV === 'test'` olduğunda `laravel-vite-plugin` ve `inertia()` atlanır → `vitest run` CI ortamında "You should not run the Vite HMR server in CI" hatası giderildi.
-- **`.github/workflows/ci.yml` Node job yeniden sıralandı:** `npm ci` → vendor symlink (`stubs/vendor/lvntr/laravel-starter-kit` → repo root) → route stubs → `npm run build` → `npm run typecheck` → lint (continue-on-error) → `npm run test`. Build artık typecheck'ten önce; `auto-imports.d.ts` ve `components.d.ts` zamanında üretiliyor.
-- **`scripts/ci/generate-route-stubs.mjs`** eklendi — Wayfinder PHP gerektirdiği için node-only CI'da `stubs/resources/js/routes/*.ts` dosyaları ephemeral üretilir (16 route modülü için minimal `r(url)` stub'ları). Çıktı dizini `.gitignore`'lı; host app'lerin gerçek `npm run dev` çalıştırması wayfinder dosyalarını üretir.
-- **`tests/Feature/Doctor/{DatabaseConnection,MailDriver,RedisConnection}CheckTest.php`** — İngilizce mesaj beklentilerine güncellendi (Doctor check çıktıları İngilizce kalmaya devam ediyor; v13.5.3'te kasıtlı çevrilmişti, testlerdeki Türkçe beklentiler sürüm öncesi taslak değerleriydi).
-- **`.gitignore`** — `stubs/resources/js/routes/` (wayfinder her host app'te yeniden üretir, paket içine commit edilmez), `stubs/vendor/` (CI-only symlink), `stubs/public/build/` ve `stubs/bootstrap/ssr/` (Vite build artifact'ları) eklendi.
+- **`stubs/vite.config.ts`** — `isWayfinderAvailable()` and `isVitest` guards added.
+  - Wayfinder plugin is skipped when `artisan` is absent → fixes `php artisan wayfinder:generate` crash in node-only CI jobs (no PHP).
+  - `laravel-vite-plugin` and `inertia()` are skipped when `process.env.VITEST === 'true'` or `NODE_ENV === 'test'` → eliminates the "You should not run the Vite HMR server in CI" error during `vitest run`.
+- **GitHub Actions Node job re-ordered:** `npm ci` → vendor symlink (`stubs/vendor/lvntr/laravel-starter-kit` → repo root) → route stubs → `npm run build` → `npm run typecheck` → lint (`continue-on-error`) → `npm run test`. Build now generates `auto-imports.d.ts` / `components.d.ts` before vue-tsc runs.
+- **`scripts/ci/generate-route-stubs.mjs`** added — node-only CI fallback that writes minimal `r(url)` stub files for 16 route modules under `stubs/resources/js/routes/`. The output directory is gitignored; host apps let wayfinder generate the real files.
+- **Doctor tests** updated to expect the intentional English check messages.
+- **`.gitignore`** — wayfinder routes (`stubs/resources/js/routes/`), CI-only vendor symlink (`stubs/vendor/`), and Vite build artifacts (`stubs/public/build/`, `stubs/bootstrap/ssr/`) are now ignored.
 
-### Yükseltme
+### Upgrade
 
 ```bash
 composer update lvntr/laravel-starter-kit
 
-# Etkilenen stub'ları yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
 # AdminHeader.vue, useAdminMenu.ts, SystemHealthController.php, SettingsDefaultsQuery.php,
 # Logs/{Index,Show}.vue, env.d.ts, tsconfig.json, vite.config.ts
 php artisan vendor:publish --tag=starter-kit-stubs --force
 
-# Yeni rose tab color CSS'ini içeren tema dosyalarını yayınla
+# Re-publish theme files for the new rose tab color
 php artisan vendor:publish --tag=starter-kit-theme --force
 
 npm run build
 ```
 
-`tsconfig.json`'unu özelleştirdiyseniz `@lvntr/components/*` path mapping'ini manuel ekleyin (Vite alias'ıyla hizalı):
+If you maintain a custom `tsconfig.json`, add the `@lvntr/components/*` mapping (must come before `@lvntr/*`):
 
 ```json
 "paths": {
@@ -126,7 +146,7 @@ npm run build
 }
 ```
 
-Bu sürüm yeni izin, migration veya config anahtarı eklemiyor; davranış değişikliği yok.
+No new permissions, migrations or config keys in this release.
 
 ---
 
@@ -134,65 +154,63 @@ Bu sürüm yeni izin, migration veya config anahtarı eklemiyor; davranış değ
 
 ### Added
 
-- **`sk:doctor` artisan komutu** — 12 kontrol noktasını kapsayan sistem sağlık denetimi: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule çalışması, mail driver, npm build artifact'ları, config cache, FileManager disk bağlantısı. `--json` flag'i ile makine okunabilir çıktı, `--only=database,redis,...` flag'i ile seçili kontroller çalıştırılabilir. Exit kodu: `0` OK, `1` WARN, `2` FAIL.
-- **Admin Panel — System Health sayfası** (`/admin/system-health`) — `sk:doctor` çıktısını UI'da görselleştirir; kontrol başına durum rozeti ve manuel yenile butonu. Erişim izni: `system.health.view`.
-- **File Manager — Signed Share Link** — HMAC imzalı genel erişim URL'leri. `POST /file-manager/share` ile TTL belirterek paylaşım oluşturulur; `POST /file-manager/share/revoke` ile iptal edilir; `GET /file-manager/share/{media}?expires&signature` ile doğrulama yapılır. Config anahtarları: `file-manager.share.enabled`, `default_ttl_hours` (varsayılan 24), `max_ttl_hours` (varsayılan 720), `allow_revoke`. Token iptali `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile yönetilir. Yeni izinler: `share-media`, `revoke-share-media`.
-- **DatatableBuilder — Bulk Action API** — `BulkAction` interface ve `BulkActionDispatcher` ile sayfa sınırını aşan toplu işlem desteği. `SkDatatable` bileşeni, `select_all_filtered` modunu (filtre snapshot ile) ve cross-page seçimi destekler. Request payload: `{action, ids, select_all_filtered, filter_snapshot}`; response: `{processed, skipped, failed, message}`. Stub örnekleri: `BulkDeleteUserAction` (rank-aware) ve `BulkDeleteRoleAction` (sistem rollerine karşı koruma).
-- **Domain Generator v2 (`make:sk-domain`) — opt-in flag'ler** — `--with-policy`, `--with-factory`, `--with-seeder`, `--with-test`, `--with-relations` tek tek flag veya `--with=policy,factory,test` toplu syntax ile kullanılabilir. `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` ile ilişki scaffold'ı otomatik üretilir. Flag'siz çağrım v13.5.x davranışını korur (backward compatible).
-- **API Client & Token Admin UI** — Passport authorization_code ve client_credentials grant'leri ile Personal Access Token yönetimi için admin arayüzü (`/admin/api-clients`, `/admin/api-tokens`). Client secret ve Personal Access Token plaintext yalnızca oluşturma response'unda bir kez gösterilir (`Cache-Control: no-store`); `OneTimeSecretModal` dismiss edilemez. Yeni izinler: `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`. Yeni validation rule: `HttpsOrLocalhostUrl` (RFC 8252 §8.3 — yalnızca HTTPS, localhost istisnası ile HTTP).
-- **CI Workflow (GitHub Actions)** — PHP test (`pest`), lint (`pint`), Node 22 build/typecheck/lint job'ları. Aynı branch/PR'da paralel çalışan job'lar `concurrency: cancel-in-progress` ile önceki çalıştırmayı iptal eder.
-- `composer test` (`vendor/bin/pest tests/Feature`) ve `composer lint` (`vendor/bin/pint --test`) script'leri eklendi.
+- **`sk:doctor` artisan command** — system health check covering 12 control points: PHP extensions, database connection, Redis, Passport keys, storage symlink, writable directories, queue driver, schedule run, mail driver, npm build artifacts, config cache, FileManager disk connection. Machine-readable output via `--json`; selective checks via `--only=database,redis,...`. Exit codes: `0` OK, `1` WARN, `2` FAIL.
+- **Admin Panel — System Health page** (`/admin/system-health`) — visualises `sk:doctor` output with per-check status badges and a manual refresh button. Access permission: `system.health.view`.
+- **File Manager — Signed Share Link** — HMAC-signed public access URLs. `POST /file-manager/share` creates a link with a TTL; `POST /file-manager/share/revoke` revokes it; `GET /file-manager/share/{media}?expires&signature` validates. Config keys: `file-manager.share.enabled`, `default_ttl_hours` (default 24), `max_ttl_hours` (default 720), `allow_revoke`. Revocations tracked in `file_manager_share_revocations` with a `(media_id, signed_token_hash)` composite unique index. New permissions: `share-media`, `revoke-share-media`.
+- **DatatableBuilder — Bulk Action API** — `BulkAction` interface and `BulkActionDispatcher` for cross-page bulk operations. `SkDatatable` supports `select_all_filtered` mode (with filter snapshot) and cross-page selection. Request payload: `{action, ids, select_all_filtered, filter_snapshot}`; response: `{processed, skipped, failed, message}`. Shipped stubs: `BulkDeleteUserAction` (rank-aware) and `BulkDeleteRoleAction` (guards against system roles).
+- **Domain Generator v2 (`make:sk-domain`) — opt-in flags** — `--with-policy`, `--with-factory`, `--with-seeder`, `--with-test`, `--with-relations` individually or combined as `--with=policy,factory,test`. `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` generates relationship scaffolding automatically. Flag-free invocation preserves v13.5.x behaviour (backward compatible).
+- **API Client & Token Admin UI** — admin interface for Passport authorization_code and client_credentials grants and Personal Access Tokens (`/admin/api-clients`, `/admin/api-tokens`). Client secrets and PATs are shown in plaintext only once on creation (`Cache-Control: no-store`); `OneTimeSecretModal` cannot be dismissed. New permissions: `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`. New validation rule: `HttpsOrLocalhostUrl` (RFC 8252 §8.3 — HTTPS only, localhost HTTP exception).
+- **CI Workflow (GitHub Actions)** — PHP test (`pest`), lint (`pint`), and Node 22 build/typecheck/lint jobs. Concurrent runs on the same branch/PR are cancelled via `concurrency: cancel-in-progress`.
+- `composer test` (`vendor/bin/pest tests/Feature`) and `composer lint` (`vendor/bin/pint --test`) scripts added for contributors.
 
 ### Fixed
 
-- **`DeleteFolderAction`** — Alt klasörler query-builder `forceDelete()` ile silindiğinde Eloquent `forceDeleted` event'i tetiklenmiyordu. `FileFolder` modelindeki `forceDeleted` gözlemcisi (favori kayıtlarını temizler) yalnızca root klasör için çalışıyor, alt klasörler için `file_favorites` orphan kalıyordu. Model bazlı iterasyona geçildi; artık tüm alt klasörler için event tetikleniyor.
-- **`sk:update` — `node_modules/` stubs taramasından filtrelendi.** `NEVER_UPDATE_PATHS` sabitine `node_modules/` eklendi; `updateModifiableFiles`, `addNewFiles`, `migrateHashRegistry` ve `updateHashRegistry` döngülerinin tamamına `isNeverUpdate()` kontrolü eklendi. Sembolik link (path repository) ortamında `stubs/node_modules/` varlığı "seçilecek dosyalar" listesine sızıyordu.
-- **`sk:doctor` ve `sk:update` — console çıktısı İngilizceye çevrildi.** `DoctorCommand`, `UpdateCommand`, 12 adet `DoctorCheck` sınıfında kullanıcıya gösterilen tüm mesajlar, ipuçları ve tablo başlıkları İngilizceye çevrildi; PHP kod yorumları değiştirilmedi.
-- **Bulk action controller — Inertia flash response.** `UserBulkController` ve `RoleBulkController` `ApiResponse` (JSON) yerine `back()->with('success'/'error', ...)` döndürecek şekilde güncellendi. Önceki JSON response Inertia'nın `onSuccess`/`onError` akışını kırıyor, ham JSON'u ekrana basıyordu; şimdi başarı/hata mesajları `HandleInertiaRequests` flash paylaşımı üzerinden `SkFlash`/`useFlash` bileşenine ulaşıyor.
-- **Bulk action validation — UUID/ULID/integer ID desteği.** `BulkActionRequest::rules()` içinde `ids.*` kuralı `integer` yerine `string|min:1|max:64` olarak güncellendi; `prepareForValidation()` tüm gelen ID'leri string'e cast ediyor. Önceki `integer` kuralı `HasUuids` kullanan modellerde (User, FileBucket, FileFolder vb.) "The ids.0 field must be an integer" hatası üretiyordu. Yeni kural integer auto-increment, UUID (36 char) ve ULID (26 char) primary key'leri tek payload şemasında destekler; `whereIn('id', $ids)` sorguları her iki tipte de çalışır.
+- **`DeleteFolderAction`** — descendant folders were permanently deleted via a query-builder `forceDelete()` call, which skipped Eloquent model events. The `forceDeleted` observer in `FileFolder` (responsible for cleaning up `file_favorites`) only fired for the root folder; sub-folders left orphan favorite records. Changed to model-level iteration so every `forceDeleted` event is dispatched correctly.
+- **`sk:update` — `node_modules/` filtered from stubs scan.** `node_modules/` added to `NEVER_UPDATE_PATHS`; `isNeverUpdate()` check applied to all loops in `updateModifiableFiles`, `addNewFiles`, `migrateHashRegistry` and `updateHashRegistry`. In symlinked (path-repository) setups, `stubs/node_modules/` was leaking into the candidate file list.
+- **`sk:doctor` and `sk:update` console output translated to English.** All user-facing messages, tips and table headers in `DoctorCommand`, `UpdateCommand` and the 12 `DoctorCheck` classes are now in English; PHP code comments are unchanged.
+- **Bulk action controllers — Inertia flash response.** `UserBulkController` and `RoleBulkController` now return `back()->with('success'/'error', ...)` instead of `ApiResponse` (JSON). The previous JSON response was breaking Inertia's `onSuccess`/`onError` flow and rendering raw JSON on screen; success/error messages now reach `SkFlash`/`useFlash` via `HandleInertiaRequests` flash sharing.
+- **Bulk action validation — UUID/ULID/integer ID support.** `BulkActionRequest::rules()` updated: `ids.*` rule changed from `integer` to `string|min:1|max:64`; `prepareForValidation()` casts all incoming IDs to string. The previous `integer` rule caused "The ids.0 field must be an integer" for models using `HasUuids` (User, FileBucket, FileFolder, etc.). The new rule supports integer auto-increment, UUID (36 chars) and ULID (26 chars) primary keys in a single payload schema.
 
 ### Security
 
-- **`dedoc/scramble`** `^0.13.22`'ye yükseltildi (RCE sınıfı advisory giderildi).
-- **`phpseclib/phpseclib`** `3.0.52`'ye güncellendi (DoS advisory; `laravel/passport` üzerinden transitive).
-- **Signed Share Link — cross-media token hijack koruması.** `(media_id, signed_token_hash)` composite unique index, bir token'ın farklı media kayıtlarında geçerli sayılmasını engeller.
-- **Personal Access Token — privilege escalation guard.** `user_id` body alanı kabul edilmez; token her zaman kimliği doğrulanmış kullanıcı için mint edilir.
-- **Passport client `confidential` zorunluluğu.** API Client UI üzerinden yalnızca `confidential=true` client oluşturulabilir; authorization_code grant için `redirect_uris` min:1 + HTTPS zorunluluğu getirildi. Mevcut DB kayıtları değişmez.
+- **`dedoc/scramble`** bumped to `^0.13.22` (addresses a reported RCE-class advisory).
+- **`phpseclib/phpseclib`** updated to `3.0.52` (DoS advisory; transitive via `laravel/passport`).
+- **Signed Share Link — cross-media token hijack protection.** `(media_id, signed_token_hash)` composite unique index prevents a token from being valid for a different media record.
+- **Personal Access Token — privilege escalation guard.** `user_id` body field is rejected; tokens are always minted for the authenticated user.
+- **Passport client `confidential` enforcement.** Only `confidential=true` clients can be created via the API Client UI; authorization_code grant requires min:1 redirect URIs with HTTPS. Existing DB records are unaffected.
 
 ### Changed
 
-- **`StarterKitServiceProvider`** — Passport scope ve `Gate::before` kayıtları tek kaynak haline getirildi; `AppServiceProvider` stub'ından duplicate kayıtlar kaldırıldı.
+- **`StarterKitServiceProvider`** — Passport scope and `Gate::before` registrations consolidated to a single source; duplicate registrations removed from the `AppServiceProvider` stub.
 
 ### Upgrade
-
-Host uygulamalarda `composer update` sonrası aşağıdaki adımlar uygulanmalıdır:
 
 ```bash
 composer update lvntr/laravel-starter-kit
 
-# Yeni migration'ları yayınla ve çalıştır
+# Publish and run new migrations
 php artisan vendor:publish --tag=starter-kit-migrations
 php artisan migrate
 
-# Yeni share.* anahtarlarını içeren file-manager config'ini yayınla
+# Publish updated file-manager config (new share.* keys)
 php artisan vendor:publish --tag=starter-kit-config --force
 
-# Yeni admin sayfa ve controller stub'larını yayınla
-# DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın
+# Publish new admin page and controller stubs
+# WARNING: customised stubs will be overridden — diff first
 php artisan vendor:publish --tag=starter-kit-stubs --force
 
-# Yeni izinleri ekle ve permission cache'ini temizle
+# Add new permissions and reset permission cache
 php artisan db:seed --class=PermissionResourcesSeeder
 php artisan permission:cache-reset
 ```
 
-**Yeni izinler:** `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`.
+**New permissions:** `system.health.view`, `share-media`, `revoke-share-media`, `api-clients.create`, `api-clients.read`, `api-clients.update`, `api-clients.delete`, `api-tokens.create`, `api-tokens.read`, `api-tokens.delete`.
 
-**Davranış değişiklikleri:**
+**Behaviour changes:**
 
-- `confidential=false` ile authorization_code Passport client'ları UI üzerinden artık oluşturulamaz. Mevcut DB kayıtları etkilenmez.
-- Personal Access Token mint: `user_id` body alanı kaldırıldı; admin başka kullanıcı adına PAT oluşturmak istiyorsa artisan komutu veya özel action kullanılmalıdır.
-- `AppServiceProvider` stub'ında duplicate Passport scope / `Gate::before` bloğu varsa silinmeli; `StarterKitServiceProvider` üzerinden çalışmaya devam eder.
+- `confidential=false` authorization_code Passport clients can no longer be created via the UI. Existing DB records are unaffected.
+- Personal Access Token minting: `user_id` body field removed; to mint a PAT for another user use an artisan command or a custom action.
+- If your `AppServiceProvider` stub has duplicate Passport scope / `Gate::before` blocks, remove them — `StarterKitServiceProvider` handles this now.
 
 ---
 
@@ -200,89 +218,88 @@ php artisan permission:cache-reset
 
 ### Added
 
-- **`Admin/Settings` — `SecurityTab.vue`** Authentication ve Cloudflare Turnstile bölümlerini tek sekmede birleştirir. Eski `AuthTab.vue` ve `TurnstileTab.vue` stub'ları kaldırıldı.
-- **`Admin/Settings/components/StorageQuotaCard.vue`** — Disk-genel depolama kotası kullanımını progress bar ile gösteren yeni card component'i.
-- **`SettingsDefaultsQuery`** artık Inertia payload'ında `storage_usage` (`used_bytes`, `quota_bytes`) döndürür.
-- i18n (`sk-setting`): `security.auth_section_title`, `security.turnstile_section_title`, `storage.usage_card_title`, `storage.usage_label`, `storage.unlimited`, `file_manager.video_label`, `file_manager.audio_label`, `file_manager.video_hint`, `file_manager.audio_hint` key'leri eklendi.
-- i18n (`sk-file-manager`): `labels.filter.all`, `labels.filter.image`, `labels.filter.video`, `labels.filter.pdf`, `labels.filter.audio`, `labels.filter.archive` — FileManager filtre pill'leri için i18n key'leri eklendi.
-- i18n (`sk-common`): `confirmation`, `confirm_delete_header`, `confirm_delete_message` — `useConfirm` composable için i18n key'leri eklendi.
+- **`Admin/Settings` — `SecurityTab.vue`** consolidates Authentication and Cloudflare Turnstile settings into one tab, replacing the removed `AuthTab.vue` and `TurnstileTab.vue` stubs.
+- **`Admin/Settings/components/StorageQuotaCard.vue`** — new card component that displays disk-wide storage quota usage as a progress bar.
+- **`SettingsDefaultsQuery`** now includes `storage_usage` (`used_bytes`, `quota_bytes`) in the Inertia payload.
+- i18n (`sk-setting`): added `security.auth_section_title`, `security.turnstile_section_title`, `storage.usage_card_title`, `storage.usage_label`, `storage.unlimited`, `file_manager.video_label`, `file_manager.audio_label`, `file_manager.video_hint`, `file_manager.audio_hint` keys.
+- i18n (`sk-file-manager`): added `labels.filter.all`, `labels.filter.image`, `labels.filter.video`, `labels.filter.pdf`, `labels.filter.audio`, `labels.filter.archive` for FileManager filter pills.
+- i18n (`sk-common`): added `confirmation`, `confirm_delete_header`, `confirm_delete_message` for the `useConfirm` composable.
 
 ### Changed
 
-- **`sk-setting.tabs.auth`** label "Security" / "Güvenlik Ayarları" olarak güncellendi.
-- **`sk-setting.tab_descriptions.auth`** "Registration, 2FA, verification and CAPTCHA" olarak güncellendi.
-- **File Manager tab** — Video/Audio yüklemeleri ToggleFeatureCard yerine Images ile aynı checkbox-grid tasarımına dönüştü.
-- **FileManager bileşenlerinde minimum metin boyutu `text-lg` (14 px) olarak standardize edildi.** `FileManager.vue`, `FileGrid.vue`, `FileManagerSidebar.vue`, `FileManagerStats.vue` içindeki tüm küçük metin sınıfları (`text-xs`, `text-sm`, `text-[11px]` vb.) kaldırıldı.
-- **`useConfirm` composable** — sabit İngilizce string'ler `trans()` çağrılarına dönüştürüldü; `confirmDelete` başlık ve mesajı artık `sk-common` key'lerinden geliyor.
-- **`Admin/Files/Index.vue`** — `<FileManager>` çevresindeki gereksiz sarıcı `<div>` kaldırıldı.
+- **`sk-setting.tabs.auth`** label updated to "Security".
+- **`sk-setting.tab_descriptions.auth`** updated to "Registration, 2FA, verification and CAPTCHA".
+- **File Manager tab** — Video/Audio upload toggles now use the same checkbox-grid layout as Images, replacing the ToggleFeatureCard design.
+- **FileManager minimum text size standardised to `text-lg` (14 px).** All small text classes (`text-xs`, `text-sm`, `text-[11px]`, etc.) removed from `FileManager.vue`, `FileGrid.vue`, `FileManagerSidebar.vue` and `FileManagerStats.vue`.
+- **`useConfirm` composable** — hardcoded strings replaced with `trans()` calls; `confirmDelete` title and message now come from `sk-common` translation keys.
+- **`Admin/Files/Index.vue`** — unnecessary wrapper `<div>` around `<FileManager>` removed.
 
 ### Fixed
 
-- **`TrashContentsQuery`** — Çöp kutusu artık yalnızca kök seviyedeki silinmiş öğeleri listeler. Üst klasörü de çöp kutusunda olan alt klasör ve dosyalar ayrı öğe olarak görünüyordu; bu da tekil ve toplu geri yüklemede "Cannot restore: the parent folder is also in trash" hatasına yol açıyordu. Kök filtreleme, cascade geri yüklemenin her zaman ağacın tepesinden başlamasını sağlar.
+- **`TrashContentsQuery`** — the trash view now only returns root-level deleted items. Items whose parent folder was also in trash were listed as independent items, causing both single and bulk restore to fail with "Cannot restore: the parent folder is also in trash". Root-level filtering ensures restore operations always start from the top of the tree.
 
 ### Removed
 
-- **`Admin/Settings/components/AuthTab.vue`** — içeriği `SecurityTab.vue`'a taşındı. `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
-- **`Admin/Settings/components/TurnstileTab.vue`** — içeriği `SecurityTab.vue`'a taşındı. `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
-- **`sk-setting.tabs.turnstile`**, **`sk-setting.tab_descriptions.turnstile`** i18n key'leri kaldırıldı.
-- **`sk-setting.file_manager.media_cards.*`** i18n key grubu kaldırıldı (eski ToggleFeatureCard render'ına aitti; artık kullanılmıyor).
+- **`Admin/Settings/components/AuthTab.vue`** — content merged into `SecurityTab.vue`. `sk:update` cleans up automatically via `DEPRECATED_PATHS`.
+- **`Admin/Settings/components/TurnstileTab.vue`** — content merged into `SecurityTab.vue`. `sk:update` cleans up automatically via `DEPRECATED_PATHS`.
+- **`sk-setting.tabs.turnstile`** and **`sk-setting.tab_descriptions.turnstile`** i18n keys removed.
+- **`sk-setting.file_manager.media_cards.*`** i18n key group removed (belonged to the old ToggleFeatureCard render; no longer used).
 
 ## [13.5.1] - 2026-05-05
 
 ### Fixed
 
-- **NPM paketi exports + main path'leri düzeltildi.** `package.json` `main` ve `exports` artık gerçek dosya yapısını yansıtıyor (`resources/js/components/Lvntr-Starter-Kit/...`). FileManager export'u eklendi.
-- **`sk:publish` bireysel tag'leri artık çalışıyor.** `form`, `datatable`, `tabs`, `skeleton`, `ui` tag'lerinin source path'leri eski yapıya göre kırıktı; `Lvntr-Starter-Kit/` segment'i ile düzeltildi.
-- **`vendor:publish --tag=starter-kit-components` nested path bug'ı giderildi.** Eski: `resources/js/components/Lvntr-Starter-Kit/Lvntr-Starter-Kit/...`. Yeni: doğrudan `resources/js/components/Lvntr-Starter-Kit/`.
-- **`vendor:publish --tag=starter-kit-file-manager-components` artık aktif.** Source path eski klasör adına işaret ediyordu (`file-manager`); gerçek dizin yapısıyla (`Lvntr-Starter-Kit/FileManager`) hizalandı.
-- **`index.ts` barrel'da eksik 9 component export eklendi:** `EditorInput`, `EditorImagePicker`, `EditorColorPalette`, `TranslatableInput`, `ImageLightbox`, `FilePreviewModal`, `ToggleFeatureCard`, `MimePickerField`, `SkTag`.
+- **NPM package `main` and `exports` paths** now reflect the actual file structure (`resources/js/components/Lvntr-Starter-Kit/...`). FileManager export added.
+- **`sk:publish` individual tags** (`form`, `datatable`, `tabs`, `skeleton`, `ui`) had broken source paths referencing the old structure; corrected with the `Lvntr-Starter-Kit/` segment.
+- **`vendor:publish --tag=starter-kit-components` nested path bug** resolved. Was producing `resources/js/components/Lvntr-Starter-Kit/Lvntr-Starter-Kit/...`; now publishes directly to `resources/js/components/Lvntr-Starter-Kit/`.
+- **`vendor:publish --tag=starter-kit-file-manager-components`** is now active. Source path pointed to the old directory name (`file-manager`); realigned with the actual directory (`Lvntr-Starter-Kit/FileManager`).
+- **`index.ts` barrel** — 9 missing component exports added: `EditorInput`, `EditorImagePicker`, `EditorColorPalette`, `TranslatableInput`, `ImageLightbox`, `FilePreviewModal`, `ToggleFeatureCard`, `MimePickerField`, `SkTag`.
 
 ### Added
 
-- **`sk:publish --tag=filemanager`** — FileManager UI publish için yeni tag.
-- **`sk:install --without-ai-skill`** — `stubs/.claude/skills/` AI skill yayınını atla (Claude Code skill bundle kullanmayan consumer'lar için).
-- **`.gitattributes`** — Composer arşivi `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` vb. development dosyalarını dışlıyor; arşiv boyutu küçüldü.
-- **`.npmignore`** — NPM paketi `__tests__/`, `*.spec.*`, `*.test.*` dosyalarını dışlıyor (root + subdirectory; npm 11 davranışıyla uyumlu).
-- **Disk-genel depolama kotası (`storage_quota_gb`).** Admin Settings > File Manager panelinden GB cinsinden tek kota değeri tanımlanır (default 10 GB). Kota, tüm context'leri (`user`, `global`, özel morph map'ler) ve çöp kutusunu (`withTrashed`) kapsayan disk-genel tek toplam bütçeyi temsil eder.
-- **Upload kota aşım validasyonu.** `UploadFileRequest::withValidator()` kota kontrolü ekler; kota aşıldığında 422 döner ve kullanıcıya `errors.quota_exceeded` anahtarıyla çok dilli hata mesajı gösterilir.
+- **`sk:publish --tag=filemanager`** — new tag for publishing the FileManager UI separately.
+- **`sk:install --without-ai-skill`** — skip AI skill publishing (`stubs/.claude/skills/`) for consumers that don't use the Claude Code skill bundle.
+- **`.gitattributes`** — Composer archive now excludes `tests/`, `docs/`, `.github/`, `plan-docs/`, `package-audit-notes/` and other development-only paths; smaller archive size.
+- **`.npmignore`** — NPM package excludes `__tests__/`, `*.spec.*`, `*.test.*` (root and subdirectories; compatible with npm 11 behavior).
+- **Disk-wide storage quota (`storage_quota_gb`).** A single quota in GB can be set from Admin Settings > File Manager (default 10 GB). Covers all contexts (`user`, `global`, custom morph map entries) including trash (`withTrashed`).
+- **Upload quota validation.** `UploadFileRequest::withValidator()` adds a quota check; when exceeded the request returns HTTP 422 with a localised `errors.quota_exceeded` message.
 
 ### Removed
 
-- **Stub'dan duplike vendor-owned domain command'ları silindi:** `EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`. Vendor'dan tek kaynak olarak çalışmaya devam eder. Mevcut consumer'larda `sk:update` `DEPRECATED_PATHS` ile otomatik temizler.
-- **Stub `App\Http\Responses\ApiResponse.php` silindi.** ServiceProvider alias guard'ı (`App\Http\Responses\ApiResponse` → `Lvntr\StarterKit\Http\Responses\ApiResponse`) consumer dosyası silindikten sonra otomatik devreye girer; consumer kodu (`use App\Http\Responses\ApiResponse;`) hiç değişmez. Mevcut consumer'larda `sk:update` `DEPRECATED_PATHS` cleanup'la siler.
-- **Vendor `Lvntr\StarterKit\Enums\PermissionEnum` silindi.** App-owned tek kaynak: `App\Enums\PermissionEnum` (stubs altındaki resmi konum). Vendor src'de kullanılan referans yoktu (grep onayladı), BC kırılmaz.
-  > **Migration note:** Eğer kodunuz doğrudan `Lvntr\StarterKit\Enums\PermissionEnum` import ediyorsa, `App\Enums\PermissionEnum`'a geçirin (resmi konum). Vendor kopya kullanılmıyordu ama bazı early-adopter consumer'larında doğrudan import olmuş olabilir. Search & replace:
+- **Duplicate vendor-owned domain commands removed from stubs:** `EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`. They continue to run from vendor as the single source. `sk:update` cleans them up in existing consumer projects via `DEPRECATED_PATHS`.
+- **`App\Http\Responses\ApiResponse.php` stub removed.** A `StarterKitServiceProvider` alias guard maps `App\Http\Responses\ApiResponse` → `Lvntr\StarterKit\Http\Responses\ApiResponse` once the consumer file is deleted; existing `use App\Http\Responses\ApiResponse;` imports continue to work unchanged.
+- **`Lvntr\StarterKit\Enums\PermissionEnum` removed from vendor.** Canonical location is `App\Enums\PermissionEnum` (under stubs). No vendor references existed (confirmed by grep). If your code imports this namespace directly, update it to `App\Enums\PermissionEnum`:
   > ```bash
   > grep -rn "Lvntr\\StarterKit\\Enums\\PermissionEnum" app/ src/
-  > # Eşleşme varsa: use Lvntr\StarterKit\Enums\PermissionEnum;
+  > # If found: use Lvntr\StarterKit\Enums\PermissionEnum;
   > # → use App\Enums\PermissionEnum;
   > ```
 
 ### Changed
 
-- **`sk:publish` primary publish komutu olarak konumlandırıldı.** Granular interactive flow + namespace rewrite desteği. `vendor:publish --tag=starter-kit-*` BC için kalır ama `sk:publish` öne çıkar (docs/install.md, docs/artisan-commands.md).
-- **`StarterKitServiceProvider::registerCommands` yorumu güncellendi.** v13.5.1 itibariyle "domain commands single source" ifadesi gerçeği yansıtıyor (stub'lar silindi).
-- **`ResolvesMediaModel::computeStorageUsed()` imzası değişti (internal trait).** Parametre almaz hale geldi; artık `Media::withTrashed()->sum('size')` ile disk-genel toplam döndürür. Önceki davranış: `model_type` + `model_id` filtreli per-context hesaplama. Host uygulamalar bu trait'i extend edip `computeStorageUsed($context)` çağırıyorsa parametre kaldırılmalı: `grep -rn "computeStorageUsed" app/`.
-- **`FolderContentsQuery`, `FavoritesContentsQuery`, `TrashContentsQuery`** — `stats.storage_quota` alanı byte cinsinden eklendi.
-- **`FileManager.vue`** — `STORAGE_QUOTA_BYTES` hardcoded sabiti kaldırıldı; `quotaBytes` computed değeri `stats.storage_quota`'dan okunuyor. Kota sıfır veya tanımsızsa sidebar `v-if="quotaBytes > 0"` ile gizlenir.
+- **`sk:publish` is now the primary publish command.** Granular interactive flow with namespace rewrite support. `vendor:publish --tag=starter-kit-*` is kept for backward compatibility but `sk:publish` is now the recommended path in install and command docs.
+- **`StarterKitServiceProvider::registerCommands` comment updated.** From v13.5.1, "domain commands single source" accurately reflects the reality (stubs removed).
+- **`ResolvesMediaModel::computeStorageUsed()` signature changed (internal trait).** No longer accepts a parameter; returns the disk-wide total via `Media::withTrashed()->sum('size')`. Previous behavior was per-context (`model_type` + `model_id` filtered). If your app extends this trait and calls `computeStorageUsed($context)`, remove the argument: `grep -rn "computeStorageUsed" app/`.
+- **`FolderContentsQuery`, `FavoritesContentsQuery`, `TrashContentsQuery`** — `stats.storage_quota` field added (bytes).
+- **`FileManager.vue`** — hardcoded `STORAGE_QUOTA_BYTES` constant removed; `quotaBytes` is now computed from `stats.storage_quota`. The quota sidebar hides (`v-if="quotaBytes > 0"`) when quota is zero or undefined.
 
 ### Backward Compatibility Guarantees
 
-Bu sürümde mevcut consumer'lar için **breaking change yoktur**:
+No breaking changes in this release for existing consumers:
 
-- **REMOS gibi mevcut consumer'lar etkilenmez.** `composer update` + `sk:update` sonrası:
-  - Silinen 4 stub dosya (`EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`, `ApiResponse`) `DEPRECATED_PATHS` cleanup'la otomatik temizlenir.
-  - `App\Http\Responses\ApiResponse` import'u alias üzerinden vendor sınıfına resolve edilir; code değişikliği gerekmez.
-- **Vendor `PermissionEnum` kullanımı yok**, bu silme BC kırmaz. Tüm consumer'lar zaten `App\Enums\PermissionEnum` kullanır (stub resmi konum).
-- **`sk:publish` ve `vendor:publish` davranışları** consumer projesinin npm/composer tarafına dokunmaz; düzeltmeler pure bug fix.
-- **`ResolvesMediaModel`** internal trait olduğu için public package API kırılmaz. Trait'i doğrudan extend eden host uygulamalar imza değişikliğinden etkilenir (yukarıdaki Changed notuna bakın).
-- **`FolderStats.storage_quota`** TypeScript arayüzünde optional (`storage_quota?: number`) — eski response'lara karşı güvenli.
-- **DB schema değişikliği yoktur**; migration gerekmez. `storage_quota_gb` ayarı seeder çalıştırılmadan da config default'una (10 GB) düşer.
-- v13.5.0 BC garantileri korunmaktadır.
+- **Existing consumer apps are unaffected.** After `composer update` + `sk:update`:
+  - The 4 removed stub files (`EnvSyncCommand`, `MakeDomainCommand`, `RemoveDomainCommand`, `ApiResponse`) are cleaned up automatically via `DEPRECATED_PATHS`.
+  - `App\Http\Responses\ApiResponse` imports resolve to the vendor class via the alias; no code changes required.
+- **No vendor `PermissionEnum` references exist**, so the removal is not a breaking change. All consumers already use `App\Enums\PermissionEnum` (the canonical stub location).
+- **`sk:publish` and `vendor:publish` behaviour** does not touch the consumer's npm/composer side; the fixes are pure bug fixes.
+- **`ResolvesMediaModel`** is an internal trait so the public package API is unchanged. Host apps that directly extend this trait are affected by the signature change (see Changed note above).
+- **`FolderStats.storage_quota`** is optional in the TypeScript interface (`storage_quota?: number`) — safe against older responses.
+- **No DB schema changes**; no migration needed. The `storage_quota_gb` setting falls back to the config default (10 GB) without running the seeder.
+- v13.5.0 BC guarantees remain in force.
 
 ### Upgrade
 
-Aşağıdaki stub'lar güncellendi; `php artisan sk:update` ile alınabilir:
+The following stubs were updated and can be picked up via `php artisan sk:update`:
 `_03_SettingSeeder`, `FileManagerSettingsDTO`, `SettingsDefaultsQuery`, `UpdateFileManagerSettingsRequest`, `SettingsServiceProvider`, `FileManagerTab.vue`, `lang/{en,tr}/sk-setting.php`, `lang/{en,tr}/sk-file-manager.php`, `lang/{en,tr}/validation.php`.
 
 ```bash
@@ -290,25 +307,25 @@ composer update lvntr/laravel-starter-kit
 php artisan sk:update
 ```
 
-`sk:update` çıktısında "Removed" listesinde 4 path görünecek — bu beklenen davranış.
+`sk:update` output will list 4 paths under "Removed" — this is expected.
 
 ## [13.5.0] - 2026-05-05
 
-Paket runtime artık vendor'da çalışıyor ve frontend UI lib vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader `vendor/lvntr/laravel-starter-kit/src/` altına `Lvntr\StarterKit\` namespace'iyle taşındı; frontend bileşenleri ise `resources/js/components/Lvntr-Starter-Kit/` altında paketin canonical konumuna geldi. Mevcut kullanıcılar için `composer update` yeterli; hiçbir dosya değişmez, hiçbir rota adı kırılmaz. Frontend cleanup opt-in'dir. Yükseltme talimatları: [docs/UPGRADE.md](docs/UPGRADE_.md).
+The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [docs/UPGRADE.md](docs/UPGRADE_.md).
 
 ### Changed
 
-- **Vendor-first yapıya geçildi.** Paket runtime artık stub akışından değil, doğrudan `vendor/` altından çalışıyor. `sk:install` iskelet dosyalarını (auth, layout, user/rol/ayar domain, config) publish eder; FileManager ve Shared katmanlarını `app/` dizinine kopyalamaz.
+- **Vendor-first architecture.** Package runtime no longer flows through stubs — it runs directly from `vendor/`. `sk:install` publishes skeleton files (auth, layout, user/role/settings domain, config); it no longer copies FileManager and Shared layers into `app/`.
 
-- **`sk:update` komutu güncellendi.** Vendor runtime için kopyalama yapmıyor; `composer update` yeterli. Hash takipli stub'lar (auth/layout/user/rol/ayar) için mevcut davranış korundu.
+- **`sk:update` simplified.** No file copying for vendor runtime; `composer update` is enough. Hash-tracked stubs (auth/layout/user/role/settings) retain their existing diff/notify behaviour.
 
-- **Frontend UI lib taşındı.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` artık paketin canonical konumudur. App tarafı vendor symlink üzerinden tüketir.
+- **Frontend UI lib relocated.** `resources/js/components/Lvntr-Starter-Kit/{DatatableBuilder,FormBuilder,TabBuilder,FileManager,Skeleton,ui,index.ts}` is now the canonical package location. Apps consume it via vendor symlink.
 
-- **`stubs/vite.config.ts` alias güncellendi.** Yeni install için `@lvntr/components` alias'ı `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` path'ini kullanır; `preserveSymlinks: true`; `Components({ dirs })` array'inde vendor path mevcut.
+- **`stubs/vite.config.ts` alias updated.** New installs get `@lvntr/components` pointing to `vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit` with `preserveSymlinks: true` and vendor path in the `Components({ dirs })` array.
 
-- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** `media-library.media_model` config'i üzerinden Media model resolve eder. App-specific `App\Models\Media` overrider'ları (örn. SoftDeletes ile) backward compatible çalışır.
+- **`FileManagerAction` abstract base + `ResolvesMediaModel` trait.** Resolves the Media model via `media-library.media_model` config; app-specific `App\Models\Media` overrides (e.g. with SoftDeletes) work without changes.
 
-- **`Http/Requests/FileManager/UploadFileRequest`.** Protected method'lar — app tarafında override edilebilir (Setting entegrasyonu vb.).
+- **`Http/Requests/FileManager/UploadFileRequest`.** Protected methods — overridable on the app side (e.g. Settings integration).
 
 ### Added
 
@@ -320,38 +337,38 @@ Paket runtime artık vendor'da çalışıyor ve frontend UI lib vendor'a taşın
 
 - **`src/sk-helpers.php`** — `to_api()`, `definition()`, `definitionLabel()`, `sk_locale_keys()`, `sk_default_locale()`, `format_date()` fonksiyonları `function_exists` guard'larıyla vendor'da.
 
-- **`src/Http/Responses/ApiResponse.php`** — `{success, status, message, data, errors?}` envelope formatı korunarak vendor'a taşındı.
+- **`src/Http/Responses/ApiResponse.php`** — `{success, status, message, data, errors?}` envelope preserved, moved to vendor.
 
 - **`src/Http/Middleware/`** — CheckResourcePermission, SecurityHeaders `Lvntr\StarterKit\Http\Middleware\` namespace'iyle vendor'da.
 
 - **`src/Http/Controllers/FileManagerController.php`** ve **`src/Http/Requests/FileManager/*`** — vendor'da.
 
-- **`src/Console/Commands/PurgeFileManagerTrashCommand.php`** — signature `file-manager:purge-trash` AYNEN korundu.
+- **`src/Console/Commands/PurgeFileManagerTrashCommand.php`** — `file-manager:purge-trash` signature preserved.
 
 - **`src/Exceptions/`** — ApiException, ApiExceptionHandler vendor'da.
 
-- **`src/Facades/FileManager.php`** — `FileManager::routes()` ile tek satır route mount.
+- **`src/Facades/FileManager.php`** — single-line route mount via `FileManager::routes()`.
 
-- **`src/routes/file-manager.php`** — 19 route, isimler AYNEN. Consumer'ın kendi route dosyası varsa vendor mount edilmez.
+- **`src/routes/file-manager.php`** — 19 routes, all names preserved exactly. Consumer's own route file takes precedence.
 
-- **`database/migrations/`** — 3 FileManager migration, dosya adı ve içerik AYNEN korundu.
+- **`database/migrations/`** — 3 FileManager migrations, filenames and content preserved exactly.
 
-- **`config/file-manager.php`** — `models.*` ve `settings.*` key'leri eklendi.
+- **`config/file-manager.php`** — `models.*` and `settings.*` keys added.
 
 ### Deprecated
 
-- **`sk:sync` (PackageSyncCommand).** Composer path symlink workflow'unda gereksiz hale geldi. `--force` ile escape hatch korunur.
+- **`sk:sync` (PackageSyncCommand).** No longer needed with the Composer path-repository symlink workflow. The `--force` escape hatch is preserved.
 
 ### Backward Compatibility Guarantees
 
-Bu sürümde **breaking change yoktur**. Mevcut kullanıcılar için garantiler:
+No breaking changes in this release. Guarantees for existing consumers:
 
-1. **Helper fonksiyon çakışması yok.** Vendor helper'ları `function_exists` guard'lıdır; kullanıcının `app/Helpers/sk-helpers.php` dosyasındaki tanımlar baskın kalır.
-2. **Route isimleri korundu.** `file-manager.contents`, `file-manager.files.upload` dahil 19 route adı AYNEN. Wayfinder regenerate diff vermez.
-3. **Migration history dokunulmadı.** Vendor'daki 3 migration dosyasının adı ve içeriği mevcut kullanıcının DB'sindeki kayıtlarla eşleşiyor. `php artisan migrate` "Nothing to migrate" döner.
-4. **Config ekleme yönünde değişti.** Yeni key'ler eklendi; hiçbir mevcut key silinmedi veya yeniden adlandırılmadı.
-5. **Frontend `@lvntr` alias'ı dokunulmadı.** Paket `vite.config.ts`'e müdahale etmiyor.
-6. **REMOS gibi mevcut consumer'lar etkilenmez.** Kendi `resources/js/components/Lvntr-Starter-Kit/` kopyası ve kendi vite alias'ı olan uygulamalar `composer update` sonrası değişmeden çalışır. Frontend cleanup opt-in'dir (bkz. [docs/UPGRADE.md](docs/UPGRADE_.md)).
+1. **No helper function collisions.** Vendor helpers are guarded by `function_exists`; definitions in your `app/Helpers/sk-helpers.php` take precedence.
+2. **Route names preserved.** All 19 route names — including `file-manager.contents` and `file-manager.files.upload` — are unchanged. Wayfinder regeneration produces no diff.
+3. **Migration history untouched.** The 3 vendor migration filenames and contents match what existing users already have in their DB. `php artisan migrate` returns "Nothing to migrate".
+4. **Config is additive.** New keys added; no existing key was removed or renamed.
+5. **Frontend `@lvntr` alias untouched.** The package does not modify `vite.config.ts`.
+6. **Existing consumer apps are unaffected.** Apps with their own `resources/js/components/Lvntr-Starter-Kit/` copy and their own Vite alias continue to work unchanged after `composer update`. Frontend cleanup is fully opt-in (see [docs/UPGRADE.md](docs/UPGRADE_.md)).
 
 ### Upgrade
 
@@ -360,9 +377,9 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Detaylı talimatlar ve opsiyonel frontend cleanup: [docs/UPGRADE.md](docs/UPGRADE_.md)
+Detailed instructions and optional frontend cleanup: [docs/UPGRADE.md](docs/UPGRADE_.md)
 
-Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek isteğe bağlıdır: [Mevcut Projeyi Vendor'a Taşıma Rehberi](https://github.com/lvntrdev/laravel-starter-kit) (bkz. `docs_project/migrate-existing-project-to-vendor.tr.md`).
+Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional.
 
 ## [13.4.10] - 2026-05-04
 
@@ -965,7 +982,7 @@ New installs via `sk:install` pick up everything automatically. Existing consume
 
 - **Two new global helpers** — `definition($key, $value)` returns the matching record (object) from `DefinitionService`; `definitionLabel($key, $value)` returns its `label`. Useful for resolving enum-style values to display strings without re-fetching the definition list per call. Both ship from `vendor/lvntr/laravel-starter-kit/src/sk-helpers.php` and are autoloaded automatically.
 - **`sk:publish --tag=helpers`** — publishes the package's `sk-helpers.php` into `app/Helpers/sk-helpers.php` so consumers can override or extend the bundled helpers without forking. The vendor file detects the published copy at autoload time and routes through it via `require_once`; a realpath guard prevents self-recursion. No `composer.json` change is needed. Deleting the published file reverts to the vendor implementation immediately.
-- **Friendly file manager validation messages** — `UploadFileRequest` now overrides `attributes()` and `messages()`. Each `files.{i}` slot is bound to the file's `getClientOriginalName()`, so toasts show `vacation.jpg yüklenemedi: …` instead of `files.0`. Mimetypes / max-size errors map to translation keys with a readable extension list (`İzinli tipler: WEBP, PDF, JPG, …`) and human-friendly size limit (`en fazla 10 MB`). New keys: `errors.upload_invalid_type`, `errors.upload_too_large`, `errors.upload_invalid_file`.
+- **Friendly file manager validation messages** — `UploadFileRequest` now overrides `attributes()` and `messages()`. Each `files.{i}` slot is bound to the file's `getClientOriginalName()`, so toasts show `vacation.jpg could not be uploaded: …` instead of `files.0`. Mimetypes / max-size errors map to translation keys with a readable extension list and human-friendly size limit. New keys: `errors.upload_invalid_type`, `errors.upload_too_large`, `errors.upload_invalid_file`.
 
 ### Changed
 

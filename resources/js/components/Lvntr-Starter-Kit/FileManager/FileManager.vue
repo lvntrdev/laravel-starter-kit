@@ -1535,7 +1535,7 @@
                     {{ busy.description }}
                 </p>
                 <div v-if="busy.onCancel" class="mt-2 flex justify-end">
-                    <Button rounded :label="trans('sk-file-manager.labels.stop')" @click="busy.onCancel" />
+                    <Button rounded :label="trans('sk-file-manager.labels.stop')" @click="() => busy.onCancel?.()" />
                 </div>
             </div>
         </div>

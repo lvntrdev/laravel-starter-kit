@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import systemHealth from '@/routes/system-health';
-    import axios from 'axios';
+    import { useApi } from '@/composables/useApi';
     import { trans } from 'laravel-vue-i18n';
     import { Button, Card } from 'primevue';
     import { useToast } from 'primevue/usetoast';
@@ -35,6 +35,7 @@
         report: null,
     });
 
+    const api = useApi({ toast: false });
     const toast = useToast();
     const running = ref(false);
     const localReport = ref<DoctorReport | null>(props.report);
@@ -133,7 +134,7 @@
         running.value = true;
 
         try {
-            const { data } = await axios.post<{ report: DoctorReport; type: string; message: string }>(
+            const data = await api.post<{ report: DoctorReport; type: string; message: string }>(
                 systemHealth.run.url(),
             );
 

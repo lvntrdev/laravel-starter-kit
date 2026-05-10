@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { useForm, usePage } from '@inertiajs/vue3';
     import type {
+        DatePickerFieldConfig,
         ExistingMedia,
         FieldConfig,
         FileUploadFieldConfig,
@@ -332,11 +333,34 @@
             return;
         }
         const { url, method, preserveScroll = true } = props.config.submit;
-        (internalForm as unknown as Record<string, (url: string, opts: object) => void>)[method](url, {
-            preserveScroll,
-            forceFormData: hasFileFields.value,
-            onSuccess: () => emit('success'),
-        });
+
+        const dateOnlyFields = resolvedFields.value.filter(
+            (f): f is DatePickerFieldConfig => f.type === 'date-picker' && !f.showTime,
+        );
+
+        function toLocalDateStr(d: Date): string {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        internalForm
+            .transform((data: Record<string, unknown>) => {
+                if (dateOnlyFields.length === 0) return data;
+                const result = { ...data };
+                for (const field of dateOnlyFields) {
+                    const val = result[field.key];
+                    if (val instanceof Date) {
+                        result[field.key] = toLocalDateStr(val);
+                    } else if (Array.isArray(val)) {
+                        result[field.key] = val.map((v) => (v instanceof Date ? toLocalDateStr(v) : v));
+                    }
+                }
+                return result;
+            })
+            [method](url, {
+                preserveScroll,
+                forceFormData: hasFileFields.value,
+                onSuccess: () => emit('success'),
+            });
     }
 
     function reset(): void {

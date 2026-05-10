@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
+use App\Http\Responses\ApiResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +16,7 @@ class SystemHealthController extends Controller
      * JSON isteğinde (Settings tab'ı) raporu doğrudan döner — sayfa navigasyonu olmaz,
      * tab state korunur. Normal istekte Settings sayfasına redirect yapar.
      */
-    public function run(): JsonResponse|RedirectResponse
+    public function run(): ApiResponse|RedirectResponse
     {
         Gate::authorize('system.health.view');
 
@@ -39,7 +39,7 @@ class SystemHealthController extends Controller
                 default => __('sk-system-health.run_ok'),
             };
 
-            return response()->json(['report' => $report, 'type' => $type, 'message' => $message]);
+            return to_api(['report' => $report, 'type' => $type, 'message' => $message], $message);
         }
 
         session()->flash('doctor_report', $report);
