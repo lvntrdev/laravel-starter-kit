@@ -133,7 +133,7 @@
 }
 
 .sk-user-menu__item {
-    @apply flex cursor-pointer items-center gap-2.5 rounded px-2.5 py-2.5 text-sm font-medium text-surface-700 no-underline transition-colors duration-150 dark:text-surface-200;
+    @apply flex cursor-pointer items-center gap-2.5 rounded px-2.5 py-2.5 text-base font-medium text-surface-700 no-underline transition-colors duration-150 dark:text-surface-200;
 }
 
 .sk-user-menu__item:hover,

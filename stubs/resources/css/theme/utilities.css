@@ -10,24 +10,26 @@
  */
 
 @theme inline {
-    /* Typography — base 14px */
-    --text-xs: 0.75rem; /* 12px */
-    --text-xs--line-height: 1rem;
-    --text-sm: 0.8125rem; /* 13px */
-    --text-sm--line-height: 1.25rem;
-    --text-base: 0.875rem; /* 14px */
-    --text-base--line-height: 1.375rem;
-    --text-lg: 1rem; /* 16px */
-    --text-lg--line-height: 1.5rem;
-    --text-xl: 1.125rem; /* 18px */
-    --text-xl--line-height: 1.625rem;
-    --text-2xl: 1.25rem; /* 20px */
-    --text-2xl--line-height: 1.75rem;
-    --text-3xl: 1.5rem; /* 24px */
-    --text-3xl--line-height: 2rem;
-    --text-4xl: 1.875rem; /* 30px */
-    --text-4xl--line-height: 2.25rem;
-    --text-5xl: 2.25rem; /* 36px */
+    /* Typography — 14px root tabanlı sistem.
+       rem değerleri html font-size: 0.875rem (= 14px root) üzerinden hesaplanır;
+       yorum satırlarındaki px değerleri root 14px'te beklenen görüntüdür. */
+    --text-xs: 0.857rem; /* 12px (12/14) */
+    --text-xs--line-height: 1.143rem; /* 16px */
+    --text-sm: 0.929rem; /* 13px (13/14) */
+    --text-sm--line-height: 1.429rem; /* 20px */
+    --text-base: 1rem; /* 14px */
+    --text-base--line-height: 1.571rem; /* 22px */
+    --text-lg: 1.143rem; /* 16px (16/14) */
+    --text-lg--line-height: 1.714rem; /* 24px */
+    --text-xl: 1.286rem; /* 18px (18/14) */
+    --text-xl--line-height: 1.857rem; /* 26px */
+    --text-2xl: 1.429rem; /* 20px (20/14) */
+    --text-2xl--line-height: 2rem; /* 28px */
+    --text-3xl: 1.714rem; /* 24px (24/14) */
+    --text-3xl--line-height: 2.286rem; /* 32px */
+    --text-4xl: 2.143rem; /* 30px (30/14) */
+    --text-4xl--line-height: 2.571rem; /* 36px */
+    --text-5xl: 2.571rem; /* 36px (36/14) */
     --text-5xl--line-height: 1;
 
     /* Layout dimensions */

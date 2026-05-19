@@ -1318,10 +1318,10 @@
                         class="flex min-h-[400px] flex-col items-center justify-center gap-3 p-8 text-center"
                     >
                         <i class="pi pi-star text-5xl text-amber-400" />
-                        <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                        <h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.favorites_empty_title') }}
                         </h3>
-                        <p class="max-w-md text-lg text-surface-500 dark:text-surface-400">
+                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
                             {{ trans('sk-file-manager.favorites_empty_subtitle') }}
                         </p>
                     </div>
@@ -1337,10 +1337,10 @@
                         class="flex min-h-[400px] flex-col items-center justify-center gap-3 p-8 text-center"
                     >
                         <i class="pi pi-trash text-5xl text-amber-400" />
-                        <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                        <h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.trash_empty_title') }}
                         </h3>
-                        <p class="max-w-md text-lg text-surface-500 dark:text-surface-400">
+                        <p class="max-w-md text-base text-surface-500 dark:text-surface-400">
                             {{ trans('sk-file-manager.trash_empty_subtitle') }}
                         </p>
                     </div>
@@ -1357,7 +1357,7 @@
                                     v-for="pill in filterPills"
                                     :key="pill.key"
                                     type="button"
-                                    class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-lg font-semibold transition-colors"
+                                    class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-base font-semibold transition-colors"
                                     :class="
                                         fileTypeFilter === pill.key
                                             ? 'border-primary-300 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
@@ -1367,7 +1367,7 @@
                                 >
                                     <span>{{ pill.label }}</span>
                                     <span
-                                        class="rounded-full px-1.5 text-lg font-bold leading-tight"
+                                        class="rounded-full px-1.5 text-base font-bold leading-tight"
                                         :class="
                                             fileTypeFilter === pill.key
                                                 ? 'bg-primary-500/15 text-primary-700 dark:text-primary-200'
@@ -1513,7 +1513,7 @@
                 class="flex flex-col items-center gap-3 rounded-[6px] border-2 border-dashed border-primary-400 bg-surface-0/95 px-10 py-8 text-primary-700 shadow-xl dark:border-primary-500 dark:bg-surface-900/95 dark:text-primary-200"
             >
                 <i class="pi pi-cloud-upload" style="font-size: 3.5rem" />
-                <span class="text-lg font-semibold">{{ trans('sk-file-manager.labels.drop_files_here') }}</span>
+                <span class="text-base font-semibold">{{ trans('sk-file-manager.labels.drop_files_here') }}</span>
             </div>
         </div>
 
@@ -1527,7 +1527,7 @@
             >
                 <div class="flex items-center gap-3">
                     <i class="pi pi-spin pi-spinner shrink-0 text-primary-500" style="font-size: 1.4rem" />
-                    <h3 class="text-lg font-semibold leading-tight text-surface-900 dark:text-surface-100">
+                    <h3 class="text-base font-semibold leading-tight text-surface-900 dark:text-surface-100">
                         {{ busy.title }}
                     </h3>
                 </div>

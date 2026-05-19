@@ -123,14 +123,14 @@
     >
         <!-- Quick access -->
         <div class="flex flex-col gap-0.5">
-            <h3 class="px-2 pb-1 text-lg font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
+            <h3 class="px-2 pb-1 text-base font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
                 {{ trans('sk-file-manager.labels.sidebar.quick_access') }}
             </h3>
             <button
                 v-for="item in quickItems"
                 :key="item.key"
                 type="button"
-                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-lg font-medium transition-colors"
+                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-base font-medium transition-colors"
                 :class="
                     quickView === item.key && currentFolderId === null
                         ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
@@ -151,7 +151,7 @@
         <!-- Folders -->
         <div class="flex min-h-0 flex-col gap-0.5">
             <div class="flex items-center justify-between px-2 pb-1">
-                <h3 class="text-lg font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
+                <h3 class="text-base font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">
                     {{ trans('sk-file-manager.labels.sidebar.folders') }}
                 </h3>
                 <Button
@@ -167,7 +167,7 @@
                 />
             </div>
 
-            <div v-if="tree.length === 0" class="px-2 py-2 text-lg text-surface-400 dark:text-surface-500">
+            <div v-if="tree.length === 0" class="px-2 py-2 text-base text-surface-400 dark:text-surface-500">
                 {{ trans('sk-file-manager.labels.sidebar.no_folders') }}
             </div>
 
@@ -176,7 +176,7 @@
                 v-else
                 :key="folder.id"
                 type="button"
-                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-lg font-medium transition-colors"
+                class="flex items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-base font-medium transition-colors"
                 :class="
                     currentFolderId === folder.id
                         ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200'
@@ -190,7 +190,7 @@
 
             <button
                 type="button"
-                class="mt-1 flex items-center gap-2 rounded-[6px] border border-dashed border-surface-300 px-2.5 py-2 text-lg font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
+                class="mt-1 flex items-center gap-2 rounded-[6px] border border-dashed border-surface-300 px-2.5 py-2 text-base font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
                 :disabled="readonly"
                 @click="emit('new-folder')"
             >
@@ -205,10 +205,10 @@
             class="mt-auto rounded-[6px] border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800/40"
         >
             <div class="mb-2 flex items-center justify-between">
-                <span class="text-lg font-semibold text-surface-700 dark:text-surface-200">
+                <span class="text-base font-semibold text-surface-700 dark:text-surface-200">
                     {{ trans('sk-file-manager.labels.sidebar.storage_usage') }}
                 </span>
-                <span class="text-lg font-bold" :class="usagePercent >= 90 ? 'text-rose-500' : usagePercent >= 70 ? 'text-amber-500' : 'text-primary-500'">
+                <span class="text-base font-bold" :class="usagePercent >= 90 ? 'text-rose-500' : usagePercent >= 70 ? 'text-amber-500' : 'text-primary-500'">
                     {{ usagePercent }}%
                 </span>
             </div>
@@ -219,7 +219,7 @@
                     :style="{ width: usagePercent + '%' }"
                 />
             </div>
-            <div class="mt-1.5 flex justify-between text-lg text-surface-400 dark:text-surface-500">
+            <div class="mt-1.5 flex justify-between text-base text-surface-400 dark:text-surface-500">
                 <span>{{ trans('sk-file-manager.labels.sidebar.storage_used_of', { used: humanSize(usedBytes), total: humanSize(quotaBytes) }) }}</span>
             </div>
         </div>

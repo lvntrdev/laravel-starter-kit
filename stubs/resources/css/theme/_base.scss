@@ -69,8 +69,12 @@
 
 @layer base {
     html {
-        font-size: 0.875rem; /* 14px */
-        line-height: 1.375rem; /* 22px */
+        /* 14px tabanlı sistem: browser-default 16px'in %87.5'i.
+           Kullanıcı browser ayarından default font-size'ı büyüttüğünde
+           root da orantılı büyür (a11y zoom çalışır). Diğer rem değerleri
+           bu root'a (14px) göre hesaplanır. */
+        font-size: 0.875rem;
+        line-height: 1.5715;
     }
 
     a,

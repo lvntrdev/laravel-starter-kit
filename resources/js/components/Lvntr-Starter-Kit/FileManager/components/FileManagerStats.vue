@@ -92,8 +92,8 @@
                 <i :class="[card.icon, card.iconClass]" style="font-size: 0.9rem" />
             </span>
             <div class="flex min-w-0 flex-col gap-0.5">
-                <span class="text-lg font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500">{{ card.label }}</span>
-                <span class="truncate text-lg font-bold leading-none text-surface-900 dark:text-surface-100">
+                <span class="text-base font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500">{{ card.label }}</span>
+                <span class="truncate text-base font-bold leading-none text-surface-900 dark:text-surface-100">
                     {{ card.value }}
                 </span>
             </div>

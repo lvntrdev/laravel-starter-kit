@@ -363,7 +363,7 @@
             class="fm-empty flex min-h-80 flex-col items-center justify-center gap-3 p-10"
         >
             <i class="pi pi-search text-surface-300 dark:text-surface-600" style="font-size: 3rem" />
-            <h3 class="text-lg font-semibold text-surface-800 dark:text-surface-100">
+            <h3 class="text-base font-semibold text-surface-800 dark:text-surface-100">
                 {{ emptyLabel }}
             </h3>
         </div>
@@ -407,7 +407,7 @@
                         <h3 class="text-[15px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.labels.folders_section') }}
                         </h3>
-                        <span class="text-lg text-surface-400 dark:text-surface-500">
+                        <span class="text-base text-surface-400 dark:text-surface-500">
                             {{ folders.length }} {{ trans('sk-file-manager.labels.sidebar.folders').toLowerCase() }}
                         </span>
                     </div>
@@ -505,10 +505,10 @@
                     </div>
 
                     <div class="min-w-0">
-                        <div class="truncate text-lg font-semibold tracking-tight" :title="folder.name">
+                        <div class="truncate text-base font-semibold tracking-tight" :title="folder.name">
                             {{ folder.name }}
                         </div>
-                        <div class="mt-0.5 text-lg text-surface-500 dark:text-surface-400">
+                        <div class="mt-0.5 text-base text-surface-500 dark:text-surface-400">
                             {{ folder.file_count ?? 0 }} files · {{ humanSize(folder.total_size ?? 0) }}
                         </div>
                     </div>
@@ -523,7 +523,7 @@
                         <h3 class="text-[15px] font-bold tracking-tight text-surface-900 dark:text-surface-100">
                             {{ trans('sk-file-manager.labels.files_section') }}
                         </h3>
-                        <span class="text-lg text-surface-400 dark:text-surface-500">
+                        <span class="text-base text-surface-400 dark:text-surface-500">
                             {{ files.length + pending.length }} {{ trans('sk-file-manager.labels.stats.item_count', { count: '' }).trim() || 'öge' }}
                         </span>
                     </div>
@@ -649,10 +649,10 @@
                             />
                         </span>
                         <div class="min-w-0 flex-1">
-                            <div class="truncate text-lg font-semibold tracking-tight" :title="file.file_name">
+                            <div class="truncate text-base font-semibold tracking-tight" :title="file.file_name">
                                 {{ file.file_name }}
                             </div>
-                            <div class="flex items-center gap-1 text-lg text-surface-400 dark:text-surface-500">
+                            <div class="flex items-center gap-1 text-base text-surface-400 dark:text-surface-500">
                                 <span>{{ humanSize(file.size) }}</span>
                                 <span v-if="file.created_at" class="inline-block h-[3px] w-[3px] rounded-full bg-current opacity-50" />
                                 <span v-if="file.created_at">{{ relativeDate(file.created_at) }}</span>
