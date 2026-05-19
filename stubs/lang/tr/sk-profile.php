@@ -11,6 +11,13 @@ return [
         'sessions' => 'Oturumlar',
     ],
 
+    'tab_descriptions' => [
+        'general' => 'Ad, e-posta ve profil fotoğrafı',
+        'password' => 'Hesap parolanızı değiştirin',
+        'security' => 'İki adımlı doğrulama',
+        'sessions' => 'Aktif tarayıcı oturumları',
+    ],
+
     'info_title' => 'Profil Bilgileri',
     'info_subtitle' => 'Adınızı ve e-posta adresinizi güncelleyin.',
 

@@ -46,7 +46,7 @@
 }
 
 .sk-vtab {
-    @apply relative flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-surface-700 transition-colors duration-150 dark:text-surface-200;
+    @apply relative flex min-h-[3.25rem] w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-surface-700 transition-colors duration-150 dark:text-surface-200;
 
     &:hover {
         background: color-mix(in srgb, var(--p-surface-500) 8%, transparent);
@@ -54,7 +54,7 @@
 }
 
 .sk-vtab--rich {
-    @apply px-2.5 py-2.5;
+    @apply min-h-16 px-2.5 py-2.5;
 }
 
 :root.dark .sk-vtab:hover {
@@ -90,11 +90,7 @@
 }
 
 .sk-vtab__label {
-    @apply truncate text-sm font-semibold;
-}
-
-.sk-vtab--rich .sk-vtab__label {
-    @apply text-[0.9375rem];
+    @apply truncate text-base font-semibold;
 }
 
 .sk-vtab__description {

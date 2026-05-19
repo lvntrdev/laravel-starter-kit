@@ -19,14 +19,31 @@
     const tabConfig = TB.tabs()
         .vertical()
         .addTabs(
-            TB.item().key('general').label('sk-profile.tabs.general').icon('pi pi-user'),
-            TB.item().key('password').label('sk-profile.tabs.password').icon('pi pi-lock'),
+            TB.item()
+                .key('general')
+                .label('sk-profile.tabs.general')
+                .description('sk-profile.tab_descriptions.general')
+                .icon('pi pi-user')
+                .iconColor('blue'),
+            TB.item()
+                .key('password')
+                .label('sk-profile.tabs.password')
+                .description('sk-profile.tab_descriptions.password')
+                .icon('pi pi-lock')
+                .iconColor('amber'),
             TB.item()
                 .key('security')
                 .label('sk-profile.tabs.security')
+                .description('sk-profile.tab_descriptions.security')
                 .icon('pi pi-shield')
+                .iconColor('emerald')
                 .visible(page.props.features.two_factor),
-            TB.item().key('sessions').label('sk-profile.tabs.sessions').icon('pi pi-desktop'),
+            TB.item()
+                .key('sessions')
+                .label('sk-profile.tabs.sessions')
+                .description('sk-profile.tab_descriptions.sessions')
+                .icon('pi pi-desktop')
+                .iconColor('purple'),
         )
         .build();
 </script>

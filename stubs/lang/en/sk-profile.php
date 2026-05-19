@@ -11,6 +11,13 @@ return [
         'sessions' => 'Sessions',
     ],
 
+    'tab_descriptions' => [
+        'general' => 'Name, email and profile photo',
+        'password' => 'Change your account password',
+        'security' => 'Two-factor authentication',
+        'sessions' => 'Active browser sessions',
+    ],
+
     'info_title' => 'Profile Information',
     'info_subtitle' => 'Update your name and email address.',
 
