@@ -5,6 +5,44 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.7] - 2026-05-19
+
+### Added
+
+- **Profile vertical tabs** — `Profile/Index.vue` now sets `description()` and `iconColor()` on every tab item; `sk-profile.tab_descriptions.*` i18n keys introduced (general/password/security/sessions, TR/EN). `.sk-vtab--rich` minimum height raised to fit the description row.
+- **`AvatarUpload.initials` prop** — when `avatarUrl` is null, `<AvatarUpload :initials="user.initials">` renders the user's initials in the avatar slot; falls back to the existing `pi-user` icon when not provided.
+
+### Changed
+
+- **`AvatarUpload` redesign** — switched from a stacked card layout to a single-row layout (avatar · title/hint · actions). Avatar circle shrunk to `size-14` with a `primary-200` border on a `primary-50` background. "Remove" is now `severity-secondary text`, "Change" is `outlined`. The `title` and `subtitle` props now distinguish three states: `undefined` → falls back to the default i18n key, any non-empty string → renders the given text, **`''` (empty string) → hides the title/hint row entirely**.
+- **`sk-avatar.hint`** copy updated to a more technical format: `"JPG · PNG · GIF — max 2 MB · 512×512 recommended"` (TR equivalent in `sk-avatar.hint`).
+- **Typography rebased to 14px root** — `stubs/resources/css/theme/_base.scss` sets `html { font-size: 0.875rem }` (= 14px against the browser-default 16px so a11y zoom still scales proportionally). `stubs/resources/css/theme/utilities.css` declares `--text-*` tokens in rem relative to the new 14px root (`--text-base: 1rem`). User-overridable browser font-size is now honoured again.
+- **FileManager text scale rebalanced** — favourites/trash empty-state headings and the file-type filter pills moved from `text-lg` to `text-base` so they match the new root size. `sk-user-menu__item` text raised from `text-sm` to `text-base` for consistency.
+
+### Fixed
+
+- **Dialog sticky action bar bleed** — long forms inside `AppDialog` were leaking scrolling content out from under the sticky `Cancel`/`Update` bar. Fix is three-part:
+  1. `resources/js/components/Lvntr-Starter-Kit/ui/AppDialog.vue` — Dialog `content` PT now sets `padding-bottom: 0`, `display: flex`, `flex-direction: column`.
+  2. `resources/js/components/Lvntr-Starter-Kit/FormBuilder/SkForm.vue` — adds a `sk-fb--dialog` marker class when `inDialog === true`.
+  3. `stubs/resources/css/theme/_formbuilder.scss` — `.sk-fb__actions` now uses an opaque `var(--p-content-background)` background; in dialog mode the bar spans edge-to-edge (`-mx-5 px-5`) and its bottom corners match the Dialog's `borderRadius.xl` via `rounded-b-xl`.
+
+### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# stubs/resources/css/theme/{_base.scss,utilities.css,_formbuilder.scss,_tabs.scss,_menus.scss}
+# stubs/resources/js/pages/Profile/Index.vue
+# stubs/resources/js/pages/Profile/components/ProfileInfoTab.vue
+# stubs/lang/{tr,en}/{sk-avatar.php,sk-profile.php}
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Migration note — `AvatarUpload` title/subtitle behaviour:** if you previously passed `:subtitle=""` expecting the description to render the default hint, that no longer applies — `''` now hides the row. Remove the prop entirely (or set it to a non-empty string) to restore the previous output. Default i18n behaviour kicks in only when the prop is omitted.
+
+---
+
 ## [13.5.6] - 2026-05-10
 
 ### Fixed

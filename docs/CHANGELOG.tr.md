@@ -2,6 +2,49 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-19 — v13.5.7
+
+### Yama sürüm — Dialog sticky bar sızıntısı düzeltildi, AvatarUpload yenilendi, 14px root tipografi
+
+`AppDialog` içindeki form sticky action bar'ı (`Cancel` / `Update`), uzun formlarda alttan akan içeriği gizleyemiyordu — temel sorun, PrimeVue Dialog content'inin default `padding: 1.25rem` değerinin sticky barın altında transparan bir boşluk bırakmasıydı. Dialog content `padding-bottom` PT API ile sıfırlandı, `SkForm` artık dialog mode'da `sk-fb--dialog` marker class ekliyor ve `_formbuilder.scss` sticky barı dialog kenarına yapıştırıp `rounded-b-xl` ile alt köşelerini Dialog'un yuvarlatmasına eşliyor. `AvatarUpload` dikey kart düzeninden tek satır row layout'a (avatar · başlık/hint · butonlar) geçirildi; 56px küçültülmüş avatar, primary border vurgusu ve yeni `initials` prop'u eklendi. `title` ve `subtitle` prop'larının davranışı netleştirildi: verilmezse default i18n, dolu string → o metin, **boş string `''` → satır tamamen gizlenir** (eski geçici davranış yeniden bozmadan eski API uyumu sağlanıyor). Tipografi 14px root tabanlı rem sistemine geri çevrildi (kullanıcı tarayıcı font-size ayarları ve a11y zoom orantılı çalışıyor); önceki geçici mutlak-px override'ı kaldırıldı. Profil dikey sekmelerine description metni ve sekme başına ikon rengi eklendi.
+
+#### Eklendi
+
+- **Profil sekmeleri** — `Profile/Index.vue` artık her tab için `description()` ve `iconColor()` çağırıyor; `sk-profile.tab_descriptions.{general,password,security,sessions}` i18n key'leri tanıtıldı (TR/EN).
+- **`AvatarUpload :initials`** — `avatarUrl` yokken avatar kutusunda kullanıcının baş harflerini gösterir; verilmezse mevcut `pi-user` fallback'i korunur.
+
+#### Değiştirildi
+
+- **`AvatarUpload` row layout** — avatar `size-14` boyutuna küçültüldü, primary-200 border + primary-50 zemin, "Kaldır" `severity-secondary text`, "Değiştir" `outlined`. Başlık ve hint inline basılır; `:title=""` ve/veya `:subtitle=""` ile başlık bloğu komple gizlenebilir.
+- **`AvatarUpload` `title` / `subtitle` semantiği** — `undefined` → default i18n key, dolu string → birebir metin, `''` → element `v-if` ile gizli. Etiketleri tamamen kapatma yetkisi geri geldi.
+- **`sk-avatar.hint`** — metni teknik formata güncellendi: `"JPG · PNG · GIF — en fazla 2 MB · 512×512 önerilir"` (EN: `"JPG · PNG · GIF — max 2 MB · 512×512 recommended"`).
+- **Tipografi (14px root, rem)** — `_base.scss` artık `html { font-size: 0.875rem }` ile root'u 14px'e sabitliyor (browser default 16px'ten ölçeklenir); `utilities.css` tüm `--text-*` token'larını bu root'a göre rem cinsinden tanımlıyor (`--text-base: 1rem`, `--text-xs: 0.857rem` vb.). Geçici mutlak-px override'ı kaldırıldı, a11y zoom yine orantılı çalışıyor.
+- **FileManager metin dengeleme** — favoriler/çöp boş durum başlık/altyazıları ve dosya tipi filtre pill'leri `text-lg` → `text-base`. `sk-user-menu__item` ise `text-sm` → `text-base` ile büyütüldü, yeni base ile hizalandı.
+
+#### Düzeltildi
+
+- **Sticky action bar sızıntısı (`AppDialog`/`SkForm`)** — Dialog içindeki uzun formlar, sticky alt barın altından scroll içeriği akıtıyordu. Çözüm üç parçalı:
+  1. `AppDialog.vue` — Dialog `content` PT'sine `padding-bottom: 0` + flex column layout
+  2. `SkForm.vue` — dialog mode'da `sk-fb--dialog` marker class
+  3. `_formbuilder.scss` — `.sk-fb__actions` opak `var(--p-content-background)` zemin; dialog mode'da `-mx-5 px-5` ile edge-to-edge, alt köşeler `rounded-b-xl` ile Dialog'un `borderRadius.xl`'sine eşitlendi.
+
+#### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yeniden yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# stubs/resources/css/theme/{_base.scss,utilities.css,_formbuilder.scss,_tabs.scss,_menus.scss}
+# stubs/resources/js/pages/Profile/Index.vue
+# stubs/resources/js/pages/Profile/components/ProfileInfoTab.vue
+# stubs/lang/{tr,en}/{sk-avatar.php,sk-profile.php}
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**`AvatarUpload` davranış notu:** Eğer kodunuzda `:subtitle=""` geçip default hint'in yine de basılmasını bekliyorduysanız, artık `''` hint satırını **gizler**. Default i18n davranışını geri getirmek için prop'u tamamen kaldırın veya dolu bir string verin.
+
+---
+
 ## 2026-05-10 — v13.5.6
 
 ### Yama sürüm — SystemHealthTab'dan axios kaldırıldı, API envelope uyumu, FileManager tip düzeltmesi

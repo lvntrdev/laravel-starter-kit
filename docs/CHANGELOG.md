@@ -2,6 +2,46 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-19 — v13.5.7
+
+### Patch release — Dialog sticky bar bleed fix, AvatarUpload redesign, 14px root typography
+
+`AppDialog`'s sticky form action bar (`Cancel` / `Update`) was leaking scrolling content out from under the buttons whenever a form exceeded the Dialog's visible height — the root cause was Dialog content's default `padding: 1.25rem` leaving a transparent gap underneath the sticky bar. Fixed by zeroing the Dialog's `padding-bottom` via the PT API, having `SkForm` advertise dialog mode through a `sk-fb--dialog` marker class, and extending the sticky bar edge-to-edge with a matching `rounded-b-xl` so the bar mirrors the Dialog's rounded corners. `AvatarUpload` has been redesigned from the previous stacked card to a single-row layout (avatar · title/hint · actions) with a smaller 56px avatar, primary border accent, and a new `initials` prop for showing user initials when no photo is uploaded. The `title` and `subtitle` props now have explicit three-state semantics: omit → default i18n, non-empty string → that text, empty string → row hidden entirely. Typography has been rebased to a 14px root system written in rem (so user browser font-size preferences and a11y zoom continue to scale proportionally); the previous absolute-px override is gone. Profile vertical tabs gained description text and per-tab icon colors.
+
+#### Added
+
+- **Profile tabs** — `Profile/Index.vue` now declares `description()` and `iconColor()` on each tab; `sk-profile.tab_descriptions.{general,password,security,sessions}` keys added (TR/EN).
+- **`AvatarUpload :initials`** — renders user initials in the avatar slot when no `avatarUrl` is provided; falls back to `pi-user` otherwise.
+
+#### Changed
+
+- **`AvatarUpload` row layout** — avatar shrunk to `size-14`, primary-200 border on primary-50 background, "Remove" is `severity-secondary text`, "Change" is `outlined`. Title and hint render inline; the avatar block can be rendered without any caption by passing `:title=""` and/or `:subtitle=""`.
+- **`AvatarUpload` `title` / `subtitle` semantics** — `undefined` → default i18n key, non-empty string → that text, `''` → element fully hidden via `v-if`. Restores the ability to opt out of the labels.
+- **`sk-avatar.hint`** — copy reformatted to `"JPG · PNG · GIF — max 2 MB · 512×512 recommended"` (TR: `"JPG · PNG · GIF — en fazla 2 MB · 512×512 önerilir"`).
+- **Typography (14px root, rem)** — `_base.scss` sets `html { font-size: 0.875rem }`; `utilities.css` declares all `--text-*` tokens in rem relative to that root (`--text-base: 1rem`, `--text-xs: 0.857rem`, etc). The transient absolute-px override from a previous WIP is replaced; a11y zoom now scales the whole UI again.
+- **FileManager text rebalance** — favourites/trash empty-state titles/subtitles and file-type filter pills downgraded from `text-lg` to `text-base`. `sk-user-menu__item` raised from `text-sm` to `text-base`.
+
+#### Fixed
+
+- **Sticky action bar bleed (`AppDialog`/`SkForm`)** — long forms inside `AppDialog` were leaking scrolling content from underneath the sticky bottom bar; Dialog `content` PT now zeros `padding-bottom` and switches to a flex column layout, `SkForm` adds an `sk-fb--dialog` marker, and `_formbuilder.scss` paints `.sk-fb__actions` opaque, edge-to-edge with `rounded-b-xl` matching `borderRadius.xl`. Scroll content can no longer slide behind the buttons.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# stubs/resources/css/theme/{_base.scss,utilities.css,_formbuilder.scss,_tabs.scss,_menus.scss}
+# stubs/resources/js/pages/Profile/Index.vue
+# stubs/resources/js/pages/Profile/components/ProfileInfoTab.vue
+# stubs/lang/{tr,en}/{sk-avatar.php,sk-profile.php}
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Behavioural note for `AvatarUpload`:** if your code was passing `:subtitle=""` expecting the default hint to render anyway, it will now hide the hint row instead. Either remove the prop (default i18n applies) or supply a non-empty value.
+
+---
+
 ## 2026-05-10 — v13.5.6
 
 ### Patch release — axios removed from SystemHealthTab, API envelope compliance, FileManager type fix
