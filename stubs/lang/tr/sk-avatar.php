@@ -5,6 +5,6 @@ return [
     'subtitle' => 'Hesabınızı kişiselleştirmek için bir profil fotoğrafı yükleyin.',
     'change' => 'Değiştir',
     'remove' => 'Kaldır',
-    'hint' => 'JPG, PNG veya GIF. En fazla 2MB.',
+    'hint' => 'JPG · PNG · GIF — en fazla 2 MB · 512×512 önerilir',
     'remove_confirm' => 'Bu görseli kaldırmak istediğinizden emin misiniz?',
 ];

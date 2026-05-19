@@ -7,15 +7,27 @@
         avatarUrl?: string | null;
         uploadUrl: string;
         deleteUrl: string;
+        /**
+         * Inline başlık.
+         * - verilmezse $t('sk-avatar.title') basılır
+         * - '' (boş string) verilirse başlık tamamen gizlenir
+         */
         title?: string;
+        /**
+         * Açıklama satırı.
+         * - verilmezse $t('sk-avatar.hint') basılır
+         * - '' (boş string) verilirse açıklama tamamen gizlenir
+         */
         subtitle?: string;
+        /** Foto yokken avatar kutusunda gösterilecek baş harfler (örn: "AU"). */
+        initials?: string | null;
+        /** Dialog gibi yerlerde Card kabuğunu gizlemek için false. */
         isCard?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         avatarUrl: null,
-        title: '',
-        subtitle: '',
+        initials: null,
         isCard: true,
     });
 
@@ -132,52 +144,69 @@
 
 <template>
     <Card :pt="cardPt">
-        <template v-if="isCard && title" #title>
-            {{ title }}
-        </template>
-        <template v-if="isCard && subtitle" #subtitle>
-            {{ subtitle }}
-        </template>
         <template #content>
-            <div class="flex flex-col items-center gap-3 sm:flex-row">
-                <div
-                    class="relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-surface-100 dark:bg-surface-800"
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <!-- Avatar -->
+                <button
+                    type="button"
+                    class="group relative flex size-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-primary-200 bg-primary-50 transition-colors hover:border-primary-400 dark:border-primary-800/60 dark:bg-primary-900/30"
+                    :aria-label="$t('sk-avatar.change')"
                     @click="selectFile"
                 >
-                    <img v-if="currentUrl" :src="currentUrl" alt="Avatar" class="size-full object-cover">
-                    <i v-else class="pi pi-user text-3xl text-surface-400" />
-                    <div
-                        class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100"
+                    <img v-if="currentUrl" :src="currentUrl" alt="" class="size-full object-cover">
+                    <span
+                        v-else-if="initials"
+                        class="text-base font-semibold uppercase text-primary-700 dark:text-primary-300"
                     >
-                        <i v-if="uploading" class="pi pi-spin pi-spinner text-lg text-white" />
-                        <i v-else class="pi pi-camera text-lg text-white" />
+                        {{ initials }}
+                    </span>
+                    <i v-else class="pi pi-user text-xl text-primary-400 dark:text-primary-500" />
+
+                    <div
+                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                        <i v-if="uploading" class="pi pi-spin pi-spinner text-base text-white" />
+                        <i v-else class="pi pi-camera text-base text-white" />
                     </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <div class="flex gap-2">
-                        <Button
-                            type="button"
-                            :label="$t('sk-avatar.change')"
-                            icon="pi pi-upload"
-                            size="small"
-                            outlined
-                            :loading="uploading"
-                            @click="selectFile"
-                        />
-                        <Button
-                            v-if="currentUrl"
-                            type="button"
-                            :label="$t('sk-avatar.remove')"
-                            icon="pi pi-trash"
-                            size="small"
-                            severity="danger"
-                            outlined
-                            :disabled="uploading"
-                            @click="removeAvatar"
-                        />
+                </button>
+
+                <!-- Title + hint -->
+                <div v-if="title !== '' || subtitle !== ''" class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div
+                        v-if="title !== ''"
+                        class="text-base font-semibold text-surface-900 dark:text-surface-100"
+                    >
+                        {{ title ?? $t('sk-avatar.title') }}
                     </div>
-                    <small class="text-surface-400">{{ $t('sk-avatar.hint') }}</small>
+                    <small v-if="subtitle !== ''" class="text-surface-500 dark:text-surface-400">
+                        {{ subtitle ?? $t('sk-avatar.hint') }}
+                    </small>
                 </div>
+
+                <!-- Actions -->
+                <div class="flex shrink-0 items-center gap-2">
+                    <Button
+                        v-if="currentUrl"
+                        type="button"
+                        :label="$t('sk-avatar.remove')"
+                        icon="pi pi-trash"
+                        size="small"
+                        severity="secondary"
+                        text
+                        :disabled="uploading"
+                        @click="removeAvatar"
+                    />
+                    <Button
+                        type="button"
+                        :label="$t('sk-avatar.change')"
+                        icon="pi pi-upload"
+                        size="small"
+                        outlined
+                        :loading="uploading"
+                        @click="selectFile"
+                    />
+                </div>
+
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected">
             </div>
         </template>

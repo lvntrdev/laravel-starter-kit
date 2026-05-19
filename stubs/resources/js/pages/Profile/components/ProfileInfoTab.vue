@@ -38,8 +38,6 @@
         :avatar-url="user?.avatar_url"
         upload-url="/user/avatar"
         delete-url="/user/avatar"
-        :title="$t('sk-avatar.title')"
-        :subtitle="$t('sk-avatar.subtitle')"
         class="mb-8"
     />
 
