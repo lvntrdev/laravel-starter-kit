@@ -15,6 +15,9 @@
         :draggable="false"
         :style="{ width: state.width }"
         :breakpoints="{ '768px': '95vw' }"
+        :pt="{
+            content: { style: { paddingBottom: '0', display: 'flex', flexDirection: 'column' } },
+        }"
         @update:visible="(val) => !val && close()"
     >
         <div v-if="state.loading" class="flex justify-center py-8">

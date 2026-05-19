@@ -580,7 +580,7 @@
                 :is="isInternalMode ? 'form' : 'div'"
                 v-else
                 class="sk-fb"
-                :class="config.cssClass"
+                :class="[{ 'sk-fb--dialog': isDialogMode }, config.cssClass]"
                 @submit.prevent="handleSubmit"
             >
                 <!-- ── Top actions ─────────────────────────────────────────────────────── -->
