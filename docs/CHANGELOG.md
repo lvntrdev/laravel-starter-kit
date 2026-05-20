@@ -2,6 +2,42 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-20 — v13.5.8
+
+### Patch release — AppDialog Material Flat shell, rich header & footer API, scrollbar-gap fix
+
+`AppDialog` has been redesigned around PrimeVue Dialog's `#container` template into a self-contained "Material Flat" shell: gradient icon lozenge + title + subtitle in the header, an optional slate-100 sticky footer with hint icon/text on the left and Cancel/Confirm buttons on the right, a softer dual-layer drop shadow, and a custom "rise" enter/leave animation. The shell is fully scoped (`sk-dlg` PT class) so `ConfirmDialog` and other Dialog usages remain untouched. The `useDialog` composable gained `subtitle`, `icon`, and `footer` open options, a new `DialogFooter` interface, and `setFooter()` / `patchFooter()` methods so components rendered inside the dialog can mutate the footer (e.g. flip the confirm button to a loading state) without re-opening. The remaining sticky-bar issue from v13.5.7 — a ~10 px white gap on the right side of the gray footer when the form scrolled — is fixed by hiding the dialog body's scrollbar visually; scroll still works via wheel / trackpad / keyboard, so the slate-100 bar now reaches the dialog's right edge cleanly.
+
+#### Added
+
+- **`AppDialog` Material Flat shell** — header now ships an icon lozenge (`state.icon`), title (`state.header`), and subtitle (`state.subtitle`); a slate-themed close button replaces PrimeVue's default. Optional opt-in footer renders a sticky slate-100 action bar with hint icon/text + Cancel/Confirm.
+- **`useDialog` rich-header & footer API** — `OpenOptions.subtitle`, `OpenOptions.icon`, `OpenOptions.footer` added. New `DialogFooter` type with `icon`, `text`, `cancelLabel`, `confirmLabel`, `confirmIcon`, `severity`, `onConfirm`, `hideCancel`, `disabled`, `loading`. New `setFooter()` and `patchFooter()` methods.
+- **`_dialog.scss`** — new stylesheet imported from `theme.css`; defines the shell (mask, root, head/lead/title-block, body, foot/info/actions) and is scoped via the `sk-dlg` PT class.
+
+#### Changed
+
+- **`preset.ts` modal token** — `borderRadius.xl` → `borderRadius.md` (6 px), `padding: 1.25rem` → `padding: 0` (shell-level padding handled inside `AppDialog`), drop shadow updated to a softer dual-layer (`0 24px 60px -20px ...`, `0 6px 20px -6px ...`).
+
+#### Fixed
+
+- **Form scrollbar gap on the right of the footer** — long forms inside `AppDialog` left a ~10 px white gap between the right edge of the slate-100 action bar and the dialog's right edge (the body's scrollbar consumed content width and the bar's `-mx-8` extension only reached the body's content edge). `.sk-dlg__body:has(.sk-fb--dialog)` now hides the scrollbar visually (`scrollbar-width: none` + `::-webkit-scrollbar { width: 0 }`); scroll continues to work via wheel / trackpad / arrow keys / Page Up–Down / Home–End.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# stubs/resources/css/theme/{_dialog.scss,_formbuilder.scss,theme.css}
+# stubs/resources/js/composables/useDialog.ts
+# stubs/resources/js/theme/preset.ts
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Behavioural note:** the Dialog body's scrollbar is intentionally invisible inside form dialogs. The visible track is hidden so the slate-100 action bar reaches the dialog edge with no gap; scroll continues to work via wheel, trackpad, arrow keys, Page Up/Down, Home/End.
+
+---
+
 ## 2026-05-19 — v13.5.7
 
 ### Patch release — Dialog sticky bar bleed fix, AvatarUpload redesign, 14px root typography

@@ -5,6 +5,38 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.8] - 2026-05-20
+
+### Added
+
+- **`AppDialog` Material Flat shell** — complete `AppDialog.vue` rewrite using PrimeVue Dialog's `#container` template. Custom header carries a gradient icon lozenge, title, subtitle, and a slate-themed close button; optional slate-100 footer (`state.footer` / `useDialog().open(..., { footer })`) renders a sticky action bar with a hint icon/text on the left and Cancel/Confirm buttons on the right. Animations switched to a custom "rise" transition.
+- **`useDialog` rich-header & footer API** — `OpenOptions.subtitle`, `OpenOptions.icon`, `OpenOptions.footer` added. New `DialogFooter` interface with `icon`, `text`, `cancelLabel`, `confirmLabel`, `confirmIcon`, `severity`, `onConfirm`, `hideCancel`, `disabled`, `loading`. New `setFooter()` and `patchFooter()` methods let rendered components mutate the footer from inside the dialog (e.g. toggle the confirm button's `loading` without re-opening).
+- **`stubs/resources/css/theme/_dialog.scss`** — new file imported from `theme.css`. All rules are scoped via the `sk-dlg` PT class so `ConfirmDialog` and other Dialog instances are unaffected.
+
+### Changed
+
+- **`preset.ts` modal token** — `borderRadius.xl` → `borderRadius.md` (6 px to match the Material Flat shell), `padding: 1.25rem` → `padding: 0` (shell-level padding handled inside `AppDialog`), drop shadow tuned to a softer dual-layer.
+
+### Fixed
+
+- **Dialog form scrollbar gap on the right of the footer** — long forms inside `AppDialog` showed a ~10 px white gap between the right edge of the slate-100 action bar and the dialog's right edge, because the body's scrollbar consumed content width and the bar's `-mx-8 px-8` extension only reached the body's content edge. `.sk-dlg__body:has(.sk-fb--dialog)` now hides the scrollbar visually (`scrollbar-width: none` + `::-webkit-scrollbar { width: 0 }`) so the bar lands flush against the dialog's actual edge while scroll still works via wheel / trackpad / keyboard.
+
+### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# stubs/resources/css/theme/{_dialog.scss,_formbuilder.scss,theme.css}
+# stubs/resources/js/composables/useDialog.ts
+# stubs/resources/js/theme/preset.ts
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Behavioural note:** the Dialog body's scrollbar is now intentionally invisible inside form dialogs. Scroll continues to work via mouse wheel, trackpad, arrow keys, Page Up/Down, and Home/End — only the visible scrollbar track is hidden, so the slate-100 action bar reaches the dialog edge with no gap.
+
+---
+
 ## [13.5.7] - 2026-05-19
 
 ### Added

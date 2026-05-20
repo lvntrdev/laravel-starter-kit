@@ -195,9 +195,9 @@ const AppPreset = definePreset(Aura, {
                 shadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
             },
             modal: {
-                borderRadius: '{borderRadius.xl}', // Dialog/Modal radius / Dialog/Modal yuvarlaklığı
-                padding: '1.25rem', // Dialog inner padding / Dialog iç boşluğu
-                shadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                borderRadius: '{borderRadius.md}', // Dialog/Modal radius (6px — Material Flat) / Dialog/Modal yuvarlaklığı
+                padding: '0', // Shell-level padding handled inside AppDialog
+                shadow: '0 24px 60px -20px rgba(15, 14, 25, 0.35), 0 6px 20px -6px rgba(15, 14, 25, 0.18)',
             },
             navigation: {
                 shadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',

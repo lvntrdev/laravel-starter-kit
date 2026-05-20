@@ -12,4 +12,5 @@
 @import './_menus.scss';
 @import './_toast.scss';
 @import './_confirm.scss';
+@import './_dialog.scss';
 @import './_tag.scss';

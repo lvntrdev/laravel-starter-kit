@@ -12,10 +12,24 @@ import { useApi } from './useApi';
  *   dialog.open(UserForm, { user }, 'Edit User');
  *   dialog.close();
  *
- * With auto close + refresh:
- *   const dialog = useDialog();
- *   dialog.open(UserForm, { user }, 'Edit User', { refreshKey: 'users-table' });
- *   // onSuccess and onCancel are automatically injected into props
+ * Rich header (Material Flat — icon lozenge + subtitle):
+ *   dialog.open(UserForm, { user }, 'Kullanıcı Düzenle', {
+ *       subtitle: 'Profil bilgilerini güncelle',
+ *       icon: 'pi pi-user-edit',
+ *       refreshKey: 'users-table',
+ *   });
+ *
+ * Shell footer (slate-100 sticky action bar at the bottom of the modal):
+ *   dialog.open(InfoPanel, {}, 'Yayınla', {
+ *       icon: 'pi pi-send',
+ *       footer: {
+ *           text: 'Bu işlem geri alınamaz',
+ *           confirmLabel: 'Yayınla',
+ *           confirmIcon: 'pi pi-check',
+ *           severity: 'primary',
+ *           onConfirm: () => publish(),
+ *       },
+ *   });
  *
  * Edit with async data fetch:
  *   dialog.openAsync(UserForm, '/admin/users/1/data', 'Edit User', {
@@ -24,19 +38,57 @@ import { useApi } from './useApi';
  *   });
  */
 
+export type DialogFooterSeverity = 'primary' | 'secondary' | 'danger' | 'warn' | 'success';
+
+export interface DialogFooter {
+    /** Hint icon class (PrimeIcons) on the left side of the footer. */
+    icon?: string;
+    /** Hint text on the left side, next to the icon. */
+    text?: string;
+    /** Cancel button label. When omitted, falls back to translation `sk-button.cancel`. */
+    cancelLabel?: string;
+    /** Confirm button label. When omitted, falls back to translation `sk-button.confirm`. */
+    confirmLabel?: string;
+    /** Confirm button icon class. Default `pi pi-check`. */
+    confirmIcon?: string;
+    /** Confirm button severity. Default `primary`. */
+    severity?: DialogFooterSeverity;
+    /** Handler fired when the confirm button is pressed. May be async. */
+    onConfirm?: () => void | Promise<void>;
+    /** Hide the cancel button entirely. */
+    hideCancel?: boolean;
+    /** Disable the confirm button. */
+    disabled?: boolean;
+    /** Show a spinner on the confirm button and block clicks. */
+    loading?: boolean;
+}
+
 interface DialogState {
     visible: boolean;
     component: Component | null;
     props: Record<string, unknown>;
     header: string;
+    subtitle: string;
+    icon: string;
     width: string;
     loading: boolean;
+    footer: DialogFooter | null;
 }
 
 interface OpenOptions {
-    /** Dialog width override */
+    /** Dialog width override. Default `640px`. */
     width?: string;
-    /** Refresh bus key — auto-injects onSuccess (close + refresh) and onCancel (close) */
+    /** Short descriptor rendered under the header title. */
+    subtitle?: string;
+    /** Icon class (PrimeIcons) shown inside the gradient lozenge at the start of the header. */
+    icon?: string;
+    /**
+     * Opt-in slate-100 footer with action buttons. When provided, AppDialog renders
+     * the footer below the body. Components inside should NOT render their own footer
+     * in that case to avoid duplication.
+     */
+    footer?: DialogFooter;
+    /** Refresh bus key — auto-injects onSuccess (close + refresh) and onCancel (close) into props. */
     refreshKey?: string;
 }
 
@@ -50,8 +102,11 @@ const state = reactive<DialogState>({
     component: null,
     props: {},
     header: '',
+    subtitle: '',
+    icon: '',
     width: '640px',
     loading: false,
+    footer: null,
 });
 
 /**
@@ -86,7 +141,7 @@ export function useDialog() {
      * @param component  Vue component to render inside the dialog.
      * @param props      Props forwarded to the component.
      * @param header     Dialog title string.
-     * @param options    Optional overrides (width, refreshKey).
+     * @param options    Optional overrides (width, subtitle, icon, footer, refreshKey).
      */
     function open(
         component: Component,
@@ -104,7 +159,10 @@ export function useDialog() {
         state.component = markRaw(component);
         state.props = { ...buildCallbacks(options.refreshKey), ...props };
         state.header = header;
+        state.subtitle = options.subtitle ?? '';
+        state.icon = options.icon ?? '';
         state.width = options.width ?? '640px';
+        state.footer = options.footer ?? null;
         state.loading = false;
         state.visible = true;
     }
@@ -115,7 +173,7 @@ export function useDialog() {
      * @param component   Vue component to render.
      * @param url         API endpoint to fetch data from.
      * @param header      Dialog title string.
-     * @param options     refreshKey, width, mapResponse.
+     * @param options     refreshKey, width, subtitle, icon, footer, mapResponse.
      * @param baseProps   Props to pass immediately (before data arrives).
      */
     async function openAsync<T = unknown>(
@@ -156,6 +214,9 @@ export function useDialog() {
             state.component = null;
             state.props = {};
             state.header = '';
+            state.subtitle = '';
+            state.icon = '';
+            state.footer = null;
             state.loading = false;
             closeTimer = null;
         }, 300);
@@ -165,5 +226,19 @@ export function useDialog() {
         state.loading = val;
     }
 
-    return { open, openAsync, close, setLoading, state };
+    /**
+     * Dynamically update the shell footer (useful for toggling loading/disabled
+     * from inside the rendered component without re-opening the dialog).
+     */
+    function setFooter(footer: DialogFooter | null): void {
+        state.footer = footer;
+    }
+
+    /** Merge partial changes into the existing footer. No-op when no footer set. */
+    function patchFooter(partial: Partial<DialogFooter>): void {
+        if (!state.footer) return;
+        state.footer = { ...state.footer, ...partial };
+    }
+
+    return { open, openAsync, close, setLoading, setFooter, patchFooter, state };
 }

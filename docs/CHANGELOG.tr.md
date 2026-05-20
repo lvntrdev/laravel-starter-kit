@@ -2,6 +2,42 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-20 — v13.5.8
+
+### Yama sürüm — AppDialog Material Flat shell, zengin header & footer API, scrollbar-gap düzeltmesi
+
+`AppDialog`, PrimeVue Dialog'un `#container` template'i etrafında bağımsız bir "Material Flat" shell olarak yeniden tasarlandı: header'da gradient ikon lozenge + başlık + alt başlık, opsiyonel slate-100 sticky footer (solda hint ikon/metin, sağda İptal/Onay butonları), daha yumuşak iki katmanlı drop shadow ve özel "rise" enter/leave animasyonu. Shell tamamen `sk-dlg` PT class'ı ile scope'lanmış durumda; `ConfirmDialog` ve diğer Dialog kullanımları etkilenmiyor. `useDialog` composable'ı `subtitle`, `icon` ve `footer` open option'ları, yeni `DialogFooter` interface'i ve `setFooter()` / `patchFooter()` metotları ile genişletildi — dialog içinde render olan bileşenler artık footer'ı (örneğin onay butonunu loading state'e geçirme) dialog'u yeniden açmadan değiştirebiliyor. v13.5.7'den kalan son sticky-bar sorunu — form scroll ettiğinde gri footer'ın sağında kalan ~10 px beyaz boşluk — dialog body'sinin scrollbar'ını görsel olarak gizleyerek çözüldü; scroll hâlâ wheel / trackpad / klavye ile çalışıyor, slate-100 bar artık dialog'un sağ kenarına temiz biçimde dayanıyor.
+
+#### Eklendi
+
+- **`AppDialog` Material Flat shell** — header artık ikon lozenge (`state.icon`), başlık (`state.header`) ve alt başlık (`state.subtitle`) basıyor; PrimeVue'nun default close butonu yerine slate temalı bir close butonu kondu. Opt-in footer slate-100 sticky action bar üretiyor (hint ikon/metin + İptal/Onay).
+- **`useDialog` zengin header & footer API** — `OpenOptions.subtitle`, `OpenOptions.icon`, `OpenOptions.footer` eklendi. Yeni `DialogFooter` tipi: `icon`, `text`, `cancelLabel`, `confirmLabel`, `confirmIcon`, `severity`, `onConfirm`, `hideCancel`, `disabled`, `loading`. Yeni `setFooter()` ve `patchFooter()` metotları eklendi.
+- **`_dialog.scss`** — `theme.css`'ten import edilen yeni stylesheet. Shell parçalarını (mask, root, head/lead/title-block, body, foot/info/actions) tanımlıyor ve `sk-dlg` PT class'ı ile scope'lanmış durumda.
+
+#### Değiştirildi
+
+- **`preset.ts` modal token** — `borderRadius.xl` → `borderRadius.md` (6 px), `padding: 1.25rem` → `padding: 0` (shell-level padding artık `AppDialog` içinde), drop shadow daha yumuşak iki katmanlı versiyona güncellendi (`0 24px 60px -20px ...`, `0 6px 20px -6px ...`).
+
+#### Düzeltildi
+
+- **Form scrollbar boşluğu (footer'ın sağında)** — `AppDialog` içindeki uzun formlarda slate-100 action bar'ın sağ kenarı ile dialog'un sağ kenarı arasında ~10 px beyaz boşluk kalıyordu (body'nin scrollbar'ı içerik genişliğini yiyordu, bar'ın `-mx-8` uzatması yalnızca body'nin content kenarına dayanıyordu). `.sk-dlg__body:has(.sk-fb--dialog)` artık scrollbar'ı görsel olarak gizliyor (`scrollbar-width: none` + `::-webkit-scrollbar { width: 0 }`); scroll wheel / trackpad / yön tuşları / Page Up–Down / Home–End ile çalışmaya devam ediyor.
+
+#### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yeniden yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# stubs/resources/css/theme/{_dialog.scss,_formbuilder.scss,theme.css}
+# stubs/resources/js/composables/useDialog.ts
+# stubs/resources/js/theme/preset.ts
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**Davranış notu:** Form dialog'ları içinde Dialog body'sinin scrollbar'ı bilinçli olarak görünmez. Görünür track gizlendi ki slate-100 action bar dialog kenarına boşluksuz dayansın; scroll wheel, trackpad, yön tuşları, Page Up/Down, Home/End ile çalışmaya devam ediyor.
+
+---
+
 ## 2026-05-19 — v13.5.7
 
 ### Yama sürüm — Dialog sticky bar sızıntısı düzeltildi, AvatarUpload yenilendi, 14px root tipografi

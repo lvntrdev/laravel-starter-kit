@@ -45,19 +45,29 @@
     @apply bottom-0 pt-4 mt-5 border-t;
 }
 
-/* Dialog mode (paired with AppDialog's pt content padding-bottom: 0):
-   sticky bar sits flush at Dialog's bottom edge. Its own padding-bottom
-   (1.25rem, matching overlay.modal.padding in theme/preset.ts) provides
-   the opaque area that hides scrolling content. -mx-5 + px-5 lets the
-   bar span the full Dialog width edge-to-edge, and rounded-b-xl matches
-   overlay.modal.borderRadius (borderRadius.xl = 12px) so the bar follows
-   the Dialog's rounded corners. */
+/* Dialog mode — Material Flat shell integration.
+   The body scrolls (its scrollbar is hidden in `_dialog.scss` via
+   `scrollbar-width: none` so the bar's `-mx-8` extension reaches the
+   dialog's outer edges with no gap). The form keeps its natural layout;
+   `.sk-fb__actions--bottom` sticks to the body's bottom edge. The bar's
+   `-mx-8 px-8` cancels the body's 2 rem horizontal padding so the
+   slate-100 surface paints edge-to-edge inside the dialog. */
+.sk-fb--dialog .sk-fb__actions {
+    background: theme('colors.slate.100');
+}
+
+:root.dark .sk-fb--dialog .sk-fb__actions {
+    background: var(--p-surface-950);
+}
+
 .sk-fb--dialog .sk-fb__actions--bottom {
-    @apply pb-5 -mx-5 px-5 rounded-b-xl;
+    @apply -mx-8 px-8 py-3.5 rounded-b-md mt-6;
+    margin-bottom: 0;
 }
 
 .sk-fb--dialog .sk-fb__actions--top {
-    @apply pt-5 -mx-5 px-5 -mt-5 rounded-t-xl;
+    @apply -mx-8 px-8 py-3.5 rounded-t-md mb-6;
+    margin-top: 0;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
