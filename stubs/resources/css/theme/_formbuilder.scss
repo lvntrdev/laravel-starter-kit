@@ -5,10 +5,12 @@
  *   1. Form root & grid
  *   2. Actions bar (top / bottom)
  *   3. Field labels & hints
- *   4. Vertical & horizontal layout
- *   5. Inline label fields (checkbox, toggle)
- *   6. Radio & checkbox groups
- *   7. File upload zone & file lists
+ *   4. SkIcon & label/title icons
+ *   5. Vertical & horizontal layout
+ *   6. Inline label fields (checkbox, toggle)
+ *   7. Radio & checkbox groups
+ *   8. Section card
+ *   9. File upload zone & file lists
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -75,7 +77,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-fb__title {
-    @apply text-base font-bold;
+    @apply text-base font-bold inline-flex items-center gap-2;
     color: var(--p-surface-800);
 }
 
@@ -88,7 +90,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-fb__label {
-    @apply text-base font-bold;
+    @apply text-base font-bold inline-flex items-center gap-1.5;
     color: var(--p-surface-700);
 }
 
@@ -118,6 +120,55 @@
 
 :root.dark .sk-fb__hint {
     color: var(--p-surface-500);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SKICON & LABEL/TITLE ICONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-icon {
+    @apply inline-flex items-center justify-center shrink-0;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+}
+
+.sk-icon--svg svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+}
+
+.sk-icon--img {
+    object-fit: contain;
+}
+
+.sk-fb__label-icon {
+    @apply inline-flex items-center;
+    font-size: 1em;
+}
+
+.sk-fb__title-icon {
+    @apply inline-flex items-center;
+    font-size: 1em;
+}
+
+.sk-fb__section-icon {
+    @apply inline-flex items-center;
+    font-size: 1em;
+}
+
+/* Modifier'lar: opsiyonel margin override gerekirse */
+.sk-fb__label-icon--left,
+.sk-fb__title-icon--left,
+.sk-fb__section-icon--left {
+    /* left ikon için ek margin gerekmez — parent gap halleder */
+}
+
+.sk-fb__label-icon--right,
+.sk-fb__title-icon--right,
+.sk-fb__section-icon--right {
+    /* right ikon için ek margin gerekmez — parent gap halleder */
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -196,6 +247,26 @@
 .sk-fb__group-loading {
     @apply flex items-center gap-2 text-base;
     color: var(--p-surface-400);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION CARD
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__section {
+    @apply mb-2;
+
+    &:last-child {
+        @apply mb-0;
+    }
+}
+
+.sk-fb__section-title {
+    @apply inline-flex items-center gap-2;
+}
+
+.sk-fb__section-field {
+    /* Section içinde grid item — varsayılan kolon span (renderer ayarlar) */
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

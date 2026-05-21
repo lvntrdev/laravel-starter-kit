@@ -122,7 +122,60 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 - `FB.fileUpload()`
 - `FB.colorSelector()`
 - `FB.title()`
+- `FB.section()`
 - `FB.slot()`
+
+## Icons (Package-Agnostic)
+
+The kit does not depend on any specific icon library. All icon APIs (`icon`, `labelIcon`, `iconPosition`, `labelIconPosition`, title/section icon) accept a single `string` "icon descriptor."
+
+The descriptor is auto-detected from one of three formats:
+
+| Pattern | Meaning | Example |
+| --- | --- | --- |
+| Starts with `<svg…` | Raw SVG markup — rendered via `v-html` | `'<svg viewBox="0 0 24 24">…</svg>'` |
+| Starts with `https?:` or `data:` | URL or data URI — rendered as `<img src>` | `'https://cdn.example.com/icon.svg'`, `'data:image/svg+xml;base64,…'` |
+| Anything else | CSS class — rendered as `<i :class>` | `'pi pi-search'`, `'fa fa-user'`, `'mdi mdi-account'` |
+
+This approach supports PrimeIcons, FontAwesome, Material Design Icons, Lucide, Iconify, and any other class-based icon set through the same API.
+
+**Security note:** Icon descriptors must come from developer-controlled builder config — not from user input. The `<svg…` path renders via `v-html`, which is an XSS vector. Never pass an API-sourced string directly into a field's icon config without sanitization.
+
+## Label Icons
+
+`.labelIcon(descriptor)` adds an icon next to a field's label. Supported on all field types.
+
+- `.labelIconPosition('left' | 'right')` — placement relative to the label text (default `'left'`).
+
+```ts
+FB.inputText()
+    .key('email')
+    .label('Email')
+    .labelIcon('pi pi-envelope')
+    .labelIconPosition('left')
+```
+
+Works in all layout modes: `vertical` (top label), `vertical` (inline label), and `horizontal`.
+
+## Input Icons
+
+`.icon(descriptor)` places an icon inside the input element using PrimeVue `IconField` + `InputIcon`.
+
+- `.iconPosition('left' | 'right')` — placement (default `'left'`).
+
+Supported field types: `input-text`, `input-number`, `input-mask`, `password` (custom path only — see note below).
+
+```ts
+FB.inputText().key('search').label('Search').icon('pi pi-search').iconPosition('left')
+FB.inputNumber().key('price').label('Price').icon('fa fa-dollar').iconPosition('right')
+FB.inputMask().key('phone').label('Phone').mask('(999) 999-9999').icon('mdi mdi-phone')
+```
+
+**Caveats:**
+
+- `.groupPrefix()` / `.groupSuffix()` takes priority — if an InputGroup wrapper is present, the input icon is ignored.
+- `FB.password().feedback()` renders via PrimeVue `<Password>` (strength meter path). The `.icon()` method has no effect on that path. When `feedback` is disabled (default custom path), `.icon()` works normally.
+- `.icon()` is **not supported** on `select`, `multiselect`, `textarea`, `editor`, `file-upload`, `color-selector`, or `date-picker` (which has its own `showIcon` mechanism). Use `.labelIcon()` on those types, or customize via `componentProps`.
 
 ## InputMask Field API
 
@@ -274,6 +327,75 @@ FB.colorSelector().key('accent').colors(['red', 'blue', 'green']).tones([400, 50
 ```
 
 When the initial model value is a hex string, the component performs a reverse lookup to restore the matching color + tone selection.
+
+## Title Icons
+
+`FB.title()` accepts `.icon()` and `.iconPosition()` to render an icon alongside the section heading.
+
+- `.iconPosition('left' | 'right')` — placement (default `'left'`).
+
+```ts
+FB.title('General Information').icon('pi pi-info-circle').iconPosition('left')
+```
+
+## Section / Card Grouping
+
+`FB.section()` groups related fields into a visually distinct card block. Sections are a top-level field type rendered inside `FB.form().addFields(...)`.
+
+```ts
+import { FB } from '@lvntr/starter-kit/FormBuilder/core';
+
+const config = FB.form()
+    .layout('vertical')
+    .cols(2)
+    .isCard(false)  // disable form-level card; each section renders its own card
+    .addFields(
+        FB.section('Personal Information')
+            .icon('pi pi-user')
+            .cols(2)
+            .addFields(
+                FB.inputText().key('first_name').label('First Name'),
+                FB.inputText().key('last_name').label('Last Name'),
+                FB.inputText().key('email').label('Email').icon('pi pi-envelope'),
+                FB.password().key('password').label('Password').icon('pi pi-lock'),
+            ),
+        FB.section('Address')
+            .icon('pi pi-map-marker')
+            .subtitle('Contact address details')
+            .cols(2)
+            .addFields(
+                FB.inputText().key('city').label('City'),
+                FB.inputText().key('postal_code').label('Postal Code'),
+                FB.textarea().key('address').label('Full Address').class('col-span-2'),
+            ),
+        FB.section('Preferences')
+            .icon('pi pi-cog')
+            .isCard(false)  // transparent section — no card background, border, or shadow
+            .cols(1)
+            .addFields(
+                FB.toggleSwitch().key('newsletter').label('Newsletter subscription'),
+                FB.toggleSwitch().key('notifications').label('Notifications'),
+            ),
+    )
+    .build();
+```
+
+**Section Builder API:**
+
+- `FB.section(title?)` — factory method. `title` is a translation key (optional).
+- `.title(key)` — set or override the translation key used as the section heading.
+- `.subtitle(key)` — secondary text rendered below the heading.
+- `.icon(descriptor)` — icon shown next to the heading.
+- `.iconPosition('left' | 'right')` — icon placement (default `'left'`).
+- `.cols(number)` — grid columns for fields inside this section. Inherits the parent form's `cols` when omitted.
+- `.isCard(boolean)` — when `false`, the section renders without a card shell (no background, shadow, or border). Defaults to `true` (card visible).
+- `.addFields(...fields)` — nested field definitions. Only one level of nesting is supported.
+
+**Notes:**
+
+- Section `key` values do not occupy a slot in the submitted payload — the form data is flat. The example above produces: `{ first_name, last_name, email, password, city, postal_code, address, newsletter, notifications }`.
+- Nested sections (section inside section) are **not supported** — single level only.
+- `FB.title()` and `FB.section()` can be combined: use a `title` field outside sections for top-level headings, then group content under sections.
 
 ## Data Sources for Select-Like Fields
 

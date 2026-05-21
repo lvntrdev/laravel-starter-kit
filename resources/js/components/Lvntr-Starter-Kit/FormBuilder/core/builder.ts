@@ -22,6 +22,7 @@ import type {
     OptionFilter,
     PasswordFieldConfig,
     PasswordGeneratorConfig,
+    SectionFieldConfig,
     SelectFieldConfig,
     SelectOption,
     SlotFieldConfig,
@@ -132,6 +133,28 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
         return this;
     }
 
+    /** Icon descriptor rendered next to the field label. */
+    labelIcon(icon: string): this {
+        this.config.labelIcon = icon;
+        return this;
+    }
+
+    labelIconPosition(p: 'left' | 'right'): this {
+        this.config.labelIconPosition = p;
+        return this;
+    }
+
+    /** Icon descriptor rendered inside the input (input-text, input-number, input-mask, password). */
+    icon(icon: string): this {
+        this.config.icon = icon;
+        return this;
+    }
+
+    iconPosition(p: 'left' | 'right'): this {
+        this.config.iconPosition = p;
+        return this;
+    }
+
     /** Render as a hidden input — the field participates in form data but is not visible. */
     hidden(hidden = true): this {
         this.config.hidden = hidden;
@@ -179,18 +202,6 @@ export class InputTextBuilder extends BaseFieldBuilder<InputTextFieldConfig> {
 
     inputType(inputType: string): this {
         this.config.inputType = inputType;
-        return this;
-    }
-
-    /** Icon class (e.g. 'pi pi-search'). Wraps with IconField + InputIcon. */
-    icon(icon: string): this {
-        this.config.icon = icon;
-        return this;
-    }
-
-    /** Icon position: 'left' (default) or 'right'. */
-    iconPosition(position: 'left' | 'right'): this {
-        this.config.iconPosition = position;
         return this;
     }
 }
@@ -580,6 +591,16 @@ export class TitleBuilder extends BaseFieldBuilder<TitleFieldConfig> {
         this.config.tag = tag;
         return this;
     }
+
+    icon(icon: string): this {
+        this.config.icon = icon;
+        return this;
+    }
+
+    iconPosition(p: 'left' | 'right'): this {
+        this.config.iconPosition = p;
+        return this;
+    }
 }
 
 export class FileUploadBuilder extends BaseFieldBuilder<FileUploadFieldConfig> {
@@ -746,6 +767,63 @@ export class TranslatableEditorBuilder extends TranslatableBaseBuilder<Translata
     toolbar(t: 'minimal' | 'full'): this {
         this.config.toolbar = t;
         return this;
+    }
+}
+
+// ── Section Builder ───────────────────────────────────────────────────────────
+
+export class SectionBuilder extends BaseFieldBuilder<SectionFieldConfig> {
+    private static counter = 0;
+
+    constructor(title?: string) {
+        super('section');
+        const id = `__section_${++SectionBuilder.counter}`;
+        this.config.key = id;
+        if (title !== undefined) {
+            (this.config as SectionFieldConfig).title = title;
+        }
+        (this.config as SectionFieldConfig).fields = [];
+        this.config.required = false;
+    }
+
+    title(t: string): this {
+        (this.config as SectionFieldConfig).title = t;
+        return this;
+    }
+
+    subtitle(s: string): this {
+        (this.config as SectionFieldConfig).subtitle = s;
+        return this;
+    }
+
+    cols(c: number): this {
+        (this.config as SectionFieldConfig).cols = c;
+        return this;
+    }
+
+    isCard(enabled = true): this {
+        (this.config as SectionFieldConfig).isCard = enabled;
+        return this;
+    }
+
+    addFields(...fields: BaseFieldBuilder<FieldConfig>[]): this {
+        (this.config as SectionFieldConfig).fields.push(...fields.map((f) => f.build()));
+        return this;
+    }
+
+    build(): SectionFieldConfig {
+        const cfg = this.config as SectionFieldConfig;
+        // Label görsel olarak title gibi davranır — base build() zorunluluğu için fallback.
+        if (!cfg.label) {
+            cfg.label = cfg.title ?? cfg.key!;
+        }
+        if (cfg.translateLabel === undefined) {
+            cfg.translateLabel = true;
+        }
+        if (cfg.required === undefined) {
+            cfg.required = false;
+        }
+        return cfg;
     }
 }
 

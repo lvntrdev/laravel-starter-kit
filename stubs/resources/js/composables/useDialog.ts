@@ -38,7 +38,7 @@ import { useApi } from './useApi';
  *   });
  */
 
-export type DialogFooterSeverity = 'primary' | 'secondary' | 'danger' | 'warn' | 'success';
+export type DialogFooterSeverity = 'secondary' | 'success' | 'info' | 'warn' | 'help' | 'danger' | 'contrast';
 
 export interface DialogFooter {
     /** Hint icon class (PrimeIcons) on the left side of the footer. */

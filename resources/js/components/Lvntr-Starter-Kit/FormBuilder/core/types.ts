@@ -25,7 +25,8 @@ export type FieldType =
     | 'slot'
     | 'translatable-text'
     | 'translatable-textarea'
-    | 'translatable-editor';
+    | 'translatable-editor'
+    | 'section';
 
 export interface SelectOption {
     label: string;
@@ -67,6 +68,14 @@ export interface BaseFieldConfig {
     groupPrefix?: string;
     /** Suffix addon text or icon class (wraps field with InputGroup + InputGroupAddon). */
     groupSuffix?: string;
+    /** Icon descriptor shown next to the field label. See SkIcon for accepted formats (class string / raw SVG / URL / data URI). */
+    labelIcon?: string;
+    /** Label icon position (default: 'left'). */
+    labelIconPosition?: 'left' | 'right';
+    /** Icon descriptor rendered inside the input (where supported: input-text, input-number, input-mask, password). */
+    icon?: string;
+    /** Input icon position (default: 'left'). */
+    iconPosition?: 'left' | 'right';
 }
 
 export interface InputTextFieldConfig extends BaseFieldConfig {
@@ -74,9 +83,15 @@ export interface InputTextFieldConfig extends BaseFieldConfig {
     placeholder?: string;
     /** HTML input type (text, email, url, tel, etc.) */
     inputType?: string;
-    /** Icon class (e.g. 'pi pi-search'). Wraps field with IconField + InputIcon. */
+    /**
+     * Icon class (e.g. 'pi pi-search'). Wraps field with IconField + InputIcon.
+     * @deprecated Use BaseFieldConfig.icon instead. This will be removed in a future release.
+     */
     icon?: string;
-    /** Icon position (default: 'left'). */
+    /**
+     * Icon position (default: 'left').
+     * @deprecated Use BaseFieldConfig.iconPosition instead. This will be removed in a future release.
+     */
     iconPosition?: 'left' | 'right';
 }
 
@@ -278,6 +293,10 @@ export interface TitleFieldConfig extends BaseFieldConfig {
     type: 'title';
     /** Tag to render: h2, h3, h4, etc. Default: 'h3'. */
     tag?: string;
+    /** Icon descriptor rendered before the title text. */
+    icon?: string;
+    /** Title icon position (default: 'left'). */
+    iconPosition?: 'left' | 'right';
 }
 
 export interface ExistingMedia {
@@ -355,6 +374,24 @@ export interface TranslatableEditorFieldConfig extends TranslatableBaseConfig {
     toolbar?: 'minimal' | 'full';
 }
 
+export interface SectionFieldConfig extends BaseFieldConfig {
+    type: 'section';
+    /** Section header title (translation key — falls back to label). */
+    title?: string;
+    /** Section subtitle (translation key). */
+    subtitle?: string;
+    /** Section header icon (overrides labelIcon for sections). */
+    icon?: string;
+    /** Section icon position (default: 'left'). */
+    iconPosition?: 'left' | 'right';
+    /** Grid columns inside the section. Default: parent form's cols. */
+    cols?: number;
+    /** Nested fields (single level — nested sections not supported). */
+    fields: FieldConfig[];
+    /** Strip Card bg/shadow/border (transparent mode). Default: false. */
+    isCard?: boolean;
+}
+
 export type FieldConfig =
     | InputTextFieldConfig
     | InputNumberFieldConfig
@@ -374,7 +411,8 @@ export type FieldConfig =
     | SlotFieldConfig
     | TranslatableTextFieldConfig
     | TranslatableTextareaFieldConfig
-    | TranslatableEditorFieldConfig;
+    | TranslatableEditorFieldConfig
+    | SectionFieldConfig;
 
 export interface FormSubmitConfig {
     url: string;

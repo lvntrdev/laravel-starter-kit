@@ -15,7 +15,7 @@
     const cancelLabel = computed(() => state.footer?.cancelLabel ?? trans('sk-button.cancel'));
     const confirmLabel = computed(() => state.footer?.confirmLabel ?? trans('sk-button.confirm'));
     const confirmIcon = computed(() => state.footer?.confirmIcon ?? 'pi pi-check');
-    const confirmSeverity = computed(() => state.footer?.severity ?? 'primary');
+    const confirmSeverity = computed(() => state.footer?.severity);
 
     async function handleConfirm(): Promise<void> {
         const fn = state.footer?.onConfirm;

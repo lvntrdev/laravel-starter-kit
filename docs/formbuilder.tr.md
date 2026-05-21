@@ -122,7 +122,60 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 - `FB.fileUpload()`
 - `FB.colorSelector()`
 - `FB.title()`
+- `FB.section()`
 - `FB.slot()`
+
+## İkonlar (Paket-Bağımsız)
+
+Kit, paket-spesifik bir ikon kütüphanesine bağlı değildir. Tüm ikon API'leri (`icon`, `labelIcon`, `iconPosition`, `labelIconPosition`, title/section icon) bir `string` "ikon descriptor'ı" alır.
+
+Descriptor üç formattan birini otomatik algılar:
+
+| Desen | Anlam | Örnek |
+| --- | --- | --- |
+| `<svg…` ile başlar | Ham SVG markup — `v-html` ile render | `'<svg viewBox="0 0 24 24">…</svg>'` |
+| `https?:` veya `data:` ile başlar | URL veya data URI — `<img src>` ile render | `'https://cdn.example.com/icon.svg'`, `'data:image/svg+xml;base64,…'` |
+| Diğer | CSS class — `<i :class>` ile render | `'pi pi-search'`, `'fa fa-user'`, `'mdi mdi-account'` |
+
+Bu yaklaşım PrimeIcons, FontAwesome, Material Design Icons, Lucide, Iconify ve diğer class-tabanlı ikon setlerini **aynı API üzerinden** destekler.
+
+**Güvenlik notu:** İkon descriptor'ları developer-controlled builder config'ten gelmelidir — kullanıcı girdisinden değil. `<svg…` yolu `v-html` ile render eder; bu bir XSS vektörüdür. API'den gelen bir string'i sanitize etmeden doğrudan field ikon config'ine sokmayın.
+
+## Label İkonları
+
+`.labelIcon(descriptor)`, bir field'ın label'ı yanına ikon ekler. Tüm field tiplerinde desteklenir.
+
+- `.labelIconPosition('left' | 'right')` — label metnine göre konum (varsayılan `'left'`).
+
+```ts
+FB.inputText()
+    .key('email')
+    .label('E-posta')
+    .labelIcon('pi pi-envelope')
+    .labelIconPosition('left')
+```
+
+Tüm layout modlarında çalışır: `vertical` (üst label), `vertical` (inline label) ve `horizontal`.
+
+## Input İkonları
+
+`.icon(descriptor)`, PrimeVue `IconField` + `InputIcon` kullanarak input elemanının içine ikon yerleştirir.
+
+- `.iconPosition('left' | 'right')` — konum (varsayılan `'left'`).
+
+Desteklenen field tipleri: `input-text`, `input-number`, `input-mask`, `password` (yalnızca custom path — aşağıdaki nota bakın).
+
+```ts
+FB.inputText().key('search').label('Ara').icon('pi pi-search').iconPosition('left')
+FB.inputNumber().key('price').label('Fiyat').icon('fa fa-dollar').iconPosition('right')
+FB.inputMask().key('phone').label('Telefon').mask('(999) 999-9999').icon('mdi mdi-phone')
+```
+
+**Uyarılar:**
+
+- `.groupPrefix()` / `.groupSuffix()` önceliklidir — InputGroup wrapper varsa input ikonu devre dışı kalır.
+- `FB.password().feedback()`, PrimeVue `<Password>` üzerinden render eder (güç göstergesi yolu). Bu yolda `.icon()` etkisizdir. `feedback` kapalıyken (varsayılan custom path) `.icon()` normal çalışır.
+- `.icon()`, `select`, `multiselect`, `textarea`, `editor`, `file-upload`, `color-selector` ve `date-picker` (kendi `showIcon` mekanizması vardır) tiplerinde **desteklenmez**. Bu tipler için `.labelIcon()` kullanın ya da `componentProps` ile özelleştirin.
 
 ## InputMask Alan API'si
 
@@ -274,6 +327,75 @@ FB.colorSelector().key('accent').colors(['red', 'blue', 'green']).tones([400, 50
 ```
 
 Modele başlangıçta bir hex string geldiğinde, component ters arama yaparak eşleşen renk + tone seçimini geri yükler.
+
+## Title İkonları
+
+`FB.title()`, başlığın yanına ikon render etmek için `.icon()` ve `.iconPosition()` metotlarını destekler.
+
+- `.iconPosition('left' | 'right')` — konum (varsayılan `'left'`).
+
+```ts
+FB.title('Genel Bilgiler').icon('pi pi-info-circle').iconPosition('left')
+```
+
+## Section / Card Gruplama
+
+`FB.section()`, ilgili alanları görsel olarak belirgin bir kart bloğunda gruplar. Section'lar `FB.form().addFields(...)` içinde üst seviye bir field tipi olarak render edilir.
+
+```ts
+import { FB } from '@lvntr/starter-kit/FormBuilder/core';
+
+const config = FB.form()
+    .layout('vertical')
+    .cols(2)
+    .isCard(false)  // form-level card kapatılır; section'lar kendi card'larında render edilir
+    .addFields(
+        FB.section('Kişisel Bilgiler')
+            .icon('pi pi-user')
+            .cols(2)
+            .addFields(
+                FB.inputText().key('first_name').label('Ad'),
+                FB.inputText().key('last_name').label('Soyad'),
+                FB.inputText().key('email').label('E-posta').icon('pi pi-envelope'),
+                FB.password().key('password').label('Parola').icon('pi pi-lock'),
+            ),
+        FB.section('Adres')
+            .icon('pi pi-map-marker')
+            .subtitle('İletişim adresi bilgileri')
+            .cols(2)
+            .addFields(
+                FB.inputText().key('city').label('Şehir'),
+                FB.inputText().key('postal_code').label('Posta Kodu'),
+                FB.textarea().key('address').label('Açık Adres').class('col-span-2'),
+            ),
+        FB.section('Tercihler')
+            .icon('pi pi-cog')
+            .isCard(false)  // transparent section — card arka plan, kenarlık ve gölge yok
+            .cols(1)
+            .addFields(
+                FB.toggleSwitch().key('newsletter').label('Bülten aboneliği'),
+                FB.toggleSwitch().key('notifications').label('Bildirimler'),
+            ),
+    )
+    .build();
+```
+
+**Section Builder API:**
+
+- `FB.section(title?)` — factory metodu. `title` bir çeviri anahtarıdır (opsiyonel).
+- `.title(key)` — section başlığı olarak kullanılan çeviri anahtarını set eder veya override eder.
+- `.subtitle(key)` — başlığın altında gösterilen ikincil metin.
+- `.icon(descriptor)` — başlığın yanında gösterilen ikon.
+- `.iconPosition('left' | 'right')` — ikon konumu (varsayılan `'left'`).
+- `.cols(number)` — section içindeki alanlar için grid sütun sayısı. Belirtilmezse parent form'un `cols` değerini devralır.
+- `.isCard(boolean)` — `false` olduğunda section card kabuğu olmadan render edilir (arka plan, gölge veya kenarlık yok). Varsayılan `true` (card görünür).
+- `.addFields(...fields)` — iç içe field tanımları. Yalnızca tek seviye iç içe geçme desteklenir.
+
+**Notlar:**
+
+- Section `key` değerleri gönderilen payload'da yer tutmaz — form verisi flat'tir. Yukarıdaki örnek şu veriyi üretir: `{ first_name, last_name, email, password, city, postal_code, address, newsletter, notifications }`.
+- İç içe section (section içinde section) **desteklenmez** — tek seviye.
+- `FB.title()` ve `FB.section()` birlikte kullanılabilir: üst seviye başlıklar için section dışında `title` field kullanın, içerikler section'lar altında gruplandırılsın.
 
 ## Select Benzeri Alanlarda Veri Kaynakları
 

@@ -23,6 +23,7 @@
     import ColorSelector from './SkColorSelector.vue';
     import EditorInput from './inputs/EditorInput.vue';
     import TranslatableInput from './inputs/TranslatableInput.vue';
+    import SkIcon from '../ui/SkIcon.vue';
     import { generatePassword } from './utils/passwordGenerator';
     import FilePreviewModal, {
         suggestedPreviewWidth,
@@ -95,6 +96,42 @@
      * component owns its own absolute-positioned icons and fights InputGroup.
      */
     const useCustomPasswordInput = computed(() => props.field.type === 'password' && !asPassword.value.feedback);
+
+    // ── Icon support ─────────────────────────────────────────────────────────────
+
+    /**
+     * Generic input icon resolver.
+     * BaseFieldConfig.icon is preferred; InputTextFieldConfig.icon is the
+     * legacy fallback (deprecated, kept for backwards-compatibility).
+     */
+    const inputIcon = computed<string | undefined>(() => {
+        const base = (props.field as { icon?: string }).icon;
+        const legacy = (props.field as InputTextFieldConfig).icon;
+        return base ?? legacy;
+    });
+
+    const inputIconPosition = computed<'left' | 'right'>(
+        () =>
+            (props.field as { iconPosition?: 'left' | 'right' }).iconPosition ??
+            (props.field as InputTextFieldConfig).iconPosition ??
+            'left',
+    );
+
+    const SUPPORTS_INPUT_ICON = new Set(['input-text', 'input-number', 'input-mask', 'password']);
+
+    /**
+     * True when the field should render inside an IconField wrapper.
+     * Exclusions:
+     * - groupPrefix/groupSuffix present → InputGroup wins, IconField deactivated.
+     * - password with PrimeVue feedback path → component owns its own icons.
+     */
+    const usesIconField = computed(() => {
+        if (!SUPPORTS_INPUT_ICON.has(props.field.type)) return false;
+        if (!inputIcon.value) return false;
+        if (props.field.groupPrefix || props.field.groupSuffix) return false;
+        if (props.field.type === 'password' && !useCustomPasswordInput.value) return false;
+        return true;
+    });
 
     /** True when the password field should render our custom eye toggle. */
     const showPasswordToggle = computed(() => useCustomPasswordInput.value && (asPassword.value.toggleMask ?? true));
@@ -319,11 +356,13 @@
 
         <!-- InputText -->
         <IconField
-            v-if="field.type === 'input-text' && asInputText.icon"
-            :icon-position="asInputText.iconPosition ?? 'left'"
+            v-if="field.type === 'input-text' && usesIconField"
+            :icon-position="inputIconPosition"
             class="w-full"
         >
-            <InputIcon :class="asInputText.icon" />
+            <InputIcon>
+                <SkIcon :icon="inputIcon!" />
+            </InputIcon>
             <InputText
                 :id="field.key"
                 v-model="stringVal"
@@ -348,6 +387,33 @@
         />
 
         <!-- InputNumber -->
+        <IconField
+            v-else-if="field.type === 'input-number' && usesIconField"
+            :icon-position="inputIconPosition"
+            class="w-full"
+        >
+            <InputIcon>
+                <SkIcon :icon="inputIcon!" />
+            </InputIcon>
+            <InputNumber
+                :id="field.key"
+                v-model="numberVal"
+                :placeholder="asInputNumber.placeholder ? $t(asInputNumber.placeholder) : undefined"
+                :min="asInputNumber.min"
+                :max="asInputNumber.max"
+                :step="asInputNumber.step"
+                :prefix="asInputNumber.prefix"
+                :suffix="asInputNumber.suffix"
+                :show-buttons="asInputNumber.showButtons"
+                :min-fraction-digits="asInputNumber.minFractionDigits"
+                :max-fraction-digits="asInputNumber.maxFractionDigits"
+                :use-grouping="asInputNumber.useGrouping ?? true"
+                :disabled="disabled"
+                :invalid="invalid"
+                class="w-full"
+                v-bind="extraProps"
+            />
+        </IconField>
         <InputNumber
             v-else-if="field.type === 'input-number'"
             :id="field.key"
@@ -382,6 +448,28 @@
         />
 
         <!-- InputMask -->
+        <IconField
+            v-else-if="field.type === 'input-mask' && usesIconField"
+            :icon-position="inputIconPosition"
+            class="w-full"
+        >
+            <InputIcon>
+                <SkIcon :icon="inputIcon!" />
+            </InputIcon>
+            <InputMask
+                :id="field.key"
+                v-model="stringVal"
+                :mask="asInputMask.mask"
+                :placeholder="asInputMask.placeholder ? $t(asInputMask.placeholder) : undefined"
+                :slot-char="asInputMask.slotChar ?? '_'"
+                :auto-clear="asInputMask.autoClear ?? false"
+                :unmask="asInputMask.unmask ?? false"
+                :disabled="disabled"
+                :invalid="invalid"
+                class="w-full"
+                v-bind="extraProps"
+            />
+        </IconField>
         <InputMask
             v-else-if="field.type === 'input-mask'"
             :id="field.key"
@@ -546,7 +634,29 @@
 
         <!-- Password (default path) — rendered as plain InputText so the
              InputGroup can cleanly host our own eye-toggle + generate buttons
-             without fighting PrimeVue Password's absolute-positioned icons. -->
+             without fighting PrimeVue Password's absolute-positioned icons.
+             IconField is only used when there is no InputGroup wrapper
+             (groupPrefix/groupSuffix absent), which usesIconField guarantees. -->
+        <IconField
+            v-else-if="field.type === 'password' && useCustomPasswordInput && usesIconField"
+            :icon-position="inputIconPosition"
+            class="w-full"
+        >
+            <InputIcon>
+                <SkIcon :icon="inputIcon!" />
+            </InputIcon>
+            <InputText
+                :id="field.key"
+                v-model="stringVal"
+                :type="passwordVisible ? 'text' : 'password'"
+                :placeholder="asPassword.placeholder ? $t(asPassword.placeholder) : undefined"
+                :disabled="disabled"
+                :invalid="invalid"
+                autocomplete="new-password"
+                class="w-full"
+                v-bind="extraProps"
+            />
+        </IconField>
         <InputText
             v-else-if="field.type === 'password' && useCustomPasswordInput"
             :id="field.key"

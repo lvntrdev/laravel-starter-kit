@@ -9,8 +9,7 @@
         OptionFilter,
         SelectFieldConfig,
         SelectOption,
-        SlotFieldConfig,
-        TitleFieldConfig,
+        SectionFieldConfig,
         TranslatableTextFieldConfig,
     } from './core';
     import type { SharedPageProps } from '@/types';
@@ -18,7 +17,8 @@
     import { useCan } from '@/composables/useCan';
     import { useDefinition } from '@/composables/useDefinition';
     import { trans } from 'laravel-vue-i18n';
-    import SkFormInput from './SkFormInput.vue';
+    import SkFormFieldRenderer from './SkFormFieldRenderer.vue';
+    import type { RenderCtx } from './SkFormFieldRenderer.vue';
 
     /**
      * Render a field's label: translates it via laravel-vue-i18n when the label is
@@ -115,9 +115,12 @@
         }
     }
 
-    /** Collect all definitionKey values from select fields to preload them. */
+    /**
+     * Collect all definitionKey values from select fields to preload them.
+     * Uses flatFields so section-nested select fields are also included.
+     */
     const definitionKeys = computed(() =>
-        props.config.fields
+        Array.from(iterateAllFields(props.config.fields))
             .filter((f): f is SelectFieldConfig => {
                 if (!SELECT_TYPES.has(f.type)) return false;
                 const sf = f as SelectFieldConfig;
@@ -135,25 +138,59 @@
         }
     });
 
+    // ── Field iteration helper (section flattening) ───────────────────────────
+
+    /**
+     * Generator that yields all non-section leaf fields, recursively opening
+     * sections. Used to build flat lists for defaults/options/submit logic.
+     */
+    function* iterateAllFields(fields: FieldConfig[]): Iterable<FieldConfig> {
+        for (const f of fields) {
+            if (f.type === 'section') {
+                yield* iterateAllFields((f as SectionFieldConfig).fields);
+            } else {
+                yield f;
+            }
+        }
+    }
+
     // ── Resolve existingMediaKey from loaded data ─────────────────────────────
+
+    /**
+     * Resolves `existingMediaKey` for file-upload fields.
+     * Recursive: also resolves fields nested inside sections.
+     */
     const resolvedFields = computed<FieldConfig[]>(() => {
         const data = remoteData.value ?? props.config.initialData;
         if (!data) return props.config.fields;
 
-        return props.config.fields.map((field) => {
+        // Capture as non-nullable for use inside the nested closure
+        const resolvedData: Record<string, unknown> = data;
+
+        function resolveField(field: FieldConfig): FieldConfig {
+            if (field.type === 'section') {
+                const sec = field as SectionFieldConfig;
+                return { ...sec, fields: sec.fields.map(resolveField) };
+            }
             if (field.type !== 'file-upload') return field;
             const f = field as FileUploadFieldConfig;
             if (!f.existingMediaKey) return field;
-
-            const media = data[f.existingMediaKey];
+            const media = resolvedData[f.existingMediaKey];
             const resolved: ExistingMedia[] = Array.isArray(media) ? media : media ? [media as ExistingMedia] : [];
-
             return { ...f, existingMedia: resolved };
-        });
+        }
+
+        return props.config.fields.map(resolveField);
     });
 
+    /**
+     * Flat list of all leaf input fields (sections opened, non-input types excluded).
+     * Used for derivedDefaults, currentValues, hasFileFields, dateOnlyFields, etc.
+     */
+    const flatFields = computed<FieldConfig[]>(() => Array.from(iterateAllFields(resolvedFields.value)));
+
     // ── Field type sets ─────────────────────────────────────────────────────────
-    const NON_INPUT_TYPES = new Set(['title', 'slot']);
+    const NON_INPUT_TYPES = new Set(['title', 'slot', 'section']);
     const SELECT_TYPES = new Set(['select', 'multiselect', 'radio', 'select-button', 'checkbox-group']);
     const INLINE_LABEL_TYPES = new Set(['checkbox', 'toggle-button', 'toggle-switch']);
 
@@ -201,11 +238,12 @@
     /**
      * Auto-derive initial form values.
      * Priority: initialData[key] → field.defaultValue → null
+     * Uses flatFields so section-nested fields are included; section nodes themselves are excluded.
      */
     const derivedDefaults = computed(() => {
         const initial = remoteData.value ?? props.config.initialData ?? {};
         return Object.fromEntries(
-            resolvedFields.value
+            flatFields.value
                 .filter((f) => !NON_INPUT_TYPES.has(f.type))
                 .map((f) => {
                     let fromData = initial[f.key];
@@ -309,11 +347,14 @@
         }
     }
 
-    /** Snapshot of all current values — used for visible/disabled callbacks and dynamic options. */
+    /**
+     * Snapshot of all current values — used for visible/disabled callbacks and dynamic options.
+     * Uses flatFields (section-nested fields included, section nodes excluded).
+     */
     const currentValues = computed<Record<string, unknown>>(() => {
         if (isInternalMode.value) {
             return Object.fromEntries(
-                resolvedFields.value.map((f) => [f.key, (internalForm as unknown as Record<string, unknown>)[f.key]]),
+                flatFields.value.map((f) => [f.key, (internalForm as unknown as Record<string, unknown>)[f.key]]),
             );
         }
         return modelValue.value;
@@ -325,8 +366,8 @@
 
     // ── Submit & Reset ────────────────────────────────────────────────────────────
 
-    /** Check if the form contains any file upload fields. */
-    const hasFileFields = computed(() => resolvedFields.value.some((f) => f.type === 'file-upload'));
+    /** Check if the form contains any file upload fields (including section-nested). */
+    const hasFileFields = computed(() => flatFields.value.some((f) => f.type === 'file-upload'));
 
     function handleSubmit(): void {
         if (!props.config.submit || isReadOnly.value) {
@@ -334,7 +375,7 @@
         }
         const { url, method, preserveScroll = true } = props.config.submit;
 
-        const dateOnlyFields = resolvedFields.value.filter(
+        const dateOnlyFields = flatFields.value.filter(
             (f): f is DatePickerFieldConfig => f.type === 'date-picker' && !f.showTime,
         );
 
@@ -380,7 +421,7 @@
     const lastOptionUrl = ref<Record<string, string | null>>({});
 
     const dynamicSelectFields = computed<SelectFieldConfig[]>(() =>
-        resolvedFields.value.filter(
+        flatFields.value.filter(
             (f): f is SelectFieldConfig =>
                 ['select', 'multiselect', 'radio', 'select-button'].includes(f.type) &&
                 !!(f as SelectFieldConfig).optionsUrl,
@@ -546,6 +587,28 @@
         // isCard true → show Card with bg/shadow
         return {};
     });
+
+    // ── renderCtx — passed to SkFormFieldRenderer ─────────────────────────────
+
+    const renderCtx = computed<RenderCtx>(() => ({
+        config: props.config,
+        getValue,
+        setValue,
+        getOptions,
+        isVisible,
+        isDisabled,
+        isLoading,
+        hasInlineLabel,
+        hasInlineFieldLabel,
+        isControlRight,
+        isTranslatableField,
+        displayLabel,
+        translatableErrorsFor,
+        activeErrors: activeErrors.value,
+        colsClassMap,
+        transparentCard,
+        currentValues: currentValues.value,
+    }));
 </script>
 
 <template>
@@ -561,7 +624,7 @@
             <div v-if="dataLoading" class="sk-fb__skeleton" :class="config.cssClass">
                 <div class="grid gap-5" :class="gridClass">
                     <div
-                        v-for="field in resolvedFields.filter((f) => !['title', 'slot'].includes(f.type) && !f.hidden)"
+                        v-for="field in flatFields.filter((f) => !NON_INPUT_TYPES.has(f.type) && !f.hidden)"
                         :key="field.key"
                         class="flex flex-col gap-2"
                         :class="field.cssClass"
@@ -620,204 +683,28 @@
                 <!-- ── Fields grid ─────────────────────────────────────────────────────── -->
                 <div class="sk-fb__grid" :class="gridClass">
                     <template v-for="field in resolvedFields" :key="field.key">
-                        <!-- ── Hidden field ─────────────────────────────── -->
+                        <!--
+                            Section fields are handled by SkFormFieldRenderer (Card wrapper + grid).
+                            Hidden fields (non-section): render as hidden input directly.
+                            Visible fields: delegate all rendering to SkFormFieldRenderer.
+                        -->
                         <input
-                            v-if="field.hidden"
+                            v-if="field.hidden && field.type !== 'section'"
                             type="hidden"
                             :name="field.key"
                             :value="String(getValue(field.key) ?? '')"
                         >
 
-                        <div v-else-if="isVisible(field)" :class="field.cssClass">
-                            <!-- ── Title ────────────────────────────────────── -->
-                            <component
-                                :is="(field as TitleFieldConfig).tag ?? 'h3'"
-                                v-if="field.type === 'title'"
-                                class="sk-fb__title"
-                            >
-                                {{ displayLabel(field) }}
-                            </component>
-
-                            <!-- ── Slot ─────────────────────────────────────── -->
-                            <slot
-                                v-else-if="field.type === 'slot'"
-                                :name="(field as SlotFieldConfig).slotName ?? field.key"
-                                :values="currentValues"
-                            />
-
-                            <!-- ── Vertical layout ───────────────────────── -->
-                            <template v-else-if="config.layout === 'vertical'">
-                                <!-- Checkbox / Toggle: inline-label row -->
-                                <div v-if="hasInlineLabel(field)" class="sk-fb__field-vertical">
-                                    <div class="sk-fb__inline-row">
-                                        <template v-if="isControlRight(field) && !field.hideLabel">
-                                            <label :for="field.key" class="sk-fb__label sk-fb__label--inline">
-                                                {{ displayLabel(field) }}
-                                                <span v-if="field.required" class="sk-fb__required">*</span>
-                                            </label>
-                                        </template>
-
-                                        <slot
-                                            :name="`field-${field.key}`"
-                                            :field="field"
-                                            :value="getValue(field.key)"
-                                            :on-update="(v: unknown) => setValue(field.key, v)"
-                                        >
-                                            <SkFormInput
-                                                :field="field"
-                                                :value="getValue(field.key)"
-                                                :disabled="isDisabled(field)"
-                                                :invalid="!!activeErrors[field.key]"
-                                                :options="getOptions(field)"
-                                                :loading="isLoading(field)"
-                                                :translatable-errors="translatableErrorsFor(field)"
-                                                @update="(v) => setValue(field.key, v)"
-                                            />
-                                        </slot>
-
-                                        <template v-if="!isControlRight(field) && !field.hideLabel">
-                                            <label :for="field.key" class="sk-fb__label sk-fb__label--inline">
-                                                {{ displayLabel(field) }}
-                                                <span v-if="field.required" class="sk-fb__required">*</span>
-                                            </label>
-                                        </template>
-                                    </div>
-
-                                    <small
-                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
-                                        class="sk-fb__error"
-                                    >{{ activeErrors[field.key] }}</small>
-                                    <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
-                                </div>
-
-                                <!-- Regular fields: label on top -->
-                                <div
-                                    v-else
-                                    class="sk-fb__field-vertical"
-                                    :class="{ 'sk-fb__field-vertical--inline': hasInlineFieldLabel(field) }"
-                                >
-                                    <div v-if="hasInlineFieldLabel(field)" class="sk-fb__field-row">
-                                        <label
-                                            v-if="!field.hideLabel"
-                                            :for="field.key"
-                                            class="sk-fb__label sk-fb__label--field-inline"
-                                        >
-                                            {{ displayLabel(field) }}
-                                            <span v-if="field.required" class="sk-fb__required">*</span>
-                                        </label>
-
-                                        <div class="sk-fb__field-control">
-                                            <slot
-                                                :name="`field-${field.key}`"
-                                                :field="field"
-                                                :value="getValue(field.key)"
-                                                :on-update="(v: unknown) => setValue(field.key, v)"
-                                            >
-                                                <SkFormInput
-                                                    :field="field"
-                                                    :value="getValue(field.key)"
-                                                    :disabled="isDisabled(field)"
-                                                    :invalid="!!activeErrors[field.key]"
-                                                    :options="getOptions(field)"
-                                                    :loading="isLoading(field)"
-                                                    :translatable-errors="translatableErrorsFor(field)"
-                                                    @update="(v) => setValue(field.key, v)"
-                                                />
-                                            </slot>
-                                        </div>
-                                    </div>
-
-                                    <template v-else>
-                                        <label v-if="!field.hideLabel" :for="field.key" class="sk-fb__label">
-                                            {{ displayLabel(field) }}
-                                            <span v-if="field.required" class="sk-fb__required">*</span>
-                                        </label>
-
-                                        <slot
-                                            :name="`field-${field.key}`"
-                                            :field="field"
-                                            :value="getValue(field.key)"
-                                            :on-update="(v: unknown) => setValue(field.key, v)"
-                                        >
-                                            <SkFormInput
-                                                :field="field"
-                                                :value="getValue(field.key)"
-                                                :disabled="isDisabled(field)"
-                                                :invalid="!!activeErrors[field.key]"
-                                                :options="getOptions(field)"
-                                                :loading="isLoading(field)"
-                                                :translatable-errors="translatableErrorsFor(field)"
-                                                @update="(v) => setValue(field.key, v)"
-                                            />
-                                        </slot>
-                                    </template>
-
-                                    <small
-                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
-                                        class="sk-fb__error"
-                                    >{{ activeErrors[field.key] }}</small>
-                                    <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
-                                </div>
-                            </template>
-
-                            <!-- ── Horizontal layout ─────────────────────── -->
-                            <div v-else class="sk-fb__field-horizontal">
-                                <label
-                                    v-if="!field.hideLabel"
-                                    :for="field.key"
-                                    class="sk-fb__label sk-fb__label--horizontal"
-                                >
-                                    {{ displayLabel(field) }}
-                                    <span v-if="field.required" class="sk-fb__required">*</span>
-                                </label>
-
-                                <div class="sk-fb__field-content">
-                                    <div v-if="hasInlineLabel(field)" class="sk-fb__inline-wrap">
-                                        <slot
-                                            :name="`field-${field.key}`"
-                                            :field="field"
-                                            :value="getValue(field.key)"
-                                            :on-update="(v: unknown) => setValue(field.key, v)"
-                                        >
-                                            <SkFormInput
-                                                :field="field"
-                                                :value="getValue(field.key)"
-                                                :disabled="isDisabled(field)"
-                                                :invalid="!!activeErrors[field.key]"
-                                                :options="getOptions(field)"
-                                                :loading="isLoading(field)"
-                                                :translatable-errors="translatableErrorsFor(field)"
-                                                @update="(v) => setValue(field.key, v)"
-                                            />
-                                        </slot>
-                                    </div>
-
-                                    <slot
-                                        v-else
-                                        :name="`field-${field.key}`"
-                                        :field="field"
-                                        :value="getValue(field.key)"
-                                        :on-update="(v: unknown) => setValue(field.key, v)"
-                                    >
-                                        <SkFormInput
-                                            :field="field"
-                                            :value="getValue(field.key)"
-                                            :disabled="isDisabled(field)"
-                                            :invalid="!!activeErrors[field.key]"
-                                            :options="getOptions(field)"
-                                            :loading="isLoading(field)"
-                                            :translatable-errors="translatableErrorsFor(field)"
-                                            @update="(v) => setValue(field.key, v)"
-                                        />
-                                    </slot>
-
-                                    <small
-                                        v-if="activeErrors[field.key] && !isTranslatableField(field)"
-                                        class="sk-fb__error"
-                                    >{{ activeErrors[field.key] }}</small>
-                                    <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
-                                </div>
-                            </div>
+                        <div
+                            v-else-if="isVisible(field)"
+                            :class="[field.type !== 'section' ? field.cssClass : undefined]"
+                            :style="field.type === 'section' ? 'grid-column: 1 / -1' : undefined"
+                        >
+                            <SkFormFieldRenderer :field="field" :ctx="renderCtx">
+                                <template v-for="(_, name) in $slots" #[name]="slotData">
+                                    <slot :name="name" v-bind="slotData ?? {}" />
+                                </template>
+                            </SkFormFieldRenderer>
                         </div>
                     </template>
                 </div>
