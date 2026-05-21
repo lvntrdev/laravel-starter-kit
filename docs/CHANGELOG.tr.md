@@ -2,6 +2,86 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-05-21 — v13.5.9
+
+### Yama sürüm — SkIcon primitive, section/card gruplama ve icon API'leri
+
+v13.5.9 ile `SkIcon` eklendi: tek `icon: string` prop'tan üç formatı otomatik algılayan paket-bağımsız bir icon renderer. Ham SVG → `v-html`, URL → `<img>`, diğer → `<i :class>` (PrimeIcons, FontAwesome, MDI, Lucide, Iconify ve diğer class tabanlı icon set'leri). `BaseFieldConfig`'e eklenen birleşik icon API tüm field tiplerine yayıldı: `labelIcon` / `labelIconPosition` her layout'ta label yanına icon koyuyor, `icon` / `iconPosition` input içine koyuyor (`input-text`, `input-number`, `input-mask`, `password` destekli). Başlık field'larına da kendi `icon` / `iconPosition` çifti eklendi. Öne çıkan özellik ise `SectionFieldConfig` (`type: 'section'`) ve `FB.section()` fluent builder'ı — field'lar artık başlık, alt başlık, ikon ve ayarlanabilir kolon sayısıyla bir PrimeVue Card içinde görsel olarak gruplandırılabiliyor; form payload'ı flat kalmaya devam ediyor (section key'leri hiçbir zaman emit edilmiyor). `SkForm.vue`'ya `iterateAllFields` generator destekli `flatFields` computed eklendi; bu sayede section'lar tüm mevcut field işleme mantığı için (dosya upload, tarih dönüşümleri, definition preload, dynamic select) şeffaf. `SkFormFieldRenderer.vue` ayrıştırılarak recursive render ve slot forwarding bu bileşene taşındı. `InputTextFieldConfig.icon` / `iconPosition` artık deprecated; `BaseFieldConfig` seviyesindeki API kullanılmalı.
+
+#### Eklendi
+
+- **`SkIcon` UI primitive** — paket-bağımsız icon renderer. Tek `icon: string` prop'tan otomatik algılama: `<svg…` → ham SVG (`v-html`), `^(https?:|data:)` → `<img>`, diğer → `<i :class>` (PrimeIcons, FontAwesome, MDI, Lucide, Iconify ve diğer class tabanlı icon set'ler). **Güvenlik:** `icon` yalnızca builder config'ten (geliştirici kontrollü) geçirilmeli — kullanıcı kaynaklı string XSS riskidir (`<svg…` path'i `v-html` ile render eder).
+- **`BaseFieldConfig` icon alanları** — tüm field tipleri için ortak icon API'si:
+  - `labelIcon?: string` + `labelIconPosition?: 'left' | 'right'` (varsayılan: `'left'`) — tüm layout path'lerinde label yanına icon.
+  - `icon?: string` + `iconPosition?: 'left' | 'right'` (varsayılan: `'left'`) — input içine icon. Desteklenen tipler: `input-text`, `input-number`, `input-mask`, `password` (custom path — `feedback: true` ise icon yok). `groupPrefix`/`groupSuffix` önceliklidir; varsa input icon devre dışı kalır.
+- **`TitleFieldConfig` icon alanları** — `icon?: string` + `iconPosition?: 'left' | 'right'`. Örnek: `FB.title('Genel').icon('pi pi-info-circle')`.
+- **`SectionFieldConfig` (yeni field tipi `type: 'section'`)** — form içinde Card ile görsel field gruplama:
+  - `title?` (translation key, label fallback), `subtitle?`, `icon?`, `iconPosition?`
+  - `cols?: number` (varsayılan: parent formun `cols` değeri)
+  - `fields: FieldConfig[]` (tek seviye nested — iç içe section desteklenmez)
+  - `isCard?: boolean` (varsayılan: card görünür; `false` → şeffaf Card)
+  - **Form veri yapısı flat kalır** — section'ın `key`'i payload'a girmez; section yalnızca görsel gruplama primitive'idir.
+- **`SectionBuilder` ve `FB.section(title?)` factory** — fluent API: `.title(t)`, `.subtitle(s)`, `.icon(str)`, `.iconPosition(p)`, `.cols(c)`, `.isCard(enabled)`, `.addFields(...)`.
+- **`BaseFieldBuilder` fluent metotları** — `.labelIcon(str)`, `.labelIconPosition(p)`, `.icon(str)`, `.iconPosition(p)` artık tüm field builder'larında mevcut (`InputTextBuilder`'dan base'e taşındı — imza aynı, davranış değişmedi).
+- **`TitleBuilder.icon()` ve `.iconPosition()`** metotları eklendi.
+- **`SkFormFieldRenderer.vue`** — ayrıştırılmış recursive field renderer. Section render, slot forwarding ve label/title icon render bu bileşene taşındı; `SkForm.vue` template'i basitleşti.
+- **Docs** — `docs/formbuilder.md` ve `docs/formbuilder.tr.md`'ye 5 yeni bölüm: İkonlar (Paket-Bağımsız), Label İkonları, Input İkonları, Başlık İkonları, Section / Card Gruplama. XSS güvenlik notu her iki dilde mevcut.
+
+#### Değiştirildi
+
+- **`AppDialog.vue` — `confirmSeverity` artık varsayılan `'primary'` kullanmıyor** — `state.footer?.severity ?? 'primary'` → `state.footer?.severity`. Onay düğmesi artık `severity` belirtilmediğinde PrimeVue Button'ın kendi varsayılan görünümünü kullanır (tema preset'inden gelir). `DialogFooter.severity` açıkça set edilmemiş mevcut dialog'lar görsel değişiklik yaşayabilir.
+- **`useDialog.ts` — `DialogFooterSeverity` tipi genişletildi** — `'primary'` kaldırıldı (PrimeVue Button'da geçerli değil); `'info'`, `'help'`, `'contrast'` eklendi. Tam liste: `'secondary' | 'success' | 'info' | 'warn' | 'help' | 'danger' | 'contrast'`.
+- **`SkForm.vue` — flat field iterasyonu** — `derivedDefaults`, `currentValues`, `definitionKeys`, `dynamicSelectFields`, `hasFileFields`, `dateOnlyFields` computed'leri artık yeni `flatFields` computed'i (iteratif `iterateAllFields` generator) üzerinden çalışıyor. Section içindeki field'lar otomatik olarak doğru kategorize ediliyor (dosya upload existingMediaKey çözümü, tarih dönüşümleri, definition preload, dynamic optionsUrl fetch). Section içermeyen mevcut formlar birebir aynı render ediliyor (regression yok).
+- **`SkFormInput.vue` — generic input icon** — daha önce yalnızca `input-text`'te aktif olan `IconField` wrapping pattern'i artık `input-number`, `input-mask` ve `password` için de (custom path) aktif. Icon descriptor'lar `SkIcon` üzerinden render ediliyor; PrimeIcons dışında MDI/FA/Lucide/Iconify/SVG/img URL de çalışıyor. `BaseFieldConfig.icon` önceliklidir, `InputTextFieldConfig.icon` legacy fallback olarak korunur.
+- **`stubs/resources/css/theme/_formbuilder.scss`** — `.sk-fb__title` ve `.sk-fb__label` selector'larına icon hizalaması için minimal `inline-flex items-center gap` eklendi (line-height ve padding değişmedi). Yeni bölümler: `SKICON & LABEL/TITLE ICONS` (`.sk-icon`, `.sk-icon--svg svg`, `.sk-icon--img`, `.sk-fb__label-icon`, `.sk-fb__title-icon`, `.sk-fb__section-icon` + `--left/--right` modifier hook'ları), `SECTION CARD` (`.sk-fb__section`, `.sk-fb__section-title`, `.sk-fb__section-field`).
+
+#### Deprecated
+
+- **`InputTextFieldConfig.icon` ve `InputTextFieldConfig.iconPosition`** — yeni `BaseFieldConfig.icon` ve `BaseFieldConfig.iconPosition` kullanın. Legacy alanlar geriye uyumluluk için korundu (`SkFormInput.vue` `base ?? legacy` fallback ile aynı render üretiyor), gelecek major versiyonda kaldırılacak.
+
+#### Yükseltme
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Etkilenen stub'ları yeniden yayınla (DİKKAT: özelleştirilmiş stub'lar override edilir — önce diff alın)
+# stubs/resources/css/theme/_formbuilder.scss
+# stubs/resources/js/composables/useDialog.ts  ← DialogFooterSeverity tipi değişti
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**`DialogFooterSeverity` breaking change:** `'primary'` artık geçerli bir değer değil. `useDialog().open(...)` çağrılarında `severity: 'primary'` kullandıysanız kaldırın (Button kendi tema varsayılanını uygular) ya da `'secondary'` / `'contrast'` gibi geçerli bir değerle değiştirin. TypeScript bu satırları zaten hata olarak işaretleyecektir.
+
+**Migration:** legacy `InputTextFieldConfig.icon` çağrılarınız çalışmaya devam eder (deprecated, kaldırılana kadar fallback). Yeni özellikleri kullanmak için:
+
+```ts
+// Label icon — her field tipinde
+FB.inputText().key('email').label('E-posta').labelIcon('pi pi-envelope')
+
+// Input icon — input-text/number/mask/password
+FB.inputText().key('search').icon('pi pi-search')                    // PrimeIcons
+FB.inputText().key('user').icon('mdi mdi-account')                   // Material Design Icons
+FB.inputText().key('star').icon('fa fa-star').iconPosition('right')  // FontAwesome
+FB.inputText().key('logo').icon('https://cdn.example.com/icon.svg')  // URL
+
+// Başlık icon'u
+FB.title('Genel Bilgiler').icon('pi pi-info-circle')
+
+// Section / Card gruplama
+FB.form()
+    .isCard(false)
+    .addFields(
+        FB.section('Kişisel Bilgiler').icon('pi pi-user').cols(2).addFields(
+            FB.inputText().key('first_name').label('Ad'),
+            FB.inputText().key('last_name').label('Soyad'),
+        ),
+        FB.section('Adres').icon('pi pi-map-marker').addFields(/* ... */),
+    )
+    .build();
+```
+
+---
+
 ## 2026-05-20 — v13.5.8
 
 ### Yama sürüm — AppDialog Material Flat shell, zengin header & footer API, scrollbar-gap düzeltmesi

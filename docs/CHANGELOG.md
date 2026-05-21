@@ -2,6 +2,86 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-21 — v13.5.9
+
+### Patch release — SkIcon primitive, section/card grouping, and icon APIs
+
+v13.5.9 introduces `SkIcon`, a package-agnostic icon renderer that auto-detects three formats from a single `icon: string` prop: raw SVG (`v-html`), image URL (`<img>`), or class-based icon (`<i :class>` — works with PrimeIcons, FontAwesome, MDI, Lucide, Iconify, and any other CSS icon library). A unified icon API lands across all field types via `BaseFieldConfig`: `labelIcon` / `labelIconPosition` place an icon beside the label in any layout, while `icon` / `iconPosition` place one inside the input (supported on `input-text`, `input-number`, `input-mask`, and `password` without feedback). Title fields gain their own `icon` / `iconPosition` pair. The headline feature is `SectionFieldConfig` (`type: 'section'`) and its `FB.section()` fluent builder — fields can now be visually grouped inside a PrimeVue Card with a title, subtitle, icon, and configurable column count, while the form payload stays flat (section keys are never emitted). `SkForm.vue` gained a `flatFields` computed backed by an `iterateAllFields` generator so sections are transparent to all existing field-processing logic (file upload keys, date transforms, definition preloads, dynamic selects). `SkFormFieldRenderer.vue` was extracted to handle recursive rendering and slot forwarding. `InputTextFieldConfig.icon` / `iconPosition` are now deprecated in favour of the base-level API.
+
+#### Added
+
+- **`SkIcon` UI primitive** — package-agnostic icon renderer. Auto-detects from a single `icon: string` prop: `<svg…` → raw SVG (`v-html`), `^(https?:|data:)` → `<img>`, otherwise → `<i :class>` (PrimeIcons, FontAwesome, MDI, Lucide, Iconify and any class-based icon set). **Security:** `icon` must only be passed from builder config (developer-controlled) — user-sourced strings are an XSS risk (the `<svg…` path uses `v-html`).
+- **`BaseFieldConfig` icon fields** — shared icon API for all field types:
+  - `labelIcon?: string` + `labelIconPosition?: 'left' | 'right'` (default: `'left'`) — icon beside the label in all layout paths.
+  - `icon?: string` + `iconPosition?: 'left' | 'right'` (default: `'left'`) — icon inside the input. Supported types: `input-text`, `input-number`, `input-mask`, `password` (custom path — no icon when `feedback: true`). `groupPrefix`/`groupSuffix` take precedence — input icon is disabled when they are present.
+- **`TitleFieldConfig` icon fields** — `icon?: string` + `iconPosition?: 'left' | 'right'`. Example: `FB.title('General').icon('pi pi-info-circle')`.
+- **`SectionFieldConfig` (new field type `type: 'section'`)** — visual field grouping inside a Card:
+  - `title?` (translation key, falls back to `label`), `subtitle?`, `icon?`, `iconPosition?`
+  - `cols?: number` (default: parent form's `cols`)
+  - `fields: FieldConfig[]` (nested — one level only; nested sections are not supported)
+  - `isCard?: boolean` (default: card visible; `false` → transparent Card)
+  - **Form payload stays flat** — the section's `key` is never emitted; sections are a purely visual grouping primitive.
+- **`SectionBuilder` and `FB.section(title?)` factory** — fluent API: `.title(t)`, `.subtitle(s)`, `.icon(str)`, `.iconPosition(p)`, `.cols(c)`, `.isCard(enabled)`, `.addFields(...)`.
+- **`BaseFieldBuilder` fluent methods** — `.labelIcon(str)`, `.labelIconPosition(p)`, `.icon(str)`, `.iconPosition(p)` now available on all field builders (moved from `InputTextBuilder` to base — same signature, no behaviour change).
+- **`TitleBuilder.icon()` and `.iconPosition()`** methods.
+- **`SkFormFieldRenderer.vue`** — extracted recursive field renderer. Section render, slot forwarding, and label/title icon rendering are now handled here; `SkForm.vue`'s template is simplified.
+- **Docs** — 5 new sections in `docs/formbuilder.md` and `docs/formbuilder.tr.md`: Icons (Package-Agnostic), Label Icons, Input Icons, Title Icons, Section / Card Grouping. XSS security note in both languages.
+
+#### Changed
+
+- **`AppDialog.vue` — `confirmSeverity` no longer defaults to `'primary'`** — `state.footer?.severity ?? 'primary'` → `state.footer?.severity`. The confirm button now falls back to PrimeVue Button's own default appearance (from the theme preset). Existing dialogs that did not explicitly set `DialogFooter.severity` may see a visual change.
+- **`useDialog.ts` — `DialogFooterSeverity` type widened** — `'primary'` removed (not a valid PrimeVue Button severity); `'info'`, `'help'`, `'contrast'` added. Full list: `'secondary' | 'success' | 'info' | 'warn' | 'help' | 'danger' | 'contrast'`.
+- **`SkForm.vue` — flat field iteration** — `derivedDefaults`, `currentValues`, `definitionKeys`, `dynamicSelectFields`, `hasFileFields`, `dateOnlyFields` computeds are now backed by the new `flatFields` computed (iterative `iterateAllFields` generator). Fields inside sections are automatically categorised correctly (file-upload existingMediaKey resolve, date-picker toLocalDateStr transform, definition preload, dynamic optionsUrl fetch). Forms without sections render identically to before (no regression).
+- **`SkFormInput.vue` — generic input icon** — the `IconField` wrapping pattern previously only for `input-text` is now active for `input-number`, `input-mask`, and `password` (custom path). Icon descriptors render via `SkIcon`, so MDI / FA / Lucide / Iconify / SVG / img URL work in addition to PrimeIcons. `BaseFieldConfig.icon` takes precedence; `InputTextFieldConfig.icon` is kept as a legacy fallback.
+- **`stubs/resources/css/theme/_formbuilder.scss`** — minimal `inline-flex items-center gap` added to `.sk-fb__title` and `.sk-fb__label` for icon alignment (line-height and padding unchanged). New sections: `SKICON & LABEL/TITLE ICONS` (`.sk-icon`, `.sk-icon--svg svg`, `.sk-icon--img`, `.sk-fb__label-icon`, `.sk-fb__title-icon`, `.sk-fb__section-icon` + `--left/--right` modifiers), `SECTION CARD` (`.sk-fb__section`, `.sk-fb__section-title`, `.sk-fb__section-field`).
+
+#### Deprecated
+
+- **`InputTextFieldConfig.icon` and `InputTextFieldConfig.iconPosition`** — use the new `BaseFieldConfig.icon` and `BaseFieldConfig.iconPosition` instead. Legacy fields are kept for backward compatibility (`SkFormInput.vue` uses `base ?? legacy` fallback and produces the same render); they will be removed in the next major version.
+
+#### Upgrade
+
+```bash
+composer update lvntr/laravel-starter-kit
+
+# Re-publish affected stubs (warning: customised stubs are overridden — diff first)
+# stubs/resources/css/theme/_formbuilder.scss
+# stubs/resources/js/composables/useDialog.ts  ← DialogFooterSeverity type changed
+php artisan vendor:publish --tag=starter-kit-stubs --force
+```
+
+**`DialogFooterSeverity` breaking change:** `'primary'` is no longer a valid value. If you used `severity: 'primary'` in any `useDialog().open(...)` call, remove it (the Button will apply its own theme default) or replace it with a valid value such as `'secondary'` or `'contrast'`. TypeScript will already flag these as errors.
+
+**Migration:** legacy `InputTextFieldConfig.icon` calls continue to work (deprecated, kept until removal). To use the new features:
+
+```ts
+// Label icon — any field type
+FB.inputText().key('email').label('Email').labelIcon('pi pi-envelope')
+
+// Input icon — input-text/number/mask/password
+FB.inputText().key('search').icon('pi pi-search')                    // PrimeIcons
+FB.inputText().key('user').icon('mdi mdi-account')                   // Material Design Icons
+FB.inputText().key('star').icon('fa fa-star').iconPosition('right')  // FontAwesome
+FB.inputText().key('logo').icon('https://cdn.example.com/icon.svg')  // URL
+
+// Title icon
+FB.title('General Info').icon('pi pi-info-circle')
+
+// Section / Card grouping
+FB.form()
+    .isCard(false)
+    .addFields(
+        FB.section('Personal Info').icon('pi pi-user').cols(2).addFields(
+            FB.inputText().key('first_name').label('First Name'),
+            FB.inputText().key('last_name').label('Last Name'),
+        ),
+        FB.section('Address').icon('pi pi-map-marker').addFields(/* ... */),
+    )
+    .build();
+```
+
+---
+
 ## 2026-05-20 — v13.5.8
 
 ### Patch release — AppDialog Material Flat shell, rich header & footer API, scrollbar-gap fix
