@@ -397,6 +397,33 @@ const config = FB.form()
 - Nested sections (section inside section) are **not supported** — single level only.
 - `FB.title()` and `FB.section()` can be combined: use a `title` field outside sections for top-level headings, then group content under sections.
 
+## Card Title Actions Slot
+
+Both the form-level card (when `cardTitle` is set) and every `FB.section()` card expose a slot to the **right of the title** for action buttons, badges, or status indicators.
+
+- **Form card** — slot name: `title-end`.
+- **Section card** — slot name: `section-${key}-title-end`. Call `.key('your-key')` on the section so the slot name is stable; otherwise the auto-generated `__section_N` key is used.
+
+```vue
+<SkForm :config="formConfig">
+  <template #title-end>
+    <Button icon="pi pi-refresh" text rounded @click="refresh" />
+  </template>
+
+  <template #section-address-title-end="{ values }">
+    <Tag v-if="values.is_primary" severity="success" :value="$t('forms.primary')" />
+  </template>
+</SkForm>
+```
+
+```ts
+FB.section('Address').key('address').addFields(/* ... */)
+```
+
+The section slot scope exposes `{ values }` — a reactive snapshot of the current form values, useful for conditional rendering.
+
+Visually, the caption block (title + subtitle) is separated from the form content with a bottom border (themed via `--p-surface-200` light / `--p-surface-700` dark) so the title, the slot content, and the subtitle read as one cohesive header above the form fields.
+
 ## Data Sources for Select-Like Fields
 
 Select fields can get options from:

@@ -19,6 +19,7 @@
     import { trans } from 'laravel-vue-i18n';
     import SkFormFieldRenderer from './SkFormFieldRenderer.vue';
     import type { RenderCtx } from './SkFormFieldRenderer.vue';
+    import SkCard from '../ui/SkCard.vue';
 
     /**
      * Render a field's label: translates it via laravel-vue-i18n when the label is
@@ -571,22 +572,9 @@
 
     const gridClass = computed(() => colsClassMap[props.config.cols] ?? 'grid-cols-2');
 
-    // ── Card passthrough ─────────────────────────────────────────────────────────
+    // ── Card mode ────────────────────────────────────────────────────────────────
 
-    const transparentCard = { style: 'background: transparent; box-shadow: none; border: 0; padding: 0' };
-
-    const cardPt = computed(() => {
-        // Dialog mode or isCard false → invisible wrapper
-        if (props.config.inDialog || !props.config.isCard) {
-            return {
-                root: transparentCard,
-                body: { style: 'padding: 0' },
-                content: { style: 'padding: 0' },
-            };
-        }
-        // isCard true → show Card with bg/shadow
-        return {};
-    });
+    const isTransparentCard = computed(() => props.config.inDialog || !props.config.isCard);
 
     // ── renderCtx — passed to SkFormFieldRenderer ─────────────────────────────
 
@@ -606,18 +594,18 @@
         translatableErrorsFor,
         activeErrors: activeErrors.value,
         colsClassMap,
-        transparentCard,
         currentValues: currentValues.value,
     }));
 </script>
 
 <template>
-    <Card :pt="cardPt">
-        <template v-if="config.cardTitle" #title>
-            {{ $t(config.cardTitle) }}
-        </template>
-        <template v-if="config.cardSubtitle" #subtitle>
-            {{ $t(config.cardSubtitle) }}
+    <SkCard
+        :title="config.cardTitle ? $t(config.cardTitle) : undefined"
+        :subtitle="config.cardSubtitle ? $t(config.cardSubtitle) : undefined"
+        :transparent="isTransparentCard"
+    >
+        <template v-if="$slots['title-end']" #title-end>
+            <slot name="title-end" />
         </template>
         <template #content>
             <!-- ── Loading skeleton (when dataUrl is set and data is loading) ──────── -->
@@ -745,5 +733,5 @@
                 </div>
             </component>
         </template>
-    </Card>
+    </SkCard>
 </template>

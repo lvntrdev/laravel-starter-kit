@@ -2,6 +2,35 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-26 — v13.5.10
+
+### Patch release — SkCard primitive, card title actions slot, and caption divider
+
+v13.5.10 introduces `SkCard`, a shared wrapper around PrimeVue Card that provides a single source of truth for the kit's card surfaces. The same patch adds two consumer-facing slots powered by it: `#title-end` on `SkForm`'s root card and per-section `#section-${key}-title-end` on every `FB.section()` card. Both render to the **right** of the title in the same row, ready to host action buttons, status badges, or contextual indicators. The section slot is scoped — it exposes `{ values }` (a reactive snapshot of the current form values) so consumers can render conditionally. `SkCard` itself accepts `title`, `subtitle`, `transparent`, `divider`, and `pt` props plus `header`/`title`/`subtitle`/`content`/`footer`/`title-end` slots; class fallthrough works via `inheritAttrs: false` + `useAttrs` because PrimeVue Card opts out of attribute inheritance on its own root. `SkForm.vue` and `SkFormFieldRenderer.vue` were refactored to use `SkCard` instead of `<Card>` directly — their `cardPt`/`transparentCard`/`sectionCardPt` helpers are gone, the title flex wrapper and caption bottom-divider styles moved out of `_formbuilder.scss` into `_card.scss` (`.sk-card--divider .p-card-caption`), and now any consumer that wraps content in `SkCard` gets the same caption header behavior (title text on the left, `#title-end` on the right, subtitle below, divider underneath the caption block).
+
+#### Added
+
+- **`SkCard` UI primitive** — `resources/js/components/Lvntr-Starter-Kit/ui/SkCard.vue`. Shared wrapper around PrimeVue Card used by `SkForm` (and intended for future `SkDatatable` / page-level cards) so caption behavior, the `#title-end` slot, and the bottom divider have a single implementation.
+  - Props: `title?: string`, `subtitle?: string`, `transparent?: boolean` (default `false` — `true` removes background/shadow/padding, useful inside dialogs or nested cards), `divider?: boolean` (default `true` — draws a bottom border under the caption block), `pt?: Record<string, any>` (merged into the PrimeVue Card pt; consumer keys win on conflicts).
+  - Slots: `header`, `title`, `subtitle`, `content` (the default slot also maps to content), `footer`, **`title-end`** (right-aligned action/badge/status slot).
+  - `inheritAttrs: false` + `useAttrs` so outer `class` fallthrough still reaches the Card root (PrimeVue Card sets `inheritAttrs: false` on its own root, which otherwise blocks class propagation).
+  - Exported from `index.ts` as `SkCard`.
+- **`SkForm.vue` — `#title-end` slot** — new slot rendered to the right of the form-level card title. Use it for action buttons, badges, or status indicators that should live in the same row as the heading. The slot is only rendered when content is provided.
+- **`SkFormFieldRenderer.vue` — per-section `#section-${key}-title-end` slot** — scoped slot rendered to the right of each section card title. Because `SkForm.vue` already forwards every slot via the generic `v-for $slots` pattern, consumers use it directly on `<SkForm>` as `<template #section-address-title-end="{ values }">`. Slot scope: `{ values }` — a reactive snapshot of the current form values, useful for conditional rendering.
+- **Docs** — new "SkCard" section in `docs/ui-components.md` and `docs/ui-components.tr.md`; new "Card Title Actions Slot" / "Card Başlık Sağ Slot" section in `docs/formbuilder.md` and `docs/formbuilder.tr.md`.
+
+#### Changed
+
+- **`SkForm.vue` — root `<Card>` → `<SkCard>` refactor** — the internal `cardPt` computed and `transparentCard` style constant were removed; `:transparent="isTransparentCard"` is passed to `SkCard` instead. The form card's title and subtitle are now passed via `:title` and `:subtitle` props; the flex title wrapper and caption bottom-divider are produced once inside `SkCard`.
+- **`SkFormFieldRenderer.vue` — section render switched to `<SkCard>`** — `sectionCardPt` replaced with a `sectionIsTransparent` helper + `:transparent` prop. The section title flex wrapper and `title-end` slot are now delegated to `SkCard`; the icon-bearing title (`SkIcon` + text) is rendered directly inside `SkCard`'s `#title` slot.
+- **`RenderCtx` (SkFormFieldRenderer.vue) — `transparentCard` field removed** — `SkCard`'s `transparent` prop is the only source of truth; the floating style constant in the context object is no longer needed.
+- **`stubs/resources/css/theme/_card.scss`** — added `SkCard` styles:
+  - `.sk-card__title-row` (flex w-full justify-between, title row)
+  - `.sk-card__title-text` (title text, inline-flex for icon alignment)
+  - `.sk-card__title-end` (right slot container, shrink-0)
+  - `.sk-card--divider .p-card-caption` (`pb-3 mb-1 border-b` under the caption block + `--p-surface-200` / `--p-surface-700` dark variant). Only triggers inside `SkCard` — other PrimeVue Card usages stay untouched.
+- **`stubs/resources/css/theme/_formbuilder.scss`** — the transitional selectors that this work originally introduced (`.sk-fb__card*`, `.sk-fb__section-title-wrapper`, `.sk-fb__section-title-end`, `.sk-fb__card .p-card-caption`, `.sk-fb__section .p-card-caption`) were removed. A short note now points to `_card.scss`.
+
 ## 2026-05-21 — v13.5.9
 
 ### Patch release — SkIcon primitive, section/card grouping, and icon APIs

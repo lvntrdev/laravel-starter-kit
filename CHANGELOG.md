@@ -5,6 +5,31 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.10] - 2026-05-26
+
+### Added
+
+- **`SkCard` UI primitive** — `resources/js/components/Lvntr-Starter-Kit/ui/SkCard.vue`. PrimeVue Card'ı sarmalayan paylaşımlı wrapper. Tüm Sk-prefix bileşenlerinin (`SkForm`, gelecekte `SkDatatable` vb.) ve uygulama içi card'ların tek noktadan tutarlı title/subtitle/caption davranışı için kullanması amaçlanan primitive.
+  - Props: `title?: string`, `subtitle?: string`, `transparent?: boolean` (default `false` — `true` → arka plan/shadow/padding sıfır, dialog veya nested card için), `divider?: boolean` (default `true` — caption bloğunun altına alt çizgi), `pt?: Record<string, any>` (PrimeVue Card pt'sine merge edilir; consumer override eder).
+  - Slots: `header`, `title`, `subtitle`, `content` (default slot da content'e map'lenir), `footer`, **`title-end`** (başlığın sağına aksiyon/badge/durum).
+  - `inheritAttrs: false` + `useAttrs` ile dış `class` fallthrough'u Card root'una taşır (PrimeVue Card kendi `inheritAttrs: false` yaptığı için aksi halde class düşmüyordu).
+  - `index.ts`'den `SkCard` olarak export edildi.
+- **`SkForm.vue` — `#title-end` slot** — form-level card başlığının sağına render edilen yeni slot. Action button, badge veya durum göstergesi gibi içerikleri başlık metniyle aynı satırda, sağa hizalı yerleştirmek için. Slot yalnızca içerik verildiğinde render edilir.
+- **`SkFormFieldRenderer.vue` — per-section `#section-${key}-title-end` slot** — her section card başlığının sağına render edilen scoped slot. `SkForm.vue` zaten generic `v-for $slots` forwarding yaptığı için tüketici doğrudan `SkForm` üzerinden `<template #section-address-title-end="{ values }">` şeklinde kullanır. Scope: `{ values }` — mevcut form değerlerinin reaktif snapshot'ı (koşullu render için).
+- **Docs** — `docs/ui-components.md` ve `docs/ui-components.tr.md`'ye yeni "SkCard" bölümü; `docs/formbuilder.md` ve `docs/formbuilder.tr.md`'ye "Card Title Actions Slot" / "Card Başlık Sağ Slot" bölümü.
+
+### Changed
+
+- **`SkForm.vue` — root `<Card>` → `<SkCard>` refactor** — kendi içindeki `cardPt` computed'i ve `transparentCard` style sabiti kaldırıldı; `:transparent="isTransparentCard"` prop ile SkCard'a devredildi. Form card başlığı/alt başlığı `:title`/`:subtitle` prop'larıyla geçirilir; flex wrapper ve caption alt çizgisi SkCard içinde tek noktadan üretilir.
+- **`SkFormFieldRenderer.vue` — section render'ı `<Card>` → `<SkCard>` refactor** — `sectionCardPt` yerine `sectionIsTransparent` helper'ı + `:transparent` prop'u kullanır. Section title flex wrapper ve `title-end` slot SkCard'a delege edildi; icon'lu title (`SkIcon` + metin) doğrudan SkCard'ın `#title` slot'unda render edilir.
+- **`RenderCtx` (SkFormFieldRenderer.vue) — `transparentCard` alanı kaldırıldı** — SkCard `transparent` prop'u tek doğru yol; ctx'te dolaşan style sabiti gerek bırakmıyor.
+- **`stubs/resources/css/theme/_card.scss`** — SkCard stilleri eklendi:
+  - `.sk-card__title-row` (flex w-full justify-between, başlık satırı)
+  - `.sk-card__title-text` (başlık metni, ikon hizalama için inline-flex)
+  - `.sk-card__title-end` (sağ slot kapsayıcısı, shrink-0)
+  - `.sk-card--divider .p-card-caption` (caption bloğunun altına `pb-3 mb-1 border-b` + `--p-surface-200` / `--p-surface-700` dark varyant) — yalnız SkCard içinde tetiklenir, diğer PrimeVue Card kullanımlarını etkilemez.
+- **`stubs/resources/css/theme/_formbuilder.scss`** — SkCard'a taşınan geçici selektörler (`.sk-fb__card*`, `.sk-fb__section-title-wrapper`, `.sk-fb__section-title-end`, `.sk-fb__card .p-card-caption`, `.sk-fb__section .p-card-caption`) kaldırıldı. Yerlerine "SkCard'a bakın" notu eklendi.
+
 ## [13.5.9] - 2026-05-21
 
 ### Added

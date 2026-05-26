@@ -397,6 +397,33 @@ const config = FB.form()
 - İç içe section (section içinde section) **desteklenmez** — tek seviye.
 - `FB.title()` ve `FB.section()` birlikte kullanılabilir: üst seviye başlıklar için section dışında `title` field kullanın, içerikler section'lar altında gruplandırılsın.
 
+## Card Başlık Sağ Slot
+
+Hem form-level card (`cardTitle` ayarlandığında) hem her `FB.section()` card'ı, **başlığın sağına** action button, badge veya durum göstergesi yerleştirmek için bir slot açar.
+
+- **Form card** — slot adı: `title-end`.
+- **Section card** — slot adı: `section-${key}-title-end`. Section'da `.key('your-key')` çağırın ki slot adı kararlı olsun; aksi halde otomatik üretilen `__section_N` key'i kullanılır.
+
+```vue
+<SkForm :config="formConfig">
+  <template #title-end>
+    <Button icon="pi pi-refresh" text rounded @click="refresh" />
+  </template>
+
+  <template #section-address-title-end="{ values }">
+    <Tag v-if="values.is_primary" severity="success" :value="$t('forms.primary')" />
+  </template>
+</SkForm>
+```
+
+```ts
+FB.section('Adres').key('address').addFields(/* ... */)
+```
+
+Section slot scope'una `{ values }` geçilir — mevcut form değerlerinin reaktif snapshot'ı, koşullu render için kullanışlıdır.
+
+Görsel olarak caption bloğu (title + subtitle) form içeriğinden alt çizgi ile ayrılır (`--p-surface-200` light / `--p-surface-700` dark tema değişkenleri) — böylece başlık, slot içeriği ve alt başlık form alanlarının üzerinde bütünleşik tek bir başlık bloğu olarak okunur.
+
 ## Select Benzeri Alanlarda Veri Kaynakları
 
 Select alanları seçenekleri şu kaynaklardan alabilir:

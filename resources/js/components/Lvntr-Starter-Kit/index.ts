@@ -40,6 +40,7 @@ export { default as FilePreviewModal } from './ui/FilePreviewModal.vue';
 export { default as ToggleFeatureCard } from './ui/ToggleFeatureCard.vue';
 export { default as MimePickerField } from './ui/MimePickerField.vue';
 export { default as SkTag } from './ui/SkTag.vue';
+export { default as SkCard } from './ui/SkCard.vue';
 
 // FileManager
 export { default as FileManager } from './FileManager/FileManager.vue';

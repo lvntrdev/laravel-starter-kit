@@ -8,6 +8,7 @@ The starter kit includes a small set of reusable UI helpers built on top of Prim
 - `AvatarUpload`
 - `ImageLightbox`
 - `FilePreviewModal`
+- `SkCard`
 - `SkTag`
 - `ConfirmDialogComponent`
 - `ToastComponent`
@@ -82,6 +83,54 @@ confirmDelete(() => {
 
 - flash messages from `AdminLayout.vue`
 - `useApi()` error handling
+
+## SkCard
+
+`SkCard` is the shared wrapper around PrimeVue Card used by `SkForm` (and intended for `SkDatatable` and page-level cards). It guarantees a single, consistent caption header: title text on the left, an optional `#title-end` slot on the right (for action buttons, badges, status indicators), subtitle directly below, and a bottom divider that separates the whole caption block from the content.
+
+```vue
+<script setup lang="ts">
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
+</script>
+
+<template>
+    <SkCard title="Users" subtitle="Active accounts">
+        <template #title-end>
+            <Button icon="pi pi-plus" :label="$t('users.create')" @click="open" />
+        </template>
+
+        <SkDatatable :config="config" />
+    </SkCard>
+
+    <!-- transparent shell — no background, shadow, padding, or divider visuals -->
+    <SkCard transparent>
+        <p>Anything goes here.</p>
+    </SkCard>
+
+    <!-- hide the caption divider when the section is purely decorative -->
+    <SkCard title="Notes" :divider="false">
+        <p>Quick note.</p>
+    </SkCard>
+</template>
+```
+
+Props:
+
+- `title?: string` — shorthand for the `#title` slot. Pass a translated string (no internal `$t` call).
+- `subtitle?: string` — shorthand for the `#subtitle` slot.
+- `transparent?: boolean` (default `false`) — when `true`, the card renders without background, border, shadow, or padding. Useful inside dialogs or as an invisible grouping wrapper.
+- `divider?: boolean` (default `true`) — draws a bottom border under the caption block (title + subtitle) so it reads as a distinct header above the content. Themed via `--p-surface-200` (light) / `--p-surface-700` (dark).
+- `pt?: Record<string, any>` — extra PrimeVue Card passthrough. Merged with internal pt; consumer keys win on conflicts.
+
+Slots:
+
+- `header`, `title`, `subtitle`, `content`, `footer` — pass through to PrimeVue Card. The default slot also maps to `content`, so `<SkCard>…</SkCard>` is equivalent to `<SkCard><template #content>…</template></SkCard>`.
+- `title-end` — rendered to the right of the title in the same flex row.
+
+Notes:
+
+- `SkCard` is `inheritAttrs: false` internally but forwards `class` onto the Card root via `useAttrs`, so `<SkCard class="my-cls">` works as expected (plain class fallthrough is otherwise blocked by PrimeVue Card's own `inheritAttrs: false`).
+- The divider only renders when the caption is present and `divider` is `true` (default). A card without a title and subtitle gets no divider line.
 
 ## SkTag
 

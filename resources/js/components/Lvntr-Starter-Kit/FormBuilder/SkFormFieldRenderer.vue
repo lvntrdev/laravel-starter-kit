@@ -10,6 +10,7 @@
     } from './core';
     import SkFormInput from './SkFormInput.vue';
     import SkIcon from '../ui/SkIcon.vue';
+    import SkCard from '../ui/SkCard.vue';
 
     defineOptions({ name: 'SkFormFieldRenderer' });
 
@@ -56,7 +57,6 @@
         translatableErrorsFor: (field: FieldConfig) => Record<string, string> | undefined;
         activeErrors: Record<string, string>;
         colsClassMap: Record<number, string>;
-        transparentCard: { style: string };
         currentValues: Record<string, unknown>;
     }
 
@@ -79,15 +79,8 @@
         return props.ctx.colsClassMap[section.cols ?? props.ctx.config.cols] ?? 'grid-cols-2';
     }
 
-    function sectionCardPt(section: SectionFieldConfig) {
-        if (section.isCard === false) {
-            return {
-                root: props.ctx.transparentCard,
-                body: { style: 'padding: 0' },
-                content: { style: 'padding: 0' },
-            };
-        }
-        return {};
+    function sectionIsTransparent(section: SectionFieldConfig): boolean {
+        return section.isCard === false;
     }
 
     // ── Icon yardımcıları ─────────────────────────────────────────────────────
@@ -120,6 +113,10 @@
     function fieldSlotKey(key: string): string {
         return `field-${key}`;
     }
+
+    function sectionTitleEndKey(key: string): string {
+        return `section-${key}-title-end`;
+    }
 </script>
 
 <template>
@@ -131,26 +128,33 @@
         :value="String(ctx.getValue(field.key) ?? '')"
     >
 
-    <!-- ── Section — Card wrapper + recursive render ─────────────────────── -->
-    <Card
+    <!-- ── Section — SkCard wrapper + recursive render ───────────────────── -->
+    <SkCard
         v-else-if="field.type === 'section'"
-        :pt="sectionCardPt(field as SectionFieldConfig)"
+        :transparent="sectionIsTransparent(field as SectionFieldConfig)"
         :class="['sk-fb__section', field.cssClass]"
     >
         <template v-if="sectionTitle(field as SectionFieldConfig)" #title>
-            <span class="sk-fb__section-title">
-                <SkIcon
-                    v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'left'"
-                    :icon="(field as SectionFieldConfig).icon!"
-                    class="sk-fb__section-icon sk-fb__section-icon--left"
-                />
-                {{ sectionTitle(field as SectionFieldConfig) }}
-                <SkIcon
-                    v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'right'"
-                    :icon="(field as SectionFieldConfig).icon!"
-                    class="sk-fb__section-icon sk-fb__section-icon--right"
-                />
-            </span>
+            <SkIcon
+                v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'left'"
+                :icon="(field as SectionFieldConfig).icon!"
+                class="sk-fb__section-icon sk-fb__section-icon--left"
+            />
+            {{ sectionTitle(field as SectionFieldConfig) }}
+            <SkIcon
+                v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'right'"
+                :icon="(field as SectionFieldConfig).icon!"
+                class="sk-fb__section-icon sk-fb__section-icon--right"
+            />
+        </template>
+        <template
+            v-if="parentSlots[sectionTitleEndKey(field.key)]"
+            #title-end
+        >
+            <slot
+                :name="sectionTitleEndKey(field.key)"
+                :values="ctx.currentValues"
+            />
         </template>
         <template v-if="(field as SectionFieldConfig).subtitle" #subtitle>
             {{ $t((field as SectionFieldConfig).subtitle!) }}
@@ -210,7 +214,7 @@
                 </template>
             </div>
         </template>
-    </Card>
+    </SkCard>
 
     <!-- ── Non-section, non-hidden fields ───────────────────────────────── -->
     <template v-else>

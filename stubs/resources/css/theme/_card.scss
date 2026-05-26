@@ -8,3 +8,29 @@
         @apply mt-6;
     }
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SkCard — shared Card wrapper (used by SkForm, SkDatatable, etc.)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-card__title-row {
+    @apply flex w-full items-center justify-between gap-3;
+}
+
+.sk-card__title-text {
+    @apply inline-flex min-w-0 items-center gap-2;
+}
+
+.sk-card__title-end {
+    @apply inline-flex shrink-0 items-center gap-2;
+}
+
+/* Divider — bottom border under the caption (title + subtitle) block */
+.sk-card--divider .p-card-caption {
+    @apply pb-3 mb-1 border-b;
+    border-color: var(--p-surface-200);
+}
+
+:root.dark .sk-card--divider .p-card-caption {
+    border-color: var(--p-surface-700);
+}

@@ -265,6 +265,9 @@
     @apply inline-flex items-center gap-2;
 }
 
+/* Note: card title flex row, `#title-end` slot, and caption bottom divider
+   are provided by the shared `SkCard` wrapper (`.sk-card`) — see _card.scss. */
+
 .sk-fb__section-field {
     /* Section içinde grid item — varsayılan kolon span (renderer ayarlar) */
 }

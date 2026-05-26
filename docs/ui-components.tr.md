@@ -8,6 +8,7 @@ Starter kit, PrimeVue üzerine kurulu tekrar kullanılabilir bir UI yardımcı s
 - `AvatarUpload`
 - `ImageLightbox`
 - `FilePreviewModal`
+- `SkCard`
 - `SkTag`
 - `ConfirmDialogComponent`
 - `ToastComponent`
@@ -82,6 +83,54 @@ confirmDelete(() => {
 
 - `AdminLayout.vue` içindeki flash mesajları
 - `useApi()` hata yönetimi
+
+## SkCard
+
+`SkCard`, `SkForm` tarafından kullanılan (ve `SkDatatable` ile sayfa düzeyi card'lar için de düşünülen) PrimeVue Card etrafındaki paylaşımlı wrapper'dır. Tek ve tutarlı bir caption başlığı garanti eder: başlık metni solda, opsiyonel `#title-end` slot'u sağda (action button, badge, durum göstergesi için), alt başlık hemen altta ve tüm caption bloğunu içerikten ayıran alt çizgi.
+
+```vue
+<script setup lang="ts">
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
+</script>
+
+<template>
+    <SkCard title="Kullanıcılar" subtitle="Aktif hesaplar">
+        <template #title-end>
+            <Button icon="pi pi-plus" :label="$t('users.create')" @click="open" />
+        </template>
+
+        <SkDatatable :config="config" />
+    </SkCard>
+
+    <!-- şeffaf kabuk — arka plan, gölge, padding veya divider görseli yok -->
+    <SkCard transparent>
+        <p>İçerik buraya gelir.</p>
+    </SkCard>
+
+    <!-- caption sırf dekoratifse divider'ı kapat -->
+    <SkCard title="Notlar" :divider="false">
+        <p>Kısa not.</p>
+    </SkCard>
+</template>
+```
+
+Props:
+
+- `title?: string` — `#title` slot'u için kısa yol. Çevrilmiş string verin (içeride `$t` çağrılmaz).
+- `subtitle?: string` — `#subtitle` slot'u için kısa yol.
+- `transparent?: boolean` (varsayılan `false`) — `true` olduğunda card arka plan, kenarlık, gölge veya padding olmadan render edilir. Dialog içinde veya görünmez gruplama wrapper'ı olarak kullanışlıdır.
+- `divider?: boolean` (varsayılan `true`) — caption bloğunun (title + subtitle) altına alt çizgi çizer; başlık içerikten net olarak ayrılır. Tema: `--p-surface-200` (light) / `--p-surface-700` (dark).
+- `pt?: Record<string, any>` — ek PrimeVue Card passthrough. Dahili pt ile merge edilir; çakışmada consumer key'leri kazanır.
+
+Slot'lar:
+
+- `header`, `title`, `subtitle`, `content`, `footer` — PrimeVue Card'a passthrough. Default slot da `content`'e map'lenir, yani `<SkCard>…</SkCard>` `<SkCard><template #content>…</template></SkCard>` ile aynıdır.
+- `title-end` — başlığın sağına, aynı flex satırında render edilir.
+
+Notlar:
+
+- `SkCard` içeride `inheritAttrs: false`'dir ama `useAttrs` ile dış `class` fallthrough'unu Card root'una iletir; böylece `<SkCard class="my-cls">` beklendiği gibi çalışır (aksi halde PrimeVue Card'ın kendi `inheritAttrs: false`'i class düşmesini engellerdi).
+- Divider yalnızca caption mevcutsa ve `divider` `true` ise (varsayılan) çizilir. Title ve subtitle olmayan bir card'da çizgi olmaz.
 
 ## SkTag
 
