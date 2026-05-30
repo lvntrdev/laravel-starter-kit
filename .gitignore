@@ -19,3 +19,9 @@ composer.lock
 .DS_Store
 package-audit-notes/
 /package-promo
+
+# AI tooling (local, not shipped to package consumers)
+/plan-docs/
+/PROJECT_MAP.md
+/.claude/
+/CLAUDE.local.md

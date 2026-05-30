@@ -5,11 +5,19 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.5.11] - 2026-05-30
+## [13.5.11] - Unreleased
 
-### Kaldırıldı
+### Added
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — pakete dahil Claude Code skill dosyası kaldırıldı. Daha kapsamlı bir skill yapısı sonraki sürümde eklenecek.
+- **Standalone AI skill set (3 skills)** — replaces the removed monolithic skill. Distributed under `stubs/.claude/skills/`:
+  - **`lvntr-starter-kit`** — core rules: hard constraints, recipe pointers, permissions/i18n config, and cross-domain `references/` links.
+  - **`lvntr-kit-domain`** — backend / DDD layer: Actions, Services, FormRequest, Resource, Repository conventions, and domain boundaries.
+  - **`lvntr-kit-frontend`** — FormBuilder / DatatableBuilder / TabBuilder patterns, composables (`useApi`, `useDialog`, `useForm`), and starter-kit component rules.
+- **`sk:install --without-ai-skill` flag** — opt-out of AI skill publishing during host application setup. The skills are ai-kit-agnostic and work without ai-kit installed.
+
+### Removed
+
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the previous 723-line ai-kit-dependent monolithic skill file has been removed and replaced by the 3-skill set above. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before running `vendor:publish` again.
 
 ## [13.5.10] - 2026-05-30
 

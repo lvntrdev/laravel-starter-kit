@@ -2,15 +2,24 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## 2026-05-30 — v13.5.11
+## v13.5.11 — Yayımlanmadı
 
-### Yama sürüm — Pakete dahil Claude Code skill'i kaldırıldı
+### Yama sürüm — Monolit skill kaldırıldı, yerine ai-kit-agnostik 3-skill seti eklendi
 
-v13.5.11 ile daha önce paketle birlikte dağıtılan Claude Code skill dosyası (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) kaldırıldı. Bu skill, `vendor:publish` aracılığıyla host uygulamalara dağıtılıyor ve Claude Code kullanan geliştiricilere starter-kit bağlamında AI asistan desteği sağlıyordu. Daha kapsamlı yeni bir skill yapısı sonraki sürümde eklenecek.
+v13.5.11 ile 723 satırlık ai-kit'e bağımlı monolit skill dosyası (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) kaldırıldı ve yerine `stubs/.claude/skills/` altında dağıtılan üç odaklı, ai-kit-agnostik skill geldi. Yeni skill'ler ai-kit kurulu olmadan da çalışır ve starter-kit projesinin üç ana alanını kapsar: çekirdek kurallar, backend/DDD ve frontend builder kalıpları.
+
+`sk:install` komutuna `--without-ai-skill` flag'i eklendi; bu flag ile skill dosyalarının host uygulamaya yayımlanması atlanabilir.
+
+#### Eklendi
+
+- **`stubs/.claude/skills/lvntr-starter-kit/`** — çekirdek skill: zorunlu kurallar, reçete pointer'ları, permissions/i18n yapılandırması, alan arası `references/` bağlantıları.
+- **`stubs/.claude/skills/lvntr-kit-domain/`** — backend / DDD skill: Action, Service, FormRequest, Resource, Repository kuralları ve domain sınır rehberi.
+- **`stubs/.claude/skills/lvntr-kit-frontend/`** — frontend skill: FormBuilder / DatatableBuilder / TabBuilder kalıpları, composable'lar (`useApi`, `useDialog`, `useForm`) ve starter-kit bileşen kuralları.
+- **`sk:install --without-ai-skill`** — opt-out flag'i; skill dosyalarının host uygulamaya yayımlanmasını atlar.
 
 #### Kaldırıldı
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — pakete dahil Claude Code skill dosyası kaldırıldı. Bu dosyayı daha önce host uygulamanıza yayımladıysanız `.claude/skills/lvntr-starter-kit/` dizininden güvenle silebilirsiniz. Yeni bir skill sonraki sürümde gelecek.
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — 723 satırlık ai-kit'e bağımlı monolit skill kaldırıldı. Bu dosyayı daha önce host uygulamanıza yayımladıysanız `vendor:publish` komutunu tekrar çalıştırmadan önce `.claude/skills/lvntr-starter-kit/SKILL.md` dosyasını silin.
 
 ## 2026-05-30 — v13.5.10
 

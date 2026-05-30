@@ -2,15 +2,24 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-05-30 — v13.5.11
+## v13.5.11 — Unreleased
 
-### Patch release — Removed bundled Claude Code skill
+### Patch release — Standalone 3-skill set replaces monolithic bundled skill
 
-v13.5.11 removes the Claude Code skill file (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) that was previously shipped with the package. The skill was distributed to host applications via `vendor:publish` and provided AI assistant context for Claude Code users working within a starter-kit project. A new, more comprehensive skill structure is planned for a future release.
+v13.5.11 removes the previous 723-line ai-kit-dependent monolithic skill (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) and replaces it with three focused, ai-kit-agnostic skills distributed under `stubs/.claude/skills/`. The new skills work independently of ai-kit and cover the three main concerns of a starter-kit project: core rules, backend/DDD conventions, and frontend builder patterns.
+
+`sk:install` gains a `--without-ai-skill` flag for projects that prefer not to publish any AI skill files.
+
+#### Added
+
+- **`stubs/.claude/skills/lvntr-starter-kit/`** — core skill: hard rules, recipe pointers, permissions/i18n config, cross-domain `references/` links.
+- **`stubs/.claude/skills/lvntr-kit-domain/`** — backend / DDD skill: Actions, Services, FormRequest, Resource, Repository conventions, and domain boundary guidance.
+- **`stubs/.claude/skills/lvntr-kit-frontend/`** — frontend skill: FormBuilder / DatatableBuilder / TabBuilder patterns, composables (`useApi`, `useDialog`, `useForm`), and starter-kit component rules.
+- **`sk:install --without-ai-skill`** — opt-out flag; skips publishing the skill files to the host application.
 
 #### Removed
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the bundled Claude Code skill file has been removed. If you previously published this file to your host application, it can be safely deleted from `.claude/skills/lvntr-starter-kit/`. A replacement skill will ship in an upcoming release.
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the 723-line monolithic ai-kit-dependent skill has been removed. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before re-running `vendor:publish`.
 
 ## 2026-05-30 — v13.5.10
 
