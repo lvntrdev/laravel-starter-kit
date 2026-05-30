@@ -100,6 +100,18 @@ import {
  *     FB.toggleSwitch().key('is_active').label('Active'),
  *   )
  *   .build();
+ *
+ * @example — 12-column grid with field spanning
+ * const config = FB.form()
+ *   .cols(12)
+ *   .addFields(
+ *     FB.inputText().key('title').label('Title').colSpan(12),   // full row
+ *     FB.inputText().key('first_name').label('First Name').colSpan(6),
+ *     FB.inputText().key('last_name').label('Last Name').colSpan(6),
+ *     FB.textarea().key('bio').label('Bio').colSpan(8),
+ *     FB.select().key('role').label('Role').colSpan(4),
+ *   )
+ *   .build();
  */
 export const FB = {
     form: () => new FormBuilder(),

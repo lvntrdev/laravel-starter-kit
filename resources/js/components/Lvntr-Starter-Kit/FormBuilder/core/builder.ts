@@ -161,6 +161,19 @@ abstract class BaseFieldBuilder<T extends FieldConfig> {
         return this;
     }
 
+    /**
+     * Field'ın grid içinde kaç kolon kaplayacağını belirtir (1..cols).
+     * `cols` değerini aşan değer otomatik clamp edilir.
+     *
+     * @example
+     *   FB.inputText().key('baslik').colSpan(12)   // tam satır
+     *   FB.inputText().key('ad').colSpan(6)        // cols(12) formda yarım satır
+     */
+    colSpan(n: number): this {
+        this.config.colSpan = n;
+        return this;
+    }
+
     /** Pass additional props directly to the underlying PrimeVue component. */
     props(componentProps: Record<string, unknown>): this {
         this.config.componentProps = { ...(this.config.componentProps ?? {}), ...componentProps };

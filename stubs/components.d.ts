@@ -50,6 +50,7 @@ declare module 'vue' {
     RadioButton: typeof import('primevue/radiobutton')['default']
     Select: typeof import('primevue/select')['default']
     SelectButton: typeof import('primevue/selectbutton')['default']
+    SkCard: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/ui/SkCard.vue')['default']
     SkColorSelector: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/FormBuilder/SkColorSelector.vue')['default']
     SkDatatable: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/DatatableBuilder/SkDatatable.vue')['default']
     SkeletonBox: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/Skeleton/SkeletonBox.vue')['default']

@@ -568,6 +568,20 @@
         4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
         5: 'grid-cols-1 md:grid-cols-5',
         6: 'grid-cols-1 md:grid-cols-6',
+        7: 'grid-cols-1 md:grid-cols-7',
+        8: 'grid-cols-1 md:grid-cols-8',
+        9: 'grid-cols-1 md:grid-cols-9',
+        10: 'grid-cols-1 md:grid-cols-10',
+        11: 'grid-cols-1 md:grid-cols-11',
+        12: 'grid-cols-1 md:grid-cols-12',
+    };
+
+    // Statik — Tailwind 4 JIT dinamik `col-span-${n}` purge eder. Bu map purge-safe.
+    const colSpanClassMap: Record<number, string> = {
+        1: 'md:col-span-1',   2: 'md:col-span-2',   3: 'md:col-span-3',
+        4: 'md:col-span-4',   5: 'md:col-span-5',   6: 'md:col-span-6',
+        7: 'md:col-span-7',   8: 'md:col-span-8',   9: 'md:col-span-9',
+        10: 'md:col-span-10', 11: 'md:col-span-11', 12: 'md:col-span-12',
     };
 
     const gridClass = computed(() => colsClassMap[props.config.cols] ?? 'grid-cols-2');
@@ -594,6 +608,7 @@
         translatableErrorsFor,
         activeErrors: activeErrors.value,
         colsClassMap,
+        colSpanClassMap,
         currentValues: currentValues.value,
     }));
 </script>
@@ -685,7 +700,12 @@
 
                         <div
                             v-else-if="isVisible(field)"
-                            :class="[field.type !== 'section' ? field.cssClass : undefined]"
+                            :class="[
+                                field.type !== 'section' ? field.cssClass : undefined,
+                                field.type !== 'section' && field.colSpan
+                                    ? colSpanClassMap[Math.min(Math.max(field.colSpan, 1), config.cols)]
+                                    : undefined,
+                            ]"
                             :style="field.type === 'section' ? 'grid-column: 1 / -1' : undefined"
                         >
                             <SkFormFieldRenderer :field="field" :ctx="renderCtx">

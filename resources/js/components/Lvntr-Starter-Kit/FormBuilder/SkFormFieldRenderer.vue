@@ -57,6 +57,8 @@
         translatableErrorsFor: (field: FieldConfig) => Record<string, string> | undefined;
         activeErrors: Record<string, string>;
         colsClassMap: Record<number, string>;
+        /** Purge-safe statik col-span class map'i. Task 3 (section içi span) burayı kullanır. */
+        colSpanClassMap: Record<number, string>;
         currentValues: Record<string, unknown>;
     }
 
@@ -66,6 +68,16 @@
     }
 
     const props = defineProps<Props>();
+
+    // ── Span yardımcıları ─────────────────────────────────────────────────────
+
+    /**
+     * colSpan değerini 1..maxCols aralığına sıkıştırır.
+     * Section cols(6) iken child colSpan(12) → 6 döner, grid taşması olmaz.
+     */
+    function clampColSpan(span: number | undefined, maxCols: number): number {
+        return Math.min(Math.max(span ?? 1, 1), maxCols);
+    }
 
     // ── Section yardımcıları ───────────────────────────────────────────────────
 
@@ -172,8 +184,13 @@
                     <!-- Visible child field — recursive -->
                     <div
                         v-else-if="ctx.isVisible(child)"
-                        :class="child.cssClass"
                         class="sk-fb__section-field"
+                        :class="[
+                            child.cssClass,
+                            child.colSpan
+                                ? ctx.colSpanClassMap[clampColSpan(child.colSpan, (field as SectionFieldConfig).cols ?? ctx.config.cols)]
+                                : undefined,
+                        ]"
                     >
                         <!--
                             Render child field via SkFormFieldRenderer.

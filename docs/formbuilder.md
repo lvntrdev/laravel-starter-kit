@@ -58,7 +58,7 @@ If `submit(...)` is omitted, you can use `v-model` and handle submission yoursel
 ## Form Builder API
 
 - `layout('vertical' | 'horizontal')`
-- `cols(number)`
+- `cols(number)` — grid column count for the form (1–12 are all supported; previously values above 6 silently fell back to the default 2-column layout)
 - `class(string)`
 - `dataUrl(url)`
 - `dataKey(key)`
@@ -92,6 +92,7 @@ Most fields support:
 - `hidden(boolean)`
 - `default(value)`
 - `props({...})`
+- `colSpan(number)` — how many grid columns this field occupies (1..cols). Omitting it defaults to 1 cell. Values exceeding the active `cols` are automatically clamped; inside a section, the section's own `cols` is used as the upper bound.
 
 `hidden(true)` keeps the field in the submitted payload while rendering it as a hidden input instead of a visible control.
 
@@ -297,7 +298,7 @@ See [Translatable Fields](./translatable-fields.md) for the complete backend and
 
 `FB.colorSelector()` renders a Tailwind color palette picker with an optional tone selector.
 
-- `colors(string[])` — available color names. Defaults to all Tailwind palettes.
+- `colors(string[])` — available color names. Defaults to all 22 Tailwind palette families: the 17 chromatic families (`red` through `rose`) plus the 5 neutral families (`slate`, `gray`, `zinc`, `neutral`, `stone`).
 - `tones(number[])` — tone steps displayed. Defaults to `[50, 100, …, 950]`.
 - `format('hex' | 'name' | 'name-tone')` — output format. Defaults to `'name'`.
 - `defaultTone(number)` — initial tone used when format requires one. Defaults to `500`.
@@ -366,7 +367,7 @@ const config = FB.form()
             .addFields(
                 FB.inputText().key('city').label('City'),
                 FB.inputText().key('postal_code').label('Postal Code'),
-                FB.textarea().key('address').label('Full Address').class('col-span-2'),
+                FB.textarea().key('address').label('Full Address').colSpan(2), // span full row — preferred over .class('col-span-2')
             ),
         FB.section('Preferences')
             .icon('pi pi-cog')
@@ -380,6 +381,20 @@ const config = FB.form()
     .build();
 ```
 
+**Field-level `.colSpan()` example** — using a 12-column form to mix full-width and half-width fields:
+
+```ts
+FB.form()
+    .cols(12)
+    .addFields(
+        FB.inputText().key('title').label('Title').colSpan(12),  // full row
+        FB.inputText().key('first_name').label('First Name').colSpan(6),
+        FB.inputText().key('last_name').label('Last Name').colSpan(6),
+        FB.textarea().key('notes').label('Notes').colSpan(12),
+    )
+    .build();
+```
+
 **Section Builder API:**
 
 - `FB.section(title?)` — factory method. `title` is a translation key (optional).
@@ -387,7 +402,7 @@ const config = FB.form()
 - `.subtitle(key)` — secondary text rendered below the heading.
 - `.icon(descriptor)` — icon shown next to the heading.
 - `.iconPosition('left' | 'right')` — icon placement (default `'left'`).
-- `.cols(number)` — grid columns for fields inside this section. Inherits the parent form's `cols` when omitted.
+- `.cols(number)` — grid columns for fields inside this section (1–12). Inherits the parent form's `cols` when omitted.
 - `.isCard(boolean)` — when `false`, the section renders without a card shell (no background, shadow, or border). Defaults to `true` (card visible).
 - `.addFields(...fields)` — nested field definitions. Only one level of nesting is supported.
 

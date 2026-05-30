@@ -2,14 +2,19 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-05-26 — v13.5.10
+## 2026-05-30 — v13.5.10
 
-### Patch release — SkCard primitive, card title actions slot, and caption divider
+### Patch release — SkCard primitive, card title actions slot, caption divider, SkForm grid span + 12-column support, and SkColorSelector neutral palette
 
 v13.5.10 introduces `SkCard`, a shared wrapper around PrimeVue Card that provides a single source of truth for the kit's card surfaces. The same patch adds two consumer-facing slots powered by it: `#title-end` on `SkForm`'s root card and per-section `#section-${key}-title-end` on every `FB.section()` card. Both render to the **right** of the title in the same row, ready to host action buttons, status badges, or contextual indicators. The section slot is scoped — it exposes `{ values }` (a reactive snapshot of the current form values) so consumers can render conditionally. `SkCard` itself accepts `title`, `subtitle`, `transparent`, `divider`, and `pt` props plus `header`/`title`/`subtitle`/`content`/`footer`/`title-end` slots; class fallthrough works via `inheritAttrs: false` + `useAttrs` because PrimeVue Card opts out of attribute inheritance on its own root. `SkForm.vue` and `SkFormFieldRenderer.vue` were refactored to use `SkCard` instead of `<Card>` directly — their `cardPt`/`transparentCard`/`sectionCardPt` helpers are gone, the title flex wrapper and caption bottom-divider styles moved out of `_formbuilder.scss` into `_card.scss` (`.sk-card--divider .p-card-caption`), and now any consumer that wraps content in `SkCard` gets the same caption header behavior (title text on the left, `#title-end` on the right, subtitle below, divider underneath the caption block).
 
+The same release also adds field-level grid span control to `SkForm`: `BaseFieldConfig.colSpan` lets any field (or a field inside a section) declare how many columns it occupies in the form grid, so layouts like "full-width title + two fields side by side" are now possible, and `.cols()` supports the full 1–12 range instead of falling back above 6. `SkColorSelector` gains the 5 neutral Tailwind families (`slate`, `gray`, `zinc`, `neutral`, `stone`), bringing the total palette to 22 families.
+
 #### Added
 
+- **`BaseFieldConfig.colSpan?: number`** — sets how many columns a field (or a field inside a section) spans in the form grid (`1..cols`). Omitted → existing behavior (1 cell). Values exceeding `cols` are clamped automatically; inside a section the clamp uses `sectionCols` (the section's own `cols`, or the form `cols`).
+- **`BaseFieldBuilder.colSpan(n: number)`** — chainable `.colSpan(n)` added to every field builder. Example: `FB.inputText().key('title').label('Title').colSpan(12)`.
+- **`SkColorSelector` — 5 neutral Tailwind families** — `slate`, `gray`, `zinc`, `neutral`, `stone` added with all 50–950 shades (official Tailwind v4 hex). Total palette: 22 families.
 - **`SkCard` UI primitive** — `resources/js/components/Lvntr-Starter-Kit/ui/SkCard.vue`. Shared wrapper around PrimeVue Card used by `SkForm` (and intended for future `SkDatatable` / page-level cards) so caption behavior, the `#title-end` slot, and the bottom divider have a single implementation.
   - Props: `title?: string`, `subtitle?: string`, `transparent?: boolean` (default `false` — `true` removes background/shadow/padding, useful inside dialogs or nested cards), `divider?: boolean` (default `true` — draws a bottom border under the caption block), `pt?: Record<string, any>` (merged into the PrimeVue Card pt; consumer keys win on conflicts).
   - Slots: `header`, `title`, `subtitle`, `content` (the default slot also maps to content), `footer`, **`title-end`** (right-aligned action/badge/status slot).
@@ -30,6 +35,8 @@ v13.5.10 introduces `SkCard`, a shared wrapper around PrimeVue Card that provide
   - `.sk-card__title-end` (right slot container, shrink-0)
   - `.sk-card--divider .p-card-caption` (`pb-3 mb-1 border-b` under the caption block + `--p-surface-200` / `--p-surface-700` dark variant). Only triggers inside `SkCard` — other PrimeVue Card usages stay untouched.
 - **`stubs/resources/css/theme/_formbuilder.scss`** — the transitional selectors that this work originally introduced (`.sk-fb__card*`, `.sk-fb__section-title-wrapper`, `.sk-fb__section-title-end`, `.sk-fb__card .p-card-caption`, `.sk-fb__section .p-card-caption`) were removed. A short note now points to `_card.scss`.
+- **`SkForm.vue` — `colsClassMap` extended to 1–12** — values 7–12 previously fell back to the default grid; `cols(7)`–`cols(12)` now apply `md:grid-cols-N` directly.
+- **`SkForm.vue` + `SkFormFieldRenderer.vue` — `colSpanClassMap`** — purge-safe static map added; top-level and in-section field wrappers receive `md:col-span-N` based on `colSpan`. Fields without `colSpan` render identically to before (no regression).
 
 ## 2026-05-21 — v13.5.9
 

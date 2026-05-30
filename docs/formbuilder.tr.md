@@ -58,7 +58,7 @@ import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
 ## Form Builder API
 
 - `layout('vertical' | 'horizontal')`
-- `cols(number)`
+- `cols(number)` — form grid sütun sayısı (1–12 aralığının tamamı desteklenir; daha önce 6'nın üzerindeki değerler varsayılan 2 sütunlu düzene düşüyordu)
 - `class(string)`
 - `dataUrl(url)`
 - `dataKey(key)`
@@ -92,6 +92,7 @@ import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
 - `hidden(boolean)`
 - `default(value)`
 - `props({...})`
+- `colSpan(number)` — bu alanın form grid'inde kaç sütun kaplayacağı (1..cols). Belirtilmezse 1 hücre. Aktif `cols` değerini aşan değerler otomatik clamp edilir; section içindeyse clamp section'ın kendi `cols` değerini kullanır.
 
 `hidden(true)`, alanı gönderilen payload içinde tutarken görünür bir kontrol yerine gizli input olarak render eder.
 
@@ -297,7 +298,7 @@ Tam backend ve frontend rehberi için [Çevrilebilir Alanlar](./translatable-fie
 
 `FB.colorSelector()`, Tailwind renk paletinden seçim yapılan ve isteğe bağlı tone seçici içeren bir alan üretir.
 
-- `colors(string[])` — kullanılabilir renk adları. Varsayılan: tüm Tailwind paletleri.
+- `colors(string[])` — kullanılabilir renk adları. Varsayılan: 22 Tailwind palet ailesinin tamamı — 17 kromatik aile (`red`'den `rose`'a) ve 5 nötr aile (`slate`, `gray`, `zinc`, `neutral`, `stone`).
 - `tones(number[])` — gösterilecek tone basamakları. Varsayılan: `[50, 100, …, 950]`.
 - `format('hex' | 'name' | 'name-tone')` — çıktı formatı. Varsayılan: `'name'`.
 - `defaultTone(number)` — tone gerektiren formatlarda ilk seçim. Varsayılan: `500`.
@@ -366,7 +367,7 @@ const config = FB.form()
             .addFields(
                 FB.inputText().key('city').label('Şehir'),
                 FB.inputText().key('postal_code').label('Posta Kodu'),
-                FB.textarea().key('address').label('Açık Adres').class('col-span-2'),
+                FB.textarea().key('address').label('Açık Adres').colSpan(2), // tam satır kapla — .class('col-span-2') yerine tercih edilir
             ),
         FB.section('Tercihler')
             .icon('pi pi-cog')
@@ -380,6 +381,20 @@ const config = FB.form()
     .build();
 ```
 
+**Alan bazlı `.colSpan()` örneği** — 12 sütunlu formda tam genişlik ve yan yana alanların karıştırılması:
+
+```ts
+FB.form()
+    .cols(12)
+    .addFields(
+        FB.inputText().key('title').label('Başlık').colSpan(12),  // tam satır
+        FB.inputText().key('first_name').label('Ad').colSpan(6),
+        FB.inputText().key('last_name').label('Soyad').colSpan(6),
+        FB.textarea().key('notes').label('Notlar').colSpan(12),
+    )
+    .build();
+```
+
 **Section Builder API:**
 
 - `FB.section(title?)` — factory metodu. `title` bir çeviri anahtarıdır (opsiyonel).
@@ -387,7 +402,7 @@ const config = FB.form()
 - `.subtitle(key)` — başlığın altında gösterilen ikincil metin.
 - `.icon(descriptor)` — başlığın yanında gösterilen ikon.
 - `.iconPosition('left' | 'right')` — ikon konumu (varsayılan `'left'`).
-- `.cols(number)` — section içindeki alanlar için grid sütun sayısı. Belirtilmezse parent form'un `cols` değerini devralır.
+- `.cols(number)` — section içindeki alanlar için grid sütun sayısı (1–12). Belirtilmezse parent form'un `cols` değerini devralır.
 - `.isCard(boolean)` — `false` olduğunda section card kabuğu olmadan render edilir (arka plan, gölge veya kenarlık yok). Varsayılan `true` (card görünür).
 - `.addFields(...fields)` — iç içe field tanımları. Yalnızca tek seviye iç içe geçme desteklenir.
 

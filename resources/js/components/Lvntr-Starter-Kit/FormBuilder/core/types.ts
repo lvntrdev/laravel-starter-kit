@@ -76,6 +76,11 @@ export interface BaseFieldConfig {
     icon?: string;
     /** Input icon position (default: 'left'). */
     iconPosition?: 'left' | 'right';
+    /**
+     * Field'ın grid içinde kaç kolon kaplayacağı (1..cols).
+     * Belirtilmezse 1 hücre. `cols` değerini aşan değer otomatik clamp edilir.
+     */
+    colSpan?: number;
 }
 
 export interface InputTextFieldConfig extends BaseFieldConfig {
