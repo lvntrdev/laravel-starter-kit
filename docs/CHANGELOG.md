@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-05-30 — v13.5.11
+
+### Patch release — Removed bundled Claude Code skill
+
+v13.5.11 removes the Claude Code skill file (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) that was previously shipped with the package. The skill was distributed to host applications via `vendor:publish` and provided AI assistant context for Claude Code users working within a starter-kit project. A new, more comprehensive skill structure is planned for a future release.
+
+#### Removed
+
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the bundled Claude Code skill file has been removed. If you previously published this file to your host application, it can be safely deleted from `.claude/skills/lvntr-starter-kit/`. A replacement skill will ship in an upcoming release.
+
 ## 2026-05-30 — v13.5.10
 
 ### Patch release — SkCard primitive, card title actions slot, caption divider, SkForm grid span + 12-column support, and SkColorSelector neutral palette

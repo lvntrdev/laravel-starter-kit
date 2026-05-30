@@ -9,9 +9,6 @@ LOCAL.md
 # Vite build artifacts — produced by `npm run build` in CI and locally.
 /stubs/public/build/
 /stubs/bootstrap/ssr/
-/stubs/.claude/*
-!/stubs/.claude/skills/
-/stubs/.cursor/
 composer.lock
 .phpunit.result.cache
 .phpunit.cache/
@@ -20,15 +17,5 @@ composer.lock
 *.swp
 *.swo
 .DS_Store
-CLAUDE.local.md
-.claude/settings.local.json
-plan-docs/
-.claude
-.agents
-.cursor
-AGENTS.md
-CLAUDE.md
-.ai
 package-audit-notes/
 /package-promo
-.abacusai

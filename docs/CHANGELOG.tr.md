@@ -2,7 +2,17 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## 2026-05-26 — v13.5.10
+## 2026-05-30 — v13.5.11
+
+### Yama sürüm — Pakete dahil Claude Code skill'i kaldırıldı
+
+v13.5.11 ile daha önce paketle birlikte dağıtılan Claude Code skill dosyası (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) kaldırıldı. Bu skill, `vendor:publish` aracılığıyla host uygulamalara dağıtılıyor ve Claude Code kullanan geliştiricilere starter-kit bağlamında AI asistan desteği sağlıyordu. Daha kapsamlı yeni bir skill yapısı sonraki sürümde eklenecek.
+
+#### Kaldırıldı
+
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — pakete dahil Claude Code skill dosyası kaldırıldı. Bu dosyayı daha önce host uygulamanıza yayımladıysanız `.claude/skills/lvntr-starter-kit/` dizininden güvenle silebilirsiniz. Yeni bir skill sonraki sürümde gelecek.
+
+## 2026-05-30 — v13.5.10
 
 ### Yama sürüm — SkCard primitive, card başlığı sağ slot ve caption alt çizgisi
 
@@ -18,6 +28,10 @@ v13.5.10 ile PrimeVue Card'ı sarmalayan paylaşımlı bir wrapper olan `SkCard`
 - **`SkForm.vue` — `#title-end` slot** — form-level card başlığının sağına render edilen yeni slot. Başlık metniyle aynı satırda action button, badge veya durum göstergesi yerleştirmek için kullanılır. Slot yalnızca içerik verildiğinde render edilir.
 - **`SkFormFieldRenderer.vue` — per-section `#section-${key}-title-end` slot** — her section card başlığının sağına render edilen scoped slot. `SkForm.vue` zaten generic `v-for $slots` forwarding yaptığı için tüketici doğrudan `<SkForm>` üzerinden `<template #section-address-title-end="{ values }">` şeklinde kullanır. Slot scope: `{ values }` — mevcut form değerlerinin reaktif snapshot'ı, koşullu render için kullanışlı.
 - **Docs** — `docs/ui-components.md` ve `docs/ui-components.tr.md`'ye yeni "SkCard" bölümü; `docs/formbuilder.md` ve `docs/formbuilder.tr.md`'ye "Card Title Actions Slot" / "Card Başlık Sağ Slot" bölümü.
+- **`BaseFieldConfig.colSpan?: number`** — field'ın (ya da section içindeki field'ın) form grid'inde kaç sütun kaplayacağını belirtir (`1..cols`). Belirtilmezse mevcut davranış geçerli (1 hücre). `cols` değerini aşan değerler otomatik clamp'lenir; section içinde clamp, `sectionCols`'u referans alır.
+- **`BaseFieldBuilder.colSpan(n: number)`** — her field builder'ına zincirlenebilir `.colSpan(n)` eklendi. Örnek: `FB.inputText().key('baslik').label('Başlık').colSpan(12)`.
+- **`SkColorSelector` — 5 nötr Tailwind ailesi** — tüm 50–950 shade'leriyle `slate`, `gray`, `zinc`, `neutral`, `stone` eklendi (Tailwind v4 resmi hex değerleri). Toplam palette: 22 aile.
+- **`stubs/components.d.ts`** — `SkCard` export tipi eklendi.
 
 #### Değiştirildi
 
@@ -30,6 +44,8 @@ v13.5.10 ile PrimeVue Card'ı sarmalayan paylaşımlı bir wrapper olan `SkCard`
   - `.sk-card__title-end` (sağ slot kapsayıcısı, shrink-0)
   - `.sk-card--divider .p-card-caption` — caption bloğunun altına `pb-3 mb-1 border-b` + `--p-surface-200` / `--p-surface-700` dark varyant. Yalnız SkCard içinde tetiklenir, diğer PrimeVue Card kullanımlarını etkilemez.
 - **`stubs/resources/css/theme/_formbuilder.scss`** — bu çalışmanın ilk turunda eklenen geçici selektörler (`.sk-fb__card*`, `.sk-fb__section-title-wrapper`, `.sk-fb__section-title-end`, `.sk-fb__card .p-card-caption`, `.sk-fb__section .p-card-caption`) kaldırıldı. Yerine `_card.scss`'e işaret eden kısa bir not eklendi.
+- **`SkForm.vue` — `colsClassMap` 1–12'ye genişletildi** — 7–12 aralığı artık default grid'e düşmüyor; `cols(7)`–`cols(12)` doğrudan `md:grid-cols-N` uygular.
+- **`SkForm.vue` + `SkFormFieldRenderer.vue` — `colSpanClassMap`** — purge-safe statik map eklendi; üst seviye ve section içi field wrapper'ları `colSpan` değerine göre `md:col-span-N` alır. `colSpan` belirtilmemiş field'lar öncekiyle birebir render edilir (regression yok).
 
 ## 2026-05-21 — v13.5.9
 

@@ -29,13 +29,5 @@
         "starter-kit",
         "laravel"
     ],
-    "license": "PolyForm-Noncommercial-1.0.0",
-    "scripts": {
-        "ai:doctor": "~/.claude/bin/ai-kit doctor",
-        "ai:diff": "~/.claude/bin/ai-kit diff",
-        "ai:update": "~/.claude/bin/ai-kit update",
-        "ai:install": "~/.claude/bin/ai-kit install",
-        "ai:uninstall": "~/.claude/bin/ai-kit uninstall",
-        "ai:discipline": "~/.claude/bin/ai-kit setup-discipline"
-    }
+    "license": "PolyForm-Noncommercial-1.0.0"
 }
