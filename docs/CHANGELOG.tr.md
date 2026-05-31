@@ -4,9 +4,9 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ## v13.5.11 — Yayımlanmadı
 
-### Yama sürüm — Monolit skill kaldırıldı, yerine ai-kit-agnostik 3-skill seti eklendi
+### Yama sürüm — Monolit skill kaldırıldı, yerine bağımsız 3-skill seti eklendi
 
-v13.5.11 ile 723 satırlık ai-kit'e bağımlı monolit skill dosyası (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) kaldırıldı ve yerine `stubs/.claude/skills/` altında dağıtılan üç odaklı, ai-kit-agnostik skill geldi. Yeni skill'ler ai-kit kurulu olmadan da çalışır ve starter-kit projesinin üç ana alanını kapsar: çekirdek kurallar, backend/DDD ve frontend builder kalıpları.
+v13.5.11 ile 723 satırlık monolit skill dosyası (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) kaldırıldı ve yerine `stubs/.claude/skills/` altında dağıtılan üç odaklı, kendi kendine yeten skill geldi. Yeni skill'ler ek bir araç gerektirmeden çalışır ve starter-kit projesinin üç ana alanını kapsar: çekirdek kurallar, backend/DDD ve frontend builder kalıpları.
 
 `sk:install` komutuna `--without-ai-skill` flag'i eklendi; bu flag ile skill dosyalarının host uygulamaya yayımlanması atlanabilir.
 
@@ -19,7 +19,7 @@ v13.5.11 ile 723 satırlık ai-kit'e bağımlı monolit skill dosyası (`stubs/.
 
 #### Kaldırıldı
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — 723 satırlık ai-kit'e bağımlı monolit skill kaldırıldı. Bu dosyayı daha önce host uygulamanıza yayımladıysanız `vendor:publish` komutunu tekrar çalıştırmadan önce `.claude/skills/lvntr-starter-kit/SKILL.md` dosyasını silin.
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — 723 satırlık monolit skill kaldırıldı. Bu dosyayı daha önce host uygulamanıza yayımladıysanız `vendor:publish` komutunu tekrar çalıştırmadan önce `.claude/skills/lvntr-starter-kit/SKILL.md` dosyasını silin.
 
 ## 2026-05-30 — v13.5.10
 

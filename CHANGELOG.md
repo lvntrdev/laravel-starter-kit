@@ -13,11 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **`lvntr-starter-kit`** — core rules: hard constraints, recipe pointers, permissions/i18n config, and cross-domain `references/` links.
   - **`lvntr-kit-domain`** — backend / DDD layer: Actions, Services, FormRequest, Resource, Repository conventions, and domain boundaries.
   - **`lvntr-kit-frontend`** — FormBuilder / DatatableBuilder / TabBuilder patterns, composables (`useApi`, `useDialog`, `useForm`), and starter-kit component rules.
-- **`sk:install --without-ai-skill` flag** — opt-out of AI skill publishing during host application setup. The skills are ai-kit-agnostic and work without ai-kit installed.
+- **`sk:install --without-ai-skill` flag** — opt-out of AI skill publishing during host application setup. The skills are self-contained and require no additional tooling.
 
 ### Removed
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the previous 723-line ai-kit-dependent monolithic skill file has been removed and replaced by the 3-skill set above. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before running `vendor:publish` again.
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the previous 723-line monolithic skill file has been removed and replaced by the 3-skill set above. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before running `vendor:publish` again.
 
 ## [13.5.10] - 2026-05-30
 

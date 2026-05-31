@@ -6,7 +6,7 @@ Newly added features and improvements to the starter kit are listed here.
 
 ### Patch release — Standalone 3-skill set replaces monolithic bundled skill
 
-v13.5.11 removes the previous 723-line ai-kit-dependent monolithic skill (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) and replaces it with three focused, ai-kit-agnostic skills distributed under `stubs/.claude/skills/`. The new skills work independently of ai-kit and cover the three main concerns of a starter-kit project: core rules, backend/DDD conventions, and frontend builder patterns.
+v13.5.11 removes the previous 723-line monolithic skill (`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`) and replaces it with three focused, self-contained skills distributed under `stubs/.claude/skills/`. The new skills require no additional tooling and cover the three main concerns of a starter-kit project: core rules, backend/DDD conventions, and frontend builder patterns.
 
 `sk:install` gains a `--without-ai-skill` flag for projects that prefer not to publish any AI skill files.
 
@@ -19,7 +19,7 @@ v13.5.11 removes the previous 723-line ai-kit-dependent monolithic skill (`stubs
 
 #### Removed
 
-- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the 723-line monolithic ai-kit-dependent skill has been removed. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before re-running `vendor:publish`.
+- **`stubs/.claude/skills/lvntr-starter-kit/SKILL.md`** — the 723-line monolithic skill has been removed. If you published the old file to your host application, delete `.claude/skills/lvntr-starter-kit/SKILL.md` before re-running `vendor:publish`.
 
 ## 2026-05-30 — v13.5.10
 
