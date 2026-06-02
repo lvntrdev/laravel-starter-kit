@@ -21,12 +21,12 @@ class RevokeShareLinkAction extends FileManagerAction
 {
     /**
      * @param  string  $tokenHash  Signature parametresinin SHA256 hash'i
-     * @param  int|null  $revokedByUserId  İşlemi yapan kullanıcı ID'si
+     * @param  string|null  $revokedByUserId  İşlemi yapan kullanıcı ID'si (users.id UUID)
      */
     public function execute(
         Media $media,
         string $tokenHash,
-        ?int $revokedByUserId = null,
+        ?string $revokedByUserId = null,
         ?string $tenantId = null,
     ): ShareRevocation {
         // K2 (security): Composite (media_id, signed_token_hash) ile lookup.

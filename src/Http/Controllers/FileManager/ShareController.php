@@ -181,7 +181,9 @@ class ShareController extends Controller
         $action->execute(
             media: $media,
             tokenHash: $request->string('token')->toString(),
-            revokedByUserId: $user ? (int) $user->getAuthIdentifier() : null,
+            // users.id is a UUID string — never cast to int (that would truncate
+            // the identifier to a meaningless number and break the users FK).
+            revokedByUserId: $user ? (string) $user->getAuthIdentifier() : null,
         );
 
         // K3: to_api() envelope — useApi composable {success, data, ...} bekliyor.

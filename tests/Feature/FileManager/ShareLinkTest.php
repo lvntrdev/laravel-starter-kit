@@ -171,16 +171,19 @@ it('creates revocation record on first revoke', function (): void {
     $media = insertShareTestMedia('user', 'owner-revoke');
     $tokenHash = hash('sha256', Str::random(32));
 
+    // users.id is a UUID string — revoked_by_user_id mirrors that type.
+    $userId = '0b8f1d2c-3e4a-4b5c-8d6e-7f8091a2b3c4';
+
     $revocation = app(RevokeShareLinkAction::class)->execute(
         media: $media,
         tokenHash: $tokenHash,
-        revokedByUserId: 42,
+        revokedByUserId: $userId,
     );
 
     expect($revocation)->toBeInstanceOf(ShareRevocation::class)
         ->and($revocation->signed_token_hash)->toBe($tokenHash)
         ->and($revocation->media_id)->toBe($media->id)
-        ->and($revocation->revoked_by_user_id)->toBe(42)
+        ->and($revocation->revoked_by_user_id)->toBe($userId)
         ->and($revocation->revoked_at)->not->toBeNull();
 });
 
