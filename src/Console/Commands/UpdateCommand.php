@@ -296,6 +296,10 @@ class UpdateCommand extends Command
                 continue;
             }
 
+            if ($this->isIgnoredStubFile($relativePath)) {
+                continue;
+            }
+
             // Skip if target doesn't exist (handled in addNewFiles)
             if (! $this->files->exists($targetPath)) {
                 continue;
@@ -403,6 +407,10 @@ class UpdateCommand extends Command
                 continue;
             }
 
+            if ($this->isIgnoredStubFile($relativePath)) {
+                continue;
+            }
+
             if ($this->files->exists($targetPath)) {
                 continue;
             }
@@ -482,6 +490,40 @@ class UpdateCommand extends Command
     }
 
     /**
+     * Locally-reproduced artifacts that must never be copied into — or recorded
+     * for — a consumer app: dependencies, Vite build output, Wayfinder/unplugin
+     * codegen, and OS junk. Composer's export-ignore strips these from the dist
+     * tarball, but path / working-copy installs read the stubs directory straight
+     * from disk where these may exist. Mirrors InstallCommand::isIgnoredStubFile()
+     * so install and update stay in lockstep.
+     */
+    private function isIgnoredStubFile(string $relativePath): bool
+    {
+        $normalizedPath = str_replace('\\', '/', $relativePath);
+
+        $ignoredPrefixes = [
+            'node_modules/',
+            'public/build/',
+            'bootstrap/ssr/',
+            'resources/js/routes/',
+            'vendor/',
+        ];
+
+        foreach ($ignoredPrefixes as $prefix) {
+            if (str_starts_with($normalizedPath, $prefix)) {
+                return true;
+            }
+        }
+
+        // Generated type declarations (unplugin auto-import / components resolver).
+        if (in_array($normalizedPath, ['auto-imports.d.ts', 'components.d.ts'], true)) {
+            return true;
+        }
+
+        return basename($normalizedPath) === '.DS_Store';
+    }
+
+    /**
      * Check if two files have identical content.
      */
     private function filesAreIdentical(string $source, string $target): bool
@@ -541,6 +583,10 @@ class UpdateCommand extends Command
             $targetPath = base_path($relativePath);
 
             if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
+            if ($this->isIgnoredStubFile($relativePath)) {
                 continue;
             }
 
@@ -610,6 +656,10 @@ class UpdateCommand extends Command
             $relativePath = str_replace('\\', '/', $file->getRelativePathname());
 
             if ($this->isNeverUpdate($relativePath)) {
+                continue;
+            }
+
+            if ($this->isIgnoredStubFile($relativePath)) {
                 continue;
             }
 
