@@ -9,6 +9,9 @@ LOCAL.md
 # Vite build artifacts — produced by `npm run build` in CI and locally.
 /stubs/public/build/
 /stubs/bootstrap/ssr/
+# Generated type declarations (unplugin auto-import / components resolver) — regenerated per host app.
+/stubs/auto-imports.d.ts
+/stubs/components.d.ts
 composer.lock
 .phpunit.result.cache
 .phpunit.cache/

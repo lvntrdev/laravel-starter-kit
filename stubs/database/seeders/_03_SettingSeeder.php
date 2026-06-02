@@ -2,15 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Models\Setting;
+use App\Domain\Setting\SettingService;
 use Illuminate\Database\Seeder;
 
 class _03_SettingSeeder extends Seeder
 {
     /**
      * Seed default settings from current config/.env values.
+     *
+     * Writes go through SettingService::seedDefault() so that sensitive keys
+     * (mail.password, storage.*_secret) are encrypted-at-rest just like values
+     * saved from the admin panel — the seeder never stores secrets in plaintext.
      */
-    public function run(): void
+    public function run(SettingService $settings): void
     {
         $defaults = [
             'general' => [
@@ -70,12 +74,9 @@ class _03_SettingSeeder extends Seeder
             ],
         ];
 
-        foreach ($defaults as $group => $settings) {
-            foreach ($settings as $key => $value) {
-                Setting::firstOrCreate(
-                    ['group' => $group, 'key' => $key],
-                    ['value' => $value],
-                );
+        foreach ($defaults as $group => $groupSettings) {
+            foreach ($groupSettings as $key => $value) {
+                $settings->seedDefault($group, $key, $value);
             }
         }
     }

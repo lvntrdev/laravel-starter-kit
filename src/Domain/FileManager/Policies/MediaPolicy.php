@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace Lvntr\StarterKit\Domain\FileManager\Policies;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * FileManager Media politikaları.
  *
- * share / revokeShare: owner-only kontrolü.
+ * share / revokeShare: medyayı YÖNETME yetkisi kontrolü.
  * Admin kullanıcılar Gate::before ile zaten tüm policy'leri atlatır;
- * bu policy non-admin kullanıcılar için ownership'i zorlar.
+ * bu policy non-admin kullanıcılar için yetkiyi zorlar.
  *
- * Ownership tespiti: media.model_id == user.id VE
- * media.model_type == user morph alias.
- * Bu yöntem context-agnostic — GlobalFileBucket gibi shared context'lerde
- * farklı ownership mantığı gerekiyorsa policy override edilmeli.
+ * Yetki tespiti iki aşamalı (bkz. {@see self::canManage()}):
+ *   1. Owner fast-path — media.model_id == user.id VE model_type == user
+ *      morph alias ise kullanıcı kendi dosyasını yönetir, izin verilir.
+ *   2. Aksi halde dosyanın FileManager context'inin kendi authorizer'ına
+ *      delege edilir. Böylece GlobalFileBucket gibi paylaşımlı context'ler,
+ *      kişisel ownership yerine context iznine (örn. files.update) göre
+ *      paylaşılabilir hale gelir — owner-only kontrolünün her zaman 403
+ *      döndürmesi sorunu (global dosyalar) ortadan kalkar.
  *
  * TODO (multi-tenant): Tenant izolasyonu host uygulamanın middleware'ine
  * bırakılmıştır. Tenant context'i ShareController@show'da aktif olmalıdır.
@@ -33,7 +39,7 @@ class MediaPolicy
             return false;
         }
 
-        return $this->isOwner($user, $media);
+        return $this->canManage($user, $media);
     }
 
     /**
@@ -49,7 +55,47 @@ class MediaPolicy
             return false;
         }
 
-        return $this->isOwner($user, $media);
+        return $this->canManage($user, $media);
+    }
+
+    /**
+     * Kullanıcı bu medyayı paylaşma/revoke amacıyla yönetebilir mi?
+     *
+     * 1. Owner ise (kendi dosyası) her zaman izinli — registry'ye bağımlı
+     *    olmadan kişisel `user` context'ini kapsar.
+     * 2. Aksi halde dosyanın context'i çözülür ve o context'in authorizer'ına
+     *    'write' yetkisiyle delege edilir (global bucket → files.update vb.).
+     *    Context çözülemezse veya owner kaydı bulunamazsa güvenli tarafta
+     *    kalınır ve reddedilir.
+     */
+    private function canManage(Authenticatable $user, Media $media): bool
+    {
+        if ($this->isOwner($user, $media)) {
+            return true;
+        }
+
+        // Context authorizer Eloquent Model bekler; Authenticatable garanti değil.
+        if (! $user instanceof Model) {
+            return false;
+        }
+
+        try {
+            $registry = app(ContextRegistry::class);
+            $contextKey = $registry->keyForModel((string) $media->model_type);
+
+            if ($contextKey === null) {
+                return false;
+            }
+
+            $definition = $registry->get($contextKey);
+            $owner = $definition->resolveOwner((string) $media->model_id);
+
+            // Paylaşma/revoke bir yönetim ('write') işlemidir.
+            return $definition->authorize($user, 'write', $owner);
+        } catch (\Throwable) {
+            // Owner kaydı silinmiş / context bozuk → 404 yerine güvenli reddet.
+            return false;
+        }
     }
 
     /**

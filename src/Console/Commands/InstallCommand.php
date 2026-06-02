@@ -460,6 +460,14 @@ class InstallCommand extends Command
                 continue;
             }
 
+            // Dependencies, build output, generated type files, and OS junk are
+            // regenerated locally and must never reach a consumer app. Guarded here
+            // (independent of git / Composer export-ignore) so that path or working-copy
+            // installs are protected too.
+            if ($this->isIgnoredStubFile($normalizedPath)) {
+                continue;
+            }
+
             foreach ($this->getSkipPaths() as $skipPath) {
                 if (str_starts_with($normalizedPath, $skipPath)) {
                     continue 2; // skip this file
@@ -636,6 +644,44 @@ class InstallCommand extends Command
     }
 
     /**
+     * Build/generated/dependency/OS-junk files that must never be copied into a
+     * consumer app nor recorded in the hash registry.
+     *
+     * These are reproduced locally (npm install, vite build, wayfinder/unplugin
+     * codegen) and are never the kit's source of truth. Matching is done by
+     * directory prefix, exact generated-file name, and `.DS_Store` basename at any
+     * depth. `resources/js/env.d.ts` is hand-written and intentionally NOT matched.
+     */
+    private function isIgnoredStubFile(string $normalizedPath): bool
+    {
+        $ignoredPrefixes = [
+            'node_modules/',
+            'public/build/',
+            'bootstrap/ssr/',
+            'resources/js/routes/',
+            'vendor/',
+        ];
+
+        foreach ($ignoredPrefixes as $prefix) {
+            if (str_starts_with($normalizedPath, $prefix)) {
+                return true;
+            }
+        }
+
+        // Generated type declarations (unplugin auto-import / components resolver).
+        $ignoredExact = [
+            'auto-imports.d.ts',
+            'components.d.ts',
+        ];
+
+        if (in_array($normalizedPath, $ignoredExact, true)) {
+            return true;
+        }
+
+        return basename($normalizedPath) === '.DS_Store';
+    }
+
+    /**
      * Check if a path is user-customizable and should be preserved on re-install.
      * Only these paths are skipped when the file already exists (without --force).
      * Everything else is always overwritten to ensure a working installation.
@@ -745,13 +791,28 @@ class InstallCommand extends Command
             $this->newLine();
             $this->components->warn('The database already contains tables.');
 
+            // Never offer a destructive full reset in production-like environments.
+            // Mirrors site:install's guard so a mis-set APP_ENV cannot wipe live
+            // data through the installer.
+            $allowFresh = ! $this->isProductionLikeEnvironment();
+
+            if (! $allowFresh) {
+                $this->line('  <fg=gray>Detected a production-like environment — the destructive "fresh" option is disabled.</>');
+            }
+
+            $options = ['migrate' => 'Run pending migrations only (keep existing data)'];
+
+            if ($allowFresh) {
+                $options = [
+                    'fresh' => 'Drop all tables and run fresh migrations (data will be lost)',
+                ] + $options;
+            }
+
+            $options['skip'] = 'Skip migrations';
+
             $action = select(
                 label: 'How would you like to proceed?',
-                options: [
-                    'fresh' => 'Drop all tables and run fresh migrations (data will be lost)',
-                    'migrate' => 'Run pending migrations only (keep existing data)',
-                    'skip' => 'Skip migrations',
-                ],
+                options: $options,
                 default: 'migrate',
             );
 
@@ -761,7 +822,9 @@ class InstallCommand extends Command
                 return;
             }
 
-            if ($action === 'fresh') {
+            // `$allowFresh` re-checked as belt-and-suspenders: in production the
+            // option is never presented, so select() cannot return it here.
+            if ($action === 'fresh' && $allowFresh) {
                 if (! confirm('Are you sure? ALL existing data will be permanently deleted.', default: false)) {
                     $this->components->info('Migrations skipped.');
 
@@ -779,6 +842,27 @@ class InstallCommand extends Command
         $this->step('Running migrations', function () {
             $this->callSilently('migrate', ['--force' => true]);
         });
+    }
+
+    /**
+     * Whether the current environment looks like production, where a destructive
+     * full reset (migrate:fresh) must never be offered.
+     *
+     * Matches 'prod'/'production' as a case-insensitive substring so 'prod',
+     * 'production', 'prod-eu', 'my-prod' all trip the guard — mirrors the
+     * stubbed site:install command's blocklist philosophy.
+     */
+    private function isProductionLikeEnvironment(): bool
+    {
+        $environment = strtolower((string) app()->environment());
+
+        foreach (['prod', 'production'] as $keyword) {
+            if (str_contains($environment, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -1382,6 +1466,12 @@ class InstallCommand extends Command
             $relativePath = $file->getRelativePathname();
             $normalizedPath = str_replace('\\', '/', $relativePath);
             $targetPath = base_path($relativePath);
+
+            // Build/generated/junk files are never published and never tracked —
+            // skip entirely so the hash registry does not fill with node_modules etc.
+            if ($this->isIgnoredStubFile($normalizedPath)) {
+                continue;
+            }
 
             // Mark explicitly-skipped paths (e.g. --without-ai-skill) so sk:update
             // knows not to re-add them. Mirrors the '__deleted__' sentinel pattern.

@@ -1,6 +1,6 @@
 # Claude Code Skill'leri
 
-Starter kit, herhangi bir uyumlu yapay zeka kodlama asistanına kit'in convention'larını, hard rule'larını ve builder API'lerini öğreten üç Claude Code skill'i ile birlikte gelir. Skill'ler bağımsız çalışır — ai-kit veya başka bir orkestrasyon katmanı gerektirmez.
+Starter kit, herhangi bir uyumlu yapay zeka kodlama asistanına kit'in convention'larını, hard rule'larını ve builder API'lerini öğreten üç Claude Code skill'i ile birlikte gelir. Skill'ler bağımsız çalışır — herhangi bir harici araç ya da orkestrasyon katmanı gerektirmez.
 
 ## Kurulum
 

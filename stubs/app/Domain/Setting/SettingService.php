@@ -79,6 +79,34 @@ class SettingService
     }
 
     /**
+     * Seed a default value for a setting, but only if the key does not yet exist.
+     *
+     * Mirrors setValue()'s normalization + encryption rules so that seeded
+     * sensitive keys (mail.password, storage.*_secret, …) are stored
+     * encrypted-at-rest exactly like values written through the admin panel —
+     * never as plaintext. Unlike setValue() this NEVER overwrites an existing
+     * row, so re-running a seeder preserves admin-edited values.
+     *
+     * Intended for seeders/installers; centralising the rule here guarantees a
+     * single write path even when values originate from config/.env.
+     */
+    public function seedDefault(string $group, string $key, mixed $value): void
+    {
+        $path = "{$group}.{$key}";
+
+        $value = $this->normalizeValue($path, $value);
+        $isSensitive = in_array($path, $this->sensitiveKeys, true);
+
+        Setting::query()->firstOrCreate(
+            ['group' => $group, 'key' => $key],
+            [
+                'value' => $isSensitive && $value !== null ? Crypt::encryptString((string) $value) : $value,
+                'encrypted' => $isSensitive,
+            ],
+        );
+    }
+
+    /**
      * Get all settings for a group as a key-value array.
      *
      * Reads through the cached allGrouped() snapshot (see getValue()).

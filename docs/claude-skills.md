@@ -1,6 +1,6 @@
 # Claude Code Skills
 
-The starter kit ships three Claude Code skills that teach any compatible AI coding assistant the kit's conventions, hard rules, and builder APIs. The skills work standalone — they do not require ai-kit or any other orchestration layer.
+The starter kit ships three Claude Code skills that teach any compatible AI coding assistant the kit's conventions, hard rules, and builder APIs. The skills work standalone — they do not require any external tooling or orchestration layer.
 
 ## Installation
 

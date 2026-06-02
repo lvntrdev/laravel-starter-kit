@@ -17,11 +17,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class RevokeShareLinkRequest extends FormRequest
 {
     /**
-     * K2 / O3 (security): Request katmanında erken ownership kontrolü.
+     * K2 / O3 (security): Request katmanında erken yetki kontrolü.
      *
-     * media_id geçerli ve mevcut kullanıcıya ait olmalıdır. Bu kontrolün
-     * hem burada hem controller'da yapılması defense-in-depth sağlar:
-     * birinden atlanırsa diğeri yetki ihlalini yakalar.
+     * Yetki, controller ile AYNI gate üzerinden (`revoke-share-media` →
+     * MediaPolicy) değerlendirilir; iki katman defense-in-depth sağlar ama
+     * yetki mantığı tek kaynaktan gelir. Owner-only yerine context-aware:
+     * kendi dosyası VEYA dosyanın context izni yeterlidir.
      *
      * media_id henüz validate edilmemişse (invalid integer) ya da kayıt
      * yoksa false döner ve Laravel 403 üretir. Böylece existence probe
@@ -49,8 +50,7 @@ class RevokeShareLinkRequest extends FormRequest
             return false;
         }
 
-        return (string) $media->model_id === (string) $user->getAuthIdentifier()
-            && $media->model_type === $user->getMorphClass();
+        return $user->can('revoke-share-media', $media);
     }
 
     /**

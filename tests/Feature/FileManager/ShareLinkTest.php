@@ -27,6 +27,7 @@
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -36,7 +37,9 @@ use Lvntr\StarterKit\Domain\FileManager\DTOs\CreateShareLinkDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\ShareLinkResultDTO;
 use Lvntr\StarterKit\Domain\FileManager\Models\ShareRevocation;
 use Lvntr\StarterKit\Domain\FileManager\Policies\MediaPolicy;
+use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Lvntr\StarterKit\Tests\Stubs\TestMedia;
+use Lvntr\StarterKit\Tests\Stubs\TestOwner;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Yardımcı: media tablosuna test kaydı ekler
@@ -634,4 +637,127 @@ it('ShareController composite revocation: aynı hash farklı media için revoke 
 
     // mediaB aynı hash'e sahip ama revoke edilmemiş → controller 200 döner (geçmeli)
     expect($isRevokedForB)->toBeFalse();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// J) Context-aware authorization — paylaşımlı (sahibi olmayan) context'ler
+//
+// Önceki davranış: owner-only kontrolü GlobalFileBucket gibi paylaşımlı
+// context'lerde her zaman 403 dönüyordu (media owner != kullanıcı). Fix:
+// MediaPolicy, sahibi olmayan kullanıcı için dosyanın context authorizer'ına
+// 'write' yetkisiyle delege eder.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Gerçek Eloquent Model + Authenticatable aktör (canManage'in instanceof Model guard'ını geçer). */
+function shareTestModelActor(string $id): Authenticatable
+{
+    $actor = new class extends Model implements Authenticatable
+    {
+        use Illuminate\Auth\Authenticatable;
+
+        protected $table = 'share_test_actors';
+
+        public $timestamps = false;
+    };
+
+    $actor->forceFill(['id' => $id]);
+
+    return $actor;
+}
+
+/**
+ * Tek bir paylaşımlı context kayıtlı ContextRegistry'yi container'a bağlar.
+ * authorize closure'ı yalnızca 'write' yetkisinde ve $grantWrite açıkken izin verir;
+ * böylece canManage'in 'write' ability'sini doğru geçirdiği de dolaylı doğrulanır.
+ */
+function bindShareTestRegistry(bool $grantWrite): void
+{
+    $registry = new ContextRegistry;
+    $owner = (new TestOwner)->forceFill(['id' => 'shared-owner']);
+
+    $registry->register('shared_ctx', [
+        'model' => TestOwner::class,
+        'path' => 'shared/files',
+        'resolve' => fn (?string $id) => $owner,
+        'authorize' => fn ($actor, string $ability, $owner) => $ability !== 'read' && $grantWrite,
+    ]);
+
+    app()->instance(ContextRegistry::class, $registry);
+}
+
+it('MediaPolicy@share allows a permitted non-owner via the context authorizer (shared context)', function (): void {
+    config(['file-manager.share.enabled' => true, 'file-manager.share.allow_revoke' => true]);
+    bindShareTestRegistry(grantWrite: true);
+
+    // media paylaşımlı context'e (TestOwner) ait; aktör sahibi DEĞİL.
+    $media = insertShareTestMedia(TestOwner::class, 'shared-owner');
+    $actor = shareTestModelActor('not-the-owner');
+
+    $policy = new MediaPolicy;
+
+    expect($policy->share($actor, $media))->toBeTrue()
+        ->and($policy->revokeShare($actor, $media))->toBeTrue();
+});
+
+it('MediaPolicy@share denies a non-owner when the shared context refuses the write', function (): void {
+    config(['file-manager.share.enabled' => true, 'file-manager.share.allow_revoke' => true]);
+    bindShareTestRegistry(grantWrite: false);
+
+    $media = insertShareTestMedia(TestOwner::class, 'shared-owner');
+    $actor = shareTestModelActor('not-the-owner');
+
+    $policy = new MediaPolicy;
+
+    expect($policy->share($actor, $media))->toBeFalse()
+        ->and($policy->revokeShare($actor, $media))->toBeFalse();
+});
+
+it('MediaPolicy@share still denies a non-Eloquent stub actor even when the context would allow', function (): void {
+    config(['file-manager.share.enabled' => true]);
+    bindShareTestRegistry(grantWrite: true);
+
+    $media = insertShareTestMedia(TestOwner::class, 'shared-owner');
+
+    // Authenticatable ama Eloquent Model değil → canManage instanceof Model guard'ı reddeder.
+    $stub = new class implements Authenticatable
+    {
+        public function getAuthIdentifierName(): string
+        {
+            return 'id';
+        }
+
+        public function getAuthIdentifier(): mixed
+        {
+            return 'stub-actor';
+        }
+
+        public function getAuthPasswordName(): string
+        {
+            return 'password';
+        }
+
+        public function getAuthPassword(): string
+        {
+            return '';
+        }
+
+        public function getRememberToken(): ?string
+        {
+            return null;
+        }
+
+        public function setRememberToken($value): void {}
+
+        public function getRememberTokenName(): string
+        {
+            return 'remember_token';
+        }
+
+        public function getMorphClass(): string
+        {
+            return 'user';
+        }
+    };
+
+    expect((new MediaPolicy)->share($stub, $media))->toBeFalse();
 });

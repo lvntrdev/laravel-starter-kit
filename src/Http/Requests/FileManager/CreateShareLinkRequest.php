@@ -16,11 +16,13 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class CreateShareLinkRequest extends FormRequest
 {
     /**
-     * O3 (security): Request katmanında erken ownership kontrolü.
+     * O3 (security): Request katmanında erken yetki kontrolü.
      *
-     * media_id geçerli ve mevcut kullanıcıya ait olmalıdır. Bu kontrolün
-     * hem burada hem controller'da (Gate::authorize) yapılması defense-in-depth
-     * sağlar: birinden atlanırsa diğeri yetki ihlalini yakalar.
+     * Yetki, controller ile AYNI gate üzerinden (`share-media` → MediaPolicy)
+     * değerlendirilir; böylece iki katman defense-in-depth sağlar ama yetki
+     * mantığı tek kaynaktan gelir ve diverge edemez. Owner-only yerine
+     * context-aware: kendi dosyası VEYA dosyanın context izni (örn. global
+     * bucket'ta files.update) yeterlidir.
      *
      * media_id henüz validate edilmemişse (invalid integer) ya da kayıt
      * yoksa false döner ve Laravel 403 üretir.
@@ -46,8 +48,7 @@ class CreateShareLinkRequest extends FormRequest
             return false;
         }
 
-        return (string) $media->model_id === (string) $user->getAuthIdentifier()
-            && $media->model_type === $user->getMorphClass();
+        return $user->can('share-media', $media);
     }
 
     /**

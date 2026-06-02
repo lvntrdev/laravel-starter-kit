@@ -11,3 +11,10 @@
 /.gitattributes export-ignore
 /.npmignore export-ignore
 /stubs/node_modules/** export-ignore
+/stubs/public/build/** export-ignore
+/stubs/bootstrap/ssr/** export-ignore
+/stubs/resources/js/routes/** export-ignore
+/stubs/vendor/** export-ignore
+/stubs/auto-imports.d.ts export-ignore
+/stubs/components.d.ts export-ignore
+.DS_Store export-ignore
