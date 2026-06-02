@@ -2,6 +2,40 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## v13.5.12 — Unreleased
+
+### Minor release — Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
+
+v13.5.12 moves 15 kit composables out of the stub scaffold and into the vendor library. They now run directly from `vendor/lvntr/laravel-starter-kit/resources/js/composables/` and are updated with every `composer update`. Import paths are fully unchanged — `@/composables/<name>` resolves local-first (consumer file wins if it exists) then falls back to the vendor copy, so no consumer import statement needs to change. `useAdminMenu` and `index.ts` remain as editable stubs because they depend on the consumer's generated routes and project-specific menu definition. `TurnstileWidget.vue` was likewise moved to the vendor library (`@lvntr/components/ui/TurnstileWidget.vue`).
+
+#### Added
+
+- **15 composables in vendor** — `useApi`, `useCan`, `useConfirm`, `useDarkMode`, `useDatatableSelection`, `useDefinition`, `useDialog`, `useFileShare`, `useFlash`, `useImageLightbox`, `useMenuBuilder`, `usePageLoading`, `useRefreshBus`, `useSidebar`, `useUrlTab` shipped inside the package. Updated via `composer update` — no manual file management.
+- **`sk:publish --tag=composables`** — copies vendor composables into `resources/js/composables/` for project-level customization. The local-first resolver picks up the local copy automatically; no alias or build-config changes required.
+- **`TurnstileWidget.vue` moved to vendor** — now available at `@lvntr/components/ui/TurnstileWidget.vue`.
+
+#### Removed
+
+- **15 composable stubs** — removed from the scaffold. Existing projects are unaffected (local-first resolver keeps using local copies). To opt into vendor-managed upgrades: delete unmodified composable files from `resources/js/composables/`, keeping `useAdminMenu.ts`, `index.ts`, and any file you have customized.
+
+### Minor release — Backend runtime classes & third-party configs run from vendor
+
+The same release continues the v13.5.0 "runtime runs from vendor" migration on the backend. A set of helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, and three third-party config files are no longer copied into your app. Existing apps are not affected — `App\…` imports keep resolving (via `class_alias` for pure-moved classes, or a thin `App\` shim for the rest), and a config you already published keeps winning. The only required step is `composer update`. See `docs/UPGRADE.md` (v13.5.3 → v13.5.12) for the full migration guide.
+
+#### Added
+
+- **Vendor-resident backend classes** — `HtmlSanitizer`, `TranslatableQueryHelpers`, `MediaPathGenerator`, `Scramble\ApiResponseExtension`, and the `AssignTraceId` / `SetLocale` / `ValidateTurnstile` middleware now run from `Lvntr\StarterKit\*`. No stub is copied to the app; old `App\…` imports resolve via `class_alias`. `ApiResponseExtension` is now properly registered with Scramble.
+- **Vendor classes with a thin `App\` shim** — `DatatableQueryBuilder`, `HttpsOrLocalhostUrl`, and `TurnstileRule` keep their `App\…` import path while running from vendor.
+- **`HasTranslatableRules` trait → vendor (direct import)** — now `Lvntr\StarterKit\Support\HasTranslatableRules`. Traits cannot be aliased, so import it from the vendor namespace (same convention as `HasActivityLogging` / `HasMediaCollections`).
+
+#### Changed
+
+- **Third-party config overrides at runtime** — `config/activitylog.php`, `config/inertia.php`, and `config/media-library.php` are no longer published. `StarterKitServiceProvider::applyVendorConfigDefaults()` applies only the kit's required keys (media-library `path_generator` + `media_model`, activitylog `include_soft_deleted_subjects`, inertia `ssr.enabled`) at runtime and skips any config you have published. The installer no longer AST-injects the media-library path generator.
+
+#### Removed
+
+- **Backend scaffold stubs** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php`, and `config/{activitylog,inertia,media-library}.php` removed from the scaffold. Upgraded apps keep existing copies (informational notice from `sk:update`, never auto-deleted). For the `HasTranslatableRules` trait, switch `use` imports to the vendor namespace before deleting a local copy.
+
 ## v13.5.11 — Unreleased
 
 ### Patch release — Standalone 3-skill set replaces monolithic bundled skill

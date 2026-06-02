@@ -76,7 +76,7 @@ declare module 'vue' {
     ToggleFeatureCard: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/ui/ToggleFeatureCard.vue')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
     TranslatableInput: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/FormBuilder/inputs/TranslatableInput.vue')['default']
-    TurnstileWidget: typeof import('./resources/js/components/Auth/TurnstileWidget.vue')['default']
+    TurnstileWidget: typeof import('./vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit/ui/TurnstileWidget.vue')['default']
   }
   export interface GlobalDirectives {
     Tooltip: typeof import('primevue/tooltip')['default']

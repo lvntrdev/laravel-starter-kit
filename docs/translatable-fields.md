@@ -8,7 +8,6 @@ FormBuilder's translatable field types let you store and edit multi-language tex
 - Stores values as `{"tr": "...", "en": "..."}` in JSON columns through `spatie/laravel-translatable`.
 - Generates per-locale Laravel validation rules from one FormRequest trait call.
 - Provides locale-aware search, sort and resource helpers for datatable responses.
-- Ships a full admin example under Sample Contents.
 
 ## What It Does Not Do
 
@@ -49,7 +48,7 @@ class Product extends Model
 Generate validation rules with `HasTranslatableRules`:
 
 ```php
-use App\Support\HasTranslatableRules;
+use Lvntr\StarterKit\Support\HasTranslatableRules;
 
 class StoreProductRequest extends FormRequest
 {
@@ -86,7 +85,7 @@ FB.form().addFields(
 Return translation-aware values from resources:
 
 ```php
-use App\Support\TranslatableQueryHelpers;
+use Lvntr\StarterKit\Support\TranslatableQueryHelpers;
 
 'name' => TranslatableQueryHelpers::resourceShape($this->resource, 'name'),
 // ['translations' => ['tr' => '...', 'en' => '...'], 'current' => '...']
@@ -133,7 +132,7 @@ It also supports `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` a
 
 ## Validation Helpers
 
-`HasTranslatableRules` lives at `App\Support\HasTranslatableRules` and is intended for Laravel FormRequests.
+`HasTranslatableRules` is a trait that runs from vendor (`Lvntr\StarterKit\Support\HasTranslatableRules`) since v13.5.12, intended for Laravel FormRequests. Import it directly from the vendor namespace. PHP traits cannot be aliased like classes, so there is no `App\Support\HasTranslatableRules` fallback — if a project upgraded from an older version still has a local copy at `app/Support/HasTranslatableRules.php`, update the `use` statement to the vendor namespace before deleting that copy.
 
 ```php
 $this->translatableRules('title', ['required', 'string', 'max:255']);
@@ -160,13 +159,13 @@ Options:
 Use `translatableAttributes()` for readable validation labels:
 
 ```php
-$this->translatableAttributes(['title' => __('sample-contents.fields.title')]);
+$this->translatableAttributes(['title' => __('articles.fields.title')]);
 // title.tr => Title (Turkish), title.en => Title (English)
 ```
 
 ## Query Helpers
 
-`TranslatableQueryHelpers` lives at `App\Support\TranslatableQueryHelpers`.
+`TranslatableQueryHelpers` runs from vendor (`Lvntr\StarterKit\Support\TranslatableQueryHelpers`) since v13.5.12. The `App\Support\TranslatableQueryHelpers` import keeps working transparently via a `class_alias`, so existing code is unaffected.
 
 ```php
 return DatatableQueryBuilder::for(Product::class)
@@ -195,16 +194,6 @@ Adding a language shows a new locale input on the next render. Existing records 
 Removing a language hides that locale in forms, but it does not delete the stored JSON key. Re-adding the language makes the stored value visible again.
 
 Single-language mode still stores JSON, for example `{"tr": "..."}`. This keeps future multi-language expansion migration-free.
-
-## Sample Contents Example
-
-The shipped Sample Contents module is the reference implementation:
-
-- `app/Models/SampleContent.php` uses `HasTranslations` for `title`, `description` and `content`.
-- `StoreSampleContentRequest` and `UpdateSampleContentRequest` use `HasTranslatableRules`.
-- `SampleContentDatatableQuery` uses `TranslatableQueryHelpers::searchFilter()` and `localeSort()`.
-- `SampleContentResource` returns `resourceShape()` for list and edit screens.
-- `resources/js/pages/Admin/SampleContents/components/SampleContentForm.vue` uses `FB.translatableText()`, `FB.translatableTextarea()` and `FB.translatableEditor()`.
 
 ## Migration Tips
 

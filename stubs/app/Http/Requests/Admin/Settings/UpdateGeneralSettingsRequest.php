@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Admin\Settings;
 
-use App\Support\HtmlSanitizer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Lvntr\StarterKit\Support\HtmlSanitizer;
 
 class UpdateGeneralSettingsRequest extends FormRequest
 {

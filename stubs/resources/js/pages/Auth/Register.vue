@@ -2,7 +2,7 @@
     import { ref } from 'vue';
     import { useForm } from '@inertiajs/vue3';
     import AuthLayout from '@/layouts/AuthLayout.vue';
-    import TurnstileWidget from '@/components/Auth/TurnstileWidget.vue';
+    import TurnstileWidget from '@lvntr/components/ui/TurnstileWidget.vue';
 
     const turnstileRef = ref<InstanceType<typeof TurnstileWidget>>();
 

@@ -27,9 +27,16 @@ use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use Lvntr\StarterKit\Exceptions\ApiException;
 use Lvntr\StarterKit\Exceptions\ApiExceptionHandler;
 use Lvntr\StarterKit\Facades\FileManager as FileManagerFacade;
+use Lvntr\StarterKit\Http\Middleware\AssignTraceId;
 use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
 use Lvntr\StarterKit\Http\Middleware\SecurityHeaders;
+use Lvntr\StarterKit\Http\Middleware\SetLocale;
+use Lvntr\StarterKit\Http\Middleware\ValidateTurnstile;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Lvntr\StarterKit\Support\HtmlSanitizer;
+use Lvntr\StarterKit\Support\MediaPathGenerator;
+use Lvntr\StarterKit\Support\Scramble\ApiResponseExtension;
+use Lvntr\StarterKit\Support\TranslatableQueryHelpers;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StarterKitServiceProvider extends ServiceProvider
@@ -91,6 +98,16 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Http\Responses\ApiResponse' => ApiResponse::class,
             'App\Http\Middleware\CheckResourcePermission' => CheckResourcePermission::class,
             'App\Http\Middleware\SecurityHeaders' => SecurityHeaders::class,
+            'App\Http\Middleware\AssignTraceId' => AssignTraceId::class,
+            'App\Http\Middleware\SetLocale' => SetLocale::class,
+            'App\Http\Middleware\ValidateTurnstile' => ValidateTurnstile::class,
+            // DatatableQueryBuilder, HttpsOrLocalhostUrl and TurnstileRule ship a
+            // thin App\ subclass shim in the scaffold, so they need no alias here —
+            // the shim is the visible override point and always satisfies the import.
+            'App\Support\HtmlSanitizer' => HtmlSanitizer::class,
+            'App\Support\TranslatableQueryHelpers' => TranslatableQueryHelpers::class,
+            'App\Support\MediaPathGenerator' => MediaPathGenerator::class,
+            'App\Support\Scramble\ApiResponseExtension' => ApiResponseExtension::class,
             'App\Domain\FileManager\Support\ContextRegistry' => ContextRegistry::class,
         ];
 
@@ -126,6 +143,7 @@ class StarterKitServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->applyVendorConfigDefaults();
         $this->configureModels();
         $this->configurePassport();
         $this->configureGates();
@@ -297,6 +315,44 @@ class StarterKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * Apply the kit's third-party config defaults from vendor.
+     *
+     * These configs (media-library, activitylog, inertia) are no longer
+     * published into the consumer app — the kit ships only the few overrides
+     * it requires and applies them at runtime here. `mergeConfigFrom()` cannot
+     * be used because the third-party providers already register the same keys
+     * and shallow merge never overrides an existing key. Each override is
+     * skipped when the consumer published their own copy of that config, so
+     * publishing (the optional escape hatch) keeps full control.
+     */
+    private function applyVendorConfigDefaults(): void
+    {
+        $configPath = fn (string $file): string => function_exists('config_path')
+            ? config_path($file)
+            : $this->app->basePath('config/'.$file);
+
+        // media-library: the FileManager Trash feature needs the kit's
+        // soft-deletes Media model and the context-aware path generator.
+        if (! file_exists($configPath('media-library.php'))) {
+            config(['media-library.path_generator' => MediaPathGenerator::class]);
+
+            if (class_exists('App\\Models\\Media')) {
+                config(['media-library.media_model' => 'App\\Models\\Media']);
+            }
+        }
+
+        // activitylog: include soft-deleted subjects in the subject relation.
+        if (! file_exists($configPath('activitylog.php'))) {
+            config(['activitylog.include_soft_deleted_subjects' => true]);
+        }
+
+        // inertia: SSR is opt-in (enable via INERTIA_SSR_ENABLED=true).
+        if (! file_exists($configPath('inertia.php'))) {
+            config(['inertia.ssr.enabled' => (bool) env('INERTIA_SSR_ENABLED', false)]);
+        }
+    }
+
+    /**
      * Configure rate limiters.
      */
     private function configureRateLimiting(): void
@@ -317,6 +373,14 @@ class StarterKitServiceProvider extends ServiceProvider
                     SecurityScheme::http('bearer')
                 );
             });
+
+        // Teach Scramble to document the ApiResponse envelope. The extension
+        // runs from vendor now, so it is registered here rather than relying
+        // on a published config/scramble.php in the consumer app.
+        config(['scramble.extensions' => array_values(array_unique(array_merge(
+            (array) config('scramble.extensions', []),
+            [ApiResponseExtension::class],
+        )))]);
 
         Gate::define('viewApiDocs', function (User $user) {
             return $user->hasPermissionTo('api-docs.read');

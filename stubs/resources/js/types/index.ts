@@ -3,7 +3,6 @@
 import type { User } from './user';
 
 export type { User, UserStatus } from './user';
-export type { SampleContent, TranslatableValue } from './sample-content';
 
 export interface PaginatedData<T> {
     data: T[];

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Lvntr\StarterKit\Http\Middleware;
 
-use App\Rules\TurnstileRule;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Lvntr\StarterKit\Rules\TurnstileRule;
 use Symfony\Component\HttpFoundation\Response;
 
 class ValidateTurnstile

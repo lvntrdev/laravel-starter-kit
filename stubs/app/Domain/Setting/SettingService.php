@@ -3,10 +3,10 @@
 namespace App\Domain\Setting;
 
 use App\Models\Setting;
-use App\Support\HtmlSanitizer;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Lvntr\StarterKit\Support\HtmlSanitizer;
 
 /**
  * Service: Centralized read/write operations for application settings.

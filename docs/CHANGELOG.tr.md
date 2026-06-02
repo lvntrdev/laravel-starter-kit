@@ -2,6 +2,40 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## v13.5.12 — Yayımlanmadı
+
+### Minor sürüm — Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`
+
+v13.5.12 ile 15 kit composable'ı stub scaffold'undan çıkarılarak vendor kütüphanesine taşındı. Artık doğrudan `vendor/lvntr/laravel-starter-kit/resources/js/composables/` üzerinden çalışıyor ve her `composer update` ile güncelleniyor. Import yolları tamamen değişmedi — `@/composables/<name>` önce local dosyayı kontrol eder (varsa tüketici dosyası kazanır), yoksa vendor kopyasına döner; bu nedenle hiçbir import ifadesinin değişmesi gerekmez. `useAdminMenu` ve `index.ts`, tüketicinin ürettiği route dosyalarına ve projeye özgü menü tanımına bağımlı olduğundan düzenlenebilir stub olarak kalmaya devam eder. `TurnstileWidget.vue` da aynı sürümde vendor kütüphanesine taşındı (`@lvntr/components/ui/TurnstileWidget.vue`).
+
+#### Eklendi
+
+- **Vendor'da 15 composable** — `useApi`, `useCan`, `useConfirm`, `useDarkMode`, `useDatatableSelection`, `useDefinition`, `useDialog`, `useFileShare`, `useFlash`, `useImageLightbox`, `useMenuBuilder`, `usePageLoading`, `useRefreshBus`, `useSidebar`, `useUrlTab` pakete dahil edildi. `composer update` ile güncellenir — elle dosya yönetimi gerekmez.
+- **`sk:publish --tag=composables`** — vendor composable'larını özelleştirme için `resources/js/composables/` dizinine kopyalar. Local-first resolver local kopyayı otomatik olarak seçer; alias veya build config değişikliği gerekmez.
+- **`TurnstileWidget.vue` vendor'a taşındı** — artık `@lvntr/components/ui/TurnstileWidget.vue` üzerinden kullanılabilir.
+
+#### Kaldırıldı
+
+- **15 composable stub** — scaffold'dan kaldırıldı. Mevcut projeler etkilenmez (local-first resolver local kopyaları kullanmaya devam eder). Vendor tarafından yönetilen güncellemelere geçmek için: özelleştirmediğiniz composable dosyalarını `resources/js/composables/` dizininden silin; `useAdminMenu.ts`, `index.ts` ve düzenlediğiniz dosyaları koruyun.
+
+### Minor sürüm — Backend runtime sınıfları ve üçüncü-parti config'ler vendor'dan çalışıyor
+
+Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend tarafında sürdürür. Bir grup yardımcı sınıf, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık app'inize kopyalanmıyor. Mevcut app'ler etkilenmez — `App\…` import'ları çözülmeye devam eder (tam taşınanlar için `class_alias`, geri kalanlar için ince bir `App\` shim), ve önceden publish ettiğiniz bir config kazanmayı sürdürür. Tek zorunlu adım `composer update`'tir. Tam geçiş rehberi için bkz. `docs/UPGRADE.md` (v13.5.3 → v13.5.12).
+
+#### Eklendi
+
+- **Vendor-resident backend sınıfları** — `HtmlSanitizer`, `TranslatableQueryHelpers`, `MediaPathGenerator`, `Scramble\ApiResponseExtension` ve `AssignTraceId` / `SetLocale` / `ValidateTurnstile` middleware'leri artık `Lvntr\StarterKit\*`'ten çalışır. App'e stub kopyalanmaz; eski `App\…` import'ları `class_alias` ile çözülür. `ApiResponseExtension` artık Scramble'a düzgün kaydedilir.
+- **İnce `App\` shim'li vendor sınıfları** — `DatatableQueryBuilder`, `HttpsOrLocalhostUrl` ve `TurnstileRule` vendor'dan çalışırken `App\…` import yolunu korur.
+- **`HasTranslatableRules` trait'i → vendor (doğrudan import)** — artık `Lvntr\StarterKit\Support\HasTranslatableRules`. Trait'ler alias'lanamadığı için vendor namespace'inden import edin (`HasActivityLogging` / `HasMediaCollections` ile aynı konvansiyon).
+
+#### Değişti
+
+- **Üçüncü-parti config override'ları runtime'da** — `config/activitylog.php`, `config/inertia.php` ve `config/media-library.php` artık publish edilmiyor. `StarterKitServiceProvider::applyVendorConfigDefaults()` yalnızca kit'in gerekli anahtarlarını (media-library `path_generator` + `media_model`, activitylog `include_soft_deleted_subjects`, inertia `ssr.enabled`) runtime'da uygular ve publish ettiğiniz config'i atlar. Installer artık media-library path generator'ı AST ile enjekte etmez.
+
+#### Kaldırıldı
+
+- **Backend scaffold stub'ları** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php` ve `config/{activitylog,inertia,media-library}.php` scaffold'dan kaldırıldı. Yükseltilen app'ler mevcut kopyaları korur (`sk:update` bilgilendirme bildirimi gösterir, asla otomatik silmez). `HasTranslatableRules` trait'i için yerel kopyayı silmeden önce `use` import'larını vendor namespace'ine çevirin.
+
 ## v13.5.11 — Yayımlanmadı
 
 ### Yama sürüm — Monolit skill kaldırıldı, yerine bağımsız 3-skill seti eklendi

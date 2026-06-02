@@ -3,7 +3,6 @@
 namespace Lvntr\StarterKit\Console\Commands;
 
 use App\Models\User;
-use App\Support\MediaPathGenerator;
 use Composer\Autoload\ClassLoader;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
@@ -15,7 +14,6 @@ use Lvntr\StarterKit\StarterKitServiceProvider;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\Node\Stmt;
-use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\CloningVisitor;
 use PhpParser\ParserFactory;
@@ -66,6 +64,76 @@ class InstallCommand extends Command
         'lang/',
     ];
 
+    /**
+     * The full .gitignore ignore set, grouped by category.
+     *
+     * On install these are MERGED into the consumer's existing .gitignore:
+     * missing lines are appended under their category header, and lines the
+     * project already has (Laravel defaults or user-added) are left untouched.
+     *
+     * @var array<string, list<string>>
+     */
+    private array $gitignoreGroups = [
+        'OS / Editör' => [
+            '.DS_Store',
+            'Thumbs.db',
+            '.phpactor.json',
+            '/.codex',
+            '/.cursor/',
+            '/.idea',
+            '/.nova',
+            '/.vscode',
+            '/.zed',
+        ],
+        'Env / Secret' => [
+            '.env',
+            '.env.*',
+            '!.env.example',
+            '/auth.json',
+            '/storage/*.key',
+        ],
+        'Bağımlılıklar' => [
+            '/node_modules',
+            '/vendor',
+        ],
+        'Log / Cache' => [
+            '*.log',
+            '.phpunit.result.cache',
+            '/.phpunit.cache',
+            '/storage/pail',
+        ],
+        'Laravel build / public' => [
+            '/public/build',
+            '/public/hot',
+            '/public/storage',
+            '/public/fonts-manifest.dev.json',
+            '_ide_helper.php',
+            'Homestead.json',
+            'Homestead.yaml',
+        ],
+        'Starter Kit runtime state (üretilen hash manifesti, ~2MB)' => [
+            '/storage/starter-kit/',
+        ],
+        'Claude Code yerel ayarları' => [
+            '.claude/settings.local.json',
+        ],
+        'Laravel Wayfinder üretimi (actions / routes / helpers)' => [
+            '/resources/js/wayfinder/',
+            '/resources/js/actions/',
+            '/resources/js/routes/',
+        ],
+        'Vite SSR build çıktısı (Inertia)' => [
+            '/bootstrap/ssr',
+        ],
+        'unplugin otomatik üretilen tip tanımları' => [
+            '/auto-imports.d.ts',
+            '/components.d.ts',
+        ],
+        'Derlenmiş JSON çeviriler (kök seviye)' => [
+            '/lang/*.json',
+        ],
+    ];
+
     public function handle(): int
     {
         $this->files = new Filesystem;
@@ -111,6 +179,12 @@ class InstallCommand extends Command
             }
         });
 
+        // 3b. Ensure .gitignore entries — merge the kit's ignore set into the
+        // project's existing .gitignore without dropping any current lines.
+        $this->step('Ensuring .gitignore entries', function () {
+            $this->ensureGitignore();
+        });
+
         // 4. Publish config
         $this->step('Publishing configuration', function () {
             // Core starter-kit config
@@ -138,12 +212,7 @@ class InstallCommand extends Command
             $this->injectFilesystemsConfig();
         });
 
-        // 4d. Configure media library path generator
-        $this->step('Configuring media library', function () {
-            $this->injectMediaLibraryConfig();
-        });
-
-        // 4e. Wire starter kit bootstrap hooks into bootstrap/app.php
+        // 4d. Wire starter kit bootstrap hooks into bootstrap/app.php
         $this->step('Configuring bootstrap/app.php', function () {
             $this->injectBootstrapApp();
         });
@@ -585,6 +654,73 @@ class InstallCommand extends Command
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    // GITIGNORE
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Ensure the project's .gitignore contains the kit's full ignore set.
+     *
+     * Reads the existing file (an empty string when absent), merges in any
+     * missing entries, and writes back only when something changed.
+     */
+    private function ensureGitignore(): void
+    {
+        $path = base_path('.gitignore');
+
+        $existing = $this->files->exists($path) ? $this->files->get($path) : '';
+
+        $merged = $this->buildGitignoreContent($existing);
+
+        if ($merged === $existing) {
+            return;
+        }
+
+        $this->files->put($path, $merged);
+    }
+
+    /**
+     * Merge the desired ignore groups into existing .gitignore content.
+     *
+     * Only entries not already present (compared line-by-line, trimmed) are
+     * appended, grouped under their category header. Existing lines — Laravel
+     * defaults and any user-added entries — are preserved verbatim. Returns the
+     * input unchanged when nothing is missing, which makes the operation
+     * idempotent.
+     */
+    private function buildGitignoreContent(string $existing): string
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $existing) ?: [];
+        $present = array_map('trim', $lines);
+
+        $blocks = [];
+
+        foreach ($this->gitignoreGroups as $label => $entries) {
+            $missing = array_values(array_filter(
+                $entries,
+                static fn (string $entry): bool => ! in_array($entry, $present, true),
+            ));
+
+            if ($missing === []) {
+                continue;
+            }
+
+            $blocks[] = "# ---- {$label} ----\n".implode("\n", $missing);
+        }
+
+        if ($blocks === []) {
+            return $existing;
+        }
+
+        $appendix = implode("\n\n", $blocks)."\n";
+
+        if (trim($existing) === '') {
+            return $appendix;
+        }
+
+        return rtrim($existing, "\n")."\n\n".$appendix;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     // MIGRATIONS
     // ══════════════════════════════════════════════════════════════════════
 
@@ -964,68 +1100,6 @@ class InstallCommand extends Command
                 'report' => false,
             ],
         ]);
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // MEDIA LIBRARY CONFIG INJECTION
-    // ══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Set the custom path generator in config/media-library.php if not already configured.
-     */
-    private function injectMediaLibraryConfig(): void
-    {
-        $configPath = config_path('media-library.php');
-
-        // Publish the config if it doesn't exist yet.
-        if (! $this->files->exists($configPath)) {
-            $vendorConfig = base_path('vendor/spatie/laravel-medialibrary/config/media-library.php');
-            if ($this->files->exists($vendorConfig)) {
-                $this->files->copy($vendorConfig, $configPath);
-            } else {
-                return;
-            }
-        }
-
-        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
-            // Idempotent — skip if MediaPathGenerator is already referenced anywhere
-            // in the file (as a class constant, qualified name, or use alias).
-            $finder = new NodeFinder;
-            $existing = $finder->find($stmts, static function (Node $node): bool {
-                if ($node instanceof Node\Name) {
-                    $name = $node->toString();
-
-                    return str_ends_with($name, 'MediaPathGenerator');
-                }
-
-                return false;
-            });
-
-            if (! empty($existing)) {
-                return false;
-            }
-
-            $root = $this->findConfigRootArray($stmts);
-
-            if ($root === null) {
-                return false;
-            }
-
-            $pathGenerator = $this->findArrayItem($root, 'path_generator');
-
-            if ($pathGenerator === null) {
-                return false;
-            }
-
-            $pathGenerator->value = new Node\Expr\ClassConstFetch(
-                new Node\Name\FullyQualified('App\\Support\\MediaPathGenerator'),
-                'class',
-            );
-
-            return true;
-        });
-
-        config(['media-library.path_generator' => MediaPathGenerator::class]);
     }
 
     // ══════════════════════════════════════════════════════════════════════

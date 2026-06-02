@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Support\Scramble;
+namespace Lvntr\StarterKit\Support\Scramble;
 
-use App\Http\Responses\ApiResponse;
 use Dedoc\Scramble\Extensions\TypeToSchemaExtension;
 use Dedoc\Scramble\Support\Generator\Response;
 use Dedoc\Scramble\Support\Generator\Schema;
@@ -12,6 +11,7 @@ use Dedoc\Scramble\Support\Generator\Types\ObjectType as OpenApiObjectType;
 use Dedoc\Scramble\Support\Generator\Types\StringType;
 use Dedoc\Scramble\Support\Type\ObjectType;
 use Dedoc\Scramble\Support\Type\Type;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 /**
  * Teaches Scramble how to document ApiResponse as the API envelope used

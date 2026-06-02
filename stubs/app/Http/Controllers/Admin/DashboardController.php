@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use App\Support\HtmlSanitizer;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lvntr\StarterKit\Support\HtmlSanitizer;
 
 class DashboardController extends Controller
 {

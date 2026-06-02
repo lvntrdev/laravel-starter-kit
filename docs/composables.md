@@ -1,6 +1,26 @@
 # Composables
 
-Project composables live under `resources/js/composables/` and are re-exported from `@/composables`. They keep view components thin by holding UI behavior, not business rules.
+Kit composables are shipped inside the package and run directly from the vendor library by default — they no longer need to be copied into the consumer app. Imports throughout the application use `@/composables/<name>` (or the bare `@/composables` barrel) exactly as before; a Vite `customResolver` plus a matching tsconfig path entry resolve those paths **local-first, then vendor**: if a file exists under the consumer's `resources/js/composables/` it wins, otherwise the vendor copy is used automatically.
+
+**`useAdminMenu`** is the only composable that still ships as an editable stub (`resources/js/composables/useAdminMenu.ts`). It depends on the consumer's generated `@/routes/*` files and is the project's own menu definition, so it must remain editable. The `@/composables/index.ts` barrel also stays as a stub.
+
+### Upgrading composables via Composer
+
+Because the 15 kit composables live in the package, they are updated when you run `composer update lvntr/laravel-starter-kit`. No manual file copying is required.
+
+### Publishing composables for customization
+
+To edit a composable, publish it to the consumer app first:
+
+```bash
+php artisan sk:publish --tag=composables
+```
+
+This copies the current vendor versions into `resources/js/composables/`. Once a local copy exists the local-first resolver picks it up automatically — no alias changes or build config edits are needed.
+
+### Migration note for existing installs
+
+Projects created before this change already have all composables under `resources/js/composables/`. The local-first resolver means those local copies continue to be used, so **nothing breaks**. The trade-off is that those projects will not receive upstream composable fixes via `composer update` until the unmodified files are removed. To opt into vendor-managed upgrades, delete the composables you have not customized from `resources/js/composables/` — keeping `useAdminMenu.ts`, `index.ts`, and any file you have intentionally edited. The kit never auto-deletes local files.
 
 ## Commonly Used Composables
 

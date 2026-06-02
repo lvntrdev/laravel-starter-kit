@@ -1,20 +1,27 @@
 // resources/js/composables/index.ts
-// Re-export composables from a single entry point.
-export { useSidebar } from './useSidebar';
+// Single entry point for composables.
+//
+// Kit composables run from the vendor package and are re-exported here through
+// the `@/composables/<name>` alias, which resolves to a local copy when present
+// (published via `php artisan sk:publish --tag=composables` or customized) and
+// otherwise falls back to the vendor copy. Only `useAdminMenu` ships locally —
+// it depends on the consumer's generated `@/routes/*` and is meant to be edited.
 export { useAdminMenu } from './useAdminMenu';
-export { useMenuBuilder } from './useMenuBuilder';
-export { useDarkMode } from './useDarkMode';
-export { useFlash } from './useFlash';
-export { useConfirm } from './useConfirm';
-export { useApi } from './useApi';
-export type { ApiEnvelope, ApiError } from './useApi';
-export { useDialog } from './useDialog';
-export { useRefreshBus } from './useRefreshBus';
-export { useUrlTab } from './useUrlTab';
-export type { TabDefinition } from './useUrlTab';
-export { useCan } from './useCan';
-export { useDefinition } from './useDefinition';
-export type { EnumItem, DefinitionKey, DefinitionFilter } from './useDefinition';
-export { usePageLoading } from './usePageLoading';
-export { useDatatableSelection } from './useDatatableSelection';
-export type { BulkSelectionMode, BulkActionResult, BulkActionPayload } from './useDatatableSelection';
+
+export { useSidebar } from '@/composables/useSidebar';
+export { useMenuBuilder } from '@/composables/useMenuBuilder';
+export { useDarkMode } from '@/composables/useDarkMode';
+export { useFlash } from '@/composables/useFlash';
+export { useConfirm } from '@/composables/useConfirm';
+export { useApi } from '@/composables/useApi';
+export type { ApiEnvelope, ApiError } from '@/composables/useApi';
+export { useDialog } from '@/composables/useDialog';
+export { useRefreshBus } from '@/composables/useRefreshBus';
+export { useUrlTab } from '@/composables/useUrlTab';
+export type { TabDefinition } from '@/composables/useUrlTab';
+export { useCan } from '@/composables/useCan';
+export { useDefinition } from '@/composables/useDefinition';
+export type { EnumItem, DefinitionKey, DefinitionFilter } from '@/composables/useDefinition';
+export { usePageLoading } from '@/composables/usePageLoading';
+export { useDatatableSelection } from '@/composables/useDatatableSelection';
+export type { BulkSelectionMode, BulkActionResult, BulkActionPayload } from '@/composables/useDatatableSelection';

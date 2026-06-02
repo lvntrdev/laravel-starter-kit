@@ -11,6 +11,10 @@
         "forceConsistentCasingInFileNames": true,
         "baseUrl": ".",
         "paths": {
+            "@/composables/*": [
+                "resources/js/composables/*",
+                "vendor/lvntr/laravel-starter-kit/resources/js/composables/*"
+            ],
             "@/*": [
                 "resources/js/*"
             ],

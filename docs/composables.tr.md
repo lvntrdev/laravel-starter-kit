@@ -1,6 +1,26 @@
 # Composable'lar
 
-Proje composable'ları `resources/js/composables/` altında yer alır ve `@/composables` üzerinden tekrar export edilir. View bileşenlerini ince tutarlar — iş kuralı değil, arayüz davranışı taşırlar.
+Kit composable'ları artık pakete dahil edilmiştir ve varsayılan olarak doğrudan vendor kütüphanesinden çalışır — tüketici uygulamasına kopyalanmaları gerekmez. Uygulama genelindeki importlar daha önce olduğu gibi `@/composables/<name>` (veya yalnızca `@/composables` barrel'ı) üzerinden yapılır; Vite `customResolver` ve buna eşlik eden tsconfig path girişi bu yolları **önce local, sonra vendor** olarak çözer: tüketicinin `resources/js/composables/` dizininde bir dosya varsa o kullanılır, yoksa vendor kopyası otomatik devreye girer.
+
+**`useAdminMenu`**, stub olarak gönderilmeye devam eden tek composable'dır (`resources/js/composables/useAdminMenu.ts`). Tüketicinin ürettiği `@/routes/*` dosyalarına bağımlıdır ve projeye özgü menü tanımını barındırır; bu nedenle düzenlenebilir olarak kalmalıdır. `@/composables/index.ts` barrel'ı da stub olarak kalmaya devam eder.
+
+### Composer üzerinden composable güncellemeleri
+
+15 kit composable'ı pakette yer aldığından, `composer update lvntr/laravel-starter-kit` çalıştırıldığında otomatik olarak güncellenir. Elle dosya kopyalamaya gerek yoktur.
+
+### Özelleştirmek için composable yayımlama
+
+Bir composable'ı düzenlemek için önce tüketici uygulamasına yayımlayın:
+
+```bash
+php artisan sk:publish --tag=composables
+```
+
+Bu komut, vendor'daki güncel sürümleri `resources/js/composables/` dizinine kopyalar. Local kopya oluştuğunda local-first resolver onu otomatik olarak seçer — alias değişikliği veya build config düzenlemesi gerekmez.
+
+### Mevcut kurulumlar için geçiş notu
+
+Bu değişiklikten önce oluşturulan projelerde tüm composable'lar `resources/js/composables/` altında zaten mevcuttur. Local-first resolver bu local kopyaları kullanmaya devam eder; **hiçbir şey bozulmaz**. Ancak bu projelerde `composer update` ile gelen upstream düzeltmeleri otomatik olarak alınmaz. Vendor tarafından yönetilen güncellemelere geçmek için özelleştirmediğiniz composable dosyalarını `resources/js/composables/` dizininden silin — `useAdminMenu.ts`, `index.ts` ve kasıtlı olarak düzenlediğiniz dosyaları koruyun. Kit, local dosyaları hiçbir zaman otomatik silmez.
 
 ## Sık Kullanılan Composable'lar
 

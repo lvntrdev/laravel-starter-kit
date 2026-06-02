@@ -149,6 +149,7 @@ The package keeps many assets inside the package by default. Publish them only w
 ```bash
 php artisan sk:publish
 php artisan sk:publish --tag=components
+php artisan sk:publish --tag=composables
 php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config

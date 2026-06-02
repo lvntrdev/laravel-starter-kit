@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace Lvntr\StarterKit\Support;
 
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;

@@ -6,7 +6,6 @@ return [
     'users' => 'Kullanıcılar',
     'roles_permissions' => 'Roller ve İzinler',
     'files' => 'Dosyalar',
-    'sample_contents' => 'Örnek İçerikler',
     'system' => 'Sistem',
     'activity_logs' => 'Etkinlik Kayıtları',
     'logs' => 'Loglar',

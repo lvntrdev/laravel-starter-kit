@@ -12,7 +12,7 @@ use function Laravel\Prompts\select;
 class PublishCommand extends Command
 {
     protected $signature = 'sk:publish
-        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, filemanager, lang, config, helpers)}
+        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, filemanager, composables, lang, config, helpers)}
         {--force : Overwrite existing files}
         {--destination= : Override destination base path (for testing or custom layouts)}';
 
@@ -60,6 +60,11 @@ class PublishCommand extends Command
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/FileManager',
             'label' => 'FileManager (FileManager.vue, components, composables)',
             'group' => 'components',
+        ],
+        'composables' => [
+            'source' => 'resources/js/composables',
+            'destination' => 'resources/js/composables',
+            'label' => 'Composables (useApi, useDialog, useConfirm, useDefinition, …)',
         ],
         'lang' => [
             'source' => 'resources/lang',
@@ -121,6 +126,7 @@ class PublishCommand extends Command
             label: 'What would you like to publish?',
             options: [
                 'components' => 'Vue Components (all or pick individual)',
+                'composables' => 'Composables (useApi, useDialog, useDefinition, …)',
                 'lang' => 'Language Files (translations)',
                 'config' => 'Configuration File',
                 'helpers' => 'Global Helpers (sk-helpers.php)',

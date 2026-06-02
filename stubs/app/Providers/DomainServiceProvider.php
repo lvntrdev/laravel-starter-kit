@@ -10,12 +10,6 @@ use App\Domain\Role\Events\RoleUpdated;
 use App\Domain\Role\Listeners\LogRoleCreated;
 use App\Domain\Role\Listeners\LogRoleDeleted;
 use App\Domain\Role\Listeners\LogRoleUpdated;
-use App\Domain\SampleContent\Events\SampleContentCreated;
-use App\Domain\SampleContent\Events\SampleContentDeleted;
-use App\Domain\SampleContent\Events\SampleContentUpdated;
-use App\Domain\SampleContent\Listeners\LogSampleContentCreated as SampleContentLogCreated;
-use App\Domain\SampleContent\Listeners\LogSampleContentDeleted as SampleContentLogDeleted;
-use App\Domain\SampleContent\Listeners\LogSampleContentUpdated as SampleContentLogUpdated;
 use App\Domain\User\Events\UserCreated;
 use App\Domain\User\Events\UserDeleted;
 use App\Domain\User\Events\UserUpdated;
@@ -54,9 +48,5 @@ class DomainServiceProvider extends ServiceProvider
 
         // ── Logs Events ──────────────────────────────────────────────────
         Event::listen(LogFilesDeleted::class, LogActivityForLogFilesDeleted::class);
-        // ── SampleContent Events ─────────────────────────────────────────────
-        Event::listen(SampleContentCreated::class, SampleContentLogCreated::class);
-        Event::listen(SampleContentUpdated::class, SampleContentLogUpdated::class);
-        Event::listen(SampleContentDeleted::class, SampleContentLogDeleted::class);
     }
 }

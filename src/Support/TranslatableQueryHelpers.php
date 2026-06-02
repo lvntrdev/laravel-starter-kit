@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Support;
+namespace Lvntr\StarterKit\Support;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;

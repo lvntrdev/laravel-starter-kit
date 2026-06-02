@@ -57,7 +57,6 @@ const ROUTES = {
         'dtApi',
         'syncPermissions',
     ],
-    'sample-contents': ['index', 'dtApi', 'destroy', 'store', 'update'],
     settings: {
         flat: ['index', 'testMail'],
         nested: {

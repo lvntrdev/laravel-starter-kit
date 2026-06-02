@@ -33,9 +33,6 @@ class UpdateCommand extends Command
     private const SAFE_UPDATE_PATHS = [
         // PermissionEnum is generated per-project but kept in sync with package constants
         'app/Enums/PermissionEnum.php',
-
-        // AssignTraceId is an app-owned middleware stub (thin wrapper around vendor)
-        'app/Http/Middleware/AssignTraceId.php',
     ];
 
     /**
@@ -53,11 +50,25 @@ class UpdateCommand extends Command
         'app/Helpers/sk-helpers.php',
         'app/Http/Middleware/CheckResourcePermission.php',
         'app/Http/Middleware/SecurityHeaders.php',
+        'app/Http/Middleware/AssignTraceId.php',
+        'app/Http/Middleware/SetLocale.php',
+        'app/Http/Middleware/ValidateTurnstile.php',
         'app/Exceptions/ApiException.php',
         'app/Exceptions/ApiExceptionHandler.php',
         'app/Http/Controllers/FileManagerController.php',
         'app/Http/Requests/FileManager/',
         'app/Console/Commands/PurgeFileManagerTrash.php',
+        'app/Support/HtmlSanitizer.php',
+        'app/Support/TranslatableQueryHelpers.php',
+        'app/Support/MediaPathGenerator.php',
+        'app/Support/HasTranslatableRules.php',
+        'app/Support/Scramble/ApiResponseExtension.php',
+        // These third-party configs are no longer published — the kit applies
+        // its required overrides from vendor at runtime (StarterKitServiceProvider
+        // ::applyVendorConfigDefaults). Publishing them again is optional.
+        'config/media-library.php',
+        'config/activitylog.php',
+        'config/inertia.php',
     ];
 
     /**
@@ -93,6 +104,7 @@ class UpdateCommand extends Command
         'app/Http/Responses/ApiResponse.php',
         'resources/js/pages/Admin/Settings/components/AuthTab.vue',
         'resources/js/pages/Admin/Settings/components/TurnstileTab.vue',
+        'resources/js/components/Auth/TurnstileWidget.vue',
     ];
 
     /** @var list<string> */
@@ -144,7 +156,6 @@ class UpdateCommand extends Command
         // 4b. Inject filesystem config if missing (added in later versions)
         if (! $dryRun) {
             $this->injectFilesystemsConfig();
-            $this->injectMediaLibraryConfig();
             $this->migrateLegacyHelpersFile();
             $this->rewriteHelpersAutoload();
         }
@@ -685,54 +696,6 @@ PHP;
         $this->files->put($configPath, $content);
 
         $this->updated[] = 'config/filesystems.php (injected DO Spaces disk)';
-    }
-
-    /**
-     * Set the custom path generator in config/media-library.php if not already configured.
-     */
-    private function injectMediaLibraryConfig(): void
-    {
-        $configPath = config_path('media-library.php');
-
-        // Publish the config if it doesn't exist yet
-        if (! $this->files->exists($configPath)) {
-            $vendorConfig = base_path('vendor/spatie/laravel-medialibrary/config/media-library.php');
-            if ($this->files->exists($vendorConfig)) {
-                $this->files->copy($vendorConfig, $configPath);
-            } else {
-                return;
-            }
-        }
-
-        $content = $this->files->get($configPath);
-
-        if (str_contains($content, 'MediaPathGenerator')) {
-            return;
-        }
-
-        $content = str_replace(
-            'Spatie\\MediaLibrary\\Support\\PathGenerator\\DefaultPathGenerator::class',
-            'App\\Support\\MediaPathGenerator::class',
-            $content,
-        );
-
-        $content = str_replace(
-            'DefaultPathGenerator::class',
-            'MediaPathGenerator::class',
-            $content,
-        );
-
-        if (str_contains($content, 'MediaPathGenerator::class') && ! str_contains($content, 'use App\\Support\\MediaPathGenerator')) {
-            $content = str_replace(
-                "<?php\n",
-                "<?php\n\nuse App\\Support\\MediaPathGenerator;\n",
-                $content,
-            );
-        }
-
-        $this->files->put($configPath, $content);
-
-        $this->updated[] = 'config/media-library.php (set custom path generator)';
     }
 
     /**

@@ -5,6 +5,27 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.12] - Unreleased
+
+### Added
+
+- **Kit composables moved to vendor** — 15 composables (`useApi`, `useCan`, `useConfirm`, `useDarkMode`, `useDatatableSelection`, `useDefinition`, `useDialog`, `useFileShare`, `useFlash`, `useImageLightbox`, `useMenuBuilder`, `usePageLoading`, `useRefreshBus`, `useSidebar`, `useUrlTab`) now run directly from the vendor package. Import paths (`@/composables/<name>`) are unchanged; a Vite `customResolver` + tsconfig path entry resolve local-first then vendor. `useAdminMenu` and `index.ts` remain as editable stubs.
+- **`sk:publish --tag=composables`** — publishes the vendor composables into the consumer's `resources/js/composables/` for project-level customization. Once a local copy exists it automatically overrides the vendor one.
+- **`TurnstileWidget.vue` moved to vendor** — `resources/js/components/Auth/TurnstileWidget.vue` stub removed; the component now ships at `@lvntr/components/ui/TurnstileWidget.vue`.
+- **Backend runtime classes moved to vendor** — `HtmlSanitizer`, `TranslatableQueryHelpers`, `MediaPathGenerator`, `Scramble\ApiResponseExtension`, and the `AssignTraceId` / `SetLocale` / `ValidateTurnstile` middleware now run from `Lvntr\StarterKit\*` with no stub copied to the app. Existing `App\…` imports keep resolving via `class_alias` (the alias is skipped when you keep a customised local copy). `ApiResponseExtension` is now properly registered with Scramble.
+- **Backend classes moved to vendor with a thin `App\` shim** — `App\Http\Responses\DatatableQueryBuilder`, `App\Rules\HttpsOrLocalhostUrl`, and `App\Rules\TurnstileRule` keep their familiar import path via a thin subclass while the implementation runs from vendor.
+- **`HasTranslatableRules` trait moved to vendor (direct import)** — now `Lvntr\StarterKit\Support\HasTranslatableRules`. PHP traits cannot use `class_alias`, so there is no `App\` fallback; import the trait from the vendor namespace (consistent with `HasActivityLogging` / `HasMediaCollections`).
+
+### Changed
+
+- **Third-party config overrides applied at runtime** — `config/activitylog.php`, `config/inertia.php`, and `config/media-library.php` are no longer published. `StarterKitServiceProvider::applyVendorConfigDefaults()` sets only the kit's required keys (`media-library.path_generator` + `media-library.media_model`, `activitylog.include_soft_deleted_subjects`, `inertia.ssr.enabled`) and skips any config the consumer has already published. Publish the upstream package's own config tag (e.g. `--tag=medialibrary-config`) to take full control.
+- **`sk:install` / `sk:update`** — the media-library `path_generator` AST/string injection was removed (the value is now set at runtime); the new vendor-resident files are surfaced under `sk:update`'s informational "runs from vendor" notice.
+
+### Removed
+
+- **`stubs/resources/js/composables/<name>.ts`** — 15 composable stubs removed from the scaffold. Existing projects keep their local copies (local-first resolver ensures no breakage); to receive upstream updates via `composer update`, delete the unmodified files, keeping `useAdminMenu.ts`, `index.ts`, and any customized composables.
+- **Backend stubs removed from the scaffold** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php`, and `config/{activitylog,inertia,media-library}.php`. Existing copies are preserved in upgraded apps (shown as an informational notice by `sk:update`, never deleted automatically). Note: deleting a local copy of the `HasTranslatableRules` trait requires updating its `use` imports to the vendor namespace first (no `class_alias` for traits).
+
 ## [13.5.11] - Unreleased
 
 ### Added

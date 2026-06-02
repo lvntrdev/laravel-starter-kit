@@ -4,6 +4,148 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v13.5.3 → v13.5.12
+
+### Summary
+
+This release continues the "package runtime runs from vendor" migration started in v13.5.0. A further set of backend helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, three third-party config files are no longer published (their required overrides are applied at runtime), and on the frontend 15 composables plus `TurnstileWidget.vue` moved to the vendor library. **Your existing files in `app/`, `config/`, and `resources/js/` are not affected and keep working as-is.** `composer update` is the only required step.
+
+Backward compatibility is guaranteed two ways:
+
+- **Pure-moved PHP classes** (no stub left) resolve through `class_alias()` registered by `StarterKitServiceProvider` — your old `App\…` imports keep working as long as the corresponding `app/…` file is not deleted. The guard *steps aside* when you keep a customised copy, so your version still wins.
+- **Aliased PHP classes** (a thin `App\…` subclass/trait stays in the scaffold) keep the familiar `App\…` import valid while the implementation runs from vendor.
+
+### Upgrade steps
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan migrate          # "Nothing to migrate" — no schema changes
+```
+
+Optional:
+
+```bash
+php artisan sk:update --dry-run   # reports which moved files still exist in app/ (never forces)
+npm run build                     # frontend smoke test (composables resolve local-first then vendor)
+```
+
+### What moved to vendor
+
+#### Backend (PHP) — pure move (no stub; resolved via `class_alias`)
+
+| Was (`App\`) | Now (vendor) |
+|---|---|
+| `App\Support\HtmlSanitizer` | `Lvntr\StarterKit\Support\HtmlSanitizer` |
+| `App\Support\TranslatableQueryHelpers` | `Lvntr\StarterKit\Support\TranslatableQueryHelpers` |
+| `App\Support\MediaPathGenerator` | `Lvntr\StarterKit\Support\MediaPathGenerator` |
+| `App\Support\Scramble\ApiResponseExtension` | `Lvntr\StarterKit\Support\Scramble\ApiResponseExtension` |
+| `App\Http\Middleware\AssignTraceId` | `Lvntr\StarterKit\Http\Middleware\AssignTraceId` |
+| `App\Http\Middleware\SetLocale` | `Lvntr\StarterKit\Http\Middleware\SetLocale` |
+| `App\Http\Middleware\ValidateTurnstile` | `Lvntr\StarterKit\Http\Middleware\ValidateTurnstile` |
+
+`AssignTraceId`, `SetLocale`, and `ValidateTurnstile` are wired by `Lvntr\StarterKit\Bootstrap::middleware()` (already called from your `bootstrap/app.php`), so no bootstrap change is needed. Only `HandleInertiaRequests` stays in the scaffold — it carries app-specific Inertia shared data.
+
+#### Backend (PHP) — vendor + thin `App\` shim (import path unchanged)
+
+| Class | Note |
+|---|---|
+| `App\Http\Responses\DatatableQueryBuilder` | thin subclass of the vendor builder |
+| `App\Rules\HttpsOrLocalhostUrl` | thin subclass |
+| `App\Rules\TurnstileRule` | thin subclass |
+
+#### Backend (PHP) — traits (direct vendor import, no alias)
+
+PHP traits **cannot** be resolved with `class_alias()`, so traits do not get the transparent `App\…` fallback that classes get. The kit's traits are imported directly from the vendor namespace:
+
+| Trait | Import |
+|---|---|
+| `HasTranslatableRules` | `use Lvntr\StarterKit\Support\HasTranslatableRules;` |
+| `HasActivityLogging` (since v13.5.0) | `use Lvntr\StarterKit\Traits\HasActivityLogging;` |
+| `HasMediaCollections` (since v13.5.0) | `use Lvntr\StarterKit\Traits\HasMediaCollections;` |
+
+The shipped model/request scaffold already imports these from `Lvntr\StarterKit\…`. **If your project still has a local copy of one of these traits (e.g. `app/Support/HasTranslatableRules.php` from an older version) and you delete it, you must first change every `use` statement that references the `App\…` trait to the vendor namespace** — there is no alias to fall back on.
+
+#### Third-party config — no longer published
+
+`config/activitylog.php`, `config/inertia.php`, and `config/media-library.php` are no longer copied into your app. The kit applies only the overrides it requires at runtime via `StarterKitServiceProvider::applyVendorConfigDefaults()`:
+
+- `media-library.path_generator` → vendor `MediaPathGenerator`, and `media-library.media_model` → `App\Models\Media` (when that model exists) — **required for File Manager Trash / soft-deletes**.
+- `activitylog.include_soft_deleted_subjects` → `true`
+- `inertia.ssr.enabled` → `env('INERTIA_SSR_ENABLED', false)`
+
+Each override is **skipped if you publish your own copy** of that config — publishing remains the escape hatch for full control. Use the upstream package's own publish tag, e.g. `php artisan vendor:publish --tag=medialibrary-config`.
+
+> The previous installer behaviour that AST-injected `App\Support\MediaPathGenerator` into a published `config/media-library.php` has been removed; the path generator is now set at runtime.
+
+#### Frontend
+
+- 15 composables (`useApi`, `useCan`, … `useUrlTab`) run from vendor; `@/composables/<name>` resolves local-first then vendor. `useAdminMenu.ts` and `index.ts` stay as editable stubs.
+- `TurnstileWidget.vue` now ships at `@lvntr/components/ui/TurnstileWidget.vue`.
+
+### What does not change
+
+| Area | Status |
+|---|---|
+| Existing `app/…` copies of the moved classes | Preserved, not deleted |
+| `App\…` **class** imports in your code | Keep working (`class_alias` for pure-moved classes; thin shim for `DatatableQueryBuilder` / Rules) |
+| `App\…` **trait** imports (`HasTranslatableRules`, `HasActivityLogging`, `HasMediaCollections`) | No alias — use the vendor namespace (see the traits note above) |
+| A `config/activitylog.php` / `inertia.php` / `media-library.php` you already published | Preserved; your file wins (runtime override skipped) |
+| `@/composables/<name>` import paths | Unchanged |
+| Route names, permission keys, API response envelope | Unchanged |
+| Migration history | "Nothing to migrate" |
+
+### Optional cleanup
+
+These steps are entirely optional and can happen later.
+
+**Pure-moved PHP classes** — if you never customised them, delete the orphaned files so the vendor versions (via `class_alias`) take over:
+
+```bash
+rm -f app/Support/HtmlSanitizer.php \
+      app/Support/TranslatableQueryHelpers.php \
+      app/Support/MediaPathGenerator.php \
+      app/Support/Scramble/ApiResponseExtension.php \
+      app/Http/Middleware/AssignTraceId.php \
+      app/Http/Middleware/SetLocale.php \
+      app/Http/Middleware/ValidateTurnstile.php
+```
+
+> If a previously-published `config/media-library.php` sets `path_generator` to `App\Support\MediaPathGenerator`, it keeps working via the alias. To move fully to the runtime default, delete `config/media-library.php` — the kit then enforces the vendor path generator and `App\Models\Media`.
+
+**Shimmed PHP classes** (`DatatableQueryBuilder`, `HttpsOrLocalhostUrl`, `TurnstileRule`) — leave the thin `App\` subclass in place; it is the supported override point. Delete it only if you switch your imports to `Lvntr\StarterKit\…` directly.
+
+**Traits** (`HasTranslatableRules`, `HasActivityLogging`, `HasMediaCollections`) — if you have a local copy, first switch every `use` statement to the vendor namespace, *then* delete the local file. Skipping the import update breaks the class, because traits have no `class_alias` fallback.
+
+**If you customised any moved class**, keep your `app/…` file: the `class_alias` guard (for pure-moved classes) detects it and steps aside, so your version continues to win. For shimmed classes, customise the shim itself.
+
+### sk:update output
+
+`sk:update` reports the moved files that still exist in your app (informational only — never deleted automatically):
+
+```
+v13.5.0+: package runtime runs from vendor. The following files still exist in your app:
+
+  • app/Http/Middleware/AssignTraceId.php
+  • app/Http/Middleware/SetLocale.php
+  • app/Http/Middleware/ValidateTurnstile.php
+  • app/Support/HtmlSanitizer.php
+  • app/Support/TranslatableQueryHelpers.php
+  • app/Support/MediaPathGenerator.php
+  • app/Support/HasTranslatableRules.php
+  • app/Support/Scramble/ApiResponseExtension.php
+  • config/media-library.php
+  • config/activitylog.php
+  • config/inertia.php
+```
+
+(The v13.5.0 vendor-resident files — `app/Domain/FileManager/`, `app/Domain/Shared/`, etc. — also appear in the list if still present.)
+
+### New install (v13.5.12+)
+
+A fresh `sk:install` no longer copies these helper classes, middleware, traits, or the three third-party configs into `app/` / `config/`. They run from `vendor/lvntr/laravel-starter-kit/src/` plus the kit's runtime config overrides. The scaffold still ships the thin `App\` shims for `DatatableQueryBuilder` and the two validation Rules so generated domain code keeps its familiar imports; trait helpers (`HasTranslatableRules`) are imported directly from the vendor namespace.
+
+---
+
 ## v13.5.0 → v13.5.3
 
 ### Summary

@@ -25,6 +25,33 @@ function isWayfinderAvailable(): boolean {
 // unit tests, so skip them when running under vitest.
 const isVitest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
 
+// Kit composables run from the vendor package by default. A subpath import
+// `@/composables/<name>` resolves to the consumer-local copy when one exists
+// (published via `php artisan sk:publish --tag=composables`, or customized),
+// otherwise it falls back to the vendor copy. This is wired as an alias
+// `customResolver` rather than a `pre` plugin on purpose: Vite's alias plugin
+// runs BEFORE user `pre` plugins, so the bare `@` alias would otherwise rewrite
+// the path to the (non-existent) local file first. Bare `@/composables` is not
+// matched here and falls through to the `@` alias → local barrel (index.ts),
+// which always ships as a stub and re-exports useAdminMenu plus the vendor set.
+function resolveComposable(name: string): string | null {
+    const dirs = [
+        path.resolve(__dirname, 'resources/js/composables'),
+        path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js/composables'),
+    ];
+
+    for (const dir of dirs) {
+        for (const ext of ['.ts', '.js']) {
+            const candidate = path.join(dir, name + ext);
+            if (existsSync(candidate)) {
+                return candidate;
+            }
+        }
+    }
+
+    return null;
+}
+
 // NOTE (stubs perspective): When this file is published to a consumer project
 // via `php artisan sk:install`, __dirname resolves to the consumer project root.
 // All alias paths below therefore point to the vendor directory of the consumer.
@@ -36,19 +63,30 @@ const isVitest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test
 export default defineConfig({
     resolve: {
         preserveSymlinks: true,
-        alias: {
-            '@': path.resolve(__dirname, 'resources/js'),
+        // Array form (ordered): the @/composables fallback MUST precede `@`,
+        // otherwise the broad `@` alias rewrites the path before the fallback
+        // gets a chance. @lvntr/components precedes @lvntr for the same reason.
+        alias: [
+            {
+                find: /^@\/composables\/(.+)$/,
+                replacement: '$1',
+                customResolver: (name: string) => resolveComposable(name),
+            },
+            { find: '@', replacement: path.resolve(__dirname, 'resources/js') },
             // @lvntr/components/* → Lvntr-Starter-Kit UI lib from vendor.
             // Consumer's __dirname is the project root; vendor symlink is followed
             // via preserveSymlinks so HMR works for both install and sibling-dev.
-            '@lvntr/components': path.resolve(
-                __dirname,
-                'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
-            ),
+            {
+                find: '@lvntr/components',
+                replacement: path.resolve(
+                    __dirname,
+                    'vendor/lvntr/laravel-starter-kit/resources/js/components/Lvntr-Starter-Kit',
+                ),
+            },
             // Remaining @lvntr/* imports (e.g. shared utilities) resolve to the
             // same vendor package root.
-            '@lvntr': path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js'),
-        },
+            { find: '@lvntr', replacement: path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js') },
+        ],
     },
 
     plugins: [

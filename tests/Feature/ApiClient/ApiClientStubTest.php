@@ -324,8 +324,9 @@ test('HttpsOrLocalhostUrl Rule stub mevcut (K2)', function (): void {
 });
 
 test('HttpsOrLocalhostUrl Rule localhost http kabul ediyor', function (): void {
+    // Rule logic now runs from vendor (src/Rules); the stub is a thin alias.
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Rules/HttpsOrLocalhostUrl.php'
+        dirname(__DIR__, 3).'/src/Rules/HttpsOrLocalhostUrl.php'
     );
 
     expect($content)->toContain('localhost');
