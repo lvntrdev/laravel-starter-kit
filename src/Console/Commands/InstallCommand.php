@@ -148,11 +148,10 @@ class InstallCommand extends Command
         $this->components->info('Installing Lvntr Starter Kit...');
         $this->newLine();
 
-        // 1. Database configuration
-        $this->configureDatabaseStep();
-
-        // 2. Publish stubs — on first install (no hash registry), force-copy
-        // so preservable paths like lang/ are populated from stubs.
+        // 1. Publish stubs first so the kit's .env.example, package.json, and
+        // scaffolding are in place before any .env / database wiring runs.
+        // On first install (no hash registry), force-copy so preservable paths
+        // like lang/ are populated from stubs.
         $isFirstInstall = $this->isFirstInstall();
 
         $this->step('Publishing application scaffolding', function () use ($isFirstInstall) {
@@ -164,10 +163,21 @@ class InstallCommand extends Command
             );
         });
 
-        // 2b. Merge package.json (stub wins for shared deps, user extras preserved)
+        // 1b. Merge package.json (stub wins for shared deps, user extras preserved)
         $this->step('Merging package.json', function () {
             $this->mergePackageJson();
         });
+
+        // 1c. Seed .env from the freshly published .env.example so consumers
+        // get every kit key without copying by hand, then generate APP_KEY
+        // when it is blank. Runs before the database step so DB_* values are
+        // written into an already-seeded .env.
+        $this->step('Ensuring .env file', function () {
+            $this->ensureEnvFile();
+        });
+
+        // 2. Database configuration (writes DB_* into the now-seeded .env)
+        $this->configureDatabaseStep();
 
         // 3. Remove conflicting default Laravel files
         $this->step('Removing conflicting default files', function () {
@@ -210,6 +220,13 @@ class InstallCommand extends Command
         // 4c. Inject DigitalOcean Spaces disk into config/filesystems.php
         $this->step('Configuring filesystem disks', function () {
             $this->injectFilesystemsConfig();
+        });
+
+        // 4c-2. Inject Turnstile keys into config/services.php so the kit's
+        // CAPTCHA code (middleware, Fortify action, validation rule) can read
+        // services.turnstile.* from the TURNSTILE_* env vars.
+        $this->step('Configuring third-party services', function () {
+            $this->injectServicesConfig();
         });
 
         // 4d. Wire starter kit bootstrap hooks into bootstrap/app.php
@@ -418,6 +435,131 @@ class InstallCommand extends Command
         }
 
         $this->files->put($envPath, $content);
+    }
+
+    /**
+     * Ensure the consumer's .env exists and carries every key the kit ships in
+     * .env.example.
+     *
+     * On a fresh install the file is created from the freshly published
+     * .env.example; on a re-install only keys missing from the existing .env
+     * are appended — existing lines and values (including secrets) are never
+     * overwritten. Finally APP_KEY is generated when blank so the app boots.
+     */
+    private function ensureEnvFile(): void
+    {
+        $envPath = base_path('.env');
+        $examplePath = base_path('.env.example');
+
+        // Nothing to seed from. The publish step is expected to have placed the
+        // kit's .env.example, so reaching here means a malformed install.
+        if (! $this->files->exists($examplePath)) {
+            return;
+        }
+
+        if (! $this->files->exists($envPath)) {
+            $this->files->copy($examplePath, $envPath);
+        } else {
+            $this->mergeMissingEnvKeys($envPath, $examplePath);
+        }
+
+        $this->ensureAppKey($envPath);
+    }
+
+    /**
+     * Append keys present in .env.example but absent from .env, preserving the
+     * user's existing lines and values. Comment/blank lines are ignored when
+     * detecting keys; the missing lines are copied verbatim so their inline
+     * comments and defaults survive.
+     */
+    private function mergeMissingEnvKeys(string $envPath, string $examplePath): void
+    {
+        $merged = $this->buildMergedEnvContent(
+            $this->files->get($envPath),
+            $this->files->get($examplePath),
+        );
+
+        if ($merged === null) {
+            return;
+        }
+
+        $this->files->put($envPath, $merged);
+    }
+
+    /**
+     * Compute the merged .env body, appending any example key absent from the
+     * current .env under a kit header. Returns null when nothing is missing so
+     * the caller can skip the write (making the operation idempotent).
+     *
+     * Pure string-in / string-out — no filesystem access — so it can be unit
+     * tested in isolation.
+     */
+    private function buildMergedEnvContent(string $envContent, string $exampleContent): ?string
+    {
+        $existing = $this->parseEnvKeys($envContent);
+        $exampleLines = preg_split('/\r\n|\r|\n/', $exampleContent) ?: [];
+
+        $missing = [];
+        foreach ($exampleLines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '' || str_starts_with($trimmed, '#') || ! str_contains($trimmed, '=')) {
+                continue;
+            }
+
+            $key = trim(explode('=', $trimmed, 2)[0]);
+
+            if ($key !== '' && ! array_key_exists($key, $existing)) {
+                $missing[] = $line;
+            }
+        }
+
+        if ($missing === []) {
+            return null;
+        }
+
+        return rtrim($envContent, "\n")
+            ."\n\n# ---- Lvntr Starter Kit ----\n"
+            .implode("\n", $missing)."\n";
+    }
+
+    /**
+     * Parse an .env body into a set of declared keys, ignoring comment and
+     * blank lines.
+     *
+     * @return array<string, true>
+     */
+    private function parseEnvKeys(string $content): array
+    {
+        $keys = [];
+
+        foreach (preg_split('/\r\n|\r|\n/', $content) ?: [] as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '' || str_starts_with($trimmed, '#') || ! str_contains($trimmed, '=')) {
+                continue;
+            }
+
+            $keys[trim(explode('=', $trimmed, 2)[0])] = true;
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Generate APP_KEY via artisan when the .env value is blank, so a freshly
+     * seeded environment boots without a manual `key:generate`.
+     */
+    private function ensureAppKey(string $envPath): void
+    {
+        $content = $this->files->get($envPath);
+
+        // A non-empty APP_KEY is already set — leave it untouched.
+        if (preg_match('/^APP_KEY=.+$/m', $content)) {
+            return;
+        }
+
+        $this->callSilently('key:generate', ['--force' => true]);
     }
 
     /**
@@ -1187,6 +1329,71 @@ class InstallCommand extends Command
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    // SERVICES CONFIG INJECTION
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Inject a `turnstile` block into config/services.php if not already present.
+     *
+     * The kit reads `services.turnstile.*` (enabled / site_key / secret_key /
+     * verify_url) from the CAPTCHA middleware, the Fortify ValidateTurnstile
+     * action, and the TurnstileRule. Laravel's stock services.php has no such
+     * block, so without this the TURNSTILE_* env vars are silently ignored.
+     */
+    private function injectServicesConfig(): void
+    {
+        $configPath = config_path('services.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+            $root = $this->findConfigRootArray($stmts);
+
+            if ($root === null) {
+                return false;
+            }
+
+            // Idempotent — skip if the 'turnstile' block is already present.
+            if ($this->configArrayHasKey($root, 'turnstile')) {
+                return false;
+            }
+
+            $root->items[] = new Node\ArrayItem(
+                new Node\Expr\Array_([
+                    new Node\ArrayItem(
+                        new Node\Expr\FuncCall(new Node\Name('env'), [
+                            new Node\Arg(new Node\Scalar\String_('TURNSTILE_ENABLED')),
+                            new Node\Arg(new Node\Expr\ConstFetch(new Node\Name('false'))),
+                        ]),
+                        new Node\Scalar\String_('enabled'),
+                    ),
+                    new Node\ArrayItem($this->envCallNode('TURNSTILE_SITE_KEY'), new Node\Scalar\String_('site_key')),
+                    new Node\ArrayItem($this->envCallNode('TURNSTILE_SECRET_KEY'), new Node\Scalar\String_('secret_key')),
+                    new Node\ArrayItem(
+                        $this->envCallNode('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
+                        new Node\Scalar\String_('verify_url'),
+                    ),
+                ]),
+                new Node\Scalar\String_('turnstile'),
+            );
+
+            return true;
+        });
+
+        // Also set in runtime config so it's available immediately.
+        config([
+            'services.turnstile' => [
+                'enabled' => (bool) env('TURNSTILE_ENABLED', false),
+                'site_key' => env('TURNSTILE_SITE_KEY'),
+                'secret_key' => env('TURNSTILE_SECRET_KEY'),
+                'verify_url' => env('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
+            ],
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     // BOOTSTRAP INJECTION (format-preserving)
     // ══════════════════════════════════════════════════════════════════════
 
@@ -1312,6 +1519,14 @@ class InstallCommand extends Command
         ];
 
         $this->modifyPhpFileAst($path, function (array $stmts) use ($providers): bool {
+            // The shipped stub lists these providers by their short name via
+            // `use` imports (e.g. `DomainServiceProvider::class`). Resolving the
+            // use-alias map lets us compare against the canonical FQCN so we do
+            // not append a fully-qualified duplicate of an already-listed
+            // provider — a duplicate would boot the provider twice and register
+            // its event listeners twice.
+            $useMap = $this->collectUseAliases($stmts);
+
             $return = null;
             foreach ($stmts as $stmt) {
                 if ($stmt instanceof Stmt\Return_) {
@@ -1325,11 +1540,11 @@ class InstallCommand extends Command
             }
 
             $array = $return->expr;
-            $existing = $this->collectProviderClassNames($array);
+            $existing = $this->collectProviderClassNames($array, $useMap);
             $changed = false;
 
             foreach ($providers as $fqcn) {
-                if (in_array($fqcn, $existing, true) || in_array('\\'.$fqcn, $existing, true)) {
+                if (in_array($fqcn, $existing, true)) {
                     continue;
                 }
 
@@ -1417,12 +1632,14 @@ class InstallCommand extends Command
     }
 
     /**
-     * Collect all class names currently listed in a providers array so we can
-     * skip providers that are already registered (with or without a leading slash).
+     * Collect all class names currently listed in a providers array, resolved to
+     * their canonical fully-qualified form so a `Foo::class` written against a
+     * `use App\Providers\Foo;` import compares equal to `App\Providers\Foo`.
      *
+     * @param  array<string, string>  $useMap  alias => FQCN from the file's `use` statements
      * @return list<string>
      */
-    private function collectProviderClassNames(Node\Expr\Array_ $array): array
+    private function collectProviderClassNames(Node\Expr\Array_ $array, array $useMap = []): array
     {
         $names = [];
 
@@ -1434,11 +1651,63 @@ class InstallCommand extends Command
             if ($item->value instanceof Node\Expr\ClassConstFetch
                 && $item->value->class instanceof Node\Name
             ) {
-                $names[] = $item->value->class->toString();
+                $names[] = $this->resolveClassName($item->value->class, $useMap);
             }
         }
 
         return $names;
+    }
+
+    /**
+     * Build an alias => FQCN map from the file's top-level `use` statements
+     * (class imports only) so short class references can be resolved.
+     *
+     * @param  array<Stmt>  $stmts
+     * @return array<string, string>
+     */
+    private function collectUseAliases(array $stmts): array
+    {
+        $map = [];
+
+        foreach ($stmts as $stmt) {
+            if (! $stmt instanceof Stmt\Use_ || $stmt->type !== Stmt\Use_::TYPE_NORMAL) {
+                continue;
+            }
+
+            foreach ($stmt->uses as $use) {
+                $fqcn = $use->name->toString();
+                $alias = $use->alias?->toString() ?? $use->name->getLast();
+                $map[$alias] = $fqcn;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Resolve a class-reference name to its canonical FQCN (no leading slash).
+     *
+     * Fully-qualified names are returned as-is; an unqualified name whose first
+     * segment matches a `use` alias is expanded against that import; otherwise
+     * the name is returned verbatim.
+     *
+     * @param  array<string, string>  $useMap
+     */
+    private function resolveClassName(Node\Name $name, array $useMap): string
+    {
+        if ($name instanceof Node\Name\FullyQualified) {
+            return $name->toString();
+        }
+
+        $first = $name->getFirst();
+
+        if (isset($useMap[$first])) {
+            $rest = array_slice($name->getParts(), 1);
+
+            return $rest === [] ? $useMap[$first] : $useMap[$first].'\\'.implode('\\', $rest);
+        }
+
+        return $name->toString();
     }
 
     // ══════════════════════════════════════════════════════════════════════
