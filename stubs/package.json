@@ -6,7 +6,7 @@
         "dev": "vite",
         "build": "vite build && vite build --ssr",
         "typecheck": "vue-tsc --noEmit",
-        "lint": "eslint resources --ext .ts,.vue,.js",
+        "lint": "eslint resources",
         "test": "vitest run"
     },
     "devDependencies": {
