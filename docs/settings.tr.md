@@ -58,7 +58,7 @@ Admin modülü şu route'ları sunar:
 - Turnstile ayarları login, register ve forgot-password formlarındaki challenge davranışını besler
 - test-mail hataları sunucu tarafında loglanır ve ham SMTP exception detayı kullanıcıya gösterilmez
 - **Genel** sekmesindeki `welcome_message` alanı `FB.editor()` ile yazılır; içerik hem yazılırken (FormRequest `prepareForValidation` hook'u) hem okunurken (DashboardController defense-in-depth geçişi) `App\Support\HtmlSanitizer` üzerinden sanitize edilerek admin dashboard'da render edilir
-- `SettingService::setValue()` / `setGroup()` fonksiyonları `HTML_SAFE_KEYS` whitelist'indeki anahtarları `HtmlSanitizer::sanitize()`'den geçirir — FormRequest, tinker, scheduled command ve queue job'lar aynı sanitizer'ı kullanır, böylece normal setting API'si üzerinden sanitize edilmemiş HTML DB'ye yazılamaz
+- `SettingService::setValue()` / `setGroup()` fonksiyonları `HTML_SAFE_KEYS` whitelist'indeki anahtarları `HtmlSanitizer::clean()`'den geçirir — FormRequest, tinker, scheduled command ve queue job'lar aynı sanitizer'ı kullanır, böylece normal setting API'si üzerinden sanitize edilmemiş HTML DB'ye yazılamaz
 
 ## HTML-safe anahtarlar
 

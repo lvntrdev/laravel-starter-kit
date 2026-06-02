@@ -99,7 +99,7 @@ The installer walks through each step interactively:
 | 9    | Run database migrations                                                                          |
 | 10   | Run seeders (Roles, Permissions, Definitions, Settings)                                          |
 | 11   | Generate Passport encryption keys                                                                |
-| 12   | Create default admin user (`admin@demo.com` / `password`)                                        |
+| 12   | Create default admin user (`admin@lvntr.dev` / `password`)                                        |
 | 13   | Install npm dependencies and build frontend assets                                               |
 
 ### Useful Flags
@@ -133,7 +133,7 @@ composer dev
 
 After installation, confirm these areas work:
 
-- web login page (log in with `admin@demo.com` / `password`)
+- web login page (log in with `admin@lvntr.dev` / `password`)
 - register and forgot-password pages, including Turnstile when enabled
 - dashboard access
 - user and role management pages

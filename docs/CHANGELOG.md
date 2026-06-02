@@ -550,7 +550,7 @@ php artisan sk:update
 
 ### Major release — Vendor-first runtime and frontend UI lib
 
-The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [UPGRADE.md](UPGRADE_.md).
+The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [UPGRADE.md](UPGRADE.md).
 
 #### Changed
 
@@ -588,7 +588,7 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional. Frontend cleanup (switching the Vite alias to vendor path and removing the app-side copy) is also opt-in. See [UPGRADE.md](UPGRADE_.md) for both guides.
+Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional. Frontend cleanup (switching the Vite alias to vendor path and removing the app-side copy) is also opt-in. See [UPGRADE.md](UPGRADE.md) for both guides.
 
 ---
 
@@ -848,7 +848,7 @@ Introduces a rich-text `FB.editor()` FormBuilder field (Tiptap v3 under the hood
 
 ### Patch release — API response hardening + Postman/Apidog sync + OAuth UUID fix
 
-This release bundles the end-to-end API response envelope rework (trace-id pipeline, centralised exception handler, leak-closing controller patches) with two new API client integrations (Postman and Apidog sync) and a pair of install-time fixes (OAuth UUID compatibility, automatic Passport personal access client). Most changes are additive (new body fields + headers, new admin buttons), but three API-response behavioural breaks matter for strict clients — see [docs/UPGRADE.md](UPGRADE_.md). Fresh installs pick everything up automatically; existing projects should follow the upgrade guide. `sk:update` ships the published files; controller patches and the post-install Passport step are manual.
+This release bundles the end-to-end API response envelope rework (trace-id pipeline, centralised exception handler, leak-closing controller patches) with two new API client integrations (Postman and Apidog sync) and a pair of install-time fixes (OAuth UUID compatibility, automatic Passport personal access client). Most changes are additive (new body fields + headers, new admin buttons), but three API-response behavioural breaks matter for strict clients — see [docs/UPGRADE.md](UPGRADE.md). Fresh installs pick everything up automatically; existing projects should follow the upgrade guide. `sk:update` ships the published files; controller patches and the post-install Passport step are manual.
 
 #### Security
 
@@ -904,7 +904,7 @@ This release bundles the end-to-end API response envelope rework (trace-id pipel
 
 #### Breaking
 
-Detailed migration steps in [docs/UPGRADE.md](UPGRADE_.md). Summary:
+Detailed migration steps in [docs/UPGRADE.md](UPGRADE.md). Summary:
 
 - `abort($code, 'custom message')` no longer surfaces the message — use `throw ApiException::*` instead.
 - `ModelNotFoundException` message now includes the model name (`"User not found."`). Frontend regex matches may need to loosen.
@@ -914,7 +914,7 @@ Detailed migration steps in [docs/UPGRADE.md](UPGRADE_.md). Summary:
 
 ### Minor release — Security hardening sprint
 
-A parallel code-review sweep surfaced ~37 findings — 13 HIGH, 14 MEDIUM, 4 LOW. 36 are closed in this release; 1 HIGH (Passport private-key rotation in git history) is a manual operator step. Most patches touch **published** files (the files `sk:install` copies into your app), so existing consumer apps need to apply the diffs in [docs/UPGRADE.md](UPGRADE_.md). Fresh installs pick everything up automatically. The rare package-tier changes (HSTS `preload`, stub updates) arrive via `composer update lvntr/laravel-starter-kit`.
+A parallel code-review sweep surfaced ~37 findings — 13 HIGH, 14 MEDIUM, 4 LOW. 36 are closed in this release; 1 HIGH (Passport private-key rotation in git history) is a manual operator step. Most patches touch **published** files (the files `sk:install` copies into your app), so existing consumer apps need to apply the diffs in [docs/UPGRADE.md](UPGRADE.md). Fresh installs pick everything up automatically. The rare package-tier changes (HSTS `preload`, stub updates) arrive via `composer update lvntr/laravel-starter-kit`.
 
 #### Security
 
@@ -956,7 +956,7 @@ A parallel code-review sweep surfaced ~37 findings — 13 HIGH, 14 MEDIUM, 4 LOW
 
 #### Security — manual operator step
 
-- **GV-H1 — Passport private keys rotation.** `storage/oauth-private.key` and `storage/oauth-public.key` live in git history for legacy installs that committed them before the `.gitignore` rule landed. [docs/UPGRADE.md §6](UPGRADE_.md#6-gv-h1--passport-private-key-rotation-critical-manual) documents the `git filter-repo` + `passport:keys --force` + `passport:purge` + team-wide `git reset --hard` sequence; this cannot be automated by the package. If your repo never committed the key files, skip this step.
+- **GV-H1 — Passport private keys rotation.** `storage/oauth-private.key` and `storage/oauth-public.key` live in git history for legacy installs that committed them before the `.gitignore` rule landed. [docs/UPGRADE.md §6](UPGRADE.md#6-gv-h1--passport-private-key-rotation-critical-manual) documents the `git filter-repo` + `passport:keys --force` + `passport:purge` + team-wide `git reset --hard` sequence; this cannot be automated by the package. If your repo never committed the key files, skip this step.
 
 #### Changed
 
@@ -986,7 +986,7 @@ A parallel code-review sweep surfaced ~37 findings — 13 HIGH, 14 MEDIUM, 4 LOW
 
 ### Upgrade
 
-`composer update lvntr/laravel-starter-kit --with-all-dependencies` picks up only the package `src/` tier (HSTS `preload`, stub updates). Every other fix above lives in published / stub-backed files. Follow [docs/UPGRADE.md](UPGRADE_.md) for the full diff-style patch list and smoke-test checklist.
+`composer update lvntr/laravel-starter-kit --with-all-dependencies` picks up only the package `src/` tier (HSTS `preload`, stub updates). Every other fix above lives in published / stub-backed files. Follow [docs/UPGRADE.md](UPGRADE.md) for the full diff-style patch list and smoke-test checklist.
 
 ## 2026-04-20 -v.13.3.3
 

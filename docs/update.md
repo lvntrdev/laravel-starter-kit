@@ -2,18 +2,18 @@
 
 This guide explains the safest way to update the starter kit in an existing project.
 
-> **Hardening / security releases:** When the release notes mention edits to **published files** (files that `sk:install` copied into your app — controllers, requests, policies, composables, configs), `sk:update` will **not** overwrite them if you have modified them locally (which is the common case). For those releases, follow [UPGRADE.md](UPGRADE_.md) — it contains the diff-style patch list you need to apply by hand, plus a smoke-test checklist.
+> **Hardening / security releases:** When the release notes mention edits to **published files** (files that `sk:install` copied into your app — controllers, requests, policies, composables, configs), `sk:update` will **not** overwrite them if you have modified them locally (which is the common case). For those releases, follow [UPGRADE.md](UPGRADE.md) — it contains the diff-style patch list you need to apply by hand, plus a smoke-test checklist.
 >
 > The split is deliberate: the `composer update` tier moves package-internal code (`vendor/lvntr/laravel-starter-kit/src/`), and the UPGRADE guide moves the copy-in-your-app tier.
 
-> **v13.4.1:** This release also ships three install-time fixes (OAuth UUID migrations, Postman settings migration, Passport personal access client provisioning) in addition to the published-file patches — see [UPGRADE.md §7](UPGRADE_.md) for the commands existing installs must run once.
+> **v13.4.1:** This release also ships three install-time fixes (OAuth UUID migrations, Postman settings migration, Passport personal access client provisioning) in addition to the published-file patches — see [UPGRADE.md §7](UPGRADE.md) for the commands existing installs must run once.
 
 ## Recommended Workflow
 
 1. Commit your current work.
 2. Preview the package update.
 3. Apply the package update.
-4. Run migrations, env sync, and rebuild assets. (v13.4.1: also re-run the `oauth_*` migrations — see [UPGRADE.md §7.1](UPGRADE_.md).)
+4. Run migrations, env sync, and rebuild assets. (v13.4.1: also re-run the `oauth_*` migrations — see [UPGRADE.md §7.1](UPGRADE.md).)
 5. Re-check permissions, routes, auth/settings screens, and critical pages.
 
 ## 1. Update Composer Package

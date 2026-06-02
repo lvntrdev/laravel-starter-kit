@@ -78,7 +78,7 @@ Admin panelde ayrıca sadece `system_admin` kullanıcılarının çalıştırabi
 
 ## Otomatik Route-to-Permission Eşleme
 
-`app/Http/Middleware/CheckResourcePermission.php`, route isimlerini otomatik olarak permission string'lerine dönüştürür.
+`Lvntr\StarterKit\Http\Middleware\CheckResourcePermission` (vendor: `vendor/lvntr/laravel-starter-kit/src/Http/Middleware/CheckResourcePermission.php`), route isimlerini otomatik olarak permission string'lerine dönüştürür.
 
 Örnekler:
 
@@ -174,7 +174,7 @@ Starter kit **üç katmanı üst üste** kullanır. Birbirlerinin yerine geçmez
 | --- | --- | --- | --- |
 | 1. Route middleware | Route tanımlarında `check.permission` | Rota başına, geniş permission (`users.read`) | `Route::get('/admin/users', …)->middleware('check.permission')` |
 | 2. Laravel Policy | `app/Policies/*Policy.php` | Model örneği başına, opsiyonel satır bazlı kurallar | `$this->authorize('update', $role)` |
-| 3. FileManager ContextRegistry | `app/Domain/FileManager/Support/ContextRegistry.php` | Pluggable FileManager context'i başına (owner model + özel kurallar) | Context kaydı sırasında verilen closure |
+| 3. FileManager ContextRegistry | `Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry` (vendor) | Pluggable FileManager context'i başına (owner model + özel kurallar) | Context kaydı sırasında verilen closure |
 
 ### Hangisini ne zaman kullanmalıyım
 

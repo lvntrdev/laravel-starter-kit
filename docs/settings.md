@@ -58,7 +58,7 @@ The admin module exposes routes such as:
 - Turnstile settings drive the auth-form challenge behavior used by login, register, and forgot-password
 - test-mail failures are logged server-side and return a generic flash error instead of exposing raw SMTP exception details
 - the **General** tab's `welcome_message` field is authored through `FB.editor()`; content is sanitised through `App\Support\HtmlSanitizer` on write (FormRequest `prepareForValidation` hook) and again on read (DashboardController defense-in-depth pass) before it renders on the admin dashboard
-- `SettingService::setValue()` / `setGroup()` run keys listed in the `HTML_SAFE_KEYS` whitelist through `HtmlSanitizer::sanitize()` — FormRequest, tinker, scheduled commands and queued jobs all go through the same sanitizer, so non-sanitised HTML cannot be persisted via the normal setting API
+- `SettingService::setValue()` / `setGroup()` run keys listed in the `HTML_SAFE_KEYS` whitelist through `HtmlSanitizer::clean()` — FormRequest, tinker, scheduled commands and queued jobs all go through the same sanitizer, so non-sanitised HTML cannot be persisted via the normal setting API
 
 ## HTML-safe keys
 

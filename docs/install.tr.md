@@ -99,7 +99,7 @@ Sihirbaz her adımda sizinle interaktif olarak ilerler:
 | 9    | Veritabanı migration'larını çalıştırır                                                               |
 | 10   | Seeder'ları çalıştırır (Roller, Yetkiler, Tanımlar, Ayarlar)                                         |
 | 11   | Passport şifreleme anahtarlarını oluşturur                                                           |
-| 12   | Varsayılan admin kullanıcısı oluşturur (`admin@demo.com` / `password`)                               |
+| 12   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / `password`)                               |
 | 13   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
 
 ### Yararlı Flag'ler
@@ -133,7 +133,7 @@ composer dev
 
 Kurulumdan sonra şu alanları kontrol edin:
 
-- web giriş ekranı (`admin@demo.com` / `password` ile giriş yapın)
+- web giriş ekranı (`admin@lvntr.dev` / `password` ile giriş yapın)
 - register ve forgot-password sayfaları; etkinse Turnstile widget'ı
 - dashboard erişimi
 - kullanıcı ve rol yönetimi sayfaları

@@ -256,7 +256,7 @@ When you render editor output elsewhere in the admin UI, wrap it in an `sk-prose
 <div class="sk-prose" v-html="welcomeMessage" />
 ```
 
-Server-side, route every read through `HtmlSanitizer::sanitize()` before sharing to the frontend (defense-in-depth — the write path also sanitizes, but a drifted DB row or an old pre-sanitize entry must not reach the browser).
+Server-side, route every read through `HtmlSanitizer::clean()` before sharing to the frontend (defense-in-depth — the write path also sanitizes, but a drifted DB row or an old pre-sanitize entry must not reach the browser).
 
 ### URL scheme allowlist
 
@@ -344,7 +344,7 @@ FB.title('General Information').icon('pi pi-info-circle').iconPosition('left')
 `FB.section()` groups related fields into a visually distinct card block. Sections are a top-level field type rendered inside `FB.form().addFields(...)`.
 
 ```ts
-import { FB } from '@lvntr/starter-kit/FormBuilder/core';
+import { FB } from '@lvntr/components/FormBuilder/core';
 
 const config = FB.form()
     .layout('vertical')

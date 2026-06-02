@@ -540,7 +540,7 @@ php artisan sk:update
 
 ### Major sürüm — Vendor-first runtime ve frontend UI lib taşıması
 
-Starter kit runtime tamamen vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader artık `vendor/lvntr/laravel-starter-kit/src/` altında `Lvntr\StarterKit\` namespace'iyle çalışıyor. Frontend bileşen kütüphanesi (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) de artık paketin canonical konumunda, app tarafı vendor symlink üzerinden tüketiyor. Mevcut uygulamalar yalnızca `composer update` çalıştırmalı; hiçbir dosya değişmez, rota adı kırılmaz, `php artisan migrate` "Nothing to migrate" döner. Frontend geçişi tamamen isteğe bağlıdır. Yükseltme talimatları: [UPGRADE.md](UPGRADE_.md).
+Starter kit runtime tamamen vendor'a taşındı. FileManager backend, paylaşılan base sınıflar, trait'ler, helper'lar, middleware'ler, ApiResponse ve route loader artık `vendor/lvntr/laravel-starter-kit/src/` altında `Lvntr\StarterKit\` namespace'iyle çalışıyor. Frontend bileşen kütüphanesi (`DatatableBuilder`, `FormBuilder`, `TabBuilder`, `FileManager`, `Skeleton`, `ui`) de artık paketin canonical konumunda, app tarafı vendor symlink üzerinden tüketiyor. Mevcut uygulamalar yalnızca `composer update` çalıştırmalı; hiçbir dosya değişmez, rota adı kırılmaz, `php artisan migrate` "Nothing to migrate" döner. Frontend geçişi tamamen isteğe bağlıdır. Yükseltme talimatları: [UPGRADE.md](UPGRADE.md).
 
 #### Changed
 
@@ -580,7 +580,7 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek tamamen isteğe bağlıdır. Frontend cleanup (Vite alias'ını vendor path'e yönlendirme ve app tarafındaki kopyayı silme) da opt-in'dir. Her iki rehber için bkz. [UPGRADE.md](UPGRADE_.md).
+Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` gibi dosyalar yerinde kalır ve çalışmaya devam eder. Bu dosyaları vendor versiyonuyla değiştirmek tamamen isteğe bağlıdır. Frontend cleanup (Vite alias'ını vendor path'e yönlendirme ve app tarafındaki kopyayı silme) da opt-in'dir. Her iki rehber için bkz. [UPGRADE.md](UPGRADE.md).
 
 ---
 

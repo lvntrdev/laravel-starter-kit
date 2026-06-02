@@ -193,7 +193,7 @@ All endpoints accept `context` and `context_id` as query string on GET/DELETE or
 | POST   | `/file-manager/files/{media}/copy`                   | Duplicate file (`target_folder_id`)                                 |
 | DELETE | `/file-manager/files/{media}`                        | Delete one file                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Force-download                                                      |
-| POST   | `/file-manager/share`                                | Create an HMAC-signed share link (`media_id`, `ttl_hours?`)         |
+| POST   | `/file-manager/share`                                | Create an HMAC-signed share link (`media_id`, `expires_in_hours?`)         |
 | POST   | `/file-manager/share/revoke`                         | Revoke a share link (`token`)                                       |
 | GET    | `/file-manager/share/{media}?expires=&signature=`    | Validate signature and serve the file                               |
 

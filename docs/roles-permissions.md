@@ -78,7 +78,7 @@ The admin panel also exposes a permission sync action for `system_admin` users.
 
 ## Automatic Route-to-Permission Mapping
 
-`app/Http/Middleware/CheckResourcePermission.php` converts route names into permission strings automatically.
+`Lvntr\StarterKit\Http\Middleware\CheckResourcePermission` (vendor: `vendor/lvntr/laravel-starter-kit/src/Http/Middleware/CheckResourcePermission.php`) converts route names into permission strings automatically.
 
 Examples:
 
@@ -174,7 +174,7 @@ The starter kit uses **three stacked layers**. They do not replace each other â€
 | --- | --- | --- | --- |
 | 1. Route middleware | `check.permission` in route definitions | Per route, broad permission (`users.read`) | `Route::get('/admin/users', â€¦)->middleware('check.permission')` |
 | 2. Laravel Policy | `app/Policies/*Policy.php` | Per model instance, optional row-level rules | `$this->authorize('update', $role)` |
-| 3. FileManager ContextRegistry | `app/Domain/FileManager/Support/ContextRegistry.php` | Per pluggable FileManager context (owner model + custom rules) | Closure passed when registering a context |
+| 3. FileManager ContextRegistry | `Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry` (vendor) | Per pluggable FileManager context (owner model + custom rules) | Closure passed when registering a context |
 
 ### When to use which
 

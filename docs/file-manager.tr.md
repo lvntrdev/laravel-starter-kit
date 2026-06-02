@@ -193,7 +193,7 @@ Tüm uçlar `context` ve `context_id` parametrelerini GET/DELETE'te query string
 | POST   | `/file-manager/files/{media}/copy`                   | Dosya çoğalt (`target_folder_id`)                                     |
 | DELETE | `/file-manager/files/{media}`                        | Tekli dosya silme                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Zorla indirme                                                         |
-| POST   | `/file-manager/share`                                | HMAC imzalı paylaşım bağlantısı oluştur (`media_id`, `ttl_hours?`)   |
+| POST   | `/file-manager/share`                                | HMAC imzalı paylaşım bağlantısı oluştur (`media_id`, `expires_in_hours?`)   |
 | POST   | `/file-manager/share/revoke`                         | Paylaşım bağlantısını iptal et (`token`)                              |
 | GET    | `/file-manager/share/{media}?expires=&signature=`    | İmzayı doğrula ve dosyaya erişim ver                                  |
 

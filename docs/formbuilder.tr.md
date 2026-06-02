@@ -256,7 +256,7 @@ Editor çıktısını admin UI'ın başka bir yerinde render ederken `sk-prose` 
 <div class="sk-prose" v-html="welcomeMessage" />
 ```
 
-Server tarafında, frontend'e paylaşmadan önce her okumayı `HtmlSanitizer::sanitize()` üzerinden geçirin (defense-in-depth — yazma yolu da sanitize'liyor ama drift etmiş bir DB satırı veya sanitize öncesi eski bir kayıt tarayıcıya asla ulaşmamalı).
+Server tarafında, frontend'e paylaşmadan önce her okumayı `HtmlSanitizer::clean()` üzerinden geçirin (defense-in-depth — yazma yolu da sanitize'liyor ama drift etmiş bir DB satırı veya sanitize öncesi eski bir kayıt tarayıcıya asla ulaşmamalı).
 
 ### URL scheme allowlist'i
 
@@ -344,7 +344,7 @@ FB.title('Genel Bilgiler').icon('pi pi-info-circle').iconPosition('left')
 `FB.section()`, ilgili alanları görsel olarak belirgin bir kart bloğunda gruplar. Section'lar `FB.form().addFields(...)` içinde üst seviye bir field tipi olarak render edilir.
 
 ```ts
-import { FB } from '@lvntr/starter-kit/FormBuilder/core';
+import { FB } from '@lvntr/components/FormBuilder/core';
 
 const config = FB.form()
     .layout('vertical')
