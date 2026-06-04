@@ -172,8 +172,8 @@ class InstallCommand extends Command
         // get every kit key without copying by hand, then generate APP_KEY
         // when it is blank. Runs before the database step so DB_* values are
         // written into an already-seeded .env.
-        $this->step('Ensuring .env file', function () {
-            $this->ensureEnvFile();
+        $this->step('Ensuring .env file', function () use ($isFirstInstall) {
+            $this->ensureEnvFile($isFirstInstall);
         });
 
         // 2. Database configuration (writes DB_* into the now-seeded .env)
@@ -441,12 +441,13 @@ class InstallCommand extends Command
      * Ensure the consumer's .env exists and carries every key the kit ships in
      * .env.example.
      *
-     * On a fresh install the file is created from the freshly published
-     * .env.example; on a re-install only keys missing from the existing .env
-     * are appended — existing lines and values (including secrets) are never
-     * overwritten. Finally APP_KEY is generated when blank so the app boots.
+     * On a fresh install the kit's .env.example becomes the base — any values
+     * the user already set (APP_URL, APP_KEY, DB_*) are re-applied on top so
+     * nothing critical is lost. On a re-install only keys missing from the
+     * existing .env are appended — existing lines and values are never touched.
+     * Finally APP_KEY is generated when blank so the app boots.
      */
-    private function ensureEnvFile(): void
+    private function ensureEnvFile(bool $isFirstInstall = false): void
     {
         $envPath = base_path('.env');
         $examplePath = base_path('.env.example');
@@ -457,7 +458,7 @@ class InstallCommand extends Command
             return;
         }
 
-        if (! $this->files->exists($envPath)) {
+        if (! $this->files->exists($envPath) || $isFirstInstall) {
             $this->files->copy($examplePath, $envPath);
         } else {
             $this->mergeMissingEnvKeys($envPath, $examplePath);
@@ -465,6 +466,7 @@ class InstallCommand extends Command
 
         $this->ensureAppKey($envPath);
     }
+
 
     /**
      * Append keys present in .env.example but absent from .env, preserving the
@@ -545,6 +547,7 @@ class InstallCommand extends Command
 
         return $keys;
     }
+
 
     /**
      * Generate APP_KEY via artisan when the .env value is blank, so a freshly
