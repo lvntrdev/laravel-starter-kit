@@ -75,19 +75,66 @@ class StarterKitServiceProvider extends ServiceProvider
             $this->mergeConfigFrom($fileManagerConfig, 'file-manager');
         }
 
-        // Backward-compatibility aliases: consumer apps that were generated
-        // before v13.5.1 still import from `App\` namespace. These aliases
-        // make those imports resolve to the vendor classes transparently so
-        // consumer app code (domain actions, DTOs, models, controllers)
-        // continues to work without any changes after the published stubs
-        // are removed during cleanup.
+        // Backward-compatibility aliases: consumer apps generated before
+        // v13.5.1 still import these classes from the `App\` namespace; the
+        // aliases make those imports resolve to the vendor classes so consumer
+        // code keeps working. New installs should import directly from
+        // `Lvntr\StarterKit\*`. The tiering (unconditional vs. consumer-
+        // overridable) lives in backwardCompatAliasPlan().
         //
-        // New installs should import directly from `Lvntr\StarterKit\*`.
-        // Note: PHP traits cannot be safely aliased via class_alias() —
-        // HasActivityLogging and HasMediaCollections are NOT included here.
-        // Consumer models must update their `use` import to the vendor
-        // namespace directly (see UPGRADE_.md migration notes).
-        $bcAliases = [
+        // `base_path()` can be unavailable mid-bootstrap, so fall back to the
+        // application instance when the helper is missing.
+        $basePath = function_exists('base_path') ? base_path() : $this->app->basePath();
+
+        foreach ($this->backwardCompatAliasPlan($basePath) as $appClass => $vendorClass) {
+            if (! class_exists($appClass, false) && ! interface_exists($appClass, false)) {
+                class_alias($vendorClass, $appClass);
+            }
+        }
+    }
+
+    /**
+     * Plan the `App\` → vendor backward-compatibility class aliases to register
+     * for a consumer rooted at `$basePath`. Pure (no `class_alias` side effects)
+     * so the decision is unit-testable.
+     *
+     * Two tiers:
+     *
+     *  - **Unconditional.** `App\Http\Responses\ApiResponse` has NO valid
+     *    consumer override: a real `App\` subclass breaks the return-type
+     *    covariance of `DatatableQueryBuilder::response()` (which returns the
+     *    vendor type) in query classes — that is exactly why it is an alias,
+     *    not an extension point. It is therefore aliased on EVERY boot, early
+     *    (before any controller return-type check) and regardless of any file
+     *    at the consumer path. That determinism is the fix for the intermittent
+     *    post-install "Return value must be of type App\Http\Responses\
+     *    ApiResponse, Lvntr\StarterKit\Http\Responses\ApiResponse returned"
+     *    TypeError: previously the alias was deferred to a class_alias-only stub
+     *    (`app/Http/Responses/ApiResponse.php`) that declares no class, so it is
+     *    absent from the optimized classmap and its load — and thus the alias's
+     *    existence and timing — depended on PSR-4 fallback + opcache state.
+     *
+     *  - **Overridable.** The rest may be replaced by a consumer's own `app/`
+     *    class; the alias is skipped when such a file exists so the override
+     *    wins (otherwise `class_alias` would short-circuit Composer's autoloader
+     *    and silently drop the override).
+     *
+     * Note: PHP traits cannot be safely aliased via class_alias() —
+     * HasActivityLogging/HasMediaCollections are NOT here. DatatableQueryBuilder,
+     * HttpsOrLocalhostUrl and TurnstileRule ship a thin App\ subclass shim in the
+     * scaffold, so they need no alias here either.
+     *
+     * @return array<class-string, class-string>
+     */
+    protected function backwardCompatAliasPlan(string $basePath): array
+    {
+        // Aliased unconditionally — no valid consumer override exists.
+        $plan = [
+            'App\Http\Responses\ApiResponse' => ApiResponse::class,
+        ];
+
+        // Aliased only when the consumer ships no override at that path.
+        $overridable = [
             'App\Domain\Shared\Actions\BaseAction' => BaseAction::class,
             'App\Domain\Shared\Contracts\PipeableAction' => PipeableAction::class,
             'App\Domain\Shared\DTOs\BaseDTO' => BaseDTO::class,
@@ -95,15 +142,11 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\Shared\Services\DefinitionService' => DefinitionService::class,
             'App\Exceptions\ApiException' => ApiException::class,
             'App\Exceptions\ApiExceptionHandler' => ApiExceptionHandler::class,
-            'App\Http\Responses\ApiResponse' => ApiResponse::class,
             'App\Http\Middleware\CheckResourcePermission' => CheckResourcePermission::class,
             'App\Http\Middleware\SecurityHeaders' => SecurityHeaders::class,
             'App\Http\Middleware\AssignTraceId' => AssignTraceId::class,
             'App\Http\Middleware\SetLocale' => SetLocale::class,
             'App\Http\Middleware\ValidateTurnstile' => ValidateTurnstile::class,
-            // DatatableQueryBuilder, HttpsOrLocalhostUrl and TurnstileRule ship a
-            // thin App\ subclass shim in the scaffold, so they need no alias here —
-            // the shim is the visible override point and always satisfies the import.
             'App\Support\HtmlSanitizer' => HtmlSanitizer::class,
             'App\Support\TranslatableQueryHelpers' => TranslatableQueryHelpers::class,
             'App\Support\MediaPathGenerator' => MediaPathGenerator::class,
@@ -111,31 +154,18 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\FileManager\Support\ContextRegistry' => ContextRegistry::class,
         ];
 
-        // Resolve the consumer base path. `base_path()` is unavailable during
-        // ServiceProvider::register() in some bootstrap contexts, so fall back
-        // to the application instance when the helper is missing.
-        $basePath = function_exists('base_path') ? base_path() : $this->app->basePath();
-
-        foreach ($bcAliases as $appClass => $vendorClass) {
-            // If the consumer ships their own implementation of the App\* class,
-            // skip alias registration entirely. Without this guard, class_alias()
-            // would register the vendor class against the alias name and PHP's
-            // class resolution would short-circuit before Composer's autoloader
-            // ever loads the consumer's file — silently dropping their override.
+        foreach ($overridable as $appClass => $vendorClass) {
             $relativePath = str_replace('\\', '/', $appClass);
             if (str_starts_with($relativePath, 'App/')) {
                 $relativePath = substr($relativePath, 4);
             }
-            $appPath = $basePath.'/app/'.$relativePath.'.php';
 
-            if (file_exists($appPath)) {
-                continue;
-            }
-
-            if (! class_exists($appClass, false) && ! interface_exists($appClass, false)) {
-                class_alias($vendorClass, $appClass);
+            if (! file_exists($basePath.'/app/'.$relativePath.'.php')) {
+                $plan[$appClass] = $vendorClass;
             }
         }
+
+        return $plan;
     }
 
     /**

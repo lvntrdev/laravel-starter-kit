@@ -101,7 +101,10 @@ class UpdateCommand extends Command
         'app/Console/Commands/EnvSyncCommand.php',
         'app/Console/Commands/MakeDomainCommand.php',
         'app/Console/Commands/RemoveDomainCommand.php',
-        'app/Http/Responses/ApiResponse.php',
+        // app/Http/Responses/ApiResponse.php is intentionally NOT tracked: it is
+        // no longer shipped as a stub. App\Http\Responses\ApiResponse is provided
+        // as an unconditional vendor alias by StarterKitServiceProvider (it has no
+        // valid consumer override — a subclass breaks query return-type covariance).
         'resources/js/pages/Admin/Settings/components/AuthTab.vue',
         'resources/js/pages/Admin/Settings/components/TurnstileTab.vue',
         'resources/js/components/Auth/TurnstileWidget.vue',
