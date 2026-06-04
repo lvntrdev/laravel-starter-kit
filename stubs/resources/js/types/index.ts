@@ -33,13 +33,6 @@ export interface SharedPageProps {
     enums: Record<string, Array<{ value: string | number; label: string; severity: string }>>;
     locale: string;
     availableLocales: Record<string, string>;
-    /**
-     * App-wide active theme preset name (e.g. `'default'`, `'corporate'`).
-     * Shared by the backend from `appearance.theme`; consumed by `app.ts`
-     * (initial PrimeVue preset) and `useTheme()` (runtime swap). Absent →
-     * the frontend falls back to the default preset.
-     */
-    theme?: string;
     [key: string]: unknown;
 }
 

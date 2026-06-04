@@ -2,30 +2,7 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## v13.6.0 — Yayımlanmadı
-
-### Minor sürüm — Çalışma-zamanı tema sistemi; adlandırılmış preset kaydı; admin Görünüm sekmesi
-
-Bu sürüm PrimeVue 4'ün token motorunu temel alan, deployment gerektirmeyen bir çalışma-zamanı tema sistemi ekler. Tek sabit `preset.ts` yerine adlandırılmış preset kaydı gelir; aktif tema veritabanında tutulur ve yeniden derleme yapmadan admin Görünüm ayarları sekmesinden değiştirilebilir. Mevcut kurulumların görünümü etkilenmez — `default` preset eski derlemesiyle pixel-eşdeğer çıktı üretir; `appearance.theme` satırı yoksa sistem `default`'a düşer.
-
-#### Eklendi
-
-- **Adlandırılmış preset kaydı** — `resources/js/theme/presets/` tek `preset.ts`'in yerini alır. Kayıt, eski preset'le pixel-eşdeğer `default`'u ve ikinci örnek preset `corporate`'i içerir. Kayıt API'si: `presets`, `SkThemeName`, `SkThemePreset`, `DEFAULT_THEME`, `resolvePreset`.
-- **`useTheme` composable** — çalışma-zamanı PrimeVue preset swap'ı için `currentTheme`, `themeNames`, `setTheme(name)`. `useDarkMode` ile ortogonal (renk preset'i × light/dark bağımsız eksenler).
-- **Admin Görünüm ayarları sekmesi** — bir preset'i anında önizle (yalnızca runtime, DB'ye yazmaz) veya uygulama geneli aktif tema olarak kaydet. `settings.update` izni gerektirir.
-- **`config/starter-kit.php`** — yeni `theme` (aktif preset adı, DB'den runtime ezilir) ve `themes` (seçilebilir preset whitelist'i) anahtarları.
-- **`PUT /settings/appearance` endpoint'i** — aktif preset'i kaydeder; whitelist validasyonu (`settings.update` izni gerekli, bilinmeyen ad 422 döner).
-- **SSR-güvenli ilk preset** — `app.ts`, PrimeVue ilk preset'ini hydration öncesinde `theme` Inertia shared-prop'undan çözer; FOUC olmaz.
-- **Drift-guard testleri** — Pest + Vitest, backend `themes` config ve frontend preset kaydının senkronunu zorunlu kılar; uyumsuzluk CI'ı kırar.
-- **Prototip-zinciri güvenlik guard'ı** — `resolvePreset` ve `useTheme`, `Object.hasOwn` kullanarak prototip-zinciri anahtarlarının (`constructor`, `__proto__` vb.) geçerli preset olarak eşleşmesini engeller.
-
-#### Değişti
-
-- `resources/js/app.ts` — `withApp` callback'i, `initialPage.props.theme`'den SSR-doğru ilk preset çözümü için `setup` ile değiştirildi.
-
-#### Kaldırıldı / Taşındı
-
-- `resources/js/theme/preset.ts` — `resources/js/theme/presets/default.ts`'e taşındı. Geçiş adımları için `docs/UPGRADE.tr.md` (v13.5.11 → v13.6.0) bölümüne bakın.
+## v13.5.12 — Yayımlanmadı
 
 ### Minor sürüm — Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`
 
@@ -43,7 +20,7 @@ v13.5.12 ile 15 kit composable'ı stub scaffold'undan çıkarılarak vendor küt
 
 ### Minor sürüm — Backend runtime sınıfları ve üçüncü-parti config'ler vendor'dan çalışıyor
 
-Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend tarafında sürdürür. Bir grup yardımcı sınıf, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık app'inize kopyalanmıyor. Mevcut app'ler etkilenmez — `App\…` import'ları çözülmeye devam eder (tam taşınanlar için `class_alias`, geri kalanlar için ince bir `App\` shim), ve önceden publish ettiğiniz bir config kazanmayı sürdürür. Tek zorunlu adım `composer update`'tir. Tam geçiş rehberi için bkz. `docs/UPGRADE.md` (v13.5.11 → v13.6.0).
+Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend tarafında sürdürür. Bir grup yardımcı sınıf, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık app'inize kopyalanmıyor. Mevcut app'ler etkilenmez — `App\…` import'ları çözülmeye devam eder (tam taşınanlar için `class_alias`, geri kalanlar için ince bir `App\` shim), ve önceden publish ettiğiniz bir config kazanmayı sürdürür. Tek zorunlu adım `composer update`'tir. Tam geçiş rehberi için bkz. `docs/UPGRADE.md` (v13.5.3 → v13.5.12).
 
 #### Eklendi
 

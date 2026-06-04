@@ -11,7 +11,6 @@ The settings module centralizes operational configuration inside the admin panel
 - `file_manager` — upload size, accepted MIME list, audio/video toggles
 - `turnstile` — feature toggle, site key, and secret key
 - `api_clients` — Postman and Apidog sync credentials; two configuration cards in a single tab
-- `appearance` — app-wide active theme preset; see `docs/theming.md`
 
 ## Storage Model
 
@@ -43,7 +42,6 @@ The admin module exposes routes such as:
 - `settings.update.turnstile`
 - `settings.update.postman` — `PUT /settings/postman`
 - `settings.update.apidog` — `PUT /settings/apidog`
-- `settings.update.appearance` — `PUT /settings/appearance`
 - `settings.testMail`
 - `settings.upload.logo` — `POST settings/logo`
 - `settings.delete.logo` — `DELETE settings/logo`

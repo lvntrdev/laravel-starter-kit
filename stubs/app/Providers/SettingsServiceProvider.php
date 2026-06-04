@@ -73,26 +73,6 @@ class SettingsServiceProvider extends ServiceProvider
 
         config(['fortify.features' => $features]);
 
-        // Appearance — push the DB-stored active theme preset name into
-        // config so it is shared to Inertia (HandleInertiaRequests) and used
-        // by the frontend preset registry. Falls back to 'default' when the
-        // setting is absent (fresh installs / pre-theme upgrades), keeping the
-        // historical single-preset output unchanged.
-        // Defense in depth: clamp the DB value to the preset whitelist before
-        // it reaches config (and from there the Inertia shared prop). The
-        // FormRequest already rejects non-whitelisted names on write, but a
-        // legacy row, manual DB edit, or any non-FormRequest write path could
-        // still hold an arbitrary string — this guarantees an unknown value
-        // can never be shared to the frontend as the active theme.
-        $appearance = $settings['appearance'] ?? [];
-        $theme = $appearance['theme'] ?? 'default';
-        $allowedThemes = array_keys(config('starter-kit.themes', ['default' => null]));
-        config([
-            'starter-kit.theme' => is_string($theme) && in_array($theme, $allowedThemes, true)
-                ? $theme
-                : 'default',
-        ]);
-
         // Mail
         if ($mail = $settings['mail'] ?? null) {
             if ($mail['mailer'] ?? null) {

@@ -32,7 +32,6 @@ Projects created before this change already have all composables under `resource
 - `useConfirm` for confirmation actions
 - `useFlash` for flash message handling
 - `useDarkMode` for dark mode persistence
-- `useTheme` for app-wide runtime theme preset selection
 - `usePageLoading` for Inertia loading state
 - `useRefreshBus` for forcing table or widget refreshes
 - `useSidebar` for responsive sidebar state
@@ -160,16 +159,6 @@ Handles desktop collapse state and mobile drawer state for the admin sidebar.
 ### useDarkMode()
 
 Persists dark mode in local storage and toggles the `.dark` class on `<html>`.
-
-### useTheme()
-
-Manages the app-wide runtime color preset. The active preset name is seeded from the Inertia shared prop `theme` (which the backend resolves from `appearance.theme`). Runtime swaps after hydration go through `usePreset()` and do not require a deployment or a page reload.
-
-- `currentTheme` — reactive read-only preset name
-- `themeNames` — selectable preset names from the frontend registry
-- `setTheme(name)` — applies the preset at runtime; falls back to `default` for unknown names
-
-Orthogonal to `useDarkMode`: `setTheme()` never touches the `.dark` class. See `docs/theming.md` for the full theming guide.
 
 ### usePageLoading()
 

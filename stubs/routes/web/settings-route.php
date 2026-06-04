@@ -10,7 +10,6 @@ Route::prefix('settings')
         Route::get('/', 'index')->name('index');
         Route::put('general', 'updateGeneral')->name('update.general')->middleware('check.permission:settings.update');
         Route::put('auth', 'updateAuth')->name('update.auth')->middleware('check.permission:settings.update');
-        Route::put('appearance', 'updateAppearance')->name('update.appearance')->middleware('check.permission:settings.update');
         Route::put('mail', 'updateMail')->name('update.mail')->middleware('check.permission:settings.update');
         Route::put('storage', 'updateStorage')->name('update.storage')->middleware('check.permission:settings.update');
         Route::put('file-manager', 'updateFileManager')->name('update.fileManager')->middleware('check.permission:settings.update');

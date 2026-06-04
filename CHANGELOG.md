@@ -5,23 +5,7 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.6.0] - Unreleased
-
-### Added
-
-- **Runtime theme system** — named preset registry (`resources/js/theme/presets/`), `useTheme` composable (`currentTheme`, `themeNames`, `setTheme`), admin Appearance settings tab (preview + save), SSR-safe initial preset from Inertia shared prop. Active theme is stored in the database and switchable without a rebuild. See `docs/theming.md`.
-- **`config/starter-kit.php`** — `theme` (runtime-active preset, DB-overridden at boot) and `themes` (selectable preset whitelist) keys.
-- **`PUT /settings/appearance`** — saves the active preset name; whitelist-validated via `Rule::in`; requires `settings.update` permission.
-- **Security guards** — `Object.hasOwn` in `resolvePreset` and `useTheme` prevents prototype-chain keys from matching as valid presets; `SettingsServiceProvider` clamps the DB-read value against the whitelist before writing to config.
-- **Drift-guard tests** — Pest + Vitest assert backend `themes` config and frontend preset registry are in sync.
-
-### Changed
-
-- `resources/js/app.ts` — `withApp` replaced with `setup` for SSR-correct initial preset resolution from `initialPage.props.theme` (no FOUC).
-
-### Removed / Moved
-
-- `resources/js/theme/preset.ts` moved to `resources/js/theme/presets/default.ts` (pixel-equivalent output). See `UPGRADE.md` (v13.5.11 → v13.6.0).
+## [13.5.12] - Unreleased
 
 ### Added
 

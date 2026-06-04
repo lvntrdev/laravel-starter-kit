@@ -6,7 +6,6 @@ return [
 
     'tabs' => [
         'general' => 'Genel',
-        'appearance' => 'Görünüm',
         'auth' => 'Güvenlik Ayarları',
         'mail' => 'E-posta',
         'storage' => 'Depolama',
@@ -19,7 +18,6 @@ return [
 
     'tab_descriptions' => [
         'general' => 'Uygulama adı, dil ve logo',
-        'appearance' => 'Yönetim paneli tema önayarı',
         'auth' => 'Kayıt, 2FA, e-posta doğrulama ve CAPTCHA',
         'mail' => 'SMTP ve gönderen ayarları',
         'storage' => 'S3, Spaces ve yerel disk',
@@ -41,22 +39,6 @@ return [
         'logo_remove_confirm' => 'Uygulama logosunu kaldırmak istediğinizden emin misiniz?',
         'welcome_message_placeholder' => 'Kısa bir hoş geldin mesajı yazın…',
         'welcome_message_hint' => 'Yönetim panelinin ana sayfasında gösterilir. Temel biçimlendirme ve görsel desteği vardır.',
-    ],
-
-    'appearance' => [
-        'title' => 'Görünüm',
-        'subtitle' => 'Yönetim panelinde kullanılacak tema önayarını seçin.',
-        'theme_label' => 'Tema',
-        'theme_hint' => 'Uygulama genelinde uygulanır. Açık/koyu mod ayrı yönetilir.',
-        'active' => 'Etkin',
-        'previewing' => 'Önizleniyor — henüz kaydedilmedi',
-        'preview_hint' => 'Bir tema seçmek onu anında önizler. Değişiklik yalnızca kaydettiğinizde kalıcı olur; kaydetmeden ayrılırsanız etkin temaya geri dönülür.',
-        'discard' => 'Önizlemeyi geri al',
-        'saved' => 'Tema kaydedildi.',
-        'themes' => [
-            'default' => 'Varsayılan',
-            'corporate' => 'Kurumsal',
-        ],
     ],
 
     'security' => [

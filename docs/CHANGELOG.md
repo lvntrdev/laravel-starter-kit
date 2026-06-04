@@ -2,30 +2,7 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## v13.6.0 — Unreleased
-
-### Minor release — Runtime theme system; named preset registry; admin Appearance tab
-
-This release adds a deploy-less runtime theme system built on PrimeVue 4's token engine. A named preset registry replaces the single hardcoded `preset.ts`; the active theme is stored in the database and switchable from the admin Appearance settings tab without a rebuild. Existing installs are visually unaffected — the `default` preset produces pixel-equivalent output to the historical build, and the system falls back to `default` when no `appearance.theme` row exists.
-
-#### Added
-
-- **Named preset registry** — `resources/js/theme/presets/` replaces the single `preset.ts`. Includes `default` (pixel-equivalent to the old preset) and `corporate` as a second example preset. Registry API: `presets`, `SkThemeName`, `SkThemePreset`, `DEFAULT_THEME`, `resolvePreset`.
-- **`useTheme` composable** — `currentTheme`, `themeNames`, `setTheme(name)` for runtime PrimeVue preset swap. Orthogonal to `useDarkMode` (color preset × light/dark are independent axes).
-- **Admin Appearance settings tab** — preview a preset instantly (runtime-only, no DB write) or save it as the app-wide active theme. Requires `settings.update` permission.
-- **`config/starter-kit.php`** — new `theme` (active preset name, runtime-overridden from DB) and `themes` (selectable preset whitelist) keys.
-- **`PUT /settings/appearance` endpoint** — saves the active preset; whitelist-validated (`settings.update` permission required, 422 on unknown name).
-- **SSR-safe initial preset** — `app.ts` resolves the first PrimeVue preset from the `theme` Inertia shared prop before hydration, eliminating FOUC.
-- **Drift-guard tests** — Pest + Vitest assert that the backend `themes` config and frontend preset registry stay in sync; a mismatch breaks CI.
-- **Prototype-chain security guard** — `resolvePreset` and `useTheme` use `Object.hasOwn` to prevent prototype-chain keys (`constructor`, `__proto__`, etc.) from matching as valid presets.
-
-#### Changed
-
-- `resources/js/app.ts` — `withApp` callback replaced with `setup` to enable SSR-correct initial preset resolution from `initialPage.props.theme`.
-
-#### Removed / Moved
-
-- `resources/js/theme/preset.ts` — moved to `resources/js/theme/presets/default.ts`. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0) for migration steps.
+## v13.5.12 — Unreleased
 
 ### Minor release — Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
 
@@ -43,7 +20,7 @@ v13.5.12 moves 15 kit composables out of the stub scaffold and into the vendor l
 
 ### Minor release — Backend runtime classes & third-party configs run from vendor
 
-The same release continues the v13.5.0 "runtime runs from vendor" migration on the backend. A set of helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, and three third-party config files are no longer copied into your app. Existing apps are not affected — `App\…` imports keep resolving (via `class_alias` for pure-moved classes, or a thin `App\` shim for the rest), and a config you already published keeps winning. The only required step is `composer update`. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0) for the full migration guide.
+The same release continues the v13.5.0 "runtime runs from vendor" migration on the backend. A set of helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, and three third-party config files are no longer copied into your app. Existing apps are not affected — `App\…` imports keep resolving (via `class_alias` for pure-moved classes, or a thin `App\` shim for the rest), and a config you already published keeps winning. The only required step is `composer update`. See `docs/UPGRADE.md` (v13.5.3 → v13.5.12) for the full migration guide.
 
 #### Added
 

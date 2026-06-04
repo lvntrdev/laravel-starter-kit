@@ -132,7 +132,7 @@ It also supports `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` a
 
 ## Validation Helpers
 
-`HasTranslatableRules` is a trait that runs from vendor (`Lvntr\StarterKit\Support\HasTranslatableRules`) since v13.6.0, intended for Laravel FormRequests. Import it directly from the vendor namespace. PHP traits cannot be aliased like classes, so there is no `App\Support\HasTranslatableRules` fallback — if a project upgraded from an older version still has a local copy at `app/Support/HasTranslatableRules.php`, update the `use` statement to the vendor namespace before deleting that copy.
+`HasTranslatableRules` is a trait that runs from vendor (`Lvntr\StarterKit\Support\HasTranslatableRules`) since v13.5.12, intended for Laravel FormRequests. Import it directly from the vendor namespace. PHP traits cannot be aliased like classes, so there is no `App\Support\HasTranslatableRules` fallback — if a project upgraded from an older version still has a local copy at `app/Support/HasTranslatableRules.php`, update the `use` statement to the vendor namespace before deleting that copy.
 
 ```php
 $this->translatableRules('title', ['required', 'string', 'max:255']);
@@ -165,7 +165,7 @@ $this->translatableAttributes(['title' => __('articles.fields.title')]);
 
 ## Query Helpers
 
-`TranslatableQueryHelpers` runs from vendor (`Lvntr\StarterKit\Support\TranslatableQueryHelpers`) since v13.6.0. The `App\Support\TranslatableQueryHelpers` import keeps working transparently via a `class_alias`, so existing code is unaffected.
+`TranslatableQueryHelpers` runs from vendor (`Lvntr\StarterKit\Support\TranslatableQueryHelpers`) since v13.5.12. The `App\Support\TranslatableQueryHelpers` import keeps working transparently via a `class_alias`, so existing code is unaffected.
 
 ```php
 return DatatableQueryBuilder::for(Product::class)

@@ -11,7 +11,6 @@ export { useAdminMenu } from './useAdminMenu';
 export { useSidebar } from '@/composables/useSidebar';
 export { useMenuBuilder } from '@/composables/useMenuBuilder';
 export { useDarkMode } from '@/composables/useDarkMode';
-export { useTheme } from '@/composables/useTheme';
 export { useFlash } from '@/composables/useFlash';
 export { useConfirm } from '@/composables/useConfirm';
 export { useApi } from '@/composables/useApi';

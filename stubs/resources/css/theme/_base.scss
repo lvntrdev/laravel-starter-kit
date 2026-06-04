@@ -21,10 +21,6 @@
     --admin-sidebar-text-muted: var(--p-surface-400);
     --admin-sidebar-item-hover-bg: var(--p-surface-800);
     --admin-sidebar-item-active-bg: var(--p-primary-color);
-    /* Intentionally a fixed white in BOTH light and dark (not overridden in
-       .dark below). NOT bound to --p-primary-contrast-color: that token is
-       white in light but a dark surface in dark mode, which would shift the
-       active sidebar label from white to dark. Keep hardcoded for parity. */
     --admin-sidebar-item-active-text: #ffffff;
     --admin-sidebar-border: var(--p-surface-700);
     --admin-sidebar-logo-bg: var(--p-surface-950);
@@ -40,9 +36,7 @@
     --admin-footer-border: var(--p-surface-200);
 
     /* Content */
-    /* surface.100 === {slate.100} in the default preset (pixel-equivalent),
-       bound to the semantic surface scale so it follows the active preset. */
-    --admin-content-bg: var(--p-surface-100);
+    --admin-content-bg: var(--p-slate-100);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
