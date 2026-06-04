@@ -132,7 +132,7 @@ Ayrıca `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` ve `.local
 
 ## Validation Yardımcıları
 
-`HasTranslatableRules`, v13.5.12'den itibaren vendor'dan çalışan bir trait'tir (`Lvntr\StarterKit\Support\HasTranslatableRules`); Laravel FormRequest sınıfları için kullanılır. Doğrudan vendor namespace'inden import edin. PHP trait'leri sınıflar gibi alias'lanamaz, bu yüzden `App\Support\HasTranslatableRules` fallback'i yoktur — eski sürümden yükselten bir projede hâlâ `app/Support/HasTranslatableRules.php` yerel kopyası varsa, o kopyayı silmeden önce `use` ifadesini vendor namespace'ine güncelleyin.
+`HasTranslatableRules`, v13.6.0'dan itibaren vendor'dan çalışan bir trait'tir (`Lvntr\StarterKit\Support\HasTranslatableRules`); Laravel FormRequest sınıfları için kullanılır. Doğrudan vendor namespace'inden import edin. PHP trait'leri sınıflar gibi alias'lanamaz, bu yüzden `App\Support\HasTranslatableRules` fallback'i yoktur — eski sürümden yükselten bir projede hâlâ `app/Support/HasTranslatableRules.php` yerel kopyası varsa, o kopyayı silmeden önce `use` ifadesini vendor namespace'ine güncelleyin.
 
 ```php
 $this->translatableRules('title', ['required', 'string', 'max:255']);
@@ -165,7 +165,7 @@ $this->translatableAttributes(['title' => __('articles.fields.title')]);
 
 ## Query Yardımcıları
 
-`TranslatableQueryHelpers`, v13.5.12'den itibaren vendor'dan çalışır (`Lvntr\StarterKit\Support\TranslatableQueryHelpers`). `App\Support\TranslatableQueryHelpers` import'u `class_alias` ile şeffaf şekilde çalışmaya devam eder, mevcut kod etkilenmez.
+`TranslatableQueryHelpers`, v13.6.0'dan itibaren vendor'dan çalışır (`Lvntr\StarterKit\Support\TranslatableQueryHelpers`). `App\Support\TranslatableQueryHelpers` import'u `class_alias` ile şeffaf şekilde çalışmaya devam eder, mevcut kod etkilenmez.
 
 ```php
 return DatatableQueryBuilder::for(Product::class)

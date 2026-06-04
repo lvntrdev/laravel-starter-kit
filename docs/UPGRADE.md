@@ -4,11 +4,11 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
-## v13.5.3 → v13.5.12
+## v13.5.11 → v13.6.0
 
 ### Summary
 
-This release continues the "package runtime runs from vendor" migration started in v13.5.0. A further set of backend helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, three third-party config files are no longer published (their required overrides are applied at runtime), and on the frontend 15 composables plus `TurnstileWidget.vue` moved to the vendor library. **Your existing files in `app/`, `config/`, and `resources/js/` are not affected and keep working as-is.** `composer update` is the only required step.
+This release adds a runtime theme system and completes the "package runtime runs from vendor" migration. On the backend, helper classes, validation rules, and middleware moved out of the published scaffold and three third-party config files are no longer published. On the frontend, 15 composables and `TurnstileWidget.vue` moved to the vendor library, and a named preset registry replaces the single hardcoded `preset.ts`. **Your existing files in `app/`, `config/`, and `resources/js/` are not affected.** `composer update` is the only required step for most users.
 
 Backward compatibility is guaranteed two ways:
 
@@ -19,15 +19,59 @@ Backward compatibility is guaranteed two ways:
 
 ```bash
 composer update lvntr/laravel-starter-kit
-php artisan migrate          # "Nothing to migrate" — no schema changes
+php artisan sk:update
+php artisan db:seed --class=_03_SettingSeeder   # idempotent — adds appearance.theme = 'default'
+php artisan migrate                              # "Nothing to migrate" — no schema changes
+npm install
+npm run build
 ```
 
 Optional:
 
 ```bash
 php artisan sk:update --dry-run   # reports which moved files still exist in app/ (never forces)
-npm run build                     # frontend smoke test (composables resolve local-first then vendor)
 ```
+
+### Theme system
+
+**Existing installs are not visually affected** — the `default` preset produces pixel-equivalent output to the historical single-preset build, and the system falls back to `default` when no `appearance.theme` setting row exists.
+
+#### What changed
+
+##### Backend
+
+- `config/starter-kit.php` gains two new keys:
+  - `'theme' => 'default'` — the runtime-active preset name (overridden at boot from the DB setting).
+  - `'themes' => ['default' => …, 'corporate' => …]` — the selectable preset whitelist.
+- `SettingsServiceProvider` now reads `appearance.theme` from the database at boot and writes it to `config('starter-kit.theme')`.
+- `HandleInertiaRequests` shares `'theme'` as an Inertia shared prop on every request.
+- A new `PUT /settings/appearance` endpoint (`settings.update.appearance`) saves the active preset. Requires `settings.update` permission.
+- `_03_SettingSeeder` seeds `appearance.theme = 'default'` (idempotent — no effect on existing rows).
+
+##### Frontend
+
+- `stubs/resources/js/theme/preset.ts` was **moved** to `stubs/resources/js/theme/presets/default.ts` — see migration note below.
+- `stubs/resources/js/theme/presets/index.ts` — new preset registry (`presets`, `SkThemeName`, `SkThemePreset`, `DEFAULT_THEME`, `resolvePreset`).
+- `stubs/resources/js/theme/presets/corporate.ts` — second example preset (teal primary, softer radius).
+- `stubs/resources/js/composables/useTheme.ts` — new composable (`currentTheme`, `themeNames`, `setTheme`).
+- `stubs/resources/js/pages/Admin/Settings/components/AppearanceTab.vue` — new admin Appearance tab.
+- `stubs/resources/js/app.ts` — initial PrimeVue preset is now resolved from the `theme` shared prop (SSR-safe, no FOUC).
+
+#### Migration note — `preset.ts` moved
+
+If you customised `resources/js/theme/preset.ts` in your project, move your customisations into `resources/js/theme/presets/default.ts` before running `sk:update`.
+
+`sk:update` tracks the hash of the old `preset.ts` path. If the file still exists at the old path with no local changes, `sk:update` will inform you it has been superseded and offer to apply the update. If you modified it, `sk:update` will not overwrite your file — copy the relevant parts manually.
+
+After the move, `app.ts` resolves the initial preset from the registry (via `resolvePreset`) rather than the old direct import. The runtime behaviour is identical when only the `default` preset is active.
+
+#### `appearance.theme` setting seed
+
+The seeder adds `appearance.theme = 'default'` using `firstOrCreate` — running it on an existing install with no `appearance.theme` row sets the value to `'default'`, which has no visual effect. Running it when the row already exists (e.g. after a user changed the theme) leaves the existing value intact.
+
+#### Adding more presets
+
+See `docs/theming.md` for the full guide. The short version: create `presets/<name>.ts`, add it to `presets/index.ts`, and mirror the name in `config('starter-kit.themes')`. A drift-guard test enforces that the two sides stay in sync.
 
 ### What moved to vendor
 
@@ -140,7 +184,7 @@ v13.5.0+: package runtime runs from vendor. The following files still exist in y
 
 (The v13.5.0 vendor-resident files — `app/Domain/FileManager/`, `app/Domain/Shared/`, etc. — also appear in the list if still present.)
 
-### New install (v13.5.12+)
+### New install (v13.6.0+)
 
 A fresh `sk:install` no longer copies these helper classes, middleware, traits, or the three third-party configs into `app/` / `config/`. They run from `vendor/lvntr/laravel-starter-kit/src/` plus the kit's runtime config overrides. The scaffold still ships the thin `App\` shims for `DatatableQueryBuilder` and the two validation Rules so generated domain code keeps its familiar imports; trait helpers (`HasTranslatableRules`) are imported directly from the vendor namespace.
 

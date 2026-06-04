@@ -28,6 +28,9 @@ class _03_SettingSeeder extends Seeder
                 'two_factor' => '0',
                 'password_reset' => '1',
             ],
+            'appearance' => [
+                'theme' => 'default',
+            ],
             'mail' => [
                 'mailer' => 'smtp',
                 'host' => config('mail.mailers.smtp.host', '127.0.0.1'),

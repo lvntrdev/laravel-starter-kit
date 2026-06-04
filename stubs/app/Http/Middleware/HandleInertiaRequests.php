@@ -57,6 +57,11 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'appName' => config('app.name'),
+            // App-wide active theme preset name (string only — never raw CSS).
+            // Set from the appearance.theme DB setting in SettingsServiceProvider;
+            // falls back to 'default'. The frontend registry resolves the name to
+            // a PrimeVue preset, so an unknown value still degrades to 'default'.
+            'theme' => fn () => config('starter-kit.theme', 'default'),
             'appLogo' => fn () => ($logo = Setting::getValue('general.logo')) ? Storage::disk('public')->url($logo) : null,
             'appVersion' => InstalledVersions::getPrettyVersion('lvntr/laravel-starter-kit'),
             // Only share env/debug signals in non-production environments —

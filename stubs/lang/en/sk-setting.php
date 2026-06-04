@@ -6,6 +6,7 @@ return [
 
     'tabs' => [
         'general' => 'General',
+        'appearance' => 'Appearance',
         'auth' => 'Security',
         'mail' => 'Mail',
         'storage' => 'Storage',
@@ -18,6 +19,7 @@ return [
 
     'tab_descriptions' => [
         'general' => 'App name, language and logo',
+        'appearance' => 'Theme preset for the admin panel',
         'auth' => 'Registration, 2FA, verification and CAPTCHA',
         'mail' => 'SMTP and sender settings',
         'storage' => 'S3, Spaces and local disk',
@@ -39,6 +41,22 @@ return [
         'logo_remove_confirm' => 'Are you sure you want to remove the application logo?',
         'welcome_message_placeholder' => 'Write a short welcome message…',
         'welcome_message_hint' => 'Shown on the admin dashboard. Supports basic formatting and images.',
+    ],
+
+    'appearance' => [
+        'title' => 'Appearance',
+        'subtitle' => 'Choose the theme preset used across the admin panel.',
+        'theme_label' => 'Theme',
+        'theme_hint' => 'Applies app-wide. Light/dark mode is controlled separately.',
+        'active' => 'Active',
+        'previewing' => 'Previewing — not saved yet',
+        'preview_hint' => 'Selecting a theme previews it instantly. The change only becomes permanent once you save; leaving without saving reverts to the active theme.',
+        'discard' => 'Discard preview',
+        'saved' => 'Theme saved.',
+        'themes' => [
+            'default' => 'Default',
+            'corporate' => 'Corporate',
+        ],
     ],
 
     'security' => [

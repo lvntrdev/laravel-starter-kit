@@ -39,7 +39,7 @@ Use this package when you want to start from a ready admin platform instead of a
 
 ## SSR
 
-SSR support ships with the application and is wired through the same Inertia/Vite entrypoint. Runtime enablement is controlled by the `INERTIA_SSR_ENABLED` env var (the kit defaults it to `false` from vendor since v13.5.12, so `config/inertia.php` no longer needs to be published — publish it only to customize Inertia further); when it is off, the app falls back cleanly to client rendering without changing the page code.
+SSR support ships with the application and is wired through the same Inertia/Vite entrypoint. Runtime enablement is controlled by the `INERTIA_SSR_ENABLED` env var (the kit defaults it to `false` from vendor since v13.6.0, so `config/inertia.php` no longer needs to be published — publish it only to customize Inertia further); when it is off, the app falls back cleanly to client rendering without changing the page code.
 
 ## ApiRoutes Admin Module
 

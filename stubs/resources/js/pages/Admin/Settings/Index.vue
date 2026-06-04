@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { TB } from '@lvntr/components/TabBuilder/core';
+    import AppearanceTab from './components/AppearanceTab.vue';
     import ApiClientsManageTab from './components/ApiClientsManageTab.vue';
     import ApiClientsTab from './components/ApiClientsTab.vue';
     import ApiTokensManageTab from './components/ApiTokensManageTab.vue';
@@ -109,6 +110,13 @@
                 .icon('pi pi-cog')
                 .iconColor('blue'),
             TB.item()
+                .key('appearance')
+                .label('sk-setting.tabs.appearance')
+                .description('sk-setting.tab_descriptions.appearance')
+                .icon('pi pi-palette')
+                .iconColor('pink')
+                .permission('settings.update'),
+            TB.item()
                 .key('auth')
                 .label('sk-setting.tabs.auth')
                 .description('sk-setting.tab_descriptions.auth')
@@ -172,6 +180,10 @@
                     :timezones="props.timezones"
                     :available-languages="props.availableLanguages"
                 />
+            </template>
+
+            <template #appearance>
+                <AppearanceTab />
             </template>
 
             <template #auth>

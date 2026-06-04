@@ -32,6 +32,7 @@ Bu değişiklikten önce oluşturulan projelerde tüm composable'lar `resources/
 - onay işlemleri için `useConfirm`
 - flash mesaj yönetimi için `useFlash`
 - dark mode kalıcılığı için `useDarkMode`
+- uygulama-geneli çalışma-zamanı tema preset'i seçimi için `useTheme`
 - Inertia yüklenme durumu için `usePageLoading`
 - tablo veya widget yenilemek için `useRefreshBus`
 - responsive sidebar durumu için `useSidebar`
@@ -159,6 +160,16 @@ Admin sidebar için masaüstü daraltma ve mobil açık/kapalı durumlarını y�
 ### useDarkMode()
 
 Dark mode tercihini local storage'da saklar ve `<html>` üzerinde `.dark` sınıfını değiştirir.
+
+### useTheme()
+
+Uygulama-geneli çalışma-zamanı renk preset'ini yönetir. Aktif preset adı, Inertia shared-prop `theme`'den başlatılır (backend `appearance.theme`'den çözümler). Hydrate sonrası runtime swap'ları `usePreset()` üzerinden gerçekleşir; deployment veya sayfa yenilemesi gerekmez.
+
+- `currentTheme` — reaktif salt-okunur preset adı
+- `themeNames` — frontend kaydındaki seçilebilir preset adları
+- `setTheme(name)` — preset'i runtime'da uygular; bilinmeyen adlar `default`'a düşer
+
+`useDarkMode()` ile ortogonaldir: `setTheme()` `.dark` class'ına hiçbir zaman dokunmaz. Tam tema rehberi için `docs/theming.tr.md` dosyasına bakın.
 
 ### usePageLoading()
 

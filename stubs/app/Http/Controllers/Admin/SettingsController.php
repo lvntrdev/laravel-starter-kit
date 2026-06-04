@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Setting\Actions\SendTestMailAction;
 use App\Domain\Setting\Actions\UpdateAuthSettingsAction;
 use App\Domain\Setting\Actions\UpdateSettingsAction;
+use App\Domain\Setting\Actions\UpdateThemeSettingsAction;
 use App\Domain\Setting\DTOs\ApidogSettingsDTO;
 use App\Domain\Setting\DTOs\AuthSettingsDTO;
 use App\Domain\Setting\DTOs\FileManagerSettingsDTO;
@@ -12,6 +13,7 @@ use App\Domain\Setting\DTOs\GeneralSettingsDTO;
 use App\Domain\Setting\DTOs\MailSettingsDTO;
 use App\Domain\Setting\DTOs\PostmanSettingsDTO;
 use App\Domain\Setting\DTOs\StorageSettingsDTO;
+use App\Domain\Setting\DTOs\ThemeSettingsDTO;
 use App\Domain\Setting\DTOs\TurnstileSettingsDTO;
 use App\Domain\Setting\Queries\SettingsDefaultsQuery;
 use App\Http\Controllers\Controller;
@@ -23,6 +25,7 @@ use App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateMailSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdatePostmanSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest;
+use App\Http\Requests\Admin\Settings\UpdateThemeSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Setting;
@@ -82,6 +85,16 @@ class SettingsController extends Controller
         $action->execute(AuthSettingsDTO::fromArray($request->validated()));
 
         return back()->with('success', 'Authentication settings updated.');
+    }
+
+    /**
+     * Update appearance (theme) settings.
+     */
+    public function updateAppearance(UpdateThemeSettingsRequest $request, UpdateThemeSettingsAction $action): ApiResponse
+    {
+        $action->execute(ThemeSettingsDTO::fromArray($request->validated()));
+
+        return to_api(null, 'Appearance settings updated.');
     }
 
     /**

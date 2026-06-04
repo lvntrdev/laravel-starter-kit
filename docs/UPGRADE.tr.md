@@ -4,11 +4,11 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
-## v13.5.3 → v13.5.12
+## v13.5.11 → v13.6.0
 
 ### Özet
 
-Bu sürüm, v13.5.0'da başlayan "paket runtime'ı vendor'dan çalışır" geçişini sürdürür. Bir grup backend yardımcı sınıfı, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık publish edilmiyor (gerekli override'ları runtime'da uygulanıyor); frontend tarafında ise 15 composable ve `TurnstileWidget.vue` vendor kütüphanesine taşındı. **`app/`, `config/` ve `resources/js/` altındaki mevcut dosyalarınız etkilenmez ve aynen çalışmaya devam eder.** Tek zorunlu adım `composer update`'tir.
+Bu sürüm çalışma-zamanı tema sistemini ekler ve "paket runtime'ı vendor'dan çalışır" geçişini tamamlar. Backend tarafında yardımcı sınıflar, validation kuralları ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık publish edilmiyor. Frontend tarafında 15 composable ve `TurnstileWidget.vue` vendor kütüphanesine taşındı; tek sabit `preset.ts` yerine adlandırılmış preset kaydı geldi. **`app/`, `config/` ve `resources/js/` altındaki mevcut dosyalarınız etkilenmez.** Çoğu kullanıcı için tek zorunlu adım `composer update`'tir.
 
 Geriye dönük uyum iki yolla garanti edilir:
 
@@ -19,15 +19,59 @@ Geriye dönük uyum iki yolla garanti edilir:
 
 ```bash
 composer update lvntr/laravel-starter-kit
-php artisan migrate          # "Nothing to migrate" — şema değişikliği yok
+php artisan sk:update
+php artisan db:seed --class=_03_SettingSeeder   # idempotent — appearance.theme = 'default' ekler
+php artisan migrate                              # "Nothing to migrate" — şema değişikliği yok
+npm install
+npm run build
 ```
 
 İsteğe bağlı:
 
 ```bash
 php artisan sk:update --dry-run   # taşınan dosyalardan hâlâ app/ içinde olanları raporlar (asla zorlamaz)
-npm run build                     # frontend smoke test (composable'lar önce local sonra vendor çözülür)
 ```
+
+### Tema sistemi
+
+**Mevcut kurulumların görünümü etkilenmez** — `default` preset, eski tek-preset derlemesiyle pixel-eşdeğer çıktı üretir; `appearance.theme` satırı yoksa sistem `default`'a düşer.
+
+#### Değişenler
+
+##### Backend
+
+- `config/starter-kit.php`'e iki yeni anahtar eklendi:
+  - `'theme' => 'default'` — çalışma-zamanı aktif preset adı (boot sırasında DB ayarından ezilir).
+  - `'themes' => ['default' => …, 'corporate' => …]` — seçilebilir preset whitelist'i.
+- `SettingsServiceProvider`, boot sırasında veritabanından `appearance.theme`'yi okur ve `config('starter-kit.theme')`'ye yazar.
+- `HandleInertiaRequests`, her istekte `'theme'`'yi Inertia shared-prop olarak paylaşır.
+- Yeni `PUT /settings/appearance` endpoint'i (`settings.update.appearance`) aktif preset'i kaydeder. `settings.update` izni gerektirir.
+- `_03_SettingSeeder`, `appearance.theme = 'default'` seed satırı ekler (idempotent — mevcut satırları etkilemez).
+
+##### Frontend
+
+- `stubs/resources/js/theme/preset.ts` → `stubs/resources/js/theme/presets/default.ts`'e **taşındı** — geçiş notuna bakın.
+- `stubs/resources/js/theme/presets/index.ts` — yeni preset kaydı (`presets`, `SkThemeName`, `SkThemePreset`, `DEFAULT_THEME`, `resolvePreset`).
+- `stubs/resources/js/theme/presets/corporate.ts` — ikinci örnek preset (teal primary, yumuşak radius).
+- `stubs/resources/js/composables/useTheme.ts` — yeni composable (`currentTheme`, `themeNames`, `setTheme`).
+- `stubs/resources/js/pages/Admin/Settings/components/AppearanceTab.vue` — yeni admin Görünüm sekmesi.
+- `stubs/resources/js/app.ts` — başlangıç PrimeVue preset'i artık `theme` shared-prop'tan çözülür (SSR-güvenli, FOUC yok).
+
+#### Geçiş notu — `preset.ts` taşındı
+
+Projenizde `resources/js/theme/preset.ts` dosyasını özelleştirdiyseniz, `sk:update` çalıştırmadan önce özelleştirmelerinizi `resources/js/theme/presets/default.ts`'e taşıyın.
+
+`sk:update`, eski `preset.ts` yolunun hash'ini takip eder. Dosya eski konumda yerel değişiklik olmadan duruyorsa `sk:update` dosyanın yeni konumla değiştirildiğini bildirir ve güncellemeyi uygulamayı önerir. Dosyayı değiştirdiyseniz `sk:update` dosyanızın üzerine yazmaz — ilgili kısımları elle taşımanız gerekir.
+
+Taşıma sonrasında `app.ts`, ilk preset'i eski doğrudan import yerine kayıt üzerinden (`resolvePreset`) çözer. Yalnızca `default` preset aktifken çalışma-zamanı davranışı aynıdır.
+
+#### `appearance.theme` ayar seed'i
+
+Seeder, `firstOrCreate` kullanarak `appearance.theme = 'default'` ekler — `appearance.theme` satırı bulunmayan mevcut kurulumda çalıştırılırsa değeri `'default'` olarak set eder (görsel değişiklik olmaz). Satır zaten varsa (örn. kullanıcı tema değiştirdiyse) mevcut değere dokunulmaz.
+
+#### Ek preset ekleme
+
+Tam rehber için `docs/theming.tr.md` dosyasına bakın. Kısa özet: `presets/<isim>.ts` oluşturun, `presets/index.ts`'e ekleyin, aynı adı `config('starter-kit.themes')`'e ekleyin. Drift-guard testi iki tarafın senkronunu zorunlu kılar.
 
 ### Vendor'a ne taşındı
 
@@ -140,7 +184,7 @@ v13.5.0+: package runtime runs from vendor. The following files still exist in y
 
 (v13.5.0 vendor-resident dosyaları — `app/Domain/FileManager/`, `app/Domain/Shared/` vb. — hâlâ duruyorsa listede ayrıca görünür.)
 
-### Yeni kurulum (v13.5.12+)
+### Yeni kurulum (v13.6.0+)
 
 Sıfır bir `sk:install` artık bu yardımcı sınıfları, middleware'leri, trait'leri veya üç üçüncü-parti config'i `app/` / `config/`'e kopyalamaz. Bunlar `vendor/lvntr/laravel-starter-kit/src/` ile kit'in runtime config override'larından çalışır. Scaffold, üretilen domain kodunun tanıdık import'larını koruması için `DatatableQueryBuilder` ve iki validation Rule için ince `App\` shim'lerini hâlâ gönderir; trait yardımcıları (`HasTranslatableRules`) doğrudan vendor namespace'inden import edilir.
 

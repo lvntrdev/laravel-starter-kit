@@ -39,7 +39,7 @@ Authentication, yetkilendirme, ayarlar, medya yönetimi ve admin panel altyapıs
 
 ## SSR
 
-SSR desteği uygulamanın içinde hazır gelir ve aynı Inertia/Vite giriş noktası üzerinden çalışır. Çalışma zamanında etkin olup olmayacağı `INERTIA_SSR_ENABLED` env değişkeniyle belirlenir (kit bu değeri v13.5.12'den itibaren vendor'dan `false` olarak varsayar, bu yüzden `config/inertia.php` artık publish edilmek zorunda değildir — yalnızca Inertia'yı daha ileri özelleştirmek için publish edin); kapalıyken uygulama aynı sayfa koduyla sorunsuz şekilde client render'a döner.
+SSR desteği uygulamanın içinde hazır gelir ve aynı Inertia/Vite giriş noktası üzerinden çalışır. Çalışma zamanında etkin olup olmayacağı `INERTIA_SSR_ENABLED` env değişkeniyle belirlenir (kit bu değeri v13.6.0'dan itibaren vendor'dan `false` olarak varsayar, bu yüzden `config/inertia.php` artık publish edilmek zorunda değildir — yalnızca Inertia'yı daha ileri özelleştirmek için publish edin); kapalıyken uygulama aynı sayfa koduyla sorunsuz şekilde client render'a döner.
 
 ## ApiRoutes Admin Modülü
 

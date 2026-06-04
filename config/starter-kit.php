@@ -118,4 +118,29 @@ return [
         'default_scopes' => [],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Appearance / Theme
+    |--------------------------------------------------------------------------
+    |
+    | `theme` is the app-wide active PrimeVue preset name. It is overridden
+    | at boot from the `appearance.theme` DB setting (see
+    | SettingsServiceProvider) and falls back to `default` when unset — so a
+    | fresh install (or one without the setting) renders pixel-equivalent to
+    | the historical single-preset output.
+    |
+    | `themes` is the whitelist of selectable presets: key = preset name
+    | (the single source of truth the appearance FormRequest validates
+    | against and the frontend registry mirrors), value = display label key.
+    | Keep these names in sync with stubs/resources/js/theme/presets/index.ts.
+    |
+    */
+
+    'theme' => 'default',
+
+    'themes' => [
+        'default' => 'sk-setting::appearance.themes.default',
+        'corporate' => 'sk-setting::appearance.themes.corporate',
+    ],
+
 ];

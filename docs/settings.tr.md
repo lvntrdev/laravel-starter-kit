@@ -11,6 +11,7 @@ Settings modülü, operasyonel yapılandırmayı admin panel içinde merkezi hal
 - `file_manager` — yükleme boyutu, kabul edilen MIME listesi, ses/video toggle'ları
 - `turnstile` — özellik toggle'ı, site key ve secret key
 - `api_clients` — Postman ve Apidog senkronizasyon kimlik bilgileri; tek sekme içinde iki yapılandırma kartı
+- `appearance` — uygulama-geneli aktif tema preset'i; bkz. `docs/theming.tr.md`
 
 ## Saklama Modeli
 
@@ -42,6 +43,7 @@ Admin modülü şu route'ları sunar:
 - `settings.update.turnstile`
 - `settings.update.postman` — `PUT /settings/postman`
 - `settings.update.apidog` — `PUT /settings/apidog`
+- `settings.update.appearance` — `PUT /settings/appearance`
 - `settings.testMail`
 - `settings.upload.logo` — `POST settings/logo`
 - `settings.delete.logo` — `DELETE settings/logo`
