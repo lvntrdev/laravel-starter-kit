@@ -2,7 +2,7 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## v13.5.12 — Yayımlanmadı
+## 2026-06-04 — v13.5.12
 
 ### Minor sürüm — Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`
 
@@ -36,7 +36,7 @@ Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend 
 
 - **Backend scaffold stub'ları** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php` ve `config/{activitylog,inertia,media-library}.php` scaffold'dan kaldırıldı. Yükseltilen app'ler mevcut kopyaları korur (`sk:update` bilgilendirme bildirimi gösterir, asla otomatik silmez). `HasTranslatableRules` trait'i için yerel kopyayı silmeden önce `use` import'larını vendor namespace'ine çevirin.
 
-## v13.5.11 — Yayımlanmadı
+## 2026-06-04 — v13.5.11
 
 ### Yama sürüm — Monolit skill kaldırıldı, yerine bağımsız 3-skill seti eklendi
 

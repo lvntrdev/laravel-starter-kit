@@ -2,7 +2,7 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## v13.5.12 — Unreleased
+## 2026-06-04 — v13.5.12
 
 ### Minor release — Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
 
@@ -36,7 +36,7 @@ The same release continues the v13.5.0 "runtime runs from vendor" migration on t
 
 - **Backend scaffold stubs** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php`, and `config/{activitylog,inertia,media-library}.php` removed from the scaffold. Upgraded apps keep existing copies (informational notice from `sk:update`, never auto-deleted). For the `HasTranslatableRules` trait, switch `use` imports to the vendor namespace before deleting a local copy.
 
-## v13.5.11 — Unreleased
+## 2026-06-04 — v13.5.11
 
 ### Patch release — Standalone 3-skill set replaces monolithic bundled skill
 

@@ -5,7 +5,7 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.5.12] - Unreleased
+## [13.5.12] - 2026-06-04
 
 ### Added
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`stubs/resources/js/composables/<name>.ts`** — 15 composable stubs removed from the scaffold. Existing projects keep their local copies (local-first resolver ensures no breakage); to receive upstream updates via `composer update`, delete the unmodified files, keeping `useAdminMenu.ts`, `index.ts`, and any customized composables.
 - **Backend stubs removed from the scaffold** — `app/Support/{HtmlSanitizer,TranslatableQueryHelpers,MediaPathGenerator,HasTranslatableRules}.php`, `app/Support/Scramble/ApiResponseExtension.php`, `app/Http/Middleware/{AssignTraceId,SetLocale,ValidateTurnstile}.php`, and `config/{activitylog,inertia,media-library}.php`. Existing copies are preserved in upgraded apps (shown as an informational notice by `sk:update`, never deleted automatically). Note: deleting a local copy of the `HasTranslatableRules` trait requires updating its `use` imports to the vendor namespace first (no `class_alias` for traits).
 
-## [13.5.11] - Unreleased
+## [13.5.11] - 2026-06-04
 
 ### Added
 
