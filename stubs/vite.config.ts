@@ -11,6 +11,8 @@ import Components from 'unplugin-vue-components/vite';
 import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import path from 'path';
 import { existsSync } from 'fs';
+// @ts-expect-error — plain .mjs resolver plugin, no bundled types.
+import skTheme, { resolveActivePreset } from './scripts/vite-plugin-sk-theme.mjs';
 
 // Wayfinder requires both PHP and an artisan file to generate routes.
 // In CI (node-only job) or in the package repo itself, artisan does not
@@ -72,6 +74,19 @@ export default defineConfig({
                 replacement: '$1',
                 customResolver: (name: string) => resolveComposable(name),
             },
+            // `@/theme/preset` → the active theme's PrimeVue preset, chosen at
+            // build time by VITE_SK_THEME (override at themes/<active>/preset.ts,
+            // else the base theme/preset.ts). Wired as an alias customResolver —
+            // NOT a plugin `resolveId` — for the same reason as @/composables
+            // above: Vite's alias plugin expands `@/theme/preset` to the base file
+            // BEFORE user `pre` plugins run, so a resolveId hook never sees the
+            // bare specifier. customResolver runs DURING alias resolution and
+            // wins. MUST precede the bare `@`.
+            {
+                find: /^@\/theme\/preset(\.ts)?$/,
+                replacement: '$&',
+                customResolver: () => resolveActivePreset(),
+            },
             { find: '@', replacement: path.resolve(__dirname, 'resources/js') },
             // @lvntr/components/* → Lvntr-Starter-Kit UI lib from vendor.
             // Consumer's __dirname is the project root; vendor symlink is followed
@@ -90,6 +105,11 @@ export default defineConfig({
     },
 
     plugins: [
+        // Generate resources/css/theme/_active.css before CSS resolution. This
+        // is the npm-independent safety net (works even on a direct `vite build`,
+        // any ignore-scripts config); the explicit chain in package.json's
+        // dev/build scripts is kept as belt-and-suspenders.
+        skTheme(),
         ...(isWayfinderAvailable() ? [wayfinder()] : []),
         ...(isVitest
             ? []

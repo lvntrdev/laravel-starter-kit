@@ -6,7 +6,6 @@
 
 @import 'tailwindcss/utilities' layer(tailwind-utilities);
 @import './theme/theme.css';
-@import './theme/utilities.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/lvntr/laravel-starter-kit/resources/js/**/*.vue';

@@ -18,6 +18,7 @@ use Lvntr\StarterKit\Console\Doctor\Checks\QueueDriverCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\RedisConnectionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\StorageSymlinkCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\ThemeManifestCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\WritableDirectoriesCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorReport;
@@ -75,6 +76,7 @@ class DoctorCommand extends Command
             new NpmBuildArtifactsCheck,
             new ConfigCacheCheck,
             new FileManagerDiskCheck,
+            new ThemeManifestCheck,
         ];
 
         $only = $this->option('only');

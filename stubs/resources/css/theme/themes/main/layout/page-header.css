@@ -1,0 +1,39 @@
+/**
+ * Layout page-header shell — admin-page-header title/heading/subtitle/actions.
+ * Dark overrides kept with region. Region-disjoint from shell/sidebar/header/footer.
+ * Values byte-identical to the former _admin.scss.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PAGE HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-page-header {
+    @apply flex items-center justify-between mb-6 shrink-0;
+}
+
+.admin-page-header__title {
+    @apply min-w-0;
+}
+
+.admin-page-header__heading {
+    @apply text-2xl font-bold;
+    color: var(--p-surface-900);
+}
+
+:root.dark .admin-page-header__heading {
+    color: var(--p-surface-0);
+}
+
+.admin-page-header__subtitle {
+    @apply text-sm;
+    color: var(--p-surface-500);
+}
+
+:root.dark .admin-page-header__subtitle {
+    color: var(--p-surface-400);
+}
+
+.admin-page-header__actions {
+    @apply flex items-center gap-2 shrink-0;
+}

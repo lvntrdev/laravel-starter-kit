@@ -132,6 +132,9 @@ class InstallCommand extends Command
         'Derlenmiş JSON çeviriler (kök seviye)' => [
             '/lang/*.json',
         ],
+        'Üretilen tema manifesti (sk-theme-build resolver çıktısı)' => [
+            '/resources/css/theme/_active.css',
+        ],
     ];
 
     public function handle(): int
@@ -813,10 +816,12 @@ class InstallCommand extends Command
             }
         }
 
-        // Generated type declarations (unplugin auto-import / components resolver).
+        // Generated type declarations (unplugin auto-import / components resolver)
+        // and the theme resolver's generated manifest (sk-theme-build.mjs output).
         $ignoredExact = [
             'auto-imports.d.ts',
             'components.d.ts',
+            'resources/css/theme/_active.css',
         ];
 
         if (in_array($normalizedPath, $ignoredExact, true)) {

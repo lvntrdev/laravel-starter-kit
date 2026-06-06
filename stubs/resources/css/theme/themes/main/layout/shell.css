@@ -1,0 +1,66 @@
+/**
+ * Layout shell — admin-layout / admin-main / admin-content + Vue transitions.
+ *
+ * Structural skeleton owned by AppShell. Region-disjoint from sidebar/header/
+ * page-header/footer. Values byte-identical to the former _admin.scss.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ADMIN LAYOUT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-layout {
+    @apply flex h-screen overflow-hidden;
+    background: var(--admin-content-bg);
+}
+
+.admin-main {
+    @apply flex flex-1 flex-col overflow-hidden transition-[margin-left] duration-300 ease-in-out;
+}
+
+.admin-main--expanded {
+    @apply ml-sidebar;
+}
+
+.admin-main--collapsed {
+    @apply ml-sidebar-collapsed;
+}
+
+.admin-main--mobile {
+    @apply ml-0;
+}
+
+.admin-content {
+    @apply w-full flex-1 min-h-0 overflow-y-auto p-6 flex flex-col;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VUE TRANSITIONS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Overlay fade */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* Submenu open / close */
+.submenu-enter-active,
+.submenu-leave-active {
+    transition:
+        max-height 0.25s ease,
+        opacity 0.2s ease;
+    max-height: 400px;
+    opacity: 1;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+    max-height: 0;
+    opacity: 0;
+}

@@ -12,6 +12,8 @@ LOCAL.md
 # Generated type declarations (unplugin auto-import / components resolver) — regenerated per host app.
 /stubs/auto-imports.d.ts
 /stubs/components.d.ts
+# Theme resolver output (scripts/sk-theme-build.mjs) — regenerated per build, never shipped.
+/stubs/resources/css/theme/_active.css
 composer.lock
 .phpunit.result.cache
 .phpunit.cache/

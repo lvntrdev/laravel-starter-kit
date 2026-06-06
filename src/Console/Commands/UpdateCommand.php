@@ -518,8 +518,9 @@ class UpdateCommand extends Command
             }
         }
 
-        // Generated type declarations (unplugin auto-import / components resolver).
-        if (in_array($normalizedPath, ['auto-imports.d.ts', 'components.d.ts'], true)) {
+        // Generated type declarations (unplugin auto-import / components resolver)
+        // and the theme resolver's generated manifest (sk-theme-build.mjs output).
+        if (in_array($normalizedPath, ['auto-imports.d.ts', 'components.d.ts', 'resources/css/theme/_active.css'], true)) {
             return true;
         }
 

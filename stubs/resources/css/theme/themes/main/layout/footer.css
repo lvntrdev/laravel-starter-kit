@@ -1,0 +1,16 @@
+/**
+ * Layout footer shell — admin-footer bar.
+ * Region-disjoint from shell/sidebar/header/page-header.
+ * Values byte-identical to the former _admin.scss.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-footer {
+    @apply flex h-footer shrink-0 items-center justify-between border-t px-6 text-xs;
+    border-color: var(--admin-footer-border);
+    background: var(--admin-footer-bg);
+    color: var(--admin-footer-text);
+}

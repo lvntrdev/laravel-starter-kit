@@ -1,0 +1,117 @@
+/**
+ * Layout header shell — admin-header bar, left/right clusters, action buttons,
+ * locale switch, user menu, avatar, env tags. Dark overrides kept with region.
+ * Region-disjoint from shell/sidebar/page-header/footer.
+ * Values byte-identical to the former _admin.scss.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.admin-header {
+    @apply sticky top-0 z-30 flex h-header shrink-0 items-center justify-between border-b px-5;
+    border-color: var(--admin-header-border);
+    background: var(--admin-header-bg);
+    color: var(--admin-header-text);
+}
+
+.admin-header__left {
+    @apply flex items-center gap-2;
+}
+
+.admin-header__right {
+    @apply flex items-center gap-3;
+}
+
+.admin-header__btn {
+    @apply flex size-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent text-base transition-colors duration-150;
+    color: var(--admin-header-text);
+
+    &:hover {
+        background: var(--p-surface-100);
+    }
+}
+
+:root.dark .admin-header__btn:hover {
+    background: var(--p-surface-800);
+}
+
+.admin-header__btn--locale {
+    @apply w-auto gap-1.5 px-2.5 text-sm;
+}
+
+.admin-header__locale-code {
+    @apply text-xs font-semibold tracking-wide;
+}
+
+.admin-header__user {
+    @apply flex cursor-pointer items-center gap-2.5 rounded-lg border-none bg-transparent px-2 py-1.5 transition-colors duration-150;
+
+    &:hover {
+        background: var(--p-surface-100);
+    }
+}
+
+:root.dark .admin-header__user:hover {
+    background: var(--p-surface-800);
+}
+
+.admin-header__user-info {
+    @apply hidden flex-col items-end gap-0.5 sm:flex;
+}
+
+.admin-header__user-name {
+    @apply text-sm font-semibold leading-tight;
+    color: var(--admin-header-text);
+}
+
+.admin-header__user-role {
+    @apply text-xs leading-tight;
+    color: var(--p-surface-500);
+}
+
+.admin-header__avatar {
+    @apply size-9 rounded-full object-cover ring-2;
+    --tw-ring-color: var(--p-surface-200);
+}
+
+:root.dark .admin-header__avatar {
+    --tw-ring-color: var(--p-surface-700);
+}
+
+.admin-header__avatar-placeholder {
+    @apply flex size-9 items-center justify-center rounded-full text-sm ring-2;
+    background: var(--p-surface-200);
+    color: var(--p-surface-500);
+    --tw-ring-color: var(--p-surface-200);
+}
+
+:root.dark .admin-header__avatar-placeholder {
+    background: var(--p-surface-700);
+    --tw-ring-color: var(--p-surface-700);
+}
+
+.admin-header__tag {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold leading-tight select-none;
+}
+
+.admin-header__tag--dev {
+    background: color-mix(in srgb, var(--p-blue-500) 15%, transparent);
+    color: var(--p-blue-600);
+}
+
+:root.dark .admin-header__tag--dev {
+    background: color-mix(in srgb, var(--p-blue-400) 20%, transparent);
+    color: var(--p-blue-400);
+}
+
+.admin-header__tag--debug {
+    background: color-mix(in srgb, var(--p-orange-500) 15%, transparent);
+    color: var(--p-orange-600);
+}
+
+:root.dark .admin-header__tag--debug {
+    background: color-mix(in srgb, var(--p-orange-400) 20%, transparent);
+    color: var(--p-orange-400);
+}

@@ -2,7 +2,7 @@
 <script setup lang="ts">
     import { useDarkMode } from '@/composables/useDarkMode';
     import { useFlash } from '@/composables/useFlash';
-    import { useSidebar } from '@/composables/useSidebar';
+    import AppShell from '@/layouts/AppShell.vue';
     import AdminFooter from '@/layouts/components/AdminFooter.vue';
     import AdminHeader from '@/layouts/components/AdminHeader.vue';
     import AdminPageHeader from '@/layouts/components/AdminPageHeader.vue';
@@ -26,7 +26,6 @@
         backUrl: false,
     });
 
-    const { isCollapsed, isMobileOpen, isMobile, toggle, closeMobile } = useSidebar();
     const { isDark, toggleDark } = useDarkMode();
     const { flash } = useFlash();
     const toast = useToast();
@@ -77,52 +76,48 @@
 
 <template>
     <Head :title="title" />
-    <div class="admin-layout">
+    <AppShell>
         <!-- Sidebar -->
-        <AdminSidebar
-            :collapsed="isCollapsed"
-            :mobile-open="isMobileOpen"
-            :is-mobile="isMobile"
-            @close-mobile="closeMobile"
-        />
+        <template #sidebar="{ collapsed, mobileOpen, isMobile, closeMobile }">
+            <AdminSidebar
+                :collapsed="collapsed"
+                :mobile-open="mobileOpen"
+                :is-mobile="isMobile"
+                @close-mobile="closeMobile"
+            />
+        </template>
 
-        <!-- Main Area -->
-        <div
-            class="admin-main"
-            :class="{
-                'admin-main--expanded': !isMobile && !isCollapsed,
-                'admin-main--collapsed': !isMobile && isCollapsed,
-                'admin-main--mobile': isMobile,
-            }"
-        >
-            <!-- Header -->
+        <!-- Header -->
+        <template #header="{ collapsed, isMobile, toggle }">
             <AdminHeader
-                :collapsed="isCollapsed"
+                :collapsed="collapsed"
                 :is-mobile="isMobile"
                 :is-dark="isDark"
                 @toggle-sidebar="toggle"
                 @toggle-dark="toggleDark"
             />
+        </template>
 
-            <!-- Content -->
-            <main class="admin-content">
-                <AdminPageHeader :title="title" :subtitle="subtitle" :back-url="backUrl">
-                    <template #actions>
-                        <slot name="page-actions" />
-                    </template>
-                </AdminPageHeader>
+        <!-- Content -->
+        <AdminPageHeader :title="title" :subtitle="subtitle" :back-url="backUrl">
+            <template #actions>
+                <slot name="page-actions" />
+            </template>
+        </AdminPageHeader>
 
-                <slot />
-            </main>
+        <slot />
 
-            <!-- Footer -->
+        <!-- Footer -->
+        <template #footer>
             <AdminFooter />
-        </div>
+        </template>
 
         <!-- Global Overlays -->
-        <ConfirmDialogComponent />
-        <ToastComponent />
-        <AppDialog />
-        <ImageLightbox />
-    </div>
+        <template #overlays>
+            <ConfirmDialogComponent />
+            <ToastComponent />
+            <AppDialog />
+            <ImageLightbox />
+        </template>
+    </AppShell>
 </template>

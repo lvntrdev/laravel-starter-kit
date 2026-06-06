@@ -1,0 +1,40 @@
+/**
+ * Base Styles
+ *
+ * Global base layer styles and general element overrides are defined here.
+ *
+ * NOTE: CSS custom properties (light/dark theme tokens) moved to
+ * `themes/main/tokens.css` and are loaded by the theme resolver
+ * (scripts/sk-theme-build.mjs) before this file. Keep only base/reset here.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE LAYER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* PrimeVue button padding override — Material theme ignores component token overrides */
+.p-button {
+    --p-button-padding-y: var(--p-form-field-padding-y);
+}
+
+@layer base {
+    html {
+        /* 14px tabanlı sistem: browser-default 16px'in %87.5'i.
+           Kullanıcı browser ayarından default font-size'ı büyüttüğünde
+           root da orantılı büyür (a11y zoom çalışır). Diğer rem değerleri
+           bu root'a (14px) göre hesaplanır. */
+        font-size: 0.875rem;
+        line-height: 1.5715;
+    }
+
+    a,
+    button,
+    [role='button'],
+    [type='button'],
+    [type='submit'],
+    [type='reset'],
+    summary,
+    select,
+    label[for] {
+        cursor: pointer;
+    }
+}

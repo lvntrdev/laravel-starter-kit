@@ -1,0 +1,137 @@
+/**
+ * Layout sidebar shell — admin-sidebar container, collapse behavior, overlay,
+ * logo, nav scroll region, footer. Region-disjoint from shell/header/page-header.
+ *
+ * Standalone nav-item component styles live in components/navigation.css; only
+ * the sidebar collapse SHELL (which re-scopes nav-* selectors) lives here.
+ * Values byte-identical to the former _admin.scss.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SIDEBAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Mobile overlay */
+.admin-overlay {
+    @apply fixed inset-0 z-39 bg-black/50 backdrop-blur-sm;
+}
+
+/* Sidebar container */
+.admin-sidebar {
+    @apply fixed inset-y-0 left-0 z-40 flex w-sidebar flex-col overflow-hidden border-r transition-[width,transform] duration-300 ease-in-out;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-bg);
+    color: var(--admin-sidebar-text);
+}
+
+.admin-sidebar--collapsed {
+    @apply w-sidebar-collapsed;
+
+    &:hover {
+        @apply w-sidebar;
+    }
+
+    .nav-group,
+    .nav-link {
+        @apply justify-center gap-0 px-0;
+    }
+
+    .nav-label {
+        @apply w-0 overflow-hidden;
+    }
+
+    .nav-section {
+        @apply py-3 px-0;
+    }
+
+    .nav-chevron,
+    .nav-external {
+        @apply hidden;
+    }
+
+    &:hover .nav-section {
+        @apply pb-1 pt-5 px-3;
+    }
+
+    &:hover .nav-group,
+    &:hover .nav-link {
+        @apply justify-start gap-3 px-3;
+    }
+
+    &:hover .nav-label {
+        @apply w-auto overflow-visible;
+    }
+
+    &:hover .nav-chevron,
+    &:hover .nav-external {
+        @apply flex;
+    }
+}
+
+.admin-sidebar--hidden {
+    @apply -translate-x-full;
+}
+
+/* Logo */
+.admin-sidebar__logo {
+    @apply flex h-header shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b px-4;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-logo-bg);
+}
+
+.admin-sidebar__logo-icon {
+    @apply flex size-8 shrink-0 items-center justify-center text-xl;
+}
+
+.admin-sidebar__logo-text {
+    @apply text-lg font-bold transition-opacity duration-300;
+}
+
+.admin-sidebar__logo-img {
+    @apply h-8 w-auto max-w-[160px] object-contain;
+}
+
+/* Navigation */
+.admin-sidebar__nav {
+    @apply flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-3;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--admin-sidebar-border);
+    border-radius: 2px;
+}
+
+/* Footer */
+.admin-sidebar__footer {
+    @apply flex shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-t px-4 py-3.5;
+    border-color: var(--admin-sidebar-border);
+    background: var(--admin-sidebar-logo-bg);
+}
+
+.admin-sidebar__footer-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded-lg text-sm;
+    background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+    color: var(--p-primary-color);
+}
+
+.admin-sidebar__footer-info {
+    @apply flex flex-col gap-0.5 transition-opacity duration-300;
+}
+
+.admin-sidebar__footer-title {
+    @apply text-sm font-semibold leading-none;
+    color: var(--admin-sidebar-text);
+}
+
+.admin-sidebar__footer-version {
+    @apply text-xs leading-none;
+    color: var(--admin-sidebar-text-muted);
+}
