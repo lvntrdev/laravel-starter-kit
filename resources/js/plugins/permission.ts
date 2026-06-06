@@ -1,44 +1,7 @@
 // resources/js/plugins/permission.ts
 import type { App, Directive } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-
-/**
- * Check if the current user has the given permission(s).
- * Accepts a single permission string or an array (all must match).
- */
-export function useCan(): {
-    can: (permission: string | string[]) => boolean;
-    hasRole: (role: string | string[]) => boolean;
-    hasAnyRole: (roles: string[]) => boolean;
-    hasAnyPermission: (permissions: string[]) => boolean;
-} {
-    const page = usePage();
-
-    const userPermissions = computed<string[]>(
-        () => (page.props.auth as { permissions?: string[] })?.permissions ?? [],
-    );
-    const userRoles = computed<string[]>(() => (page.props.auth as { roles?: string[] })?.roles ?? []);
-
-    function can(permission: string | string[]): boolean {
-        const perms = Array.isArray(permission) ? permission : [permission];
-        return perms.every((p) => userPermissions.value.includes(p));
-    }
-
-    function hasAnyPermission(permissions: string[]): boolean {
-        return permissions.some((p) => userPermissions.value.includes(p));
-    }
-
-    function hasRole(role: string | string[]): boolean {
-        const roles = Array.isArray(role) ? role : [role];
-        return roles.every((r) => userRoles.value.includes(r));
-    }
-
-    function hasAnyRole(roles: string[]): boolean {
-        return roles.some((r) => userRoles.value.includes(r));
-    }
-
-    return { can, hasRole, hasAnyRole, hasAnyPermission };
-}
+import type { SharedPageProps } from '@/types';
 
 /**
  * v-can directive — hides/removes element if user lacks the permission.
@@ -51,11 +14,15 @@ export function useCan(): {
  *   v-role:any="['admin','system_admin']" — any role
  */
 function getPermissions(page: ReturnType<typeof usePage>): string[] {
-    return (page.props.auth as { permissions?: string[] })?.permissions ?? [];
+    return (page.props.auth as SharedPageProps['auth'])?.permissions ?? [];
 }
 
+// Roles come from Inertia's `auth.role_names` (role slugs) — NOT `auth.roles`,
+// which the backend (HandleInertiaRequests::share) never shares. Casting to the
+// canonical SharedPageProps['auth'] instead of an ad-hoc `{ roles?: string[] }`
+// makes a wrong key a compile error rather than a silently-empty array.
 function getRoles(page: ReturnType<typeof usePage>): string[] {
-    return (page.props.auth as { roles?: string[] })?.roles ?? [];
+    return (page.props.auth as SharedPageProps['auth'])?.role_names ?? [];
 }
 
 /**

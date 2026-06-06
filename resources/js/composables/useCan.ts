@@ -5,7 +5,7 @@ import type { SharedPageProps } from '@/types';
 /**
  * Composable for checking user permissions and roles in templates.
  *
- * Reads from Inertia shared `auth.permissions` and `auth.role`.
+ * Reads from Inertia shared `auth.permissions` and `auth.role_names`.
  *
  * Usage:
  *   const { can, hasRole } = useCan();
