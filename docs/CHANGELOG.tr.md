@@ -2,6 +2,64 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-06 — v13.5.14
+
+### Minor sürüm — Tüm CSS cascade katmanları artık override edilebilir slot
+
+Tema sistemindeki her CSS katmanı artık override edilebilir bir slot'tur. Daha önce `fonts.css`, `_base.scss`, `_auth.scss` ve `utilities.css`, resolver'ın dışında sabit import'lardı; artık `themes/main/` altında yaşıyor ve `scripts/sk-theme-build.mjs` tarafından `tokens`, `layout/*` ve `components/*` ile birlikte doğru cascade sırasında emit ediliyor. **Görsel değişiklik yok** — `VITE_SK_THEME=main` ile varsayılan build v13.5.13 ile byte-identical'dır. Tek fark, `custom` temanın artık `themes/custom/` altına eşleşen bir dosya bırakarak fonts, base reset, auth stilleri ve utility override'ları dahil her katmanı override edebilmesidir.
+
+#### Değişti
+
+- **`themes/main/fonts.css`**, **`themes/main/_base.scss`**, **`themes/main/_auth.scss`**, **`themes/main/utilities.css`** — `resources/css/theme/` kökünden `themes/main/` dizinine taşındı. İçerik değişmedi.
+- **`scripts/sk-theme-build.mjs`** — HEAD slot'ları (`tokens.css`, `fonts.css`, `_base.scss`) ve TAIL slot'ları (`_auth.scss`, `utilities.css`) artık `resolveSlot()` üzerinden çözümleniyor (`layout/*` ve `components/*` için kullanılan override-veya-main fallback ile aynı). Cascade sırası korunur: `tokens → fonts → _base → layout/* → components/* → _auth → utilities`.
+- **`theme/theme.css`** — artık yalnızca `@import './_active.css'` içeriyor; eski sabit `_auth.scss` import'u kaldırıldı.
+- **`app.css`** — eski sabit `utilities.css` tail import'u kaldırıldı; `utilities.css` artık resolver'ın emit ettiği son slot'tur.
+- **`themes/custom/README.md`** — `fonts.css`, `_base.scss`, `_auth.scss` ve `utilities.css` dahil tüm override edilebilir slot'ları listeleyecek şekilde güncellendi.
+
+#### Geçiş
+
+Herhangi bir işlem gerekmez. `sk:update` güncellenmiş dosyaları iletir. Varsayılan build byte-identical'dır. Daha önce sabit olan bir katmanı override etmek için `themes/custom/` altına eşleşen dosyayı bırakın (örn. `themes/custom/fonts.css`). Bkz. `docs/theme.tr.md` — Tam slot referansı.
+
+---
+
+## 2026-06-06 — v13.5.13
+
+### Minor sürüm — AppShell layout kompozisyonu + build-zamanı tema-override sistemi (`themes/main` / `themes/custom`)
+
+v13.5.13, admin panel layout'unu ve CSS'ini yapılandırılmış, override'a hazır bir sisteme yeniden düzenler. **Görsel değişiklik yok** — varsayılan build önceki sürümle byte-identical'dır. Layout kabuğu, yeniden kullanılabilir bir `AppShell.vue` (yapısal omurga, sidebar durumu, adlandırılmış bölgeler) ve standart admin bileşenlerini bağlayan ince bir `AdminLayout.vue` kompozisyonuna bölünür. CSS monoliti (`_admin.scss` ve dağınık `_*.scss` partial'ları) ayrı slot dosyalarından oluşan bir `themes/main/` dizin ağacına dönüştürülür. Yeni opt-in `themes/custom/` dizini ve `scripts/sk-theme-build.mjs` tema resolver'ı, build zamanında slot bazında override'a olanak tanır: `VITE_SK_THEME=custom` ayarlayın, `themes/custom/components/datatable.css` dosyası ekleyin — yalnızca o slot değiştirilir, geri kalanı `main`'e döner. Tam referans ve özel override reçetesi için bkz. `docs/theme.tr.md`.
+
+#### Eklendi
+
+- **`AppShell.vue`** (`resources/js/layouts/AppShell.vue`) — yeniden kullanılabilir yapısal layout kabuğu. `.admin-layout` / `.admin-main` / `.admin-content` iskeletini ve `useSidebar` durumunu sahiplenir (tek sahip). Beş adlandırılmış slot sunar: `#sidebar` (scoped: `collapsed`, `mobileOpen`, `isMobile`, `closeMobile`), `#header` (scoped: `collapsed`, `isMobile`, `toggle`), `default`, `#footer`, `#overlays`.
+- **`themes/main/` CSS ağacı** — `tokens.css` (CSS custom property'leri, aydınlık + karanlık), `layout/{shell,sidebar,header,page-header,footer}.css`, `components/{card,confirm,datatable,dialog,editor,formbuilder,menus,navigation,primevue,tabs,tag,toast}.css`. Değerler kaldırılan partial'larla byte-identical'dır.
+- **`themes/custom/` iskeleti** — tam-değiştirme + fallback modelini açıklayan `README.md` ile birlikte boş override-tema dizini.
+- **`scripts/sk-theme-build.mjs`** — tema resolver'ı. `VITE_SK_THEME`'yi okur (varsayılan `main`); kanonikleri slot listesi için `themes/main/`'i dolaşır; her slot için varsa `themes/<aktif>/<slot>`, yoksa `themes/main/<slot>` emit eder; `theme/_active.css`'i yazar. Override slot'ları çıktıda `/* override */` ile işaretlenir. `dev` ve `build`'e açık `&&` adımı olarak zincirlenir — npm lifecycle hook kullanılmaz — bu nedenle `ignore-scripts=true` altında da doğru çalışır.
+- **`npm run theme:build`** — resolver için bağımsız script alias'ı (`dev` ve `build`'in açık bir adımı olarak da çalışır).
+- **`VITE_SK_THEME=main`** satır içi dokümantasyonuyla `.env.example`'a eklendi.
+- **PrimeVue preset resolver** — `scripts/vite-plugin-sk-theme.mjs` artık `@/theme/preset` import'unu build zamanında yakalar; `resources/js/theme/themes/<aktif>/preset.ts` mevcutsa ona, yoksa taban `resources/js/theme/preset.ts`'e çözümler. Taban dosya yerinde kalır — consumer geçiş adımı gerekmez. `resources/js/theme/themes/custom/` iskeleti boş gelir; varsayılan build önceki sürümle byte-identical'dır.
+- **`docs/theme.md` + `docs/theme.tr.md`** — güncellendi: iki katmanlı genel bakış tablosu (CSS override ve PrimeVue preset), PrimeVue preset katmanı bölümü (dizin düzeni, custom palet reçetesi ve bağımlılık zinciri notu — `tokens.css` `--p-*` değişkenlerini okur).
+
+#### Değişti
+
+- **`AdminLayout.vue`** ince bir `AppShell` kompozisyonuna dönüştürüldü. Dış prop/slot kontratı (`title`, `subtitle`, `backUrl`, `default`, `page-actions`) **değişmedi** — mevcut tüm sayfalar değişiklik gerektirmeden çalışmaya devam eder.
+- **`theme.css`** artık açık bir partial listesi yerine tek bir `_active.css` import eder. Import sırası korunur.
+- **`_base.scss`** yalnızca base/reset kurallarını barındırır; `:root` / `.dark` CSS custom-property blokları `themes/main/tokens.css`'e taşındı.
+
+#### Kaldırıldı
+
+- **`_admin.scss`** — `themes/main/layout/*` ile değiştirildi.
+- **`_datatable.scss`, `_formbuilder.scss`, `_dialog.scss`, `_toast.scss`, `_tag.scss`, `_card.scss`, `_editor.scss`, `_tabs.scss`, `_menus.scss`, `_navigation.scss`, `_confirm.scss`, `_primevue.scss`** — `themes/main/components/*` ile değiştirildi.
+
+#### Düzeltildi
+
+- **Tema resolver'ı artık `ignore-scripts=true` altında da çalışıyor** — resolver doğrudan `dev` ve `build` script'lerine zincirlendi (`node scripts/sk-theme-build.mjs && vite …`). Daha önce `predev` / `prebuild` lifecycle hook'ları olarak çalışıyordu; npm bu hook'ları `ignore-scripts=true` ayarlandığında (consumer projelerde ve CI'da yaygın) sessizce atlıyor, bu da `_active.css`'in oluşturulmamasına ve build'in hard-fail vermesine neden oluyordu. `predev` ve `prebuild` girdileri kaldırıldı.
+
+#### Geçiş
+
+`sk:update` tüm yeni stub'ları iletir. Taşınan dosyalardan hiçbiri özelleştirilmediyse geçiş adımı gerekmez — `npm run build` byte-identical panel üretir. Taşınan bir dosyayı özelleştirdiyseniz, değişikliklerinizi ilgili `themes/main/` slot'una kopyalayın veya izole bir override için `themes/custom/` kullanın. Ayrıntılar için bkz. `docs/UPGRADE.tr.md` (v13.5.12 → v13.5.13).
+
+---
+
 ## 2026-06-04 — v13.5.12
 
 ### Minor sürüm — Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`

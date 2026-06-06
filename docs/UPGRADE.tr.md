@@ -4,6 +4,179 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v13.5.13 → v13.5.14
+
+### Özet
+
+Bu sürüm v13.5.13'te başlayan tema-slot genelleştirmesini tamamlar. Daha önce resolver'ın dışında sabit import olan dört CSS dosyası (`fonts.css`, `_base.scss`, `_auth.scss`, `utilities.css`) artık `themes/main/` altında yaşıyor ve resolver tarafından normal slot'lar gibi emit ediliyor. Cascade sırası değişmedi. **Varsayılan build v13.5.13 ile byte-identical'dır.**
+
+Geçiş adımı gerekmez. Manuel adımlar yalnızca taşınan dosyaları elle düzenlediyseniz gereklidir.
+
+### Taşınan dosyalar
+
+| Kaldırılan | Yerine gelen |
+|---|---|
+| `resources/css/theme/fonts.css` | `themes/main/fonts.css` |
+| `resources/css/theme/_base.scss` | `themes/main/_base.scss` |
+| `resources/css/theme/_auth.scss` | `themes/main/_auth.scss` |
+| `resources/css/theme/utilities.css` | `themes/main/utilities.css` |
+
+### Değişen dosyalar (import temizliği)
+
+| Dosya | Değişiklik |
+|---|---|
+| `theme/theme.css` | Sabit `_auth.scss` import'u kaldırıldı — resolver emit ediyor. Artık yalnızca `@import './_active.css'` içeriyor. |
+| `app.css` | Sabit `utilities.css` tail import'u kaldırıldı — resolver son slot olarak emit ediyor. |
+
+### Yükseltme adımları
+
+**Taşınan dosyalardan hiçbirini özelleştirmediyseniz:**
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm install
+npm run build
+```
+
+`sk:update` yeni dosya düzenini ve güncellenmiş `theme.css` ile `app.css`'i iletir. Build başarılı olmalı ve panel görsel olarak aynı görünmelidir.
+
+**`fonts.css`, `_base.scss`, `_auth.scss` veya `utilities.css`'i özelleştirdiyseniz:**
+
+1. `php artisan sk:update` çalıştırın — taşınan dosyalar için hash farkı raporlanır.
+2. Özelleştirmelerinizi yukarıdaki tabloya göre ilgili `themes/main/` dosyasına kopyalayın.
+3. Değişiklikleriniz temaya özgüyse `themes/custom/` altına almayı düşünün (örn. `themes/custom/fonts.css`). Bkz. `docs/theme.tr.md` — Tam slot referansı.
+4. Doğrulamak için `npm run build` çalıştırın.
+
+### Öksüz kalan dosyalar (silinebilir)
+
+`sk:update` yeni `themes/main/` dosyalarını ekler ama diskte zaten bulunan eski düz-yol kopyalarını silmez. Yükseltmeden sonra şu dört dosya artık hiçbir yerden import edilmez ve ağacı temiz tutmak için silinebilir — yerinde bırakmak zararsızdır (hiçbir şey import etmez):
+
+- `resources/css/theme/fonts.css`
+- `resources/css/theme/_base.scss`
+- `resources/css/theme/_auth.scss`
+- `resources/css/theme/utilities.css`
+
+### Görsel değişiklik yok
+
+`VITE_SK_THEME=main` (varsayılan) ile oluşturulan `_active.css`, v13.5.13 çıktısıyla tamamen aynı CSS kurallarını aynı sırayla import eder. Token değerleri, class adları ve DOM yapısı birebir aynıdır.
+
+---
+
+## v13.5.12 → v13.5.13
+
+### Özet
+
+Bu sürüm admin panel CSS'ini ve layout kabuğunu yeniden düzenler. Görsel çıktı **değişmez** — varsayılan build (`VITE_SK_THEME=main`) önceki sürümle byte-identical'dır. Tüm layout ve bileşen class adları, token değerleri ve DOM yapısı korunur. Değişen yalnızca dosya düzenidir: monolitik bir `_admin.scss` ve dağınık `_*.scss` partial'larındaki stiller artık yapılandırılmış bir `themes/main/` dizin ağacında yaşar; layout kabuğu ise yeniden kullanılabilir bir `AppShell.vue` + ince bir `AdminLayout.vue` kompozisyonuna bölünür.
+
+Yeni opt-in **tema-override sistemi** (`themes/custom/`), herhangi bir CSS slot'unu build zamanında base temaya veya Vue bileşenlerine dokunmadan değiştirmenizi sağlar.
+
+Yalnızca `composer update` ve `npm install` çalıştıran mevcut projeler için geçiş adımı gerekmez. Manuel adımlar yalnızca taşınan dosyaları **elle düzenlediyseniz** gereklidir.
+
+### Taşınan dosyalar (CSS)
+
+| Kaldırılan | Yerine gelen |
+|---|---|
+| `resources/css/theme/_admin.scss` | `themes/main/layout/{shell,sidebar,header,page-header,footer}.css` |
+| `resources/css/theme/_datatable.scss` | `themes/main/components/datatable.css` |
+| `resources/css/theme/_formbuilder.scss` | `themes/main/components/formbuilder.css` |
+| `resources/css/theme/_dialog.scss` | `themes/main/components/dialog.css` |
+| `resources/css/theme/_toast.scss` | `themes/main/components/toast.css` |
+| `resources/css/theme/_tag.scss` | `themes/main/components/tag.css` |
+| `resources/css/theme/_card.scss` | `themes/main/components/card.css` |
+| `resources/css/theme/_editor.scss` | `themes/main/components/editor.css` |
+| `resources/css/theme/_tabs.scss` | `themes/main/components/tabs.css` |
+| `resources/css/theme/_menus.scss` | `themes/main/components/menus.css` |
+| `resources/css/theme/_navigation.scss` | `themes/main/components/navigation.css` |
+| `resources/css/theme/_confirm.scss` | `themes/main/components/confirm.css` |
+| `resources/css/theme/_primevue.scss` | `themes/main/components/primevue.css` |
+| `_base.scss`'teki `:root` / `.dark` blokları | `themes/main/tokens.css` |
+| `theme.css` (açık slot import'ları) | `theme.css` (tek `@import './_active.css'`) |
+
+### Taşınan dosyalar (layout)
+
+`resources/js/layouts/AdminLayout.vue` artık yeni `resources/js/layouts/AppShell.vue` etrafında ince bir kompozisyondur. Dış prop/slot kontratı (`title`, `subtitle`, `backUrl`, `default`, `page-actions`) **birebir aynıdır** — hiçbir sayfanın import'unu veya template'ini değiştirmesi gerekmez.
+
+### Yeni dosyalar
+
+| Dosya | Amaç |
+|---|---|
+| `resources/js/layouts/AppShell.vue` | Yeniden kullanılabilir yapısal kabuk (sidebar durumu, responsive margin'ler, adlandırılmış bölgeler) |
+| `resources/css/theme/themes/main/` | Dahili ana tema (tüm CSS slot'ları için kaynak) |
+| `resources/css/theme/themes/custom/` | Boş CSS override tema iskeleti (bkz. o dizindeki `themes/custom/README.md`) |
+| `scripts/sk-theme-build.mjs` | CSS tema resolver'ı — `_active.css`'i üretir; `dev` ve `build` tarafından açıkça çağrılır |
+| `resources/js/theme/themes/custom/` | Boş PrimeVue preset override iskeleti — `.gitkeep` ve override reçetesini açıklayan `README.md` ile birlikte gelir |
+| `scripts/vite-plugin-sk-theme.mjs` | Vite plugin'i — Vite'ın lifecycle'ı içinde `_active.css`'i üretir ve `@/theme/preset` import'unu build zamanında aktif temanın preset'ine çözümler |
+
+### Üretilen artefakt
+
+`resources/css/theme/_active.css`, `scripts/sk-theme-build.mjs` tarafından üretilir:
+
+- `.gitignore`'da listelenmiştir — asla commit edilmez.
+- Her `npm run dev` ve `npm run build`'de yeniden üretilir — resolver her iki script'e açıkça zincirlenir (npm lifecycle hook kullanılmaz; bu nedenle `ignore-scripts=true` altında da doğru çalışır).
+- `sk:update` tarafından hash-takip edilmez.
+
+### `.env.example` — yeni anahtar
+
+```dotenv
+VITE_SK_THEME=main
+```
+
+Henüz yoksa bu satırı `.env` ve `.env.example` dosyalarınıza ekleyin. Varsayılan `main`'dir; değişkeni atlamak aynı etkiyi verir.
+
+### `package.json` — resolver `dev` ve `build`'e zincirlendi
+
+Resolver'ın açıkça zincirin bir parçası olarak çalışması için `dev`, `build` ve `theme:build` script'leri güncellendi:
+
+```json
+"theme:build": "node scripts/sk-theme-build.mjs",
+"dev": "node scripts/sk-theme-build.mjs && vite",
+"build": "node scripts/sk-theme-build.mjs && vite build && vite build --ssr",
+```
+
+Kendi `package.json`'ınızı yönetiyorsanız `dev` ve `build`'i bu kalıba göre güncelleyin. Resolver açık bir `&&` adımı olmalıdır — **`predev` / `prebuild` lifecycle hook'larını kullanmayın**; npm, `ignore-scripts=true` ayarı aktifken bu hook'ları sessizce atlar (consumer projelerinde ve CI'da yaygın bir güvenlik ayarı), bu da `_active.css`'in oluşturulmamasına ve build'in başarısız olmasına neden olur. `npm run theme:build` ise tam build yapmadan dosyayı isteğe bağlı oluşturmak için kullanılabilir.
+
+### Yükseltme adımları
+
+**Taşınan dosyalardan hiçbirini özelleştirmediyseniz:**
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm install
+npm run build
+```
+
+`sk:update` yeni stub'ları (yeni layout dosyaları, CSS ağacı, resolver script, `.env.example` güncellemesi, `package.json` hook'ları) iletir. Build başarılı olmalı ve panel görsel olarak aynı görünmelidir.
+
+**`_admin.scss` veya herhangi bir `_*.scss` partial'ını özelleştirdiyseniz:**
+
+1. `php artisan sk:update` çalıştırın — taşınan dosyalar için hash farkı raporlanır.
+2. Özelleştirmelerinizi yukarıdaki tabloya göre ilgili `themes/main/` dosyasına kopyalayın.
+3. Değişiklikleriniz kapsamlıysa `themes/custom/`'a almayı düşünün (bkz. `docs/theme.tr.md` — özel tema reçetesi).
+4. Doğrulamak için `npm run build` çalıştırın.
+
+**`AdminLayout.vue`'yu özelleştirdiyseniz:**
+
+`sk:update` hash farkı raporlar. Yeni dosya `AppShell` etrafında ince bir kompozisyondur. Özelleştirmelerinizi yeni sürüme uygulayın — dış kontrat (prop'lar, slot'lar) değişmediğinden sayfa düzeyindeki template'lerin düzenlenmesi gerekmez.
+
+### PrimeVue preset — geçiş adımı gerekmez
+
+PrimeVue preset resolver tamamen eklemeli ve geriye dönük uyumludur:
+
+- `resources/js/theme/preset.ts` **yerinde kalır** — kit onu asla taşımaz.
+- `app.ts`, `@/theme/preset`'i değişiklik olmadan import etmeye devam eder.
+- `VITE_SK_THEME=main` (veya değişken tanımlı değilse), build `@/theme/preset`'i taban `preset.ts`'e çözümler — önceki sürümle byte-identical davranış.
+- `themes/custom/preset.ts` override'ı yalnızca `VITE_SK_THEME=custom` **ve** dosyayı oluşturduğunuzda devreye girer. Dosya yoksa tabana düşer.
+
+`preset.ts`'i özelleştirmiş mevcut consumer'lar özelleştirilmiş dosyalarını kullanmaya devam eder. Resolver buna müdahale etmez. Custom temaya kendi PrimeVue paletini vermek için bkz. `docs/theme.tr.md` — PrimeVue preset katmanı.
+
+### Görsel değişiklik yok
+
+Bu yeniden düzenleme yalnızca yapısaldır. `VITE_SK_THEME=main` (varsayılan) ile üretilen `_active.css`, önceki `theme.css` manifestiyle birebir aynı CSS kurallarını aynı sırayla import eder. Token değerleri (aydınlık ve karanlık), class adları ve DOM yapısı aynıdır.
+
+---
+
 ## v13.5.3 → v13.5.12
 
 ### Özet

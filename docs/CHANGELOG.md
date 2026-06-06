@@ -2,6 +2,64 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-06 — v13.5.14
+
+### Minor release — All CSS cascade layers are now override slots
+
+Every CSS layer in the theme system is now an overridable slot. Previously `fonts.css`, `_base.scss`, `_auth.scss`, and `utilities.css` were fixed imports outside the resolver; they now live under `themes/main/` and are emitted by `scripts/sk-theme-build.mjs` in the correct cascade order alongside `tokens`, `layout/*`, and `components/*`. **No visual change** — the default build with `VITE_SK_THEME=main` is byte-identical to v13.5.13. The only difference is that a `custom` theme can now override any layer, including fonts, base reset, auth styles, and utility overrides, by placing a matching file under `themes/custom/`.
+
+#### Changed
+
+- **`themes/main/fonts.css`**, **`themes/main/_base.scss`**, **`themes/main/_auth.scss`**, **`themes/main/utilities.css`** — moved from `resources/css/theme/` root into `themes/main/`. Content unchanged.
+- **`scripts/sk-theme-build.mjs`** — HEAD slots (`tokens.css`, `fonts.css`, `_base.scss`) and TAIL slots (`_auth.scss`, `utilities.css`) are now resolved through `resolveSlot()` (same override-or-main fallback used by `layout/*` and `components/*`). The cascade order is preserved: `tokens → fonts → _base → layout/* → components/* → _auth → utilities`.
+- **`theme/theme.css`** — now contains only `@import './_active.css'`; the former fixed `_auth.scss` import is gone.
+- **`app.css`** — the former fixed `utilities.css` tail import is gone; `utilities.css` is now the last slot emitted by the resolver.
+- **`themes/custom/README.md`** — updated to list all overridable slots including `fonts.css`, `_base.scss`, `_auth.scss`, and `utilities.css`.
+
+#### Migration
+
+No action required. `sk:update` delivers the updated files. The default build is byte-identical. To override a previously fixed layer, place the matching file under `themes/custom/` (e.g. `themes/custom/fonts.css`). See `docs/theme.md` — Complete slot reference.
+
+---
+
+## 2026-06-06 — v13.5.13
+
+### Minor release — AppShell layout composition + build-time theme-override system (`themes/main` / `themes/custom`)
+
+v13.5.13 reorganises the admin-panel layout and CSS into a structured, override-ready system. **No visual change** — the default build is byte-identical to the previous version. The layout shell is split into a reusable `AppShell.vue` (structural backbone, sidebar state, named regions) and a thin `AdminLayout.vue` composition that wires in the standard admin components. The CSS monolith (`_admin.scss` + scattered `_*.scss` partials) is dissolved into a `themes/main/` directory tree of individual slot files. A new opt-in `themes/custom/` directory and `scripts/sk-theme-build.mjs` theme resolver enable per-slot overrides at build time: set `VITE_SK_THEME=custom`, place a file in `themes/custom/components/datatable.css`, and only that slot is replaced — everything else falls back to `main`. See `docs/theme.md` for the full reference and custom-override recipe.
+
+#### Added
+
+- **`AppShell.vue`** (`resources/js/layouts/AppShell.vue`) — reusable structural layout shell. Owns the `.admin-layout` / `.admin-main` / `.admin-content` skeleton and `useSidebar` state (single owner). Exposes five named slots: `#sidebar` (scoped: `collapsed`, `mobileOpen`, `isMobile`, `closeMobile`), `#header` (scoped: `collapsed`, `isMobile`, `toggle`), `default`, `#footer`, `#overlays`.
+- **`themes/main/` CSS tree** — `tokens.css` (CSS custom properties, light + dark), `layout/{shell,sidebar,header,page-header,footer}.css`, `components/{card,confirm,datatable,dialog,editor,formbuilder,menus,navigation,primevue,tabs,tag,toast}.css`. Values are byte-identical to the removed partials.
+- **`themes/custom/` skeleton** — empty override-theme directory with a `README.md` explaining the full-replacement + fallback model.
+- **`scripts/sk-theme-build.mjs`** — theme resolver. Reads `VITE_SK_THEME` (default `main`); walks `themes/main/` for the canonical slot list; for each slot emits `themes/<active>/<slot>` if it exists, else `themes/main/<slot>`; writes `theme/_active.css`. Override slots are annotated `/* override */` in the output. Invoked as an explicit `&&` step in `dev` and `build` — not via npm lifecycle hooks — so it works correctly under `ignore-scripts=true`.
+- **`npm run theme:build`** — standalone script alias for the resolver (also runs as an explicit step in `dev` and `build`).
+- **`VITE_SK_THEME=main`** added to `.env.example` with inline documentation.
+- **PrimeVue preset resolver** — `scripts/vite-plugin-sk-theme.mjs` now intercepts the `@/theme/preset` import at build time and resolves it to `resources/js/theme/themes/<active>/preset.ts` when that file exists, otherwise falls back to the base `resources/js/theme/preset.ts`. The base file stays in place — no consumer migration required. The `resources/js/theme/themes/custom/` skeleton ships empty so the default build is byte-identical to the previous version.
+- **`docs/theme.md` + `docs/theme.tr.md`** — updated: two-layer overview table (CSS override vs PrimeVue preset), PrimeVue preset layer section with directory layout, custom-palette recipe, and dependency-chain note (`tokens.css` reads `--p-*` variables).
+
+#### Changed
+
+- **`AdminLayout.vue`** refactored into a thin `AppShell` composition. External prop/slot contract (`title`, `subtitle`, `backUrl`, `default`, `page-actions`) is **unchanged** — all existing pages continue to work without modification.
+- **`theme.css`** now imports a single `_active.css` instead of an explicit list of partials. Import order is preserved.
+- **`_base.scss`** retains only base/reset rules; the `:root` / `.dark` CSS custom-property blocks moved to `themes/main/tokens.css`.
+
+#### Removed
+
+- **`_admin.scss`** — replaced by `themes/main/layout/*`.
+- **`_datatable.scss`, `_formbuilder.scss`, `_dialog.scss`, `_toast.scss`, `_tag.scss`, `_card.scss`, `_editor.scss`, `_tabs.scss`, `_menus.scss`, `_navigation.scss`, `_confirm.scss`, `_primevue.scss`** — replaced by `themes/main/components/*`.
+
+#### Fixed
+
+- **Theme resolver now works under `ignore-scripts=true`** — the resolver is chained directly into the `dev` and `build` scripts (`node scripts/sk-theme-build.mjs && vite …`). Previously it ran as `predev` / `prebuild` lifecycle hooks, which npm silently skips when `ignore-scripts=true` is set (common in consumer projects and CI), causing `_active.css` to be absent and the build to hard-fail. The `predev` and `prebuild` entries have been removed.
+
+#### Migration
+
+`sk:update` delivers all new stubs. No migration required if no moved file was customised — `npm run build` produces a byte-identical panel. If you customised a moved file, copy your changes into the corresponding `themes/main/` slot or use `themes/custom/` for an isolated override. See `docs/UPGRADE.md` (v13.5.12 → v13.5.13) for details.
+
+---
+
 ## 2026-06-04 — v13.5.12
 
 ### Minor release — Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
