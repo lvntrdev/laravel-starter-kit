@@ -101,7 +101,7 @@ Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir. Her ikisi de aynı
 | Katman | Ne kapsar | Resolver | Artefakt |
 |---|---|---|---|
 | **CSS tema override'ı** | Layout ölçüleri, renkler, gölgeler, bileşen CSS sınıfları | `scripts/sk-theme-build.mjs`, `_active.css`'i üretir | Üretilen dosya (`_active.css`), gitignore'da |
-| **PrimeVue preset** | Birincil palet, yüzey renkleri, border radius, bileşen token'ları (`--p-*` değişkenleri) | `scripts/vite-plugin-sk-theme.mjs`'teki `resolveId` hook'u | Yok — saf JS modül çözümlemesi |
+| **PrimeVue preset** | Birincil palet, yüzey renkleri, border radius, bileşen token'ları (`--p-*` değişkenleri) | `vite.config.ts`'teki alias `customResolver`'ı (`resolveActivePreset`) | Yok — saf JS modül çözümlemesi |
 
 İki katman birbirinden bağımsızdır: preset'e dokunmadan CSS'i override edebilir, ya da tersi. Bir `tokens.css` override'ı genellikle preset'in emit ettiği `--p-*` token'larını okur — aşağıdaki [Bağımlılık zinciri](#bağımlılık-zinciri--tokenlar-ve-preset) bölümüne bakın.
 
@@ -318,7 +318,7 @@ cp resources/css/theme/themes/main/_auth.scss \
 
 `resources/js/theme/preset.ts`, PrimeVue styled-mode preset'in tabanıdır — birincil palet, yüzey renkleri, border radius ve bileşen başına token'ları tanımlar. `app.ts` bunu `@/theme/preset` olarak import eder. Import yolu hiçbir zaman değişmez.
 
-`scripts/vite-plugin-sk-theme.mjs`'teki `resolveId` hook'u, `@/theme/preset` specifier'ını build zamanında yakalar:
+`vite.config.ts`'teki alias `customResolver` — `scripts/vite-plugin-sk-theme.mjs`'ten export edilen `resolveActivePreset` helper'ı — `@/theme/preset` specifier'ını build zamanında yakalar:
 
 - `VITE_SK_THEME` değeri `main` **değilse** ve `resources/js/theme/themes/<aktif>/preset.ts` **mevcutsa** → override dosyasına çözümlenir.
 - Aksi takdirde → taban `resources/js/theme/preset.ts`'e çözümlenir.

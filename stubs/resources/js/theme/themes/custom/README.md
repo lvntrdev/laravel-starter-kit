@@ -14,13 +14,14 @@ This is the JS-preset counterpart to the per-slot CSS override under
    build-time `_active.css` (handled by `scripts/sk-theme-build.mjs`).
 2. **PrimeVue preset** — base `resources/js/theme/preset.ts` + optional override
    `resources/js/theme/themes/<name>/preset.ts` → resolved at build time by the
-   `resolveId` hook in `scripts/vite-plugin-sk-theme.mjs`.
+   alias `customResolver` in `vite.config.ts` (the `resolveActivePreset` helper
+   exported from `scripts/vite-plugin-sk-theme.mjs`).
 
 ## How it works (base in place + per-theme override)
 
 The base preset stays where it is (`resources/js/theme/preset.ts`) — it is the
 file you most often customize for your brand color, so the kit never moves it.
-The Vite plugin intercepts the `@/theme/preset` import at build time and:
+The alias resolver in `vite.config.ts` intercepts the `@/theme/preset` import at build time and:
 
 - if `VITE_SK_THEME` is not `main` **and** `themes/<active>/preset.ts` exists →
   resolves to that override,

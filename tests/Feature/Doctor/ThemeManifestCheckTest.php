@@ -19,11 +19,11 @@ use Lvntr\StarterKit\Console\Doctor\DoctorStatus;
  * ThemeManifestCheck'in base_path() bağımlılığını test edilebilir bir
  * tema dizini ile değiştiren alt sınıf.
  */
-function makeThemeManifestCheck(string $themeDir): ThemeManifestCheck
+function makeThemeManifestCheck(string $themeDir, ?string $expectedTheme = null): ThemeManifestCheck
 {
-    return new class($themeDir) extends ThemeManifestCheck
+    return new class($themeDir, $expectedTheme) extends ThemeManifestCheck
     {
-        public function __construct(private string $themeDir) {}
+        public function __construct(private string $themeDir, private ?string $expectedTheme) {}
 
         public function run(): DoctorReport
         {
@@ -46,10 +46,10 @@ function makeThemeManifestCheck(string $themeDir): ThemeManifestCheck
                 );
             }
 
-            return DoctorReport::ok(
-                $this->name(),
-                'Theme manifest present (resources/css/theme/_active.css).'
-            );
+            // İçerik denetimi üretim sınıfıyla AYNI protected metod üzerinden —
+            // mantık burada kopyalanmaz (yalnızca base_path() yerine inject edilen
+            // themeDir kullanılır). VITE_SK_THEME de env() yerine inject edilir.
+            return $this->inspectManifest($activeManifestPath, $this->expectedTheme);
         }
     };
 }
@@ -86,6 +86,69 @@ test('theme.css _active.css import ediyor ve _active.css varsa ok döner', funct
 
     expect($report->status)->toBe(DoctorStatus::Ok)
         ->and($report->message)->toContain('present');
+
+    unlink($dir.'/theme.css');
+    unlink($dir.'/_active.css');
+    rmdir($dir);
+});
+
+test('_active.css tema kökü dışına çıkan (../) import içeriyorsa warn döner', function () {
+    $dir = makeThemeDir();
+    file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
+    // Traversal artefaktı: tema dizininden çıkan bir @import.
+    file_put_contents($dir.'/_active.css', "@import './../../../outside/tokens.css';\n");
+
+    $report = makeThemeManifestCheck($dir)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->message)->toContain('escapes the theme directory');
+
+    unlink($dir.'/theme.css');
+    unlink($dir.'/_active.css');
+    rmdir($dir);
+});
+
+test('_active.css header teması VITE_SK_THEME ile uyuşmazsa warn döner (stale)', function () {
+    $dir = makeThemeDir();
+    file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: main (VITE_SK_THEME).\n@import './themes/main/tokens.css';\n");
+
+    // env'de custom aktif ama manifest main için üretilmiş → stale.
+    $report = makeThemeManifestCheck($dir, 'custom')->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->message)->toContain('built for "main"')
+        ->and($report->message)->toContain('"custom"');
+
+    unlink($dir.'/theme.css');
+    unlink($dir.'/_active.css');
+    rmdir($dir);
+});
+
+test('_active.css header teması VITE_SK_THEME ile eşleşirse ok (consistent) döner', function () {
+    $dir = makeThemeDir();
+    file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './themes/custom/tokens.css';\n");
+
+    $report = makeThemeManifestCheck($dir, 'custom')->run();
+
+    expect($report->status)->toBe(DoctorStatus::Ok)
+        ->and($report->message)->toContain('consistent');
+
+    unlink($dir.'/theme.css');
+    unlink($dir.'/_active.css');
+    rmdir($dir);
+});
+
+test('VITE_SK_THEME okunamıyorsa (null) header eşleşmesi atlanır — yanlış pozitif yok', function () {
+    $dir = makeThemeDir();
+    file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './themes/custom/tokens.css';\n");
+
+    // expectedTheme null (env okunamadı / config cache) → karşılaştırma yapılmaz.
+    $report = makeThemeManifestCheck($dir, null)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Ok);
 
     unlink($dir.'/theme.css');
     unlink($dir.'/_active.css');

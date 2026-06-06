@@ -70,6 +70,37 @@ function collectSlots(dir) {
 }
 
 /**
+ * Resolve and validate the active theme name from an explicit value, then
+ * `VITE_SK_THEME`, then the `main` default.
+ *
+ * The result is used verbatim as a path segment under `themes/` (both for the
+ * CSS slots here and the PrimeVue preset in vite-plugin-sk-theme.mjs), so it
+ * MUST NOT be able to escape that directory. We accept only a conservative slug
+ * — letters, digits, `-`, `_` — which structurally cannot contain `/`, `\`,
+ * `.`, a null byte, or whitespace, so `../`-style traversal is impossible by
+ * construction (no separate "is it still under root?" assert is needed — the
+ * allowlist already makes an escaping segment unrepresentable).
+ *
+ * An invalid name THROWS rather than silently falling back to `main`: a
+ * mistyped `VITE_SK_THEME` should be a loud build error, not a confusing
+ * zero-override "stock" build that looks like the theme simply did nothing.
+ *
+ * @param {string} [theme] Explicit theme name. Defaults to
+ *   `process.env.VITE_SK_THEME`, then `main`.
+ * @returns {string} the validated theme name.
+ */
+export function resolveThemeName(theme) {
+    const name = (theme ?? process.env.VITE_SK_THEME ?? 'main').trim() || 'main';
+    if (!/^[A-Za-z0-9_-]+$/.test(name)) {
+        throw new Error(
+            `[sk-theme-build] invalid VITE_SK_THEME "${name}": only letters, digits, "-" and "_" are allowed ` +
+                '(no path separators, dots or spaces).',
+        );
+    }
+    return name;
+}
+
+/**
  * Resolve the active theme and write `resources/css/theme/_active.css`.
  *
  * @param {object} [options]
@@ -86,7 +117,7 @@ export function buildActiveTheme({ root, theme } = {}) {
     const themesDir = join(themeDir, 'themes');
     const mainDir = join(themesDir, 'main');
 
-    const activeTheme = (theme ?? process.env.VITE_SK_THEME ?? 'main').trim() || 'main';
+    const activeTheme = resolveThemeName(theme);
     const activeDir = join(themesDir, activeTheme);
 
     if (!existsSync(mainDir)) {

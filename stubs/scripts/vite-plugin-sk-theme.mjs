@@ -29,7 +29,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildActiveTheme } from './sk-theme-build.mjs';
+import { buildActiveTheme, resolveThemeName } from './sk-theme-build.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -56,7 +56,7 @@ export function resolveActivePreset({ root, theme } = {}) {
     const themeDir = join(projectRoot, 'resources', 'js', 'theme');
     const basePreset = join(themeDir, 'preset.ts');
 
-    const activeTheme = (theme ?? process.env.VITE_SK_THEME ?? 'main').trim() || 'main';
+    const activeTheme = resolveThemeName(theme);
     if (activeTheme !== 'main') {
         const override = join(themeDir, 'themes', activeTheme, 'preset.ts');
         if (existsSync(override)) {

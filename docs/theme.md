@@ -101,7 +101,7 @@ The theme system has two independent, complementary layers. Both are keyed off t
 | Layer | What it covers | Resolver | Artifact |
 |---|---|---|---|
 | **CSS theme override** | Layout dimensions, colours, shadows, component CSS classes | `scripts/sk-theme-build.mjs` writes `_active.css` | Generated file (`_active.css`), gitignored |
-| **PrimeVue preset** | Primary palette, surface colours, border radius, component tokens (`--p-*` variables) | `resolveId` hook in `scripts/vite-plugin-sk-theme.mjs` | None — pure JS module resolution |
+| **PrimeVue preset** | Primary palette, surface colours, border radius, component tokens (`--p-*` variables) | alias `customResolver` in `vite.config.ts` (`resolveActivePreset`) | None — pure JS module resolution |
 
 The two layers are independent: you can override the CSS without touching the preset and vice versa. A `tokens.css` override typically reads the `--p-*` tokens the preset emits — see [Dependency chain](#dependency-chain-tokens-and-preset) below.
 
@@ -318,7 +318,7 @@ Edit `themes/custom/_auth.scss`. The `.scss` extension is required — the resol
 
 `resources/js/theme/preset.ts` is the base PrimeVue styled-mode preset — it defines the primary palette, surface colours, border radius, and per-component tokens. `app.ts` imports it as `@/theme/preset`. The import path never changes.
 
-The `resolveId` hook in `scripts/vite-plugin-sk-theme.mjs` intercepts the `@/theme/preset` specifier at build time:
+The alias `customResolver` in `vite.config.ts` — the `resolveActivePreset` helper exported from `scripts/vite-plugin-sk-theme.mjs` — intercepts the `@/theme/preset` specifier at build time:
 
 - If `VITE_SK_THEME` is not `main` **and** `resources/js/theme/themes/<active>/preset.ts` exists → resolves to that override file.
 - Otherwise → resolves to the base `resources/js/theme/preset.ts`.
