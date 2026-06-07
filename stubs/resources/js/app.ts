@@ -45,8 +45,12 @@ createInertiaApp({
         //      + tuketicinin ekledigi/ezdigi her `sk-*` anahtari).
         // Iki eager glob — SSR'da sync resolve sart, client'ta Promise.resolve ile sarmalanir.
         // lang JSON'lari kucuk oldugu icin tek bundle'a almak maliyetsiz.
-        const appLangs = import.meta.glob<Record<string, string>>('../../lang/*.json', { eager: true });
-        const vendorLangs = import.meta.glob<Record<string, string>>('@lvntr/lang/*.json', { eager: true });
+        // `import: 'default'` SART: aksi halde eager glob degeri JSON modul namespace'i olur
+        // ({ default: { ...ceviriler } }) ve iki modulu spread etmek ({ ...vendorModul, ...appModul })
+        // yalnizca distaki `default` anahtarini ezerek TUM vendor cevirilerini dusurur — o zaman her
+        // `sk-*` anahtari literal kalir. `import: 'default'` ile degerler DUZ ceviri objesidir.
+        const appLangs = import.meta.glob<Record<string, string>>('../../lang/*.json', { eager: true, import: 'default' });
+        const vendorLangs = import.meta.glob<Record<string, string>>('@lvntr/lang/*.json', { eager: true, import: 'default' });
         const resolveLang = (lang: string): Record<string, string> => {
             const vendor = vendorLangs[`/vendor/lvntr/laravel-starter-kit/resources/js/lang/php_${lang}.json`] ?? {};
             const appLang = appLangs[`../../lang/php_${lang}.json`] ?? {};
@@ -54,7 +58,10 @@ createInertiaApp({
             return { ...vendor, ...appLang };
         };
         app.use(i18nVue, {
-            resolve: ssr ? resolveLang : (lang: string) => Promise.resolve(resolveLang(lang)),
+            // laravel-vue-i18n resolve donusunun .default'unu acar (avoidExceptionOnPromise),
+            // bu yuzden client'ta { default: ... } ile sarmaliyoruz. SSR sync yolu duz objeyi
+            // dogrudan kullandigi icin resolveLang ciktisini oylece veriyoruz.
+            resolve: ssr ? resolveLang : (lang: string) => Promise.resolve({ default: resolveLang(lang) }),
         })
             .use(PrimeVue, {
                 theme: {
