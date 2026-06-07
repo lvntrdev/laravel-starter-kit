@@ -21,6 +21,7 @@ use PhpParser\PrettyPrinter;
 use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -296,6 +297,17 @@ class InstallCommand extends Command
             $this->step('Creating Passport personal access client', function () {
                 $this->callSilently('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
             });
+
+            // ROOT CAUSE FIX: passport:client is invoked with --no-interaction,
+            // whose configurePrompts() flips the GLOBAL static
+            // Laravel\Prompts\Prompt::$interactive to false. Laravel's
+            // restorePrompts() only restores the output stream, NOT that flag, so
+            // it leaks into every later step — the "Create admin user?" /
+            // "Install npm?" confirms would silently auto-accept their default
+            // (never asking the operator) and the required admin-detail prompts
+            // would throw NonInteractiveValidationException. Re-assert this
+            // command's own prompt interactivity before any further prompting.
+            $this->configurePrompts($this->input);
         }
 
         // 11. Create admin user
@@ -307,6 +319,14 @@ class InstallCommand extends Command
         if ($this->confirmStep('Install npm dependencies and build assets?')) {
             $this->installFrontend();
         }
+
+        // 12b. Finalize the application key as the last setup action. ensureAppKey
+        // is guarded — it generates APP_KEY only when the .env value is blank, so
+        // an existing key (e.g. on re-install) is preserved and already-encrypted
+        // data / sessions stay decryptable.
+        $this->step('Finalizing application key', function () {
+            $this->ensureAppKey(base_path('.env'));
+        });
 
         // 13. Save stub hashes for update tracking
         $this->saveStubHashes();
@@ -1088,27 +1108,84 @@ class InstallCommand extends Command
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Create the default admin user.
+     * Whether this session may prompt the operator for input.
+     *
+     * Mirrors the exact condition Laravel uses to enable laravel/prompts
+     * (Illuminate\Console\Concerns\ConfiguresPrompts): an interactive input AND
+     * a real TTY on STDIN (or a unit-test run). A genuinely TTY-less session
+     * (--no-interaction, real CI, piped stdin) must fall back to defaults rather
+     * than fire a required prompt that would throw NonInteractiveValidationException.
+     */
+    private function canPrompt(): bool
+    {
+        if ($this->option('no-interaction')) {
+            return false;
+        }
+
+        return ($this->input->isInteractive() && defined('STDIN') && stream_isatty(STDIN))
+            || $this->getLaravel()->runningUnitTests();
+    }
+
+    /**
+     * Create the admin user.
+     *
+     * When the session can actually prompt (interactive TTY), every field
+     * (first/last name, email, password) is required and prompted with NO
+     * pre-filled default — the password is masked and confirmed by re-entry.
+     * When it cannot prompt (--no-interaction, or any TTY-less session such as
+     * CI / Herd / piped stdin / site:install automation), there is no human to
+     * prompt, so the documented fallback credentials are used so the flow still
+     * produces a working admin instead of crashing on a required prompt.
      */
     private function createAdminUser(): void
     {
+        $firstName = 'Admin';
+        $lastName = 'User';
         $email = 'admin@lvntr.dev';
         $password = 'password';
+        $usedDefaults = true;
 
-        if (! $this->option('no-interaction')) {
-            $email = text('Admin email:', default: $email, required: true);
-            $password = text('Admin password:', default: $password, required: true);
+        if ($this->canPrompt()) {
+            $usedDefaults = false;
+
+            $firstName = text('Admin first name:', required: true);
+            $lastName = text('Admin last name:', required: true);
+
+            $email = text(
+                label: 'Admin email:',
+                required: true,
+                validate: fn (string $value): ?string => filter_var($value, FILTER_VALIDATE_EMAIL)
+                    ? null
+                    : 'Geçerli bir e-posta adresi girin.',
+            );
+
+            $password = password(
+                label: 'Admin password:',
+                required: true,
+                validate: fn (string $value): ?string => strlen($value) >= 8
+                    ? null
+                    : 'Şifre en az 8 karakter olmalı.',
+            );
+
+            // Re-entry only validates against $password; the value itself is discarded.
+            password(
+                label: 'Confirm admin password:',
+                required: true,
+                validate: fn (string $value): ?string => $value === $password
+                    ? null
+                    : 'Şifreler eşleşmiyor.',
+            );
         }
 
         // Use DB::table directly because the User model loaded in memory
         // is the default Laravel model, not the published stub model.
-        $this->step("Creating admin user ({$email})", function () use ($email, $password) {
+        $this->step("Creating admin user ({$email})", function () use ($firstName, $lastName, $email, $password) {
             $id = (string) Str::uuid();
 
             DB::table('users')->insert([
                 'id' => $id,
-                'first_name' => 'Admin',
-                'last_name' => 'User',
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'email' => $email,
                 'password' => Hash::make($password),
                 'status' => 'active',
@@ -1132,7 +1209,14 @@ class InstallCommand extends Command
 
         $this->newLine();
         $this->components->twoColumnDetail('<fg=green>Admin Email</>', $email);
-        $this->components->twoColumnDetail('<fg=green>Admin Password</>', $password);
+
+        // Never echo a password the operator typed into their terminal. Only the
+        // documented --no-interaction fallback password is surfaced, because
+        // automation has no other way to learn the generated credentials.
+        $this->components->twoColumnDetail(
+            '<fg=green>Admin Password</>',
+            $usedDefaults ? $password : '<fg=gray>(girdiğiniz şifre)</>',
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════
