@@ -36,3 +36,6 @@ uses(TestCase::class)->in('Feature/Bulk');
 
 // Generator testleri: DB gerektirmiyor, basit TestCase yeterli
 uses(TestCase::class)->in('Feature/Generator');
+
+// Eject testleri: --destination ile temp dizine yazar, DB gerektirmiyor
+uses(TestCase::class)->in('Feature/Eject');

@@ -11,6 +11,7 @@ Bu döküman starter kit için komut referansıdır. DDD ile ilgili mimari notla
 | `php artisan sk:update`                   | Kurulu kit dosyalarını güvenli şekilde günceller                 |
 | `php artisan sk:upgrade`                  | Eski starter-kit/Laravel ana sürümünü güncel hatta yükseltir     |
 | `php artisan sk:publish`                  | İsteğe bağlı bileşenleri, dil dosyalarını veya config'i yayınlar |
+| `php artisan sk:eject`                    | Vendor'da çalışan bir domain'i tam özelleştirme için uygulamaya çıkarır |
 | `php artisan make:sk-domain`              | Yeni bir domain iskeleti üretir                                  |
 | `php artisan remove:sk-domain`            | Üretilmiş bir domain'i kaldırır                                  |
 | `php artisan env:sync`                    | `.env` anahtarlarını `.env.example` içine senkronize eder        |
@@ -95,6 +96,68 @@ php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```
+
+## `sk:eject`
+
+Runtime'ı vendor paketinden çalışan bir domain'i tamamen özelleştirmek istediğinizde kullanılır. Eject, domain'in backend sınıflarını `app/Domain/{Name}/` altına kopyalar, namespace'lerini `App\Domain\{Name}\` olarak yeniden yazar, domain'e ait Vue sayfalarını tazeler ve event/listener binding'lerini `app/Providers/DomainServiceProvider.php` dosyasına ekleyerek audit log'un kesintisiz çalışmasını sağlar. Önce `--dry-run` ile neyin değişeceğini önizleyin.
+
+```bash
+php artisan sk:eject User
+php artisan sk:eject User --dry-run
+php artisan sk:eject User --force
+php artisan sk:eject User --no-vue
+php artisan sk:eject Role --destination=/tmp/eject-preview
+```
+
+- `--dry-run` dosya yazmadan kopyalama/yeniden yazma/enjeksiyon planını ekranda gösterir. Her zaman önce bunu çalıştırın.
+- `--force` zaten var olan dosyaların üzerine yazar — hem backend `app/Domain/{Name}/` ağacı hem de domain'in Vue sayfaları. **`--force` olmadan eject hiçbir mevcut dosyayı ezmez:** zaten var olan bir `app/Domain/{Name}/` komutu erken sonlandırır ve zaten var olan her Vue sayfası olduğu gibi bırakılıp korunan olarak raporlanır — yalnızca eksik sayfalar yazılır. Bu, `sk:install` ile gelen sayfalarda yaptığınız düzenlemeleri korur.
+- `--no-vue` domain'e ait Vue sayfalarını tazelemez; yalnızca backend sınıfları eject edilir.
+- `--destination=<yol>` çıktıyı uygulama köküne yazmak yerine belirtilen dizine yönlendirir. İzole test amacıyla kullanılır.
+
+> **Çıkış kodu:** Composer'ın autoload yenilemesi başarısız olursa (örn. `composer` yok ya da hata verir), komut hatayı yazar ve dosyalar kopyalanmış olsa bile **sıfırdan farklı kod ile çıkar** — böylece CI ve scriptler bozuk autoload'ı başarılı eject sanmaz. Elle `composer dump-autoload` çalıştırıp tekrar doğrulayın.
+
+### Eject edilebilir domain'ler
+
+Dokuz domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama sahipli olduğundan eject gerektirmez.
+
+| Domain        | Backend sınıflar | Vue sayfaları | Enjekte edilen event binding'ler    |
+| ------------- | ---------------- | ------------- | ----------------------------------- |
+| `User`        | evet             | evet          | 3 (Created/Updated/Deleted)         |
+| `Role`        | evet             | evet          | 3 (Created/Updated/Deleted)         |
+| `Setting`     | evet             | evet          | —                                   |
+| `Logs`        | evet             | evet          | 1 (FilesDeleted)                    |
+| `ActivityLog` | evet             | evet          | —                                   |
+| `ApiClient`   | evet             | —             | —                                   |
+| `ApiRoute`    | evet             | evet          | —                                   |
+| `Session`     | evet             | —             | —                                   |
+| `Media`       | evet             | —             | —                                   |
+
+**Auth, Helper'lar ve FileManager neden eject edilemiyor:** Auth ekranları zaten %100 uygulama sahipli — `sk:update` onları güncel tutar, eject gerekmez. `sk-helpers.php` global helper'ları tek bir override edilebilir dosya olarak gelir; ihtiyaç duyulmayan kısımlar silinir. FileManager'ın kendi facade ve route-registry altyapısı vardır; ayrı ele alınır.
+
+### Namespace yeniden yazımının kapsamı
+
+Yalnızca eject edilen domain'in kendi namespace'i yeniden yazılır. Diğer tüm vendor referansları olduğu gibi kalır:
+
+- `Lvntr\StarterKit\Domain\User\Actions\CreateUserAction` → `App\Domain\User\Actions\CreateUserAction`
+- `use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;` — **değişmez** (`Shared` base sınıfları vendor'da kalır)
+- `Lvntr\StarterKit\Http\Responses\ApiResponse` — **değişmez**
+- Eject edilmeyen diğer domain'ler — **değişmez**
+
+### Güncelleme-kaybı takası
+
+> **Uyarı:** Bir domain'i eject ettikten sonra, o domain'in vendor runtime'ını etkileyen güvenlik veya hata düzeltmelerini içeren `composer update` sürümleri kendi kopyanıza uygulanmaz. Dosyalar size ait olur — upstream değişikliklerini kendiniz uygulamanız gerekir.
+
+`sk:update`, `app/Domain/` altındaki backend dosyalara hiç dokunmaz (bunlar hash-tracked stub değildir). `--force` ile eject edilen Vue sayfaları normal hash-tracking kurallarına tabidir: düzenlediğinizde `sk:update` onları "özelleştirilmiş" olarak işaretler ve güncellemeyi atlar.
+
+### Eject'i geri alma (v1: manuel)
+
+`--revert` bayrağı gelecekteki bir sürüm için planlanmaktadır. Manuel geri alma adımları:
+
+1. `app/Domain/{Name}/` klasörünü silin.
+2. `app/Providers/DomainServiceProvider.php` içinden o domain'e ait `Event::listen(...)` satırlarını kaldırın.
+3. `composer dump-autoload` çalıştırın.
+
+`StarterKitServiceProvider` içindeki `class_alias` tanımları, `App\Domain\{Name}\*` importlarını otomatik olarak tekrar vendor kopyasına yönlendirir.
 
 ## `make:sk-domain`
 

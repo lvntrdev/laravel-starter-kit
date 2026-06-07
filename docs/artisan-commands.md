@@ -11,6 +11,7 @@ This document is the command reference for the starter kit. Architectural notes 
 | `php artisan sk:update`                   | Update installed kit files safely                            |
 | `php artisan sk:upgrade`                  | Upgrade an older starter-kit/Laravel line to the current one |
 | `php artisan sk:publish`                  | Publish optional components, language files, or config       |
+| `php artisan sk:eject`                    | Eject a vendor-resident domain into the app for full customization |
 | `php artisan make:sk-domain`              | Generate a new domain scaffold                               |
 | `php artisan remove:sk-domain`            | Remove a generated domain                                    |
 | `php artisan env:sync`                    | Sync `.env` keys into `.env.example`                         |
@@ -95,6 +96,68 @@ php artisan sk:publish --tag=filemanager
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```
+
+## `sk:eject`
+
+Use this when you need to fully customize a domain whose runtime currently runs from the vendor package. Ejecting copies the domain's backend classes into `app/Domain/{Name}/`, rewrites their namespaces to `App\Domain\{Name}\`, refreshes the domain's Vue pages, and wires any event/listener bindings into `app/Providers/DomainServiceProvider.php` so the audit log keeps firing. Run `--dry-run` first to preview what will change.
+
+```bash
+php artisan sk:eject User
+php artisan sk:eject User --dry-run
+php artisan sk:eject User --force
+php artisan sk:eject User --no-vue
+php artisan sk:eject Role --destination=/tmp/eject-preview
+```
+
+- `--dry-run` prints the copy/rewrite/injection plan without writing any files. Always run this first.
+- `--force` overwrites files that already exist — both the backend `app/Domain/{Name}/` tree and the domain's Vue pages. **Without `--force`, eject never overwrites an existing file:** an already-present `app/Domain/{Name}/` makes the command exit early, and any Vue page that already exists is left untouched and reported as preserved — only missing pages are written. This protects edits you made to pages shipped by `sk:install`.
+- `--no-vue` skips refreshing the domain's Vue pages; only the backend classes are ejected.
+- `--destination=<path>` redirects output to an arbitrary directory instead of the app root. Intended for isolated testing.
+
+> **Exit code:** if Composer's autoload regeneration fails (e.g. `composer` is missing or errors out), the command prints the error and **exits non-zero** even though the files were copied — so CI and scripts do not mistake a broken autoload for a successful eject. Run `composer dump-autoload` manually, then re-verify.
+
+### Ejectable domains
+
+Nine domains can be ejected. Domains not in this list are already app-owned and do not need ejecting.
+
+| Domain        | Backend classes | Vue pages | Event bindings injected |
+| ------------- | --------------- | --------- | ----------------------- |
+| `User`        | yes             | yes       | 3 (Created/Updated/Deleted) |
+| `Role`        | yes             | yes       | 3 (Created/Updated/Deleted) |
+| `Setting`     | yes             | yes       | —                       |
+| `Logs`        | yes             | yes       | 1 (FilesDeleted)        |
+| `ActivityLog` | yes             | yes       | —                       |
+| `ApiClient`   | yes             | —         | —                       |
+| `ApiRoute`    | yes             | yes       | —                       |
+| `Session`     | yes             | —         | —                       |
+| `Media`       | yes             | —         | —                       |
+
+**Why Auth, Helpers, and FileManager are not ejectable:** Auth screens are already 100% app-owned — `sk:update` keeps them fresh without any eject. The `sk-helpers.php` global helpers ship as a single overridable file; consumers delete what they do not need. FileManager has its own facade and route-registry infrastructure and is handled separately.
+
+### What the namespace rewrite covers
+
+Only the ejected domain's own namespace is rewritten. Every other vendor reference is left untouched:
+
+- `Lvntr\StarterKit\Domain\User\Actions\CreateUserAction` → `App\Domain\User\Actions\CreateUserAction`
+- `use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;` — **unchanged** (`Shared` base classes stay in vendor)
+- `Lvntr\StarterKit\Http\Responses\ApiResponse` — **unchanged**
+- Any other domain not being ejected — **unchanged**
+
+### Update-loss trade-off
+
+> **Warning:** after ejecting a domain, future `composer update` runs that include security fixes or bug fixes to that domain's vendor runtime will not apply to your copy. You own the files — you must apply upstream changes manually.
+
+`sk:update` never touches backend files in `app/Domain/` (they are not hash-tracked stubs). Vue pages ejected with `--force` follow the normal hash-tracking rules: if you edit them, `sk:update` marks them as customized and skips them.
+
+### Reverting an eject (v1: manual)
+
+A `--revert` flag is planned for a future version. To revert manually:
+
+1. Delete `app/Domain/{Name}/`.
+2. Remove the `Event::listen(...)` lines for that domain from `app/Providers/DomainServiceProvider.php`.
+3. Run `composer dump-autoload`.
+
+The `class_alias` entries in `StarterKitServiceProvider` will resume resolving `App\Domain\{Name}\*` imports back to the vendor copies automatically.
 
 ## `make:sk-domain`
 

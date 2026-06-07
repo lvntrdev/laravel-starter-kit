@@ -5,6 +5,20 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sk:eject {domain}` command** — ejects a vendor-resident domain into the consumer app for full, project-owned customization. Copies `src/Domain/{Name}/**` to `app/Domain/{Name}/`, rewrites only that domain's namespace (`Lvntr\StarterKit\Domain\{Name}\` → `App\Domain\{Name}\`; Shared base classes and all other vendor references are left untouched), refreshes the domain's Vue pages (an existing page is left untouched unless `--force` is passed, so customizations survive), and injects `Event::listen(...)` bindings into `app/Providers/DomainServiceProvider.php` for domains that carry audit-log events (User, Role, Logs) so the audit trail keeps firing after the namespace switch. Nine domains are ejectable: `User`, `Role`, `Setting`, `Logs`, `ActivityLog`, `ApiClient`, `ApiRoute`, `Session`, `Media`. Auth screens, global helpers, and FileManager are out of scope (Auth is already app-owned; FileManager has its own infrastructure).
+  - `--dry-run` prints the copy/rewrite/injection plan without writing any files.
+  - `--force` overwrites files that already exist — both the backend `app/Domain/{Name}/` tree and the domain's Vue pages. Without it, eject never overwrites an existing file: an already-present `app/Domain/{Name}/` exits early, and an existing Vue page is preserved (reported as skipped) while missing pages are written.
+  - `--no-vue` skips Vue page refresh; backend only.
+  - `--destination=<path>` redirects output to an arbitrary directory (useful for testing).
+  - The command exits non-zero if Composer's autoload regeneration fails, so CI/scripts do not treat a broken autoload as a successful eject (the files are still copied; run `composer dump-autoload` manually).
+  - Alias deactivation is automatic: `backwardCompatAliasPlan()` already skips the alias when an app copy exists; no extra step required after eject.
+  - **Trade-off:** ejected domains no longer receive upstream security or bug-fix updates via `composer update`. The command output and documentation call this out explicitly.
+  - Reverting is manual in v1: delete `app/Domain/{Name}/`, remove the injected `Event::listen` lines from `DomainServiceProvider`, and run `composer dump-autoload`. A `--revert` flag is planned for a future release.
+
 ## [13.6.0] - 2026-06-07
 
 This release bundles every published-file change since v13.5.11 into one version. It completes the vendor-runtime migration (composables, backend helpers/middleware, three third-party configs, five domain modules, kit migrations, kit translations) and introduces the structured theme/layout/CSS system. **No visual change** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. See `docs/UPGRADE.md` (`v13.5.11 → v13.6.0`) for the full migration guide.
