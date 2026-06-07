@@ -4,6 +4,91 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v15.8.0
+
+### Domain runtime katmanları vendor'a taşındı (Faz 3)
+
+Dört domain modülünün **runtime katmanı** (Actions, DTOs, Queries, Events, Listeners, Services), `stubs/app/Domain/` yerine pakete (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`) taşındı. Tüketici yüzeyi — Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları ve route dosyaları — uygulamanızda kalmaya devam eder ve **etkilenmez**.
+
+Etkilenen domain'ler: `ActivityLog`, `Logs`, `Session`, `Media`.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Controller / provider'larınızdaki `App\Domain\<Module>\...` import'ları | Çalışmaya devam eder — `class_alias` bunları vendor namespace'ine şeffaf biçimde çözer |
+| Mevcut `app/Domain/{ActivityLog,Logs,Session,Media}/` kopyaları | Korunur, otomatik silinmez |
+| Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route'lar | Değişmez — uygulamanızda kalır |
+| `App\Models\User` | Asla vendor'a taşınmaz |
+| Migration'lar | Değişmez — `stubs/database/migrations/`'ta kalır (Faz 4) |
+| Permission key'leri, route isimleri, API zarfı | Değişmez |
+
+#### Yeni kurulumlar (v15.8.0+)
+
+`sk:install` artık `app/Domain/ActivityLog/`, `app/Domain/Logs/`, `app/Domain/Session/` veya `app/Domain/Media/`'yı `app/`'e kopyalamaz. Bu modüllerin runtime sınıfları doğrudan `vendor/lvntr/laravel-starter-kit/src/Domain/`'dan çalışır. Scaffold controller'larındaki `App\Domain\<Module>\...` import'ları `class_alias` aracılığıyla çözülür — üretilen kodda herhangi bir import değişikliği gerekmez.
+
+#### Mevcut kurulumlar — geçiş adımları
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update`, artık vendor-resident olan uygulama kopyalarını raporlar (yalnızca bilgilendirici — otomatik silinmez):
+
+```
+ WARN  v13.5.0+: package runtime runs from vendor. The following files still exist in your app:
+
+  • app/Domain/ActivityLog/
+  • app/Domain/Logs/
+  • app/Domain/Session/
+  • app/Domain/Media/
+
+  Deleting these files is optional; vendor copies take precedence.
+  See: docs/migrate-existing-project-to-vendor.md
+```
+
+Başka bir adım gerekmez. Uygulamanız değişmeden çalışmaya devam eder.
+
+#### İsteğe bağlı temizlik — eski uygulama kopyalarını reconcile etme
+
+Bu adım tamamen isteğe bağlıdır, sonraya bırakılabilir.
+
+**Bu domain dosyalarını hiç özelleştirmediyseniz**, uygulama kopyalarını silin; `class_alias` aracılığıyla vendor versiyonları devreye girer:
+
+```bash
+rm -rf app/Domain/ActivityLog/
+rm -rf app/Domain/Logs/
+rm -rf app/Domain/Session/
+rm -rf app/Domain/Media/
+```
+
+**Bir domain dosyasını özelleştirdiyseniz**, `app/Domain/<Module>/` dizininizi koruyun. `class_alias` guard'ı bunu algılar ve kenara çekilir — özelleştirdiğiniz versiyon vendor kopyasının önünde çalışmayı sürdürür. Değiştirilmemiş dosyaları tek tek silebilir, değiştirilmiş olanları tutabilirsiniz; guard sınıf bazında çalışır.
+
+**Kısmi reconcile örneği** — özelleştirilmiş bir Action'ı koruyup geri kalanı silme:
+
+```bash
+# Özelleştirdiğiniz dosya dışındaki her şeyi kaldırın
+rm -rf app/Domain/Logs/DTOs/
+rm -rf app/Domain/Logs/Events/
+rm -rf app/Domain/Logs/Listeners/
+rm -rf app/Domain/Logs/Queries/
+rm -rf app/Domain/Logs/Services/
+# Koru: app/Domain/Logs/Actions/DeleteLogFilesAction.php (özelleştirilmiş)
+```
+
+#### Session domain — `Authenticatable` decoupling
+
+`PurgeOtherSessionsAction::execute()`, artık somut `App\Models\User` yerine `Illuminate\Contracts\Auth\Authenticatable` kabul eder. Metot yalnızca `Authenticatable` kontratının parçası olan `getAuthPassword()` ve `getAuthIdentifier()`'ı kullanır. `App\Models\User` örneği ileten çağrı yerleri etkilenmez — `User`, `Authenticatable`'ı uygular.
+
+`ProfileController::destroySessions()` veya herhangi başka bir çağrı yerinde değişiklik gerekmez.
+
+#### Logs domain — event listener kaydı
+
+`LogFilesDeleted → LogActivityForLogFilesDeleted` listener'ı artık vendor `StarterKitServiceProvider` tarafından kaydedilir (hem event hem listener vendor-resident). Fresh kurulum scaffold'undaki `app/Providers/DomainServiceProvider.php` bu çifti artık kaydetmez: `class_alias`'lı bir `App\...::class` literali derleme zamanında *alias* adına çözülür ve bu, vendor event'inin çalışma-zamanı sınıfıyla asla eşleşmez — app tarafındaki kayıt "log dosyaları silindi" audit kaydını sessizce düşürürdü. **Fresh kurulumda ek işlem gerekmez.** Yükseltip kendi `app/Domain/Logs/` kopyalarınızı korursanız, mevcut `DomainServiceProvider` kaydınız onlar için çalışmaya devam eder (vendor kaydı dormant kalır — çift-tetikleme yok); reconcile ederseniz (app kopyalarını silerseniz) vendor kaydı artık-vendor dispatch'i karşılar.
+
+---
+
 ## v15.7.0
 
 ### Build scriptleri vendor'a taşındı — consumer wiring güncellenmeli

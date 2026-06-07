@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Logs\Events;
+namespace Lvntr\StarterKit\Domain\Logs\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;

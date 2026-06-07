@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Domain\Logs\Actions;
+namespace Lvntr\StarterKit\Domain\Logs\Actions;
 
-use App\Domain\Logs\DTOs\DeleteLogFilesDTO;
-use App\Domain\Logs\Events\LogFilesDeleted;
-use App\Domain\Logs\Queries\LogFileQuery;
 use Illuminate\Support\Facades\File;
+use Lvntr\StarterKit\Domain\Logs\DTOs\DeleteLogFilesDTO;
+use Lvntr\StarterKit\Domain\Logs\Events\LogFilesDeleted;
+use Lvntr\StarterKit\Domain\Logs\Queries\LogFileQuery;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 
 /**

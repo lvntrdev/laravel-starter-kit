@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Domain\Logs\Listeners;
+namespace Lvntr\StarterKit\Domain\Logs\Listeners;
 
-use App\Domain\Logs\Events\LogFilesDeleted;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Lvntr\StarterKit\Domain\Logs\Events\LogFilesDeleted;
 
 /**
  * Records a single activitylog entry per delete operation.

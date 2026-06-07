@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Domain\Session\Actions;
+namespace Lvntr\StarterKit\Domain\Session\Actions;
 
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -19,9 +19,9 @@ class PurgeOtherSessionsAction extends BaseAction
      *
      * @throws ValidationException
      */
-    public function execute(User $user, string $password, string $currentSessionId): void
+    public function execute(Authenticatable $user, string $password, string $currentSessionId): void
     {
-        if (! Hash::check($password, $user->password)) {
+        if (! Hash::check($password, $user->getAuthPassword())) {
             throw ValidationException::withMessages([
                 'password' => [__('The provided password is incorrect.')],
             ]);

@@ -11,14 +11,27 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Laravel\Passport\Passport;
+use Lvntr\StarterKit\Domain\ActivityLog\Queries\ActivityLogDatatableQuery;
 use Lvntr\StarterKit\Domain\FileManager\Policies\MediaPolicy;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
+use Lvntr\StarterKit\Domain\Logs\Actions\DeleteLogFilesAction;
+use Lvntr\StarterKit\Domain\Logs\DTOs\DeleteLogFilesDTO;
+use Lvntr\StarterKit\Domain\Logs\DTOs\LogEntryFilterDTO;
+use Lvntr\StarterKit\Domain\Logs\Events\LogFilesDeleted;
+use Lvntr\StarterKit\Domain\Logs\Listeners\LogActivityForLogFilesDeleted;
+use Lvntr\StarterKit\Domain\Logs\Queries\LogEntryQuery;
+use Lvntr\StarterKit\Domain\Logs\Queries\LogFileQuery;
+use Lvntr\StarterKit\Domain\Media\Actions\ClearMediaAction;
+use Lvntr\StarterKit\Domain\Media\Actions\UploadMediaAction;
+use Lvntr\StarterKit\Domain\Session\Actions\PurgeOtherSessionsAction;
+use Lvntr\StarterKit\Domain\Session\Queries\UserSessionsQuery;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
@@ -135,6 +148,18 @@ class StarterKitServiceProvider extends ServiceProvider
 
         // Aliased only when the consumer ships no override at that path.
         $overridable = [
+            'App\Domain\ActivityLog\Queries\ActivityLogDatatableQuery' => ActivityLogDatatableQuery::class,
+            'App\Domain\Logs\Actions\DeleteLogFilesAction' => DeleteLogFilesAction::class,
+            'App\Domain\Logs\DTOs\DeleteLogFilesDTO' => DeleteLogFilesDTO::class,
+            'App\Domain\Logs\DTOs\LogEntryFilterDTO' => LogEntryFilterDTO::class,
+            'App\Domain\Logs\Events\LogFilesDeleted' => LogFilesDeleted::class,
+            'App\Domain\Logs\Listeners\LogActivityForLogFilesDeleted' => LogActivityForLogFilesDeleted::class,
+            'App\Domain\Logs\Queries\LogEntryQuery' => LogEntryQuery::class,
+            'App\Domain\Logs\Queries\LogFileQuery' => LogFileQuery::class,
+            'App\Domain\Media\Actions\ClearMediaAction' => ClearMediaAction::class,
+            'App\Domain\Media\Actions\UploadMediaAction' => UploadMediaAction::class,
+            'App\Domain\Session\Actions\PurgeOtherSessionsAction' => PurgeOtherSessionsAction::class,
+            'App\Domain\Session\Queries\UserSessionsQuery' => UserSessionsQuery::class,
             'App\Domain\Shared\Actions\BaseAction' => BaseAction::class,
             'App\Domain\Shared\Contracts\PipeableAction' => PipeableAction::class,
             'App\Domain\Shared\DTOs\BaseDTO' => BaseDTO::class,
@@ -181,6 +206,7 @@ class StarterKitServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureScramble();
         $this->registerCommands();
+        $this->registerEventListeners();
         $this->registerTranslations();
         $this->registerPublishables();
         $this->registerMigrations();
@@ -451,6 +477,43 @@ class StarterKitServiceProvider extends ServiceProvider
 
             $this->commands($commands);
         }
+    }
+
+    /**
+     * Register vendor-resident domain event listeners.
+     *
+     * Only listeners whose BOTH event and listener live in vendor
+     * (`Lvntr\StarterKit\Domain\*`) belong here — the registration key and the
+     * dispatched object's `get_class()` are then the same vendor string, so the
+     * dispatcher's string-keyed lookup matches.
+     *
+     * Why this is NOT in the consumer's DomainServiceProvider for the Logs
+     * domain: the Logs event+listener were moved vendor-first, and
+     * `DeleteLogFilesAction` (vendor) dispatches the VENDOR `LogFilesDeleted`.
+     * On a fresh install the stub provider registered the listener under the
+     * `App\Domain\Logs\Events\LogFilesDeleted::class` literal — a plain lexical
+     * string that the class_alias never rewrites — so the dispatched vendor
+     * object never matched and the audit listener silently never fired. Binding
+     * here, with the vendor FQCN on both sides, is the fix.
+     *
+     * No double-fire risk:
+     *   - Fresh install: only this vendor binding exists; vendor dispatch → 1 run.
+     *   - Existing consumer that kept its App\ Logs event/listener+action:
+     *     their App-keyed registration + App dispatch run once; this vendor
+     *     binding is dormant (their action never dispatches the vendor event).
+     *   - Existing consumer reconciled to vendor (App copies removed): the alias
+     *     makes the App import resolve to vendor, dispatch is the vendor object,
+     *     and only this vendor binding matches — still exactly one run.
+     *
+     * Role/User domain events stay in the stub DomainServiceProvider — they are
+     * still App-resident on both sides, so moving them here would not match.
+     */
+    private function registerEventListeners(): void
+    {
+        Event::listen(
+            LogFilesDeleted::class,
+            LogActivityForLogFilesDeleted::class,
+        );
     }
 
     /**

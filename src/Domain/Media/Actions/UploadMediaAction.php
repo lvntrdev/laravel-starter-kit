@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Media\Actions;
+namespace Lvntr\StarterKit\Domain\Media\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;

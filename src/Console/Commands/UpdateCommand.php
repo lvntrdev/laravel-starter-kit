@@ -45,6 +45,10 @@ class UpdateCommand extends Command
     private const VENDOR_RESIDENT_PATHS = [
         'app/Domain/FileManager/',
         'app/Domain/Shared/',
+        'app/Domain/ActivityLog/',
+        'app/Domain/Logs/',
+        'app/Domain/Session/',
+        'app/Domain/Media/',
         'app/Traits/HasActivityLogging.php',
         'app/Traits/HasMediaCollections.php',
         'app/Helpers/sk-helpers.php',

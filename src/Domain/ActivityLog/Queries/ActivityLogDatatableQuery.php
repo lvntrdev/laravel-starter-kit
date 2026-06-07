@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Domain\ActivityLog\Queries;
+namespace Lvntr\StarterKit\Domain\ActivityLog\Queries;
 
-use App\Http\Responses\ApiResponse;
-use App\Http\Responses\DatatableQueryBuilder;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Lvntr\StarterKit\Http\Responses\DatatableQueryBuilder;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\QueryBuilder\AllowedFilter;
 

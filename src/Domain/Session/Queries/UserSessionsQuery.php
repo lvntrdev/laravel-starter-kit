@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Session\Queries;
+namespace Lvntr\StarterKit\Domain\Session\Queries;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;

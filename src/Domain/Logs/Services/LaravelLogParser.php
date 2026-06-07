@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Domain\Logs\Services;
+namespace Lvntr\StarterKit\Domain\Logs\Services;
 
-use App\Domain\Logs\DTOs\LogEntryDTO;
 use Carbon\Carbon;
+use Lvntr\StarterKit\Domain\Logs\DTOs\LogEntryDTO;
 
 /**
  * Stateless parser for Laravel log lines.

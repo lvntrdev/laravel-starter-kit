@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Domain\Logs\Queries;
+namespace Lvntr\StarterKit\Domain\Logs\Queries;
 
-use App\Domain\Logs\DTOs\LogFileDTO;
-use App\Exceptions\ApiException;
-use App\Http\Responses\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
+use Lvntr\StarterKit\Domain\Logs\DTOs\LogFileDTO;
+use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 use SplFileInfo;
 
 /**

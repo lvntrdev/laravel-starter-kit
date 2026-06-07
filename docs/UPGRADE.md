@@ -4,6 +4,91 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v15.8.0
+
+### Domain runtime layers moved to vendor (Phase 3)
+
+Four domain modules have had their **runtime layer** (Actions, DTOs, Queries, Events, Listeners, Services) moved from `stubs/app/Domain/` into the package (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`). The consumer-facing surface — Controllers, FormRequests, Models, Vue pages, and route files — stays in your app and is **not affected**.
+
+Affected domains: `ActivityLog`, `Logs`, `Session`, `Media`.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| `App\Domain\<Module>\...` imports in your controllers / providers | Keep working — `class_alias` resolves them to the vendor namespace transparently |
+| Existing `app/Domain/{ActivityLog,Logs,Session,Media}/` copies | Preserved, never deleted automatically |
+| Controllers, FormRequests, Models, Vue pages, routes | Unchanged — stays in your app |
+| `App\Models\User` | Never moved to vendor |
+| Migrations | Unchanged — stays in `stubs/database/migrations/` (Phase 4) |
+| Permission keys, route names, API envelope | Unchanged |
+
+#### New installs (v15.8.0+)
+
+A fresh `sk:install` no longer copies `app/Domain/ActivityLog/`, `app/Domain/Logs/`, `app/Domain/Session/`, or `app/Domain/Media/` into `app/`. These modules' runtime classes run directly from `vendor/lvntr/laravel-starter-kit/src/Domain/`. `App\Domain\<Module>\...` imports in scaffold controllers resolve via `class_alias` — no import changes needed in generated code.
+
+#### Existing installs — upgrade steps
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update` reports the app copies that are now vendor-resident (informational only — never deleted automatically):
+
+```
+ WARN  v13.5.0+: package runtime runs from vendor. The following files still exist in your app:
+
+  • app/Domain/ActivityLog/
+  • app/Domain/Logs/
+  • app/Domain/Session/
+  • app/Domain/Media/
+
+  Deleting these files is optional; vendor copies take precedence.
+  See: docs/migrate-existing-project-to-vendor.md
+```
+
+No other steps are required. Your app continues to work unchanged.
+
+#### Optional cleanup — reconcile stale app copies
+
+This step is entirely optional and can happen later.
+
+**If you have not customised any of these domain files**, delete the app copies so the vendor versions (via `class_alias`) take over:
+
+```bash
+rm -rf app/Domain/ActivityLog/
+rm -rf app/Domain/Logs/
+rm -rf app/Domain/Session/
+rm -rf app/Domain/Media/
+```
+
+**If you have customised a domain file**, keep your `app/Domain/<Module>/` directory. The `class_alias` guard detects it and steps aside — your customised version continues to win over the vendor copy. You can delete individual unchanged files while keeping modified ones; the guard operates at the class level.
+
+**Partial reconcile example** — keep a customised Action but delete the rest:
+
+```bash
+# Remove everything except your customised file
+rm -rf app/Domain/Logs/DTOs/
+rm -rf app/Domain/Logs/Events/
+rm -rf app/Domain/Logs/Listeners/
+rm -rf app/Domain/Logs/Queries/
+rm -rf app/Domain/Logs/Services/
+# Keep: app/Domain/Logs/Actions/DeleteLogFilesAction.php (customised)
+```
+
+#### Session domain — `Authenticatable` decoupling
+
+`PurgeOtherSessionsAction::execute()` now accepts `Illuminate\Contracts\Auth\Authenticatable` instead of the concrete `App\Models\User`. The method uses only `getAuthPassword()` and `getAuthIdentifier()`, which are part of the `Authenticatable` contract. Callers that pass an `App\Models\User` instance are unaffected — `User` implements `Authenticatable`.
+
+No changes to `ProfileController::destroySessions()` or any other call site are required.
+
+#### Logs domain — event listener wiring
+
+The `LogFilesDeleted → LogActivityForLogFilesDeleted` listener is now registered by the vendor `StarterKitServiceProvider` (both the event and the listener are vendor-resident). The fresh-install scaffold's `app/Providers/DomainServiceProvider.php` no longer registers this pair: a `class_alias`'d `App\...::class` literal resolves to the *alias* name at compile time, which never matches the vendor event's runtime class — so an app-side registration would silently drop the "log files deleted" audit entry. **No action needed on a fresh install.** If you upgrade and keep your own `app/Domain/Logs/` copies, your existing `DomainServiceProvider` registration keeps working for them (the vendor registration stays dormant — no double-fire); if you reconcile (delete the app copies), the vendor registration handles the now-vendor dispatch.
+
+---
+
 ## v15.7.0
 
 ### Build scripts moved to vendor — consumer wiring update required

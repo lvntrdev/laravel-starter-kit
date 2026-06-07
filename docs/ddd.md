@@ -12,17 +12,33 @@ Typical structure after installation:
 
 ```text
 app/Domain/
-├── ActivityLog/
 ├── ApiRoute/
 ├── Auth/
-├── FileManager/
-├── Media/
 ├── Role/
-├── Session/
 ├── Setting/
-├── Shared/
 └── User/
 ```
+
+Domains that are fully managed by the package and run from vendor are not scaffolded into `app/` on a fresh install. See [Vendor-resident domains](#vendor-resident-domains) below.
+
+### Vendor-resident domains
+
+The following domains have their **runtime layer** (Actions, DTOs, Queries, Events, Listeners, Services) inside the package (`src/Domain/`, `Lvntr\StarterKit\Domain\`). They are not copied into your app on install.
+
+| Domain | Vendor namespace |
+|---|---|
+| `FileManager` | `Lvntr\StarterKit\Domain\FileManager\` |
+| `Shared` | `Lvntr\StarterKit\Domain\Shared\` |
+| `ActivityLog` | `Lvntr\StarterKit\Domain\ActivityLog\` |
+| `Logs` | `Lvntr\StarterKit\Domain\Logs\` |
+| `Session` | `Lvntr\StarterKit\Domain\Session\` |
+| `Media` | `Lvntr\StarterKit\Domain\Media\` |
+
+**Import compatibility:** controllers and providers that use `App\Domain\<Module>\...` import paths continue to work — `StarterKitServiceProvider` registers `class_alias` entries that resolve them to the vendor namespace. A local `app/Domain/<Module>/` copy, if present, always takes precedence (the guard skips the alias when the file exists on disk).
+
+**Consumer-facing surface stays in `app/`:** Controllers, FormRequests, Models, Vue pages, and route files for vendor-resident domains are still scaffolded into your app. Only the runtime/business-logic layer is vendor-managed.
+
+**Existing app copies:** if your project was installed before a domain moved to vendor, your existing `app/Domain/<Module>/` files are preserved and continue to work. Removing them is optional — see [UPGRADE.md](./UPGRADE.md) for reconcile steps.
 
 Inside a domain you will usually see these layers:
 

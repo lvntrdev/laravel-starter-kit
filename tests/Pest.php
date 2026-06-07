@@ -22,6 +22,9 @@ use Lvntr\StarterKit\Tests\TestCase;
 uses(DatabaseTestCase::class)->in('Feature/FileManager');
 uses(DatabaseTestCase::class)->in('Feature/Settings');
 
+// Logs audit listener regresyonu: activity('system') yazımı için DB gerekli.
+uses(DatabaseTestCase::class)->in('Feature/Logs');
+
 // DB gerektirmeyen diğer Feature testleri
 uses(TestCase::class)->in('Feature/BackwardCompat');
 

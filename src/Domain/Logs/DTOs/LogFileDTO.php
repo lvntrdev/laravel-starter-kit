@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Logs\DTOs;
+namespace Lvntr\StarterKit\Domain\Logs\DTOs;
 
 use Carbon\Carbon;
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Domain\Logs\Queries;
+namespace Lvntr\StarterKit\Domain\Logs\Queries;
 
-use App\Domain\Logs\DTOs\LogEntryDTO;
-use App\Domain\Logs\DTOs\LogEntryFilterDTO;
-use App\Domain\Logs\Services\LaravelLogParser;
-use App\Exceptions\ApiException;
+use Lvntr\StarterKit\Domain\Logs\DTOs\LogEntryDTO;
+use Lvntr\StarterKit\Domain\Logs\DTOs\LogEntryFilterDTO;
+use Lvntr\StarterKit\Domain\Logs\Services\LaravelLogParser;
+use Lvntr\StarterKit\Exceptions\ApiException;
 
 /**
  * Streams a single Laravel log file, parses entries, applies filters,
