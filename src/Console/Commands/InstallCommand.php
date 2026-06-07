@@ -470,7 +470,6 @@ class InstallCommand extends Command
         $this->ensureAppKey($envPath);
     }
 
-
     /**
      * Append keys present in .env.example but absent from .env, preserving the
      * user's existing lines and values. Comment/blank lines are ignored when
@@ -550,7 +549,6 @@ class InstallCommand extends Command
 
         return $keys;
     }
-
 
     /**
      * Generate APP_KEY via artisan when the .env value is blank, so a freshly

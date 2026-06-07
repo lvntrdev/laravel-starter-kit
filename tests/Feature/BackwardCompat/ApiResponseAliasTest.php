@@ -99,7 +99,7 @@ it('resolves App\Http\Responses\ApiResponse to the vendor class after the provid
     expect(class_exists('App\Http\Responses\ApiResponse'))->toBeTrue();
 
     expect((new ReflectionClass('App\Http\Responses\ApiResponse'))->getName())
-        ->toBe(\Lvntr\StarterKit\Http\Responses\ApiResponse::class);
+        ->toBe(ApiResponse::class);
 
     // The semantics that were failing: a vendor instance satisfies the App\ type.
     expect(ApiResponse::success(['ok' => true]))
