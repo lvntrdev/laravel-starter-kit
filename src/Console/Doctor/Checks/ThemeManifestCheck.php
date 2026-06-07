@@ -12,7 +12,7 @@ use Lvntr\StarterKit\Console\Doctor\DoctorReport;
  *
  * resources/css/theme/theme.css, resolver tarafından üretilen
  * `_active.css`'i @import eder. Bu artefakt gitignore'lu (build sırasında
- * scripts/sk-theme-build.mjs üretir); eksikse `npm run build`/`vite build`
+ * kit tema resolver'ı üretir — sk-theme-build.mjs, vendor-resident); eksikse `npm run build`/`vite build`
  * "Can't resolve './_active.css'" ile hard-fail eder → bu durum Fail.
  *
  * Manifest mevcutsa içeriği de denetlenir (bkz. inspectManifest): tema kökü
@@ -61,7 +61,7 @@ class ThemeManifestCheck implements DoctorCheck
      * Üretilmiş _active.css içeriğini denetler:
      *
      *  1. Tema kökü dışına çıkan (`../`) bir @import var mı — bu, resolver'ın
-     *     tema-adı doğrulamasına (scripts/sk-theme-build.mjs `resolveThemeName`)
+     *     tema-adı doğrulamasına (resolver'ın `resolveThemeName`'i, vendor-resident)
      *     EK, bağımsız bir güvenlik ağıdır; elle düzenlenmiş ya da eski/güvensiz
      *     bir resolver'dan kalmış stale artefaktı yakalar.
      *  2. Header'daki "Active theme: <x>" değeri ortamdaki VITE_SK_THEME ile

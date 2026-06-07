@@ -5,7 +5,7 @@
  *
  * NOTE: CSS custom properties (light/dark theme tokens) moved to
  * `main/tokens.css` and are loaded by the theme resolver
- * (scripts/sk-theme-build.mjs) before this file. Keep only base/reset here.
+ * (sk-theme-build.mjs, vendor-resident) before this file. Keep only base/reset here.
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
