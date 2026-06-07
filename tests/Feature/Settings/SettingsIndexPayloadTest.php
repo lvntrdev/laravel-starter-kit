@@ -27,7 +27,7 @@ use Lvntr\StarterKit\Tests\Stubs\StorageQuoteHelper;
 
 it('SettingsDefaultsQuery stub contains storage_usage key', function (): void {
     $stubPath = dirname(__DIR__, 3)
-        .'/stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php';
+        .'/src/Domain/Setting/Queries/SettingsDefaultsQuery.php';
 
     expect(is_file($stubPath))->toBeTrue(
         "Stub dosyası bulunamadı: {$stubPath}"
@@ -42,7 +42,7 @@ it('SettingsDefaultsQuery stub contains storage_usage key', function (): void {
 
 it('SettingsDefaultsQuery stub uses ResolvesMediaModel trait', function (): void {
     $stubPath = dirname(__DIR__, 3)
-        .'/stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php';
+        .'/src/Domain/Setting/Queries/SettingsDefaultsQuery.php';
 
     $contents = file_get_contents($stubPath);
 
@@ -52,7 +52,7 @@ it('SettingsDefaultsQuery stub uses ResolvesMediaModel trait', function (): void
 
 it('SettingsDefaultsQuery stub calls computeStorageUsed and storageQuotaBytes', function (): void {
     $stubPath = dirname(__DIR__, 3)
-        .'/stubs/app/Domain/Setting/Queries/SettingsDefaultsQuery.php';
+        .'/src/Domain/Setting/Queries/SettingsDefaultsQuery.php';
 
     $contents = file_get_contents($stubPath);
 

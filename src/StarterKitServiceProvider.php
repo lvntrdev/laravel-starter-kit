@@ -20,6 +20,16 @@ use Illuminate\Translation\FileLoader;
 use Inertia\Inertia;
 use Laravel\Passport\Passport;
 use Lvntr\StarterKit\Domain\ActivityLog\Queries\ActivityLogDatatableQuery;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\CreateApiClientAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\CreatePersonalAccessTokenAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\RevokeApiClientAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\RevokeApiTokenAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\UpdateApiClientAction;
+use Lvntr\StarterKit\Domain\ApiRoute\Actions\RegenerateApiDocsAction;
+use Lvntr\StarterKit\Domain\ApiRoute\Actions\SyncApidogAction;
+use Lvntr\StarterKit\Domain\ApiRoute\Actions\SyncPostmanAction;
+use Lvntr\StarterKit\Domain\ApiRoute\Queries\ApiRouteListQuery;
+use Lvntr\StarterKit\Domain\ApiRoute\Support\OpenApiExporter;
 use Lvntr\StarterKit\Domain\FileManager\Policies\MediaPolicy;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
 use Lvntr\StarterKit\Domain\Logs\Actions\DeleteLogFilesAction;
@@ -31,13 +41,53 @@ use Lvntr\StarterKit\Domain\Logs\Queries\LogEntryQuery;
 use Lvntr\StarterKit\Domain\Logs\Queries\LogFileQuery;
 use Lvntr\StarterKit\Domain\Media\Actions\ClearMediaAction;
 use Lvntr\StarterKit\Domain\Media\Actions\UploadMediaAction;
+use Lvntr\StarterKit\Domain\Role\Actions\CreateRoleAction;
+use Lvntr\StarterKit\Domain\Role\Actions\DeleteRoleAction;
+use Lvntr\StarterKit\Domain\Role\Actions\SyncPermissionsAction;
+use Lvntr\StarterKit\Domain\Role\Actions\UpdateRoleAction;
+use Lvntr\StarterKit\Domain\Role\DTOs\RoleDTO;
+use Lvntr\StarterKit\Domain\Role\Events\RoleCreated;
+use Lvntr\StarterKit\Domain\Role\Events\RoleDeleted;
+use Lvntr\StarterKit\Domain\Role\Events\RoleUpdated;
+use Lvntr\StarterKit\Domain\Role\Listeners\LogRoleCreated;
+use Lvntr\StarterKit\Domain\Role\Listeners\LogRoleDeleted;
+use Lvntr\StarterKit\Domain\Role\Listeners\LogRoleUpdated;
+use Lvntr\StarterKit\Domain\Role\Queries\CanManageRoleQuery;
+use Lvntr\StarterKit\Domain\Role\Queries\GroupedPermissionsQuery;
+use Lvntr\StarterKit\Domain\Role\Queries\RoleDatatableQuery;
+use Lvntr\StarterKit\Domain\Role\Queries\RoleSelectOptionsQuery;
+use Lvntr\StarterKit\Domain\Role\Queries\UserGrantablePermissionsQuery;
 use Lvntr\StarterKit\Domain\Session\Actions\PurgeOtherSessionsAction;
 use Lvntr\StarterKit\Domain\Session\Queries\UserSessionsQuery;
+use Lvntr\StarterKit\Domain\Setting\Actions\SendTestMailAction;
+use Lvntr\StarterKit\Domain\Setting\Actions\UpdateAuthSettingsAction;
+use Lvntr\StarterKit\Domain\Setting\Actions\UpdateSettingsAction;
+use Lvntr\StarterKit\Domain\Setting\DTOs\ApidogSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\AuthSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\FileManagerSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\GeneralSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\MailSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\PostmanSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\StorageSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\TurnstileSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\Queries\SettingsDefaultsQuery;
+use Lvntr\StarterKit\Domain\Setting\SettingService;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Lvntr\StarterKit\Domain\Shared\Contracts\PipeableAction;
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 use Lvntr\StarterKit\Domain\Shared\Pipelines\ActionPipeline;
 use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Domain\User\Actions\CreateUserAction;
+use Lvntr\StarterKit\Domain\User\Actions\DeleteUserAction;
+use Lvntr\StarterKit\Domain\User\Actions\UpdateUserAction;
+use Lvntr\StarterKit\Domain\User\DTOs\UserDTO;
+use Lvntr\StarterKit\Domain\User\Events\UserCreated;
+use Lvntr\StarterKit\Domain\User\Events\UserDeleted;
+use Lvntr\StarterKit\Domain\User\Events\UserUpdated;
+use Lvntr\StarterKit\Domain\User\Listeners\LogUserCreated;
+use Lvntr\StarterKit\Domain\User\Listeners\LogUserDeleted;
+use Lvntr\StarterKit\Domain\User\Listeners\LogUserUpdated;
+use Lvntr\StarterKit\Domain\User\Queries\UserDatatableQuery;
 use Lvntr\StarterKit\Exceptions\ApiException;
 use Lvntr\StarterKit\Exceptions\ApiExceptionHandler;
 use Lvntr\StarterKit\Facades\FileManager as FileManagerFacade;
@@ -208,6 +258,21 @@ class StarterKitServiceProvider extends ServiceProvider
         // Aliased only when the consumer ships no override at that path.
         $overridable = [
             'App\Domain\ActivityLog\Queries\ActivityLogDatatableQuery' => ActivityLogDatatableQuery::class,
+            // Faz 6 — ApiClient runtime (Passport secret-handling actions). HTTP
+            // layer (controller/request/resource/policy) stays app-owned; only the
+            // pure-runtime actions are vendor-resident behind these aliases.
+            'App\Domain\ApiClient\Actions\CreateApiClientAction' => CreateApiClientAction::class,
+            'App\Domain\ApiClient\Actions\CreatePersonalAccessTokenAction' => CreatePersonalAccessTokenAction::class,
+            'App\Domain\ApiClient\Actions\RevokeApiClientAction' => RevokeApiClientAction::class,
+            'App\Domain\ApiClient\Actions\RevokeApiTokenAction' => RevokeApiTokenAction::class,
+            'App\Domain\ApiClient\Actions\UpdateApiClientAction' => UpdateApiClientAction::class,
+            // Faz 6 — ApiRoute runtime (Postman/Apidog sync + OpenAPI export).
+            // ApiRouteController stays app-owned (Inertia render + app shim).
+            'App\Domain\ApiRoute\Actions\RegenerateApiDocsAction' => RegenerateApiDocsAction::class,
+            'App\Domain\ApiRoute\Actions\SyncApidogAction' => SyncApidogAction::class,
+            'App\Domain\ApiRoute\Actions\SyncPostmanAction' => SyncPostmanAction::class,
+            'App\Domain\ApiRoute\Queries\ApiRouteListQuery' => ApiRouteListQuery::class,
+            'App\Domain\ApiRoute\Support\OpenApiExporter' => OpenApiExporter::class,
             'App\Domain\Logs\Actions\DeleteLogFilesAction' => DeleteLogFilesAction::class,
             'App\Domain\Logs\DTOs\DeleteLogFilesDTO' => DeleteLogFilesDTO::class,
             'App\Domain\Logs\DTOs\LogEntryFilterDTO' => LogEntryFilterDTO::class,
@@ -217,13 +282,81 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\Logs\Queries\LogFileQuery' => LogFileQuery::class,
             'App\Domain\Media\Actions\ClearMediaAction' => ClearMediaAction::class,
             'App\Domain\Media\Actions\UploadMediaAction' => UploadMediaAction::class,
+            // Faz 6 — Role runtime (Actions/DTO/Events/Listeners/Queries). The Role
+            // MODEL (extends Spatie Role), Store/UpdateRoleRequest (privilege-boundary
+            // validated()), RoleController, RoleResource and RolePolicy stay app-owned.
+            // permission-resources.php and RoleEnum are out of scope (sanctuary).
+            // Event/listener registration moves to the vendor registerEventListeners()
+            // so the dispatched vendor event matches the binding key (class_alias does
+            // not rewrite a `::class` literal). BulkActions/BulkDeleteRoleAction stays
+            // app-owned: it extends the app-owned App\Http\BulkActions\BulkDeleteAction
+            // override base, so it is not vendor-aliased here (a vendor class with an
+            // app-owned parent would fatal under class_alias eager-load).
+            'App\Domain\Role\Actions\CreateRoleAction' => CreateRoleAction::class,
+            'App\Domain\Role\Actions\DeleteRoleAction' => DeleteRoleAction::class,
+            'App\Domain\Role\Actions\SyncPermissionsAction' => SyncPermissionsAction::class,
+            'App\Domain\Role\Actions\UpdateRoleAction' => UpdateRoleAction::class,
+            'App\Domain\Role\DTOs\RoleDTO' => RoleDTO::class,
+            'App\Domain\Role\Events\RoleCreated' => RoleCreated::class,
+            'App\Domain\Role\Events\RoleDeleted' => RoleDeleted::class,
+            'App\Domain\Role\Events\RoleUpdated' => RoleUpdated::class,
+            'App\Domain\Role\Listeners\LogRoleCreated' => LogRoleCreated::class,
+            'App\Domain\Role\Listeners\LogRoleDeleted' => LogRoleDeleted::class,
+            'App\Domain\Role\Listeners\LogRoleUpdated' => LogRoleUpdated::class,
+            'App\Domain\Role\Queries\CanManageRoleQuery' => CanManageRoleQuery::class,
+            'App\Domain\Role\Queries\GroupedPermissionsQuery' => GroupedPermissionsQuery::class,
+            'App\Domain\Role\Queries\RoleDatatableQuery' => RoleDatatableQuery::class,
+            'App\Domain\Role\Queries\RoleSelectOptionsQuery' => RoleSelectOptionsQuery::class,
+            'App\Domain\Role\Queries\UserGrantablePermissionsQuery' => UserGrantablePermissionsQuery::class,
             'App\Domain\Session\Actions\PurgeOtherSessionsAction' => PurgeOtherSessionsAction::class,
             'App\Domain\Session\Queries\UserSessionsQuery' => UserSessionsQuery::class,
+            // Faz 6 — Setting runtime: SettingService (encryption/cache core,
+            // config('settings.sensitive_keys') read), Actions, 8 settings DTOs and
+            // SettingsDefaultsQuery move to vendor. The Setting MODEL and SettingPolicy
+            // stay app-owned (the model is a static facade delegating to SettingService
+            // via app(); keeping it app-owned avoids an App\Models\Setting alias and
+            // preserves Laravel's App\Models\Setting → App\Policies\SettingPolicy
+            // auto-discovery). The SettingService alias is the critical one — the
+            // app-owned Setting model and _03_SettingSeeder reference it by App\ FQCN.
+            'App\Domain\Setting\SettingService' => SettingService::class,
+            'App\Domain\Setting\Actions\SendTestMailAction' => SendTestMailAction::class,
+            'App\Domain\Setting\Actions\UpdateAuthSettingsAction' => UpdateAuthSettingsAction::class,
+            'App\Domain\Setting\Actions\UpdateSettingsAction' => UpdateSettingsAction::class,
+            'App\Domain\Setting\DTOs\ApidogSettingsDTO' => ApidogSettingsDTO::class,
+            'App\Domain\Setting\DTOs\AuthSettingsDTO' => AuthSettingsDTO::class,
+            'App\Domain\Setting\DTOs\FileManagerSettingsDTO' => FileManagerSettingsDTO::class,
+            'App\Domain\Setting\DTOs\GeneralSettingsDTO' => GeneralSettingsDTO::class,
+            'App\Domain\Setting\DTOs\MailSettingsDTO' => MailSettingsDTO::class,
+            'App\Domain\Setting\DTOs\PostmanSettingsDTO' => PostmanSettingsDTO::class,
+            'App\Domain\Setting\DTOs\StorageSettingsDTO' => StorageSettingsDTO::class,
+            'App\Domain\Setting\DTOs\TurnstileSettingsDTO' => TurnstileSettingsDTO::class,
+            'App\Domain\Setting\Queries\SettingsDefaultsQuery' => SettingsDefaultsQuery::class,
             'App\Domain\Shared\Actions\BaseAction' => BaseAction::class,
             'App\Domain\Shared\Contracts\PipeableAction' => PipeableAction::class,
             'App\Domain\Shared\DTOs\BaseDTO' => BaseDTO::class,
             'App\Domain\Shared\Pipelines\ActionPipeline' => ActionPipeline::class,
             'App\Domain\Shared\Services\DefinitionService' => DefinitionService::class,
+            // Faz 6 — User runtime (Actions/DTO/Events/Listeners/Queries). The User
+            // MODEL (Spatie HasRoles + Fortify contracts), Store/UpdateUserRequest,
+            // UserController (Admin + Api), UserResource and UserPolicy stay app-owned.
+            // Actions/Fortify/CreateNewUser stays app-owned. Rank-hierarchy behaviour in
+            // UserDatatableQuery is byte-identical (relocation only). Event/listener
+            // registration moves to the vendor registerEventListeners().
+            // BulkActions/BulkDeleteUserAction stays app-owned: it extends the app-owned
+            // App\Http\BulkActions\BulkDeleteAction override base, so it is not vendor-
+            // aliased here (a vendor class with an app-owned parent would fatal under
+            // class_alias eager-load).
+            'App\Domain\User\Actions\CreateUserAction' => CreateUserAction::class,
+            'App\Domain\User\Actions\DeleteUserAction' => DeleteUserAction::class,
+            'App\Domain\User\Actions\UpdateUserAction' => UpdateUserAction::class,
+            'App\Domain\User\DTOs\UserDTO' => UserDTO::class,
+            'App\Domain\User\Events\UserCreated' => UserCreated::class,
+            'App\Domain\User\Events\UserDeleted' => UserDeleted::class,
+            'App\Domain\User\Events\UserUpdated' => UserUpdated::class,
+            'App\Domain\User\Listeners\LogUserCreated' => LogUserCreated::class,
+            'App\Domain\User\Listeners\LogUserDeleted' => LogUserDeleted::class,
+            'App\Domain\User\Listeners\LogUserUpdated' => LogUserUpdated::class,
+            'App\Domain\User\Queries\UserDatatableQuery' => UserDatatableQuery::class,
             'App\Exceptions\ApiException' => ApiException::class,
             'App\Exceptions\ApiExceptionHandler' => ApiExceptionHandler::class,
             'App\Http\Middleware\CheckResourcePermission' => CheckResourcePermission::class,
@@ -555,17 +688,23 @@ class StarterKitServiceProvider extends ServiceProvider
      * object never matched and the audit listener silently never fired. Binding
      * here, with the vendor FQCN on both sides, is the fix.
      *
-     * No double-fire risk:
+     * No double-fire risk (applies to every binding below):
      *   - Fresh install: only this vendor binding exists; vendor dispatch → 1 run.
-     *   - Existing consumer that kept its App\ Logs event/listener+action:
-     *     their App-keyed registration + App dispatch run once; this vendor
-     *     binding is dormant (their action never dispatches the vendor event).
+     *     The stub DomainServiceProvider no longer registers these (the App-keyed
+     *     Event::listen lines were removed when the domain moved vendor-first).
+     *   - Existing consumer that kept its App\ event/listener+action: their
+     *     App-keyed registration + App dispatch run once; this vendor binding is
+     *     dormant (their App action never dispatches the vendor event).
      *   - Existing consumer reconciled to vendor (App copies removed): the alias
      *     makes the App import resolve to vendor, dispatch is the vendor object,
      *     and only this vendor binding matches — still exactly one run.
      *
-     * Role/User domain events stay in the stub DomainServiceProvider — they are
-     * still App-resident on both sides, so moving them here would not match.
+     * Faz 6 — User and Role audit events (UserCreated/Updated/Deleted +
+     * RoleCreated/Updated/Deleted) moved vendor-first alongside their Log*
+     * listeners and their dispatching Create/Update/Delete actions. Their
+     * registration moved here from the stub DomainServiceProvider for the SAME
+     * reason as Logs: the vendor action dispatches the vendor event, and a stub
+     * App-keyed `::class` literal would never match it.
      */
     private function registerEventListeners(): void
     {
@@ -573,6 +712,16 @@ class StarterKitServiceProvider extends ServiceProvider
             LogFilesDeleted::class,
             LogActivityForLogFilesDeleted::class,
         );
+
+        // ── User audit events (vendor event + vendor listener) ───────────────
+        Event::listen(UserCreated::class, LogUserCreated::class);
+        Event::listen(UserUpdated::class, LogUserUpdated::class);
+        Event::listen(UserDeleted::class, LogUserDeleted::class);
+
+        // ── Role audit events (vendor event + vendor listener) ───────────────
+        Event::listen(RoleCreated::class, LogRoleCreated::class);
+        Event::listen(RoleUpdated::class, LogRoleUpdated::class);
+        Event::listen(RoleDeleted::class, LogRoleDeleted::class);
     }
 
     /**

@@ -6,9 +6,10 @@
 |--------------------------------------------------------------------------
 |
 | Bu testler BulkDeleteUserAction'ın authorize() mantığını doğrular.
-| App\Domain\User\BulkActions\BulkDeleteUserAction stubs altında olduğu
-| için autoload edilemez; mantık package'in base sınıfları üzerinden
-| in-test anonymous class ile simüle edilir.
+| App\Domain\User\BulkActions\BulkDeleteUserAction stubs altında (app-owned;
+| app-owned App\Http\BulkActions\BulkDeleteAction'ı extend ettiği için Faz 6'da
+| vendor'a taşınmadı) olduğundan autoload edilemez; mantık package'in base
+| sınıfları üzerinden in-test anonymous class ile simüle edilir.
 |
 | Test senaryoları:
 |

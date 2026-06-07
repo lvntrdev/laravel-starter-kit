@@ -72,6 +72,9 @@ test('ApiTokenPolicy stub mevcut', function (): void {
 });
 
 test('Action dosyaları mevcut', function (): void {
+    // v16.x (Faz 6): ApiClient runtime actions moved to vendor (src/Domain).
+    // The HTTP layer (controller/request/resource/policy) stays app-owned;
+    // consumer refs resolve through the backward-compat alias.
     $actions = [
         'CreateApiClientAction',
         'UpdateApiClientAction',
@@ -81,8 +84,8 @@ test('Action dosyaları mevcut', function (): void {
     ];
 
     foreach ($actions as $action) {
-        $path = dirname(__DIR__, 3)."/stubs/app/Domain/ApiClient/Actions/{$action}.php";
-        expect(file_exists($path))->toBeTrue("{$action} stub bulunamadı.");
+        $path = dirname(__DIR__, 3)."/src/Domain/ApiClient/Actions/{$action}.php";
+        expect(file_exists($path))->toBeTrue("{$action} vendor runtime bulunamadı.");
     }
 });
 
@@ -365,8 +368,9 @@ test('StoreApiClientRequest confidential alanını kabul etmiyor (K3)', function
 });
 
 test('CreateApiClientAction confidential parametresini kaldırdı (K3)', function (): void {
+    // Action logic now runs from vendor (src/Domain/ApiClient); behavior unchanged.
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Domain/ApiClient/Actions/CreateApiClientAction.php'
+        dirname(__DIR__, 3).'/src/Domain/ApiClient/Actions/CreateApiClientAction.php'
     );
 
     // confidential parametresi method signature'dan kaldırıldı

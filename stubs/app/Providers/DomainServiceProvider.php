@@ -2,19 +2,6 @@
 
 namespace App\Providers;
 
-use App\Domain\Role\Events\RoleCreated;
-use App\Domain\Role\Events\RoleDeleted;
-use App\Domain\Role\Events\RoleUpdated;
-use App\Domain\Role\Listeners\LogRoleCreated;
-use App\Domain\Role\Listeners\LogRoleDeleted;
-use App\Domain\Role\Listeners\LogRoleUpdated;
-use App\Domain\User\Events\UserCreated;
-use App\Domain\User\Events\UserDeleted;
-use App\Domain\User\Events\UserUpdated;
-use App\Domain\User\Listeners\LogUserCreated;
-use App\Domain\User\Listeners\LogUserDeleted;
-use App\Domain\User\Listeners\LogUserUpdated;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -34,25 +21,18 @@ class DomainServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // ── User Events ──────────────────────────────────────────────────
-        Event::listen(UserCreated::class, LogUserCreated::class);
-        Event::listen(UserUpdated::class, LogUserUpdated::class);
-        Event::listen(UserDeleted::class, LogUserDeleted::class);
-
-        // ── Role Events ──────────────────────────────────────────────────
-        Event::listen(RoleCreated::class, LogRoleCreated::class);
-        Event::listen(RoleUpdated::class, LogRoleUpdated::class);
-        Event::listen(RoleDeleted::class, LogRoleDeleted::class);
-
-        // ── Logs Events ──────────────────────────────────────────────────
-        // The Logs domain was moved vendor-first: its event + listener now live
-        // in Lvntr\StarterKit\Domain\Logs\* and the vendor DeleteLogFilesAction
-        // dispatches the VENDOR event. The kit's StarterKitServiceProvider binds
-        // LogFilesDeleted → LogActivityForLogFilesDeleted with the vendor FQCN on
-        // both sides, so the registration key matches the dispatched class. An
-        // App-keyed Event::listen here would never match that vendor dispatch
-        // (class_alias does not rewrite a `::class` literal), so it is omitted.
-        // Re-add a binding here only if you reintroduce an App\ copy of both the
-        // event and its dispatching action.
+        // ── User / Role / Logs Events ────────────────────────────────────────
+        // These domains were moved vendor-first: their events + Log* listeners now
+        // live in Lvntr\StarterKit\Domain\{User,Role,Logs}\* and the vendor actions
+        // (Create/Update/Delete*) dispatch the VENDOR event. The kit's
+        // StarterKitServiceProvider::registerEventListeners() binds each event to its
+        // listener with the vendor FQCN on both sides, so the registration key matches
+        // the dispatched class. An App-keyed Event::listen here would never match that
+        // vendor dispatch (class_alias does not rewrite a `::class` literal), so the
+        // bindings are omitted.
+        //
+        // Add your OWN application event→listener bindings here. Re-add a binding for
+        // a kit domain only if you reintroduce an App\ copy of BOTH the event and its
+        // dispatching action.
     }
 }

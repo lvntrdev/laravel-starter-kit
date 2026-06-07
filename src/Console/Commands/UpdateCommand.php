@@ -49,6 +49,47 @@ class UpdateCommand extends Command
         'app/Domain/Logs/',
         'app/Domain/Session/',
         'app/Domain/Media/',
+        // v16.x (Faz 6): ApiClient + ApiRoute runtime moved to vendor. Only the
+        // pure-runtime Domain/ subtrees are vendor-resident; the HTTP layer
+        // (controllers/requests/resources/policies) and Postman/Apidog console
+        // commands stay app-owned. Existing app copies of these Domain/ dirs are
+        // reported here only — never force-deleted (they may be customized, and
+        // any app copy keeps WINNING via the alias-skip override invariant).
+        'app/Domain/ApiClient/',
+        'app/Domain/ApiRoute/',
+        // v16.x (Faz 6): Setting runtime moved to vendor — SettingService
+        // (encryption/cache core), Actions, settings DTOs and SettingsDefaultsQuery.
+        // Only the pure-runtime Domain/Setting/ subtree is vendor-resident; the
+        // Setting MODEL (app/Models/Setting.php, static facade), SettingPolicy,
+        // SettingsController, Settings FormRequests, config/settings.php and the
+        // _03_SettingSeeder stay app-owned. Existing app copies of Domain/Setting/
+        // are reported here only — never force-deleted (they may be customized, and
+        // any app copy keeps WINNING via the alias-skip override invariant).
+        'app/Domain/Setting/',
+        // v16.x (Faz 6): User + Role runtime moved to vendor — Actions, DTOs, Events,
+        // Listeners and Queries (incl. rank-hierarchy queries and the audit
+        // event/listener pairs). Only these pure-runtime subtrees are vendor-resident;
+        // the User/Role MODELS (Spatie HasRoles + Fortify / extends Spatie Role),
+        // Store/UpdateRoleRequest privilege-boundary, controllers, resources, policies,
+        // Actions/Fortify/CreateNewUser, the permission-resources.php matrix and RoleEnum
+        // all stay app-owned. Domain/{User,Role}/BulkActions/ ALSO stays app-owned (the
+        // BulkDelete*Action classes extend the app-owned App\Http\BulkActions\
+        // BulkDeleteAction override base) — hence the per-subdirectory listing below
+        // instead of a blanket app/Domain/{User,Role}/ prefix. Existing app copies of
+        // the listed dirs are reported here only — never force-deleted (they may be
+        // customized, and any app copy keeps WINNING via the alias-skip override
+        // invariant). The audit event→listener bindings moved to the vendor
+        // StarterKitServiceProvider::registerEventListeners().
+        'app/Domain/User/Actions/',
+        'app/Domain/User/DTOs/',
+        'app/Domain/User/Events/',
+        'app/Domain/User/Listeners/',
+        'app/Domain/User/Queries/',
+        'app/Domain/Role/Actions/',
+        'app/Domain/Role/DTOs/',
+        'app/Domain/Role/Events/',
+        'app/Domain/Role/Listeners/',
+        'app/Domain/Role/Queries/',
         'app/Traits/HasActivityLogging.php',
         'app/Traits/HasMediaCollections.php',
         'app/Helpers/sk-helpers.php',
@@ -138,6 +179,12 @@ class UpdateCommand extends Command
      */
     private const NEVER_UPDATE_PATHS = [
         'config/permission-resources.php',
+        // v16.x (Faz 6): the sensitive-keys whitelist. Setting runtime (SettingService)
+        // is now vendor-resident and reads config('settings.sensitive_keys') at runtime,
+        // but the whitelist itself is consumer-owned — consumers add their own sensitive
+        // keys (and other settings) here. Never overwrite it on update, or a consumer's
+        // added sensitive key would be lost and that value would be stored plaintext.
+        'config/settings.php',
         'node_modules/',
     ];
 

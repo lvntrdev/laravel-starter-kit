@@ -25,7 +25,9 @@ function settingSeederStub(): string
 
 function settingServiceStub(): string
 {
-    return dirname(__DIR__, 3).'/stubs/app/Domain/Setting/SettingService.php';
+    // v16.x (Faz 6): SettingService moved to vendor (src/Domain/Setting). The
+    // encryption/seedDefault behavior is unchanged; only the file location moved.
+    return dirname(__DIR__, 3).'/src/Domain/Setting/SettingService.php';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

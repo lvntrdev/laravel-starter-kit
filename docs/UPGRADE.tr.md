@@ -4,7 +4,155 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
-## v15.10.0
+## v13.5.11 → v13.6.0
+
+### Özet
+
+13.6.0, v13.5.11'den (son yayınlanan sürüm) bu yana publish edilmiş dosyalara dokunan tüm değişiklikleri tek bir geçişte toplar. Vendor-runtime migrasyonunu tamamlar — backend yardımcı sınıfları, middleware, üç üçüncü-parti config, 15 composable, `TurnstileWidget.vue` ve `v-can` / `v-role` izin direktif plugin'i artık vendor paketinden çalışır — ve yapılandırılmış tema/layout/CSS sistemini getirir: bir `AppShell.vue` kompozisyonu, `themes/main/` slot ağacı (her CSS cascade katmanı override edilebilir bir slot) ve opt-in `themes/custom/` override teması. **Görsel değişiklik yok** — varsayılan build (`VITE_SK_THEME=main`) v13.5.11 ile byte-identical'dır. Aşağıdaki adımlarla geçişi tek seferde yapın; ardından gelen alan-bazlı bölümler referans detaydır (yalnızca projenize uyan "özelleştirdiyseniz…" notlarını uygulayın).
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update          # yeni stub'ları getirir: layout, CSS tema ağacı, resolver, .env.example + package.json güncellemeleri
+php artisan migrate            # "Nothing to migrate" — şema değişikliği yok
+npm install
+npm run build                  # panel birebir aynı görünmeli
+```
+
+---
+
+### Domain runtime katmanları vendor'a taşındı (Faz 6)
+
+Beş domain modülünün **runtime katmanı** (Actions, DTOs, Queries, Events, Listeners ve Setting servisi), `stubs/app/Domain/` yerine pakete (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`) taşındı. Tüketici yüzeyi — Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route dosyaları, Policy'ler ve `config/settings.php` — uygulamanızda kalmaya devam eder ve **etkilenmez**.
+
+Etkilenen domain'ler: `ApiClient`, `ApiRoute`, `Setting`, `User`, `Role`.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Controller / provider'larınızdaki `App\Domain\<Module>\...` import'ları | Çalışmaya devam eder — `class_alias` bunları vendor namespace'ine şeffaf biçimde çözer |
+| Mevcut `app/Domain/{ApiClient,ApiRoute,Setting,User,Role}/` kopyaları | Korunur, otomatik silinmez |
+| Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route dosyaları | Değişmez — uygulamanızda kalır |
+| `App\Models\User`, `App\Models\Role`, `App\Models\Setting` | Asla vendor'a taşınmaz |
+| `Store/UpdateRoleRequest` privilege-boundary (`validated()`) | Değişmez — app-owned |
+| `config/permission-resources.php` | Değişmez — sanctuary (`sk:update` asla üzerine yazmaz) |
+| `config/settings.php` | Değişmez — sanctuary (`sk:update` asla üzerine yazmaz, bu sürümde eklendi) |
+| Policy'ler (`UserPolicy`, `RolePolicy`, `SettingPolicy`, `ApiClientPolicy`, `ApiTokenPolicy`) | Değişmez — app-owned |
+| Postman / Apidog console command'ları | Değişmez — app-owned |
+| `BulkDeleteUserAction`, `BulkDeleteRoleAction` | Değişmez — app-owned (app-owned `App\Http\BulkActions\BulkDeleteAction` override base sınıfını extend eder) |
+| Permission key'leri, route isimleri, API zarfı | Değişmez |
+| `RoleEnum` (system_admin / admin / user sözleşmesi) | Değişmez — app-owned |
+
+#### Yeni kurulumlar (v13.6.0+)
+
+`sk:install` artık `app/Domain/ApiClient/`, `app/Domain/ApiRoute/`, `app/Domain/Setting/`, `app/Domain/User/Actions/`, `app/Domain/User/DTOs/`, `app/Domain/User/Events/`, `app/Domain/User/Listeners/`, `app/Domain/User/Queries/`, `app/Domain/Role/Actions/`, `app/Domain/Role/DTOs/`, `app/Domain/Role/Events/`, `app/Domain/Role/Listeners/` veya `app/Domain/Role/Queries/` dizinlerini `app/`'e kopyalamaz. Bu modüllerin runtime sınıfları doğrudan `vendor/lvntr/laravel-starter-kit/src/Domain/`'dan çalışır. Scaffold controller'larındaki `App\Domain\<Module>\...` import'ları `class_alias` aracılığıyla çözülür — üretilen kodda herhangi bir import değişikliği gerekmez.
+
+#### Mevcut kurulumlar — geçiş adımları
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+```
+
+`sk:update`, uygulamanızda kalan vendor-resident app kopyalarını raporlar (yalnızca bilgilendirici — otomatik olarak asla silinmez):
+
+```
+ WARN  v13.5.0+: package runtime runs from vendor. The following files still exist in your app:
+
+  • app/Domain/ApiClient/
+  • app/Domain/ApiRoute/
+  • app/Domain/Setting/
+  • app/Domain/User/Actions/
+  • app/Domain/User/DTOs/
+  • app/Domain/User/Events/
+  • app/Domain/User/Listeners/
+  • app/Domain/User/Queries/
+  • app/Domain/Role/Actions/
+  • app/Domain/Role/DTOs/
+  • app/Domain/Role/Events/
+  • app/Domain/Role/Listeners/
+  • app/Domain/Role/Queries/
+
+  Deleting these files is optional; vendor copies take precedence.
+```
+
+Başka herhangi bir adım gerekmez. Uygulamanız değişmeden çalışmaya devam eder.
+
+#### İsteğe bağlı temizlik — eski app kopyalarını reconcile etme
+
+Bu adım tamamen isteğe bağlıdır ve daha sonra da yapılabilir.
+
+**Bu domain dosyalarının hiçbirini özelleştirmediyseniz**, app kopyalarını silerek vendor versiyonlarının (`class_alias` aracılığıyla) devreye girmesini sağlayabilirsiniz:
+
+```bash
+# ApiClient + ApiRoute
+rm -rf app/Domain/ApiClient/
+rm -rf app/Domain/ApiRoute/
+
+# Setting runtime (app/Models/Setting.php ve app/Policies/SettingPolicy.php'yi koruyun)
+rm -rf app/Domain/Setting/
+
+# User runtime (app/Domain/User/BulkActions/'ı koruyun)
+rm -rf app/Domain/User/Actions/
+rm -rf app/Domain/User/DTOs/
+rm -rf app/Domain/User/Events/
+rm -rf app/Domain/User/Listeners/
+rm -rf app/Domain/User/Queries/
+
+# Role runtime (app/Domain/Role/BulkActions/'ı koruyun)
+rm -rf app/Domain/Role/Actions/
+rm -rf app/Domain/Role/DTOs/
+rm -rf app/Domain/Role/Events/
+rm -rf app/Domain/Role/Listeners/
+rm -rf app/Domain/Role/Queries/
+```
+
+**Bir domain dosyasını özelleştirdiyseniz**, `app/Domain/<Module>/` dizinini veya ilgili alt dizini koruyun. `class_alias` guard'ı bunu algılar ve devre dışı kalır — özelleştirilmiş versiyonunuz vendor kopyasını kazanmaya devam eder. Değiştirilmemiş alt dizinleri silerken değiştirilmişleri saklayabilirsiniz; guard sınıf düzeyinde çalışır.
+
+**Kısmi reconcile örneği** — özelleştirilmiş bir Action'ı koruyun, geri kalanları silin:
+
+```bash
+# User Actions'dan yalnızca özelleştirilmiş dosyayı bırakın
+rm app/Domain/User/Actions/DeleteUserAction.php
+rm app/Domain/User/Actions/UpdateUserAction.php
+# Koru: app/Domain/User/Actions/CreateUserAction.php (özelleştirilmiş)
+```
+
+#### Domain bazında override yolları
+
+Taşınan tüm runtime sınıfları `overridable` tier'dadır: `app/Domain/<Module>/<Class>.php` dosyası mevcutsa vendor kopyasını geçersiz kılar — alias guard otomatik olarak devre dışı kalır. Açık bir opt-in gerekmez.
+
+| Katman | Override yolu |
+|---|---|
+| Action, DTO, Query, Event, Listener, Service | `App\Domain\<Module>\...` namespace'iyle `app/Domain/<Module>/<path>.php` oluşturun — alias guard vendor versiyonunu otomatik olarak atlar |
+| Controller, FormRequest, Resource, Policy | Zaten app-owned — doğrudan düzenleyin |
+| `config/settings.php` | Zaten app-owned sanctuary — doğrudan düzenleyin |
+| Vue sayfaları (`resources/js/pages/Admin/*`) | Zaten app-owned — doğrudan düzenleyin |
+| Runtime sınıfını yeniden yayınlama | PHP runtime sınıfları için `sk:publish <domain>` tag'i yoktur. `vendor/lvntr/laravel-starter-kit/src/Domain/<Module>/` konumundan `app/Domain/<Module>/` konumuna `App\Domain\<Module>\` namespace'iyle kopyalayın; alias guard gerisini halleder |
+
+#### User / Role audit log event wiring
+
+`UserCreated`, `UserUpdated`, `UserDeleted`, `RoleCreated`, `RoleUpdated` ve `RoleDeleted` event'leri ile `Log*` listener'ları artık vendor-resident'tır. `StarterKitServiceProvider`, event→listener bağlamalarını doğrudan kaydeder; `DomainServiceProvider`'daki bu altı çift için kayıtlar artık gerekli değildir.
+
+**Fresh install:** `DomainServiceProvider`, bu altı çift için artık `Event::listen` çağrısı içermez — vendor provider bunları işler.
+
+**Mevcut kurulum:** `app/Providers/DomainServiceProvider.php` içinde hâlâ bu çiftler için `Event::listen` kayıtları varsa (ör. `Event::listen(UserCreated::class, LogUserCreated::class)`), app kopyalarını reconcile ettikten sonra bu kayıtları kaldırın. App kopyaları mevcutken kayıtların tutulması zararsızdır — alias guard vendor binding'i atlar ve app tarafındaki kayıt tam olarak bir kez çalışır. Tamamen vendor'a geçmek için app kopyalarını ve `DomainServiceProvider` kayıtlarını birlikte kaldırın.
+
+#### `config/settings.php` never-update sanctuary'sine eklendi
+
+`config/settings.php` artık `NEVER_UPDATE_PATHS` listesindedir. `sk:update` bu dosyanın üzerine asla yazmaz; eklediğiniz sensitive key'ler veya setting grupları korunur. Bu, v13.6.0'dan itibaren geçerlidir — elle bir işlem gerekmez.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Auth / permission davranışı | Değişmez — `CheckResourcePermission`, `permission-resources.php`, `RoleEnum` dokunulmadı |
+| API secret — Passport `plainSecret` tek-seferlik kuralı | Değişmez — secret-üreten yüzey app-owned `ApiClientController` ve `ApiClientResource`'da kalır |
+| Setting şifreleme — `SettingService` `sensitive_keys` okuma / `Crypt::encryptString` yazma | Değişmez — logic aynı; yalnızca dosya konumu taşındı |
+| `config/settings.php` sensitive-keys whitelist | Değişmez — app-owned ve artık sanctuary |
+| Route dosyaları ve middleware tier'ları | Değişmez — tüm route dosyaları app-owned; route registry değişmedi |
+
+---
 
 ### Kit çevirileri vendor'a taşındı (Faz 5)
 
@@ -12,7 +160,7 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 #### Çeviriler nasıl dağıtılıyor
 
-| Katman | v15.10.0 öncesi | v15.10.0+ |
+| Katman | v13.6.0 öncesi | v13.6.0+ |
 |---|---|---|
 | Frontend (`$t('sk-common.*')`) | `app/lang/*.php` Vite plugin tarafından derlenir | Vendor JSON, build zamanında `app/lang` ile merge edilir — çakışmada app kazanır |
 | PHP backend (`__('sk-common.*')`) | `sk:install`'ın kopyaladığı `app/lang/{locale}/sk-*.php` | `StarterKitServiceProvider` boot'ta vendor `resources/lang/{locale}/sk-*.php`'yi kaydeder |
@@ -26,7 +174,7 @@ Frontend i18n setup'ı (`resources/js/app.ts`) artık iki kaynak yükler:
 
 Eksik çeviriler vendor varsayılanına düşer. Bir `sk-*` key'ini özelleştirmediyseniz görünür bir değişiklik olmaz; özelleştirdiyseniz kendi versiyonunuz gösterilmeye devam eder.
 
-#### Yeni kurulumlar (v15.10.0+)
+#### Yeni kurulumlar (v13.6.0+)
 
 `sk:install` artık `lang/{en,tr}/sk-*.php` dosyalarını uygulamanıza kopyalamaz. Kit çevirileri vendor paketinden sunulur. `lang/{en,tr}/validation.php` hâlâ kopyalanır — bu, standart Laravel validation override yüzeyidir ve uygulamanızda kalmaya devam eder.
 
@@ -87,8 +235,6 @@ Bu komut, vendor `resources/lang/` içeriğini `lang/vendor/starter-kit/` konumu
 
 ---
 
-## v15.9.0
-
 ### Kit migration'ları vendor'a taşındı (Faz 4)
 
 Altı kit-özel migration `stubs/database/migrations/` yerine paket içine (`database/migrations/`, `loadMigrationsFrom` ile otomatik yüklenir) taşındı. Artık fresh install'da uygulamanıza kopyalanmıyorlar.
@@ -110,7 +256,7 @@ Framework-default migration'lar (`create_users_table`, `create_cache_table`, `cr
 
 `config('starter-kit.run_migrations')` değeri `true` (varsayılan) olduğunda paket, vendor-resident migration'ları `loadMigrationsFrom` aracılığıyla otomatik yükler. Laravel migration geçmişini dosya adıyla (basename) takip ettiğinden, uygulamanızda zaten çalışmış bir migration sessizce atlanır — çift koşma veya hata olmaz.
 
-#### Yeni kurulumlar (v15.9.0+)
+#### Yeni kurulumlar (v13.6.0+)
 
 `sk:install` artık yukarıda listelenen altı migration'ı kopyalamaz. Bu migration'lar doğrudan vendor paketinden çalışır. Ekstra bir adım gerekmez.
 
@@ -152,8 +298,6 @@ Otomatik yükleme devre dışıyken paket `loadMigrationsFrom`'u hiç çağırma
 
 ---
 
-## v15.8.0
-
 ### Domain runtime katmanları vendor'a taşındı (Faz 3)
 
 Dört domain modülünün **runtime katmanı** (Actions, DTOs, Queries, Events, Listeners, Services), `stubs/app/Domain/` yerine pakete (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`) taşındı. Tüketici yüzeyi — Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları ve route dosyaları — uygulamanızda kalmaya devam eder ve **etkilenmez**.
@@ -168,10 +312,10 @@ Etkilenen domain'ler: `ActivityLog`, `Logs`, `Session`, `Media`.
 | Mevcut `app/Domain/{ActivityLog,Logs,Session,Media}/` kopyaları | Korunur, otomatik silinmez |
 | Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route'lar | Değişmez — uygulamanızda kalır |
 | `App\Models\User` | Asla vendor'a taşınmaz |
-| Kit migration'ları | v15.9.0'da vendor'a taşındı (Faz 4) — yukarıya bakın |
+| Kit migration'ları | v13.6.0'da vendor'a taşındı (Faz 4) — yukarıya bakın |
 | Permission key'leri, route isimleri, API zarfı | Değişmez |
 
-#### Yeni kurulumlar (v15.8.0+)
+#### Yeni kurulumlar (v13.6.0+)
 
 `sk:install` artık `app/Domain/ActivityLog/`, `app/Domain/Logs/`, `app/Domain/Session/` veya `app/Domain/Media/`'yı `app/`'e kopyalamaz. Bu modüllerin runtime sınıfları doğrudan `vendor/lvntr/laravel-starter-kit/src/Domain/`'dan çalışır. Scaffold controller'larındaki `App\Domain\<Module>\...` import'ları `class_alias` aracılığıyla çözülür — üretilen kodda herhangi bir import değişikliği gerekmez.
 
@@ -237,8 +381,6 @@ rm -rf app/Domain/Logs/Services/
 
 ---
 
-## v15.7.0
-
 ### Build scriptleri vendor'a taşındı — consumer wiring güncellenmeli
 
 `scripts/sk-theme-build.mjs` ve `scripts/vite-plugin-sk-theme.mjs` artık uygulamanıza kopyalanmıyor. Bu scriptler paket içinde taşınarak `vendor/lvntr/laravel-starter-kit/resources/js/theme/` üzerinden çözülüyor — `@lvntr/components` ve kit composable'larının kullandığı mekanizmanın birebir aynısı.
@@ -294,8 +436,6 @@ Resolver mantığı değişmedi — yalnızca dosya konumu taşındı. Üretilen
 
 ---
 
-## v15.6.0
-
 ### Tema dizin yapısı düzleştirildi — BREAKING
 
 `themes/` ara dizini hem CSS hem JS tema ağacından kaldırıldı. Bu yollara doğrudan referans veren consumer app'lerin manuel geçiş yapması gerekir.
@@ -339,22 +479,6 @@ Taşıma sonrasında `npm run theme:build && npm run build` ile doğrulayın.
 #### Varsayılan tema — görsel değişiklik yok
 
 Varsayılan `VITE_SK_THEME=main` (veya değişken tanımlı değil) kullanan projeler için görsel değişiklik yoktur. Geçiş sonrası üretilen `_active.css` çıktısı aynıdır.
-
----
-
-## v13.5.11 → v13.6.0
-
-### Özet
-
-13.6.0, v13.5.11'den (son yayınlanan sürüm) bu yana publish edilmiş dosyalara dokunan tüm değişiklikleri tek bir geçişte toplar. Vendor-runtime migrasyonunu tamamlar — backend yardımcı sınıfları, middleware, üç üçüncü-parti config, 15 composable, `TurnstileWidget.vue` ve `v-can` / `v-role` izin direktif plugin'i artık vendor paketinden çalışır — ve yapılandırılmış tema/layout/CSS sistemini getirir: bir `AppShell.vue` kompozisyonu, `themes/main/` slot ağacı (her CSS cascade katmanı override edilebilir bir slot) ve opt-in `themes/custom/` override teması. **Görsel değişiklik yok** — varsayılan build (`VITE_SK_THEME=main`) v13.5.11 ile byte-identical'dır. Aşağıdaki adımlarla geçişi tek seferde yapın; ardından gelen alan-bazlı bölümler referans detaydır (yalnızca projenize uyan "özelleştirdiyseniz…" notlarını uygulayın).
-
-```bash
-composer update lvntr/laravel-starter-kit
-php artisan sk:update          # yeni stub'ları getirir: layout, CSS tema ağacı, resolver, .env.example + package.json güncellemeleri
-php artisan migrate            # "Nothing to migrate" — şema değişikliği yok
-npm install
-npm run build                  # panel birebir aynı görünmeli
-```
 
 ---
 

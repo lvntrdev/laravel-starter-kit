@@ -49,7 +49,7 @@ it('stub UpdateFileManagerSettingsRequest includes storage_quota_gb validation r
 
 it('FileManagerSettingsDTO stub contains storageQuotaGb property', function (): void {
     $stubPath = dirname(__DIR__, 3)
-        .'/stubs/app/Domain/Setting/DTOs/FileManagerSettingsDTO.php';
+        .'/src/Domain/Setting/DTOs/FileManagerSettingsDTO.php';
 
     expect(is_file($stubPath))->toBeTrue();
 
