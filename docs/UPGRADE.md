@@ -4,6 +4,71 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v15.9.0
+
+### Kit migrations moved to vendor (Phase 4)
+
+Six kit-specific migrations have moved from `stubs/database/migrations/` into the package itself (`database/migrations/`, auto-loaded via `loadMigrationsFrom`). They are no longer copied into your app on a fresh install.
+
+#### Moved migrations
+
+| File | Table |
+|---|---|
+| `2026_03_08_205445_create_media_table.php` | `media` |
+| `2026_03_11_071628_create_activity_log_table.php` | `activity_log` |
+| `2026_03_12_001950_create_definitions_table.php` | `definitions` |
+| `2026_03_14_080933_create_settings_table.php` | `settings` |
+| `2026_04_13_100200_add_folder_id_to_media_table.php` | `media` (add `folder_id`) |
+| `2026_05_02_094121_add_soft_deletes_to_media_table.php` | `media` (add `deleted_at`) |
+
+Framework-default migrations (`create_users_table`, `create_cache_table`, `create_jobs_table`), Passport OAuth migrations, and the Spatie permission migration were **not moved** — they remain in `stubs/database/migrations/` and continue to be copied into your app.
+
+#### How it works
+
+The package loads all vendor-resident migrations automatically when `config('starter-kit.run_migrations')` is `true` (the default). Laravel keys migration history by bare filename, so a migration that already ran in your app is silently skipped — no double-run, no error.
+
+#### New installs (v15.9.0+)
+
+A fresh `sk:install` no longer copies the six migrations listed above. They run directly from the vendor package. No extra step is needed.
+
+#### Existing installs — upgrade steps
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+```
+
+`sk:update` force-deletes the six app copies listed above. This is safe: each filename is already recorded in your `migrations` table and will not be re-run (Laravel's basename-keyed deduplication). `php artisan migrate` returns "Nothing to migrate" unless other pending migrations are queued.
+
+#### Disabling auto-load (escape hatch)
+
+If you need a physical copy in your app — for example, to modify a migration before it has run, or to satisfy a static-analysis tool — publish the vendor migrations and disable auto-load:
+
+```bash
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan vendor:publish --tag=starter-kit-config
+```
+
+Then set `run_migrations` to `false` in `config/starter-kit.php`:
+
+```php
+'run_migrations' => false,
+```
+
+With auto-load disabled the package never calls `loadMigrationsFrom`; your published copies are the sole source of truth. Do not set this flag to `false` without also publishing the migrations, or the tables will never be created on a fresh install.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| Migration history (`migrations` table) | Unchanged — basenames already recorded |
+| Schema — tables, columns, indexes | Unchanged — pure file relocation |
+| Framework-default, Passport, and Spatie migrations | Unchanged — remain in your app |
+| Permission keys, route names, API envelope | Unchanged |
+
+---
+
 ## v15.8.0
 
 ### Domain runtime layers moved to vendor (Phase 3)
@@ -20,7 +85,7 @@ Affected domains: `ActivityLog`, `Logs`, `Session`, `Media`.
 | Existing `app/Domain/{ActivityLog,Logs,Session,Media}/` copies | Preserved, never deleted automatically |
 | Controllers, FormRequests, Models, Vue pages, routes | Unchanged — stays in your app |
 | `App\Models\User` | Never moved to vendor |
-| Migrations | Unchanged — stays in `stubs/database/migrations/` (Phase 4) |
+| Kit migrations | Moved to vendor in v15.9.0 (Phase 4) — see above |
 | Permission keys, route names, API envelope | Unchanged |
 
 #### New installs (v15.8.0+)

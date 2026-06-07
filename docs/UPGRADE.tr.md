@@ -4,6 +4,71 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v15.9.0
+
+### Kit migration'ları vendor'a taşındı (Faz 4)
+
+Altı kit-özel migration `stubs/database/migrations/` yerine paket içine (`database/migrations/`, `loadMigrationsFrom` ile otomatik yüklenir) taşındı. Artık fresh install'da uygulamanıza kopyalanmıyorlar.
+
+#### Taşınan migration'lar
+
+| Dosya | Tablo |
+|---|---|
+| `2026_03_08_205445_create_media_table.php` | `media` |
+| `2026_03_11_071628_create_activity_log_table.php` | `activity_log` |
+| `2026_03_12_001950_create_definitions_table.php` | `definitions` |
+| `2026_03_14_080933_create_settings_table.php` | `settings` |
+| `2026_04_13_100200_add_folder_id_to_media_table.php` | `media` (`folder_id` ekleme) |
+| `2026_05_02_094121_add_soft_deletes_to_media_table.php` | `media` (`deleted_at` ekleme) |
+
+Framework-default migration'lar (`create_users_table`, `create_cache_table`, `create_jobs_table`), Passport OAuth migration'ları ve Spatie permission migration'ı **taşınmadı** — `stubs/database/migrations/` içinde kalmaya devam ediyor ve uygulamanıza kopyalanmaya devam ediyor.
+
+#### Nasıl çalışır
+
+`config('starter-kit.run_migrations')` değeri `true` (varsayılan) olduğunda paket, vendor-resident migration'ları `loadMigrationsFrom` aracılığıyla otomatik yükler. Laravel migration geçmişini dosya adıyla (basename) takip ettiğinden, uygulamanızda zaten çalışmış bir migration sessizce atlanır — çift koşma veya hata olmaz.
+
+#### Yeni kurulumlar (v15.9.0+)
+
+`sk:install` artık yukarıda listelenen altı migration'ı kopyalamaz. Bu migration'lar doğrudan vendor paketinden çalışır. Ekstra bir adım gerekmez.
+
+#### Mevcut kurulumlar — geçiş adımları
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+php artisan migrate
+```
+
+`sk:update`, yukarıda listelenen altı app kopyasını force-delete eder. Bu güvenlidir: her dosya adı zaten `migrations` tablonuzda kayıtlıdır ve yeniden koşmaz (Laravel'in basename bazlı deduplication'ı). `php artisan migrate`, başka bekleyen migration yoksa "Nothing to migrate" döner.
+
+#### Otomatik yüklemeyi devre dışı bırakma (kaçış kapısı)
+
+Uygulamanızda fiziksel bir kopyaya ihtiyaç duyuyorsanız — örneğin bir migration'ı çalışmadan önce değiştirmek ya da statik analiz aracını tatmin etmek için — vendor migration'larını yayınlayın ve otomatik yüklemeyi kapatın:
+
+```bash
+php artisan vendor:publish --tag=starter-kit-migrations
+php artisan vendor:publish --tag=starter-kit-config
+```
+
+Ardından `config/starter-kit.php` içinde `run_migrations` değerini `false` yapın:
+
+```php
+'run_migrations' => false,
+```
+
+Otomatik yükleme devre dışıyken paket `loadMigrationsFrom`'u hiç çağırmaz; yayınlanan kopyalar tek kaynak haline gelir. Bu bayrağı migration'ları yayınlamadan `false` yapmayın — aksi hâlde fresh install'da tablolar hiç oluşturulmaz.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Migration geçmişi (`migrations` tablosu) | Değişmez — basename'ler zaten kayıtlı |
+| Şema — tablo, kolon, index | Değişmez — yalnızca dosya taşıması |
+| Framework-default, Passport ve Spatie migration'ları | Değişmez — uygulamanızda kalmaya devam eder |
+| Permission key'leri, route isimleri, API zarfı | Değişmez |
+
+---
+
 ## v15.8.0
 
 ### Domain runtime katmanları vendor'a taşındı (Faz 3)
@@ -20,7 +85,7 @@ Etkilenen domain'ler: `ActivityLog`, `Logs`, `Session`, `Media`.
 | Mevcut `app/Domain/{ActivityLog,Logs,Session,Media}/` kopyaları | Korunur, otomatik silinmez |
 | Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route'lar | Değişmez — uygulamanızda kalır |
 | `App\Models\User` | Asla vendor'a taşınmaz |
-| Migration'lar | Değişmez — `stubs/database/migrations/`'ta kalır (Faz 4) |
+| Kit migration'ları | v15.9.0'da vendor'a taşındı (Faz 4) — yukarıya bakın |
 | Permission key'leri, route isimleri, API zarfı | Değişmez |
 
 #### Yeni kurulumlar (v15.8.0+)

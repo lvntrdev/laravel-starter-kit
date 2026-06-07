@@ -75,6 +75,15 @@ it('does not contain unexpected migration files in the vendor directory', functi
         '2026_04_13_100100_create_file_folders_table.php',
         '2026_05_02_092853_create_file_favorites_table.php',
         '2026_05_06_100000_create_file_manager_share_revocations_table.php',
+        // Faz 4 (v15.9.0): kit-specific migrations relocated from stubs into the
+        // vendor package. Pure rename — same basenames, content unchanged — so a
+        // consumer's basename-keyed `migrations` history never re-runs them.
+        '2026_03_08_205445_create_media_table.php',
+        '2026_03_11_071628_create_activity_log_table.php',
+        '2026_03_12_001950_create_definitions_table.php',
+        '2026_03_14_080933_create_settings_table.php',
+        '2026_04_13_100200_add_folder_id_to_media_table.php',
+        '2026_05_02_094121_add_soft_deletes_to_media_table.php',
     ];
 
     $actual = collect(scandir($migrationDir))

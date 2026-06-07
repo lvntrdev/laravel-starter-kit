@@ -112,6 +112,20 @@ class UpdateCommand extends Command
         'resources/js/pages/Admin/Settings/components/AuthTab.vue',
         'resources/js/pages/Admin/Settings/components/TurnstileTab.vue',
         'resources/js/components/Auth/TurnstileWidget.vue',
+        // v15.9.0+: kit-specific migrations moved from stubs into the package
+        // (vendor-resident database/migrations/, auto-loaded via loadMigrationsFrom
+        // + config('starter-kit.run_migrations')). Old app copies are force-deleted
+        // here; this is safe because each basename is already recorded in the
+        // consumer's `migrations` table, and Laravel keys history by basename — the
+        // single vendor copy is "already run" and never re-executes. Removing the
+        // app copy also eliminates the vendor↔app basename duplicate, so the silent
+        // keyBy(basename) dedupe becomes deterministic (one source of truth).
+        'database/migrations/2026_03_08_205445_create_media_table.php',
+        'database/migrations/2026_03_11_071628_create_activity_log_table.php',
+        'database/migrations/2026_03_12_001950_create_definitions_table.php',
+        'database/migrations/2026_03_14_080933_create_settings_table.php',
+        'database/migrations/2026_04_13_100200_add_folder_id_to_media_table.php',
+        'database/migrations/2026_05_02_094121_add_soft_deletes_to_media_table.php',
     ];
 
     /**
