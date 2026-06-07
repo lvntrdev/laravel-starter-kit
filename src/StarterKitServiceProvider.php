@@ -559,47 +559,101 @@ class StarterKitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register vendor FileManager routes.
+     * The vendor-mountable module route registry.
      *
-     * Override mechanism: when the consumer app already ships its own
-     * `routes/web/file-manager-route.php` (or the API equivalent) the
-     * orchestrator in `routes/web.php` / `routes/api.php` will load that
-     * file directly. In that case the package MUST NOT auto-mount — doing
-     * so would register the same route names twice and clash with the
-     * consumer's customized controller.
+     * Each descriptor declares a self-contained route module the package can
+     * auto-mount on a fresh install — and that the consumer can override by
+     * shipping their own route stub.
      *
-     * On a fresh install where neither stub exists, the package mounts the
-     * routes itself under the `web` middleware group with `auth + verified`,
-     * matching the previously published stub's behaviour.
+     * Descriptor shape:
+     *   - name:          Human-readable module key (diagnostics / errors only).
+     *   - overrideStubs: Consumer route-file paths (absolute, base_path()).
+     *                    If ANY of them exists, the package steps aside — the
+     *                    consumer's route orchestrator (routes/web.php /
+     *                    routes/api.php) loads it instead, so the package must
+     *                    not auto-mount or it would double-register names.
+     *   - middleware:    The outer middleware tier the group mounts under.
+     *                    This is the SINGLE source of truth for the module's
+     *                    auth/permission stack on the auto-mount path.
+     *   - loader:        Closure that mounts the vendor route group. Held in
+     *                    code (not config) so it survives `config:cache` —
+     *                    closures are not serializable, which is exactly why
+     *                    the registry lives here and not in config/.
+     *
+     * Adding a module (Faz 3/6 recipe): append one descriptor here with its
+     * own override stubs, middleware tier and a `loader` closure that requires
+     * the vendor route file (mirroring FileManager::routes()). registerRoutes()
+     * picks it up generically — no further wiring needed.
+     *
+     * @return array<int, array{
+     *     name: string,
+     *     overrideStubs: array<int, string>,
+     *     middleware: array<int, string>,
+     *     loader: \Closure(): void
+     * }>
+     */
+    protected function moduleRouteRegistry(): array
+    {
+        return [
+            [
+                'name' => 'file-manager',
+                'overrideStubs' => [
+                    base_path('routes/web/file-manager-route.php'),
+                    base_path('routes/api/file-manager-route.php'),
+                ],
+                // K1 (security): The public share/show endpoint strips
+                // auth+verified via withoutMiddleware() inside the route file
+                // itself, so anonymous signed-URL access works even though the
+                // group mounts under auth+verified here. No special handling
+                // needed at this tier — the route file is self-contained.
+                'middleware' => ['web', 'auth', 'verified'],
+                'loader' => static function (): void {
+                    FileManagerFacade::routes();
+                },
+            ],
+        ];
+    }
+
+    /**
+     * Register vendor module routes from the registry.
+     *
+     * Override mechanism: when the consumer app already ships a module's
+     * override stub (e.g. `routes/web/file-manager-route.php`) the orchestrator
+     * in `routes/web.php` / `routes/api.php` loads it directly. In that case
+     * the package MUST NOT auto-mount that module — doing so would register the
+     * same route names twice and clash with the consumer's customized
+     * controller.
+     *
+     * On a fresh install where no override stub exists, the package mounts the
+     * module itself under its declared middleware tier — matching the
+     * previously published stub's behaviour 1:1.
      */
     private function registerRoutes(): void
     {
-        $consumerRouteFiles = [
-            base_path('routes/web/file-manager-route.php'),
-            base_path('routes/api/file-manager-route.php'),
-        ];
+        foreach ($this->moduleRouteRegistry() as $module) {
+            // Consumer override: if any override stub is present, the consumer
+            // owns the mount (via the stub one-liner that calls the module
+            // loader, or a fully customized route file). The orchestrator in
+            // routes/web.php picks it up automatically — skip this module.
+            $overridden = false;
 
-        foreach ($consumerRouteFiles as $consumerRouteFile) {
-            if (file_exists($consumerRouteFile)) {
-                // Consumer owns the route mount (either via the stub
-                // one-liner that calls FileManager::routes() or via a fully
-                // customized route file pointing to their own controller).
-                // Either way the orchestrator in routes/web.php picks it up
-                // automatically — nothing for the package to do here.
-                return;
+            foreach ($module['overrideStubs'] as $overrideStub) {
+                if (file_exists($overrideStub)) {
+                    $overridden = true;
+
+                    break;
+                }
             }
-        }
 
-        // Fresh install fallback: mount under the standard web auth stack so
-        // the FileManager UI works out of the box without requiring a stub
-        // route file in the consumer app.
-        //
-        // K1 (security): The public share/show endpoint uses withoutMiddleware()
-        // inside the route file to strip auth+verified from the outer group.
-        // No special handling needed here — the route file is self-contained.
-        Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
-            FileManagerFacade::routes();
-        });
+            if ($overridden) {
+                continue;
+            }
+
+            // Fresh install fallback: mount under the module's declared
+            // middleware tier so the feature works out of the box without
+            // requiring a stub route file in the consumer app.
+            Route::middleware($module['middleware'])->group($module['loader']);
+        }
     }
 
     /**
