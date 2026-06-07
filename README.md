@@ -126,7 +126,7 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 ### `sk:doctor` — System Health
 
-Runs 12 checks and reports: PHP extensions, database, Redis, Passport keys, storage symlink, writable directories, queue driver, schedule, mail driver, npm build artifacts, config cache, FileManager disk.
+Runs 15 checks and reports: PHP extensions, database, Redis, Passport keys, storage symlink, writable directories, log channel, log stack, queue driver, schedule, mail driver, npm build artifacts, config cache, FileManager disk, theme manifest.
 
 ```bash
 # Human-readable output
@@ -141,7 +141,7 @@ php artisan sk:doctor --only=database,redis,passport-keys
 
 Exit codes: `0` OK, `1` WARN (non-critical), `2` FAIL (action required).
 
-The `/admin/system-health` admin page runs these checks on demand. Permission required: `system.health.view`.
+The **Settings → System Health** tab runs these checks on demand. Permission required: `system.health.view`.
 
 ### `make:sk-domain` — Domain Generator
 
@@ -228,7 +228,7 @@ Permissions: `share-media`, `revoke-share-media`.
 
 When `select_all_filtered: true`, the action receives the filter snapshot and resolves affected records server-side — no client-side ID enumeration required.
 
-Built-in stub examples available via `php artisan sk:publish --tag=starter-kit-stubs`:
+Built-in stub examples available via `php artisan vendor:publish --tag=starter-kit-stubs`:
 - `BulkDeleteUserAction` — rank-aware; prevents self-deletion
 - `BulkDeleteRoleAction` — skips system-protected roles
 

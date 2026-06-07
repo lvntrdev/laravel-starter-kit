@@ -15,7 +15,7 @@ The Global Files module is the full-page admin screen used to manage system-wide
 | --- | --- | --- | --- |
 | `GET` | `/files` | `files.index` | Opens the global file manager screen |
 
-See [routes/web/files-route.php](../routes/web/files-route.php) for the definition.
+See [routes/web/files-route.php](../stubs/routes/web/files-route.php) for the definition.
 
 ## Screen Structure
 

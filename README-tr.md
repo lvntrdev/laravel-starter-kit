@@ -107,7 +107,7 @@ Kurulum, güncelleme akışı, domain scaffolding, FormBuilder / DatatableBuilde
 
 ### `sk:doctor` — Sistem Sağlık Kontrolü
 
-12 kontrol noktasını çalıştırır: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule, mail driver, npm build artifact'ları, config cache, FileManager disk bağlantısı.
+15 kontrol noktasını çalıştırır: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, log channel, log stack, queue driver, schedule, mail driver, npm build artifact'ları, config cache, FileManager disk bağlantısı, tema manifest'i.
 
 ```bash
 # İnsan okunabilir çıktı
@@ -122,7 +122,7 @@ php artisan sk:doctor --only=database,redis,passport-keys
 
 Exit kodları: `0` OK, `1` WARN (kritik değil), `2` FAIL (müdahale gerektirir).
 
-`/admin/system-health` admin sayfası bu kontrolleri talep üzerine çalıştırır. Erişim izni: `system.health.view`.
+**Settings → System Health** sekmesi bu kontrolleri talep üzerine çalıştırır. Erişim izni: `system.health.view`.
 
 ### `make:sk-domain` — Domain Generator
 
@@ -209,7 +209,7 @@ GET /file-manager/share/{media}?expires=...&signature=...
 
 `select_all_filtered: true` olduğunda action, filtre snapshot'ı alır ve etkilenen kayıtları server tarafında çözer; client'ın ID listesi göndermesi gerekmez.
 
-`php artisan sk:publish --tag=starter-kit-stubs` komutu ile stub örneklerine ulaşabilirsin:
+`php artisan vendor:publish --tag=starter-kit-stubs` komutu ile stub örneklerine ulaşabilirsin:
 - `BulkDeleteUserAction` — rank-aware; kendi hesabını silmeyi engeller
 - `BulkDeleteRoleAction` — sistem tarafından korunan rolleri atlar
 

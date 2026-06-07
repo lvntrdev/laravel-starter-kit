@@ -15,7 +15,7 @@ Global Files modülü, sistem genelindeki dosyaları admin panel içinde tam say
 | --- | --- | --- | --- |
 | `GET` | `/files` | `files.index` | Global dosya yöneticisi ekranını açar |
 
-Tanım için [routes/web/files-route.php](../routes/web/files-route.php) dosyasına bakın.
+Tanım için [routes/web/files-route.php](../stubs/routes/web/files-route.php) dosyasına bakın.
 
 ## Ekran Yapısı
 

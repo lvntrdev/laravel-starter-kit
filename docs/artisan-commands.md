@@ -93,8 +93,11 @@ php artisan sk:publish --tag=tabs
 php artisan sk:publish --tag=skeleton
 php artisan sk:publish --tag=ui
 php artisan sk:publish --tag=filemanager
+php artisan sk:publish --tag=composables
+php artisan sk:publish --tag=plugins
 php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
+php artisan sk:publish --tag=helpers
 ```
 
 ## `sk:eject`

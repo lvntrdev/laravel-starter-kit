@@ -23,7 +23,7 @@ The module uses these web routes:
 | `POST` | `/api-routes/postman-sync` | `api-routes.syncPostman` | Pushes the current OpenAPI spec to Postman |
 | `POST` | `/api-routes/apidog-sync` | `api-routes.syncApidog` | Pushes the current OpenAPI spec to Apidog |
 
-See [routes/web/developer-route.php](../routes/web/developer-route.php) for the definitions.
+See [routes/web/developer-route.php](../stubs/routes/web/developer-route.php) for the definitions.
 
 ## Screen Behavior
 
@@ -66,7 +66,7 @@ The admin page ships two extra toolbar buttons next to **Regenerate Docs**:
 - **Sync to Postman**: runs `SyncPostmanAction`, which exports the current Scramble spec and uploads it to Postman's `POST /import/openapi` endpoint with `folderStrategy=Tags`. Each sync imports a fresh collection, persists the new UID to settings, then best-effort deletes the previous collection — an `import-first, delete-after` sequence so a transient Postman outage cannot leave the workspace without a working collection.
 - **Sync to Apidog**: runs `SyncApidogAction`, which uploads the same spec to Apidog's `POST /v1/projects/{id}/import-openapi` endpoint as inline JSON with `OVERWRITE_EXISTING` mode.
 
-Both buttons share a loading spinner and a result toast. If the matching credentials are missing, the button is disabled and a hint redirects to **Settings → API Clients**, where the `postman` and `apidog` settings groups live. The secret fields (`postman.api_key`, `apidog.access_token`) are encrypted at rest via the `sensitive_keys` list in [config/settings.php](../config/settings.php).
+Both buttons share a loading spinner and a result toast. If the matching credentials are missing, the button is disabled and a hint redirects to **Settings → API Clients**, where the `postman` and `apidog` settings groups live. The secret fields (`postman.api_key`, `apidog.access_token`) are encrypted at rest via the `sensitive_keys` list in [config/settings.php](../stubs/config/settings.php).
 
 The Actions share a helper, `App\Domain\ApiRoute\Support\OpenApiExporter`, which runs `scramble:export` into a per-request temp file under `storage/app/postman/` and cleans up in a `finally` block — the CLI command and the admin UI button can run concurrently without racing on a shared file. The spec is handed to the target client **unchanged**; content-type rewriting is deliberately avoided so the pushed collection mirrors the real server contract.
 

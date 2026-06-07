@@ -23,7 +23,7 @@ Modül şu web route'larını kullanır:
 | `POST` | `/api-routes/postman-sync` | `api-routes.syncPostman` | Güncel OpenAPI spec'ini Postman'e gönderir |
 | `POST` | `/api-routes/apidog-sync` | `api-routes.syncApidog` | Güncel OpenAPI spec'ini Apidog'a gönderir |
 
-Tanımlar için [routes/web/developer-route.php](../routes/web/developer-route.php) dosyasına bakın.
+Tanımlar için [routes/web/developer-route.php](../stubs/routes/web/developer-route.php) dosyasına bakın.
 
 ## Ekran Davranışı
 
@@ -66,7 +66,7 @@ Admin ekranındaki araç çubuğu, **Regenerate Docs** butonunun yanına iki yen
 - **Sync to Postman**: `SyncPostmanAction` çalışır; güncel Scramble spec'ini export eder ve Postman'in `POST /import/openapi` uçuna `folderStrategy=Tags` parametresiyle yükler. Her sync önce taze koleksiyonu import eder, yeni UID'yi ayarlara yazar, sonra eski koleksiyonu best-effort siler — `import-first, delete-after` sırası sayesinde Postman tarafında geçici bir hata mevcut çalışan koleksiyonu kaybettirmez.
 - **Sync to Apidog**: `SyncApidogAction` çalışır; aynı spec'i Apidog'un `POST /v1/projects/{id}/import-openapi` uçuna inline JSON olarak `OVERWRITE_EXISTING` modunda gönderir.
 
-Her iki buton da ortak bir loading spinner ve işlem sonucunu bildiren bir toast gösterir. İlgili kimlik bilgileri eksikse ilgili buton devre dışı kalır ve bir yönlendirme ipucu kullanıcıyı **Settings → API Clients** ekranına götürür — `postman` ve `apidog` settings grupları burada yönetilir. Gizli alanlar (`postman.api_key`, `apidog.access_token`) [config/settings.php](../config/settings.php) içindeki `sensitive_keys` listesi üzerinden şifrelenerek saklanır.
+Her iki buton da ortak bir loading spinner ve işlem sonucunu bildiren bir toast gösterir. İlgili kimlik bilgileri eksikse ilgili buton devre dışı kalır ve bir yönlendirme ipucu kullanıcıyı **Settings → API Clients** ekranına götürür — `postman` ve `apidog` settings grupları burada yönetilir. Gizli alanlar (`postman.api_key`, `apidog.access_token`) [config/settings.php](../stubs/config/settings.php) içindeki `sensitive_keys` listesi üzerinden şifrelenerek saklanır.
 
 İki Action ortak bir yardımcıyı, `App\Domain\ApiRoute\Support\OpenApiExporter` sınıfını kullanır: `scramble:export` komutunu her çağrıda `storage/app/postman/` altında benzersiz bir geçici dosyaya yazar ve `finally` bloğunda temizler — CLI komutu ve admin butonu eş zamanlı çalıştığında paylaşılan bir dosyada yarışmazlar. Spec hedef istemciye **değiştirilmeden** iletilir; content-type rewrite'ı bilinçli olarak yapılmaz, böylece gönderilen koleksiyon gerçek sunucu kontratını aynen yansıtır.
 

@@ -4,7 +4,7 @@ This document gives the high-level map of the starter kit after installation. It
 
 ## Backend Areas
 
-- `app/Domain/` for business logic
+- `app/Domain/` for the business logic that is scaffolded into your app; the runtime layer of vendor-managed domains lives in the package under `src/Domain/` (`Lvntr\StarterKit\Domain\`)
 - `app/Http/Controllers/` for web and API entry points
 - `app/Http/Responses/` for API response shaping
 - `app/Models/` for Eloquent models
@@ -13,24 +13,31 @@ This document gives the high-level map of the starter kit after installation. It
 
 ### Main Domain Modules
 
+**Scaffolded into your app (`app/Domain/`)** — controllers, FormRequests, models, and routes for these are also generated into `app/`:
+
 - `app/Domain/Auth`
 - `app/Domain/User`
 - `app/Domain/Role`
 - `app/Domain/Setting`
-- `app/Domain/Session`
-- `app/Domain/Media`
-- `app/Domain/ActivityLog`
 - `app/Domain/ApiRoute`
-- `app/Domain/FileManager`
-- `app/Domain/Logs`
-- `app/Domain/Shared`
+
+**Vendor-resident (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — their runtime layer (Actions, DTOs, Queries, Events, Listeners, Services) runs from the package and is not copied into your app on a fresh install. `App\Domain\<Module>\...` imports stay working through `class_alias`; a local `app/Domain/<Module>/` copy, if present, takes precedence:
+
+- `Session`
+- `Media`
+- `ActivityLog`
+- `FileManager`
+- `Logs`
+- `Shared`
+
+See [ddd.md](./ddd.md) for the full vendor-resident model and reconcile steps.
 
 ### Typical Request Flow
 
 1. Route resolves to a thin controller.
 2. Validation is handled by a Form Request when needed.
 3. Payload is mapped into a DTO where the feature uses DTOs.
-4. Business logic lives in Action classes under `app/Domain/.../Actions`.
+4. Business logic lives in Action classes — under `app/Domain/.../Actions` for scaffolded domains, or `src/Domain/.../Actions` (vendor namespace) for vendor-resident ones.
 5. Query classes prepare listing and filter data when needed.
 6. Responses are returned through Inertia or `to_api()`.
 
@@ -143,7 +150,7 @@ Some admin screens are isolated into dedicated route files:
 The current UI favors database-backed definitions over a separate enum-sharing layer.
 
 - `_02_DefinitionSeeder.php` seeds keys such as `userStatus`, `gender`, `identityType`, and `yesNo`
-- `App\Domain\Shared\Services\DefinitionService` groups and caches definition items per locale
+- `DefinitionService` (vendor-resident `Lvntr\StarterKit\Domain\Shared\Services\`, reachable via the `App\Domain\Shared\Services\DefinitionService` alias) groups and caches definition items per locale
 - `useDefinition()` reads them from `GET /definitions`
 - definition records carry label, severity, and optional icon metadata
 - `SkDatatable` and `SkForm` can bind directly to definition keys such as `.tag('definition').tagKey('userStatus')` and `.definitionOptions('gender')`
