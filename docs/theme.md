@@ -3,7 +3,7 @@
 This document covers:
 
 - The `AppShell` / `AdminLayout` composition model and how to build a new layout
-- The `themes/main` + `themes/custom` CSS structure, the build-time resolver, and the full-replacement + fallback model
+- The `main` + `custom` CSS structure, the build-time resolver, and the full-replacement + fallback model
 - `VITE_SK_THEME` activation
 - Step-by-step recipe for adding a custom theme or overriding a single component's styles
 
@@ -100,7 +100,7 @@ The theme system has two independent, complementary layers. Both are keyed off t
 
 | Layer | What it covers | Resolver | Artifact |
 |---|---|---|---|
-| **CSS theme override** | Layout dimensions, colours, shadows, component CSS classes | `scripts/sk-theme-build.mjs` writes `_active.css` | Generated file (`_active.css`), gitignored |
+| **CSS theme override** | Layout dimensions, colours, shadows, component CSS classes | `sk-theme-build.mjs` (vendor-resident) writes `_active.css` | Generated file (`_active.css`), gitignored |
 | **PrimeVue preset** | Primary palette, surface colours, border radius, component tokens (`--p-*` variables) | alias `customResolver` in `vite.config.ts` (`resolveActivePreset`) | None — pure JS module resolution |
 
 The two layers are independent: you can override the CSS without touching the preset and vice versa. A `tokens.css` override typically reads the `--p-*` tokens the preset emits — see [Dependency chain](#dependency-chain-tokens-and-preset) below.
@@ -115,43 +115,46 @@ The two layers are independent: you can override the CSS without touching the pr
 resources/css/theme/
 ├── theme.css              # Entry: imports _active.css only
 ├── _active.css            # GENERATED — do not edit; gitignored
-└── themes/
-    ├── main/              # Built-in base theme (source of truth for all slots)
-    │   ├── tokens.css     # CSS custom properties: layout dims, colours, shadows
-    │   ├── fonts.css      # Web font declarations
-    │   ├── _base.scss     # Base reset / typography
-    │   ├── layout/
-    │   │   ├── shell.css        # .admin-layout, .admin-main, Vue transitions
-    │   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
-    │   │   ├── header.css       # .admin-header*
-    │   │   ├── page-header.css  # .admin-page-header*
-    │   │   └── footer.css       # .admin-footer*
-    │   ├── components/
-    │   │   ├── card.css
-    │   │   ├── confirm.css
-    │   │   ├── datatable.css
-    │   │   ├── dialog.css
-    │   │   ├── editor.css
-    │   │   ├── formbuilder.css
-    │   │   ├── menus.css
-    │   │   ├── navigation.css
-    │   │   ├── primevue.css
-    │   │   ├── tabs.css
-    │   │   ├── tag.css
-    │   │   └── toast.css
-    │   ├── _auth.scss     # Auth layout styles
-    │   └── utilities.css  # Tailwind utility overrides
-    └── custom/            # Your override theme (ships empty)
-        └── README.md
+├── main/                  # Built-in base theme (source of truth for all slots)
+│   ├── tokens.css         # CSS custom properties: layout dims, colours, shadows
+│   ├── fonts.css          # Web font declarations
+│   ├── _base.scss         # Base reset / typography
+│   ├── layout/
+│   │   ├── shell.css        # .admin-layout, .admin-main, Vue transitions
+│   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
+│   │   ├── header.css       # .admin-header*
+│   │   ├── page-header.css  # .admin-page-header*
+│   │   └── footer.css       # .admin-footer*
+│   ├── components/
+│   │   ├── card.css
+│   │   ├── confirm.css
+│   │   ├── datatable.css
+│   │   ├── dialog.css
+│   │   ├── editor.css
+│   │   ├── formbuilder.css
+│   │   ├── menus.css
+│   │   ├── navigation.css
+│   │   ├── primevue.css
+│   │   ├── tabs.css
+│   │   ├── tag.css
+│   │   └── toast.css
+│   ├── _auth.scss         # Auth layout styles
+│   └── utilities.css      # Tailwind utility overrides
+└── custom/                # Your override theme — not shipped; you create it
+    └── (create as needed — see recipe below)
 ```
+
+> The kit no longer ships an empty `custom/` directory. If you want to override any slot, create the directory yourself first (see recipes below).
 
 ### How the resolver works
 
-`scripts/sk-theme-build.mjs` is invoked explicitly as part of the `dev` and `build` scripts and writes `theme/_active.css`. The model is **full-replacement + fallback**:
+`sk-theme-build.mjs` is a kit-managed build script shipped inside the package (vendor-resident at `vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs`). You do not own or edit this file — only theme/slot/preset files in your `resources/` directory are yours to customise. The script is invoked by the `skTheme()` Vite plugin automatically during `dev` and `build`, and it writes `theme/_active.css`. The model is **full-replacement + fallback**:
 
-1. `themes/main/` is the canonical slot list and import order.
-2. For each slot, the resolver loads `themes/<active>/<slot>` **if the file exists**; otherwise it loads `themes/main/<slot>`.
+1. `main/` is the canonical slot list and import order.
+2. For each slot, the resolver loads `<active>/<slot>` **if the file exists**; otherwise it loads `main/<slot>`.
 3. The result is a single `_active.css` with one `@import` per slot in the correct cascade order.
+
+If `custom/` does not exist at all, the build still completes — every slot falls through to `main`.
 
 Import order (preserved from the original cascade):
 
@@ -171,13 +174,19 @@ Set the active theme in `.env`:
 VITE_SK_THEME=custom
 ```
 
-The default is `main`. If the variable is absent or blank, `main` is used. Run `npm run dev` or `npm run build` — the resolver runs as an explicit step in those scripts and regenerates `_active.css` before Vite starts. This approach is safe under `ignore-scripts=true` because it does not rely on npm lifecycle hooks.
+The default is `main`. If the variable is absent or blank, `main` is used. Run `npm run dev` or `npm run build` — the `skTheme()` Vite plugin guarantees the resolver runs and regenerates `_active.css` before Vite processes any assets. This approach is safe under `ignore-scripts=true` because it does not rely on npm lifecycle hooks.
 
-To preview the resolved manifest without a full build:
+To preview the resolved manifest without a full build, use the `theme:build` npm script (which runs the vendor script directly):
 
 ```bash
-node scripts/sk-theme-build.mjs
+npm run theme:build
 # [sk-theme-build] theme="custom" → resources/css/theme/_active.css (22 slots, 1 override)
+```
+
+Or invoke the vendor script directly:
+
+```bash
+node vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs
 ```
 
 Open `resources/css/theme/_active.css` to see exactly which file each slot resolved to. Overridden slots are annotated with `/* override */`.
@@ -188,7 +197,7 @@ Open `resources/css/theme/_active.css` to see exactly which file each slot resol
 
 - Listed in `.gitignore` — never commit it.
 - Not hash-tracked by `sk:update` — it is regenerated on every `npm run dev` / `npm run build`.
-- Always present before Vite starts because the resolver is an explicit step in both scripts.
+- Always present before Vite starts because the `skTheme()` plugin invokes the resolver before Vite processes assets.
 
 ---
 
@@ -198,32 +207,33 @@ Open `resources/css/theme/_active.css` to see exactly which file each slot resol
 
 To restyle the datatable without touching anything else:
 
-1. Copy the slot you want to override:
+1. Create the custom directory and copy the slot you want to override:
 
    ```bash
-   cp resources/css/theme/themes/main/components/datatable.css \
-      resources/css/theme/themes/custom/components/datatable.css
+   mkdir -p resources/css/theme/custom/components
+   cp resources/css/theme/main/components/datatable.css \
+      resources/css/theme/custom/components/datatable.css
    ```
 
-2. Edit `themes/custom/components/datatable.css`. Keep the same class names — the Vue components target them.
+2. Edit `custom/components/datatable.css`. Keep the same class names — the Vue components target them.
 
 3. Set `VITE_SK_THEME=custom` in `.env`.
 
-4. Run `npm run dev`. The resolver runs as an explicit step in the `dev` script and regenerates `_active.css`; `themes/custom/components/datatable.css` replaces `themes/main/components/datatable.css` in the import list. All other slots remain from `main`.
+4. Run `npm run dev`. The `skTheme()` plugin regenerates `_active.css` before Vite starts; `custom/components/datatable.css` replaces `main/components/datatable.css` in the import list. All other slots remain from `main`.
 
 Verify the resolved manifest:
 
 ```
-@import './themes/main/tokens.css';
-@import './themes/main/fonts.css';
-@import './themes/main/_base.scss';
-@import './themes/main/layout/footer.css';
+@import './main/tokens.css';
+@import './main/fonts.css';
+@import './main/_base.scss';
+@import './main/layout/footer.css';
 …
-@import './themes/custom/components/datatable.css'; /* override */
-@import './themes/main/components/dialog.css';
+@import './custom/components/datatable.css'; /* override */
+@import './main/components/dialog.css';
 …
-@import './themes/main/_auth.scss';
-@import './themes/main/utilities.css';
+@import './main/_auth.scss';
+@import './main/utilities.css';
 ```
 
 ### Override the token set
@@ -231,8 +241,9 @@ Verify the resolved manifest:
 To change layout dimensions, colours, or shadows globally, override `tokens.css`:
 
 ```bash
-cp resources/css/theme/themes/main/tokens.css \
-   resources/css/theme/themes/custom/tokens.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/tokens.css \
+   resources/css/theme/custom/tokens.css
 ```
 
 Edit the custom properties. All layout regions and components read from these tokens, so a token change propagates everywhere without touching individual component files.
@@ -240,8 +251,9 @@ Edit the custom properties. All layout regions and components read from these to
 ### Override a layout region
 
 ```bash
-cp resources/css/theme/themes/main/layout/sidebar.css \
-   resources/css/theme/themes/custom/layout/sidebar.css
+mkdir -p resources/css/theme/custom/layout
+cp resources/css/theme/main/layout/sidebar.css \
+   resources/css/theme/custom/layout/sidebar.css
 ```
 
 Edit as needed. Only the sidebar slot is replaced; the rest of the layout comes from `main`.
@@ -251,17 +263,19 @@ Edit as needed. Only the sidebar slot is replaced; the rest of the layout comes 
 The font declarations and Tailwind utility overrides are now slots like any other. To swap in your own fonts without touching layout or components:
 
 ```bash
-cp resources/css/theme/themes/main/fonts.css \
-   resources/css/theme/themes/custom/fonts.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/fonts.css \
+   resources/css/theme/custom/fonts.css
 ```
 
-Edit the `@font-face` declarations in `themes/custom/fonts.css`. On the next build, `_active.css` will use your font file instead of the `main` version; all other slots remain from `main`.
+Edit the `@font-face` declarations in `custom/fonts.css`. On the next build, `_active.css` will use your font file instead of the `main` version; all other slots remain from `main`.
 
 Similarly, to override Tailwind utility overrides:
 
 ```bash
-cp resources/css/theme/themes/main/utilities.css \
-   resources/css/theme/themes/custom/utilities.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/utilities.css \
+   resources/css/theme/custom/utilities.css
 ```
 
 Because `utilities.css` is unlayered and emitted last in the cascade, it wins over every layered rule — the same precedence behaviour as before. Edit freely.
@@ -269,11 +283,12 @@ Because `utilities.css` is unlayered and emitted last in the cascade, it wins ov
 ### Override auth styles
 
 ```bash
-cp resources/css/theme/themes/main/_auth.scss \
-   resources/css/theme/themes/custom/_auth.scss
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/_auth.scss \
+   resources/css/theme/custom/_auth.scss
 ```
 
-Edit `themes/custom/_auth.scss`. The `.scss` extension is required — the resolver and Sass compiler are extension-aware.
+Edit `custom/_auth.scss`. The `.scss` extension is required — the resolver and Sass compiler are extension-aware.
 
 ### Complete slot reference
 
@@ -307,8 +322,9 @@ Edit `themes/custom/_auth.scss`. The `.scss` extension is required — the resol
 - A custom theme replaces slots **whole-file** — there is no cascading diff. Copy the `main` file as a starting point.
 - Custom themes cannot add new slots. A file in `custom/` that has no matching path in `main/` is never imported.
 - `VITE_SK_THEME=main` (the default) produces a build byte-identical to the stock panel — no custom files are loaded.
-- Remove `themes/custom/` files you no longer need; the resolver falls back to `main` automatically.
-- Slots with a `.scss` extension (`_base.scss`, `_auth.scss`) must keep that extension in `themes/custom/` too.
+- The kit does not ship a `custom/` directory. Create it yourself before adding overrides; if it does not exist, every slot resolves to `main`.
+- Remove `custom/` files you no longer need; the resolver falls back to `main` automatically.
+- Slots with a `.scss` extension (`_base.scss`, `_auth.scss`) must keep that extension in `custom/` too.
 
 ---
 
@@ -318,9 +334,9 @@ Edit `themes/custom/_auth.scss`. The `.scss` extension is required — the resol
 
 `resources/js/theme/preset.ts` is the base PrimeVue styled-mode preset — it defines the primary palette, surface colours, border radius, and per-component tokens. `app.ts` imports it as `@/theme/preset`. The import path never changes.
 
-The alias `customResolver` in `vite.config.ts` — the `resolveActivePreset` helper exported from `scripts/vite-plugin-sk-theme.mjs` — intercepts the `@/theme/preset` specifier at build time:
+The alias `customResolver` in `vite.config.ts` — the `resolveActivePreset` helper exported from the kit's vendor-resident `vite-plugin-sk-theme.mjs` — intercepts the `@/theme/preset` specifier at build time:
 
-- If `VITE_SK_THEME` is not `main` **and** `resources/js/theme/themes/<active>/preset.ts` exists → resolves to that override file.
+- If `VITE_SK_THEME` is not `main` **and** `resources/js/theme/<active>/preset.ts` exists → resolves to that override file.
 - Otherwise → resolves to the base `resources/js/theme/preset.ts`.
 
 The base file stays where it has always been — the kit never moves it because it is the most commonly customised file in a consumer project.
@@ -329,24 +345,25 @@ The base file stays where it has always been — the kit never moves it because 
 
 ```
 resources/js/theme/
-├── preset.ts                      # Base preset (consumer-customizable; stays here)
-└── themes/
-    └── custom/
-        ├── .gitkeep
-        ├── README.md              # Override recipe
-        └── preset.ts              # (you create this — see recipe below)
+├── preset.ts              # Base preset (consumer-customizable; stays here)
+└── custom/                # Not shipped — you create this when needed
+    └── preset.ts          # (you create this — see recipe below)
 ```
 
-The `themes/custom/` directory ships empty (only the `.gitkeep` and `README.md`). The `custom` theme's preset is absent by default, so the base preset is used and the PrimeVue look is byte-identical to the stock panel.
+The `custom/` directory is not shipped by the kit. The `custom` theme's preset is absent by default, so the base preset is used and the PrimeVue look is byte-identical to the stock panel. Create the directory only when you need a theme-specific preset override.
 
 ### Give a custom theme its own PrimeVue palette
 
-1. Create `resources/js/theme/themes/custom/preset.ts`. The simplest approach is to import the base preset and override only the palette:
+1. Create `resources/js/theme/custom/preset.ts` (create the `custom/` directory first if it does not exist). The simplest approach is to import the base preset and override only the palette:
+
+   ```bash
+   mkdir -p resources/js/theme/custom
+   ```
 
    ```ts
    import { definePreset } from '@primevue/themes';
    import Aura from '@primevue/themes/aura';
-   import AppPreset from '../../preset';
+   import AppPreset from '../preset';
 
    export default definePreset(Aura, {
        ...AppPreset,
@@ -376,12 +393,13 @@ The `themes/custom/` directory ships empty (only the `.gitkeep` and `README.md`)
 ### Notes
 
 - Export the preset object as the **default export** — this is what `app.ts` passes to PrimeVue's `preset` option.
-- The override applies only when `VITE_SK_THEME=custom` and the file exists. Any other value falls back to the base.
+- The override applies only when `VITE_SK_THEME=custom` and `resources/js/theme/custom/preset.ts` exists. Any other value falls back to the base.
+- The kit does not ship a `custom/` directory under `resources/js/theme/`. Create it yourself when you need a theme-specific preset.
 - There is no generated artifact. This is pure module resolution — no `_active` file to gitignore, no npm chain to maintain.
 
 ### Dependency chain — tokens and preset
 
-`resources/css/theme/themes/main/tokens.css` (and any `themes/custom/tokens.css` override) defines the `--admin-*` custom properties the layout and components use. These are **live references** to the `--p-*` variables the PrimeVue preset emits at runtime:
+`resources/css/theme/main/tokens.css` (and any `custom/tokens.css` override) defines the `--admin-*` custom properties the layout and components use. These are **live references** to the `--p-*` variables the PrimeVue preset emits at runtime:
 
 ```css
 /* tokens.css — admin roles point at PrimeVue's preset output */
@@ -394,8 +412,9 @@ Because they are live `var()` references, changing the primary/surface palette i
 Override `tokens.css` only if you want to re-map which PrimeVue token an admin role points at (e.g. make the sidebar read a different surface step):
 
 ```bash
-cp resources/css/theme/themes/main/tokens.css \
-   resources/css/theme/themes/custom/tokens.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/tokens.css \
+   resources/css/theme/custom/tokens.css
 ```
 
 Then edit the `--admin-*` properties to reference your chosen `--p-*` tokens.
@@ -404,7 +423,7 @@ Then edit the `--admin-*` properties to reference your chosen `--p-*` tokens.
 
 ## Dark mode
 
-CSS custom properties for dark mode are declared inside `.dark { … }` blocks in `themes/main/tokens.css` (and in the per-region layout files where layout-specific dark overrides exist). If you override `tokens.css`, copy those `.dark` blocks too.
+CSS custom properties for dark mode are declared inside `.dark { … }` blocks in `main/tokens.css` (and in the per-region layout files where layout-specific dark overrides exist). If you override `tokens.css`, copy those `.dark` blocks too.
 
 Dark mode is toggled by `useDarkMode` — it adds / removes the `dark` class on `<html>`. No build step or separate CSS file is needed.
 

@@ -110,6 +110,34 @@ class UpdateCommand extends Command
         'resources/js/components/Auth/TurnstileWidget.vue',
     ];
 
+    /**
+     * Deprecated files that were previously copied into the app but may have been
+     * edited by the user, so they are NOT force-deleted like DEPRECATED_PATHS.
+     *
+     * v13.5.14+: the theme build tooling (sk-theme-build.mjs / vite-plugin-sk-theme.mjs)
+     * moved from `stubs/scripts/` into the package itself (resources/js/theme/, vendor-
+     * resident). Old consumer copies under `scripts/` are obsolete and removed here —
+     * but only when the on-disk content matches a known shipped version. If the user
+     * customized the script, the copy is left in place with a warning so their edits
+     * are never silently destroyed.
+     *
+     * Map of relative path => list of known-stock md5 hashes (every version the kit
+     * ever shipped). A copy matching any of these is provably unmodified and safe to
+     * delete; anything else is treated as user-customized.
+     *
+     * @var array<string, list<string>>
+     */
+    private const DEPRECATED_MODIFIABLE_PATHS = [
+        'scripts/sk-theme-build.mjs' => [
+            '933a01f1ff82cbf8a29b6e7f792f64da',
+            'd1fc9be90d365a4bafef4fc8e468ae4b',
+        ],
+        'scripts/vite-plugin-sk-theme.mjs' => [
+            'f4ffbd6afadbd8be82c776ccded8bed2',
+            'fdcee61d27adf60cf7e3bc23df7d876d',
+        ],
+    ];
+
     /** @var list<string> */
     private array $updated = [];
 
@@ -124,6 +152,9 @@ class UpdateCommand extends Command
 
     /** @var list<string> */
     private array $removed = [];
+
+    /** @var list<string> Deprecated files left in place because the user modified them */
+    private array $preservedDeprecated = [];
 
     public function handle(): int
     {
@@ -144,6 +175,10 @@ class UpdateCommand extends Command
 
         // 1b. Remove deprecated files
         $this->removeDeprecatedPaths($dryRun);
+
+        // 1c. Remove deprecated-but-possibly-modified files (hash-guarded so user
+        // edits are never silently destroyed).
+        $this->removeDeprecatedModifiablePaths($dryRun);
 
         // 2. Update user-modifiable files only if not modified
         $this->updateModifiableFiles($force, $dryRun);
@@ -274,6 +309,83 @@ class UpdateCommand extends Command
                 }
             }
         }
+    }
+
+    /**
+     * Remove deprecated files that may have been customized by the user.
+     *
+     * Unlike removeDeprecatedPaths(), these are deleted only when the on-disk
+     * content matches a known shipped version (any entry in the path's stock-hash
+     * list) OR matches the hash we recorded for it at install/update time. A copy
+     * that matches neither is assumed to be user-modified: it is left untouched and
+     * reported so the user can migrate their edits manually — no silent data loss.
+     *
+     * `--force` removes the file regardless of modification, mirroring the override
+     * semantics used elsewhere in this command.
+     */
+    private function removeDeprecatedModifiablePaths(bool $dryRun): void
+    {
+        $force = (bool) $this->option('force');
+        $hashes = $this->loadHashRegistry();
+        $registryDirty = false;
+
+        foreach (self::DEPRECATED_MODIFIABLE_PATHS as $path => $stockHashes) {
+            $target = base_path($path);
+
+            if (! $this->files->exists($target)) {
+                continue;
+            }
+
+            $currentHash = md5_file($target);
+            $recordedHash = $hashes[$path] ?? null;
+
+            $isUnmodified = $this->deprecatedCopyIsUnmodified($currentHash, $stockHashes, $recordedHash);
+
+            if (! $force && ! $isUnmodified) {
+                // User customized the obsolete script — preserve it and warn.
+                $this->preservedDeprecated[] = $path;
+
+                continue;
+            }
+
+            if (! $dryRun) {
+                $this->files->delete($target);
+
+                // Drop any stale registry entry for the removed obsolete path so
+                // it does not linger forever. The file no longer ships from stubs,
+                // so a '__deleted__' sentinel is unnecessary.
+                if (array_key_exists($path, $hashes)) {
+                    unset($hashes[$path]);
+                    $registryDirty = true;
+                }
+            }
+
+            $this->removed[] = $path;
+        }
+
+        if ($registryDirty && ! $dryRun) {
+            $this->saveHashRegistry($hashes);
+        }
+    }
+
+    /**
+     * Decide whether a deprecated, possibly-modified copy is provably unmodified
+     * and therefore safe to delete. True when its current hash matches any known
+     * shipped (stock) version, or matches the hash recorded for it in the registry.
+     * Anything else is treated as user-customized and must be preserved.
+     *
+     * Pure hash-in / bool-out so the modified-copy safety rule can be unit tested
+     * without filesystem access.
+     *
+     * @param  list<string>  $stockHashes
+     */
+    private function deprecatedCopyIsUnmodified(string $currentHash, array $stockHashes, ?string $recordedHash): bool
+    {
+        if (in_array($currentHash, $stockHashes, true)) {
+            return true;
+        }
+
+        return $recordedHash !== null && $recordedHash === $currentHash;
     }
 
     /**
@@ -970,7 +1082,7 @@ PHP;
     {
         $prefix = $dryRun ? '[DRY RUN] ' : '';
 
-        $hasChanges = ! empty($this->updated) || ! empty($this->added) || ! empty($this->removed) || ! empty($this->skipped) || ! empty($this->untracked);
+        $hasChanges = ! empty($this->updated) || ! empty($this->added) || ! empty($this->removed) || ! empty($this->skipped) || ! empty($this->untracked) || ! empty($this->preservedDeprecated);
 
         if (! $hasChanges) {
             $this->components->info($prefix.'Everything is up to date!');
@@ -999,6 +1111,16 @@ PHP;
             foreach ($this->removed as $path) {
                 $this->line("  <fg=red>-</> {$path}");
             }
+        }
+
+        if (! empty($this->preservedDeprecated)) {
+            $this->newLine();
+            $this->components->warn('These obsolete files were customized and left in place — migrate your edits, then delete them manually:');
+            foreach ($this->preservedDeprecated as $path) {
+                $this->line("  <fg=yellow>!</> {$path}");
+            }
+            $this->newLine();
+            $this->line('  <fg=gray>The theme build tooling now ships from vendor (resources/js/theme/). Use --force to remove these copies.</>');
         }
 
         // Show untracked files (dry-run: not yet resolved; normal: already resolved into updated/skipped)

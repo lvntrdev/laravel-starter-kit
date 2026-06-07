@@ -12,7 +12,7 @@ use function Laravel\Prompts\select;
 class PublishCommand extends Command
 {
     protected $signature = 'sk:publish
-        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, filemanager, composables, lang, config, helpers)}
+        {--tag=* : Tag(s) to publish (components, datatable, form, tabs, skeleton, ui, filemanager, composables, plugins, lang, config, helpers)}
         {--force : Overwrite existing files}
         {--destination= : Override destination base path (for testing or custom layouts)}';
 
@@ -65,6 +65,11 @@ class PublishCommand extends Command
             'source' => 'resources/js/composables',
             'destination' => 'resources/js/composables',
             'label' => 'Composables (useApi, useDialog, useConfirm, useDefinition, …)',
+        ],
+        'plugins' => [
+            'source' => 'resources/js/plugins',
+            'destination' => 'resources/js/plugins',
+            'label' => 'Vue Plugins (v-can / v-role permission directives)',
         ],
         'lang' => [
             'source' => 'resources/lang',
@@ -127,6 +132,7 @@ class PublishCommand extends Command
             options: [
                 'components' => 'Vue Components (all or pick individual)',
                 'composables' => 'Composables (useApi, useDialog, useDefinition, …)',
+                'plugins' => 'Vue Plugins (v-can / v-role directives)',
                 'lang' => 'Language Files (translations)',
                 'config' => 'Configuration File',
                 'helpers' => 'Global Helpers (sk-helpers.php)',

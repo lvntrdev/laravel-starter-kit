@@ -5,7 +5,7 @@
  * plus scripts/vite-plugin-sk-theme.mjs) and resolves the active theme's slots
  * (full-replacement + fallback to `main`).
  *
- * EVERY cascade layer now lives under `themes/main/` and is emitted by the
+ * EVERY cascade layer now lives under `main/` and is emitted by the
  * resolver in order — tokens → fonts → _base → layout/* → components/* →
  * _auth → utilities. There are no fixed imports left here; this file is just the
  * stable entry point that pulls in the resolved active theme.

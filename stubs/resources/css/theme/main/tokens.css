@@ -2,7 +2,7 @@
  * Theme Tokens — main
  *
  * CSS custom properties (light/dark) that the admin shell, layout regions
- * and components read. This is the FIRST theme slot: a `themes/<active>/tokens.css`
+ * and components read. This is the FIRST theme slot: a `<active>/tokens.css`
  * fully replaces this file when an override theme is active (see the resolver
  * in scripts/sk-theme-build.mjs). Values here are byte-identical to the original
  * `_base.scss` :root / .dark blocks — no visual change.

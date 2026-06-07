@@ -2,9 +2,33 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## 2026-06-06 — v13.5.14
+## 2026-06-06 — v13.6.0
 
-### Minor sürüm — Tüm CSS cascade katmanları artık override edilebilir slot
+### Minor sürüm — Vendor-runtime migrasyonu tamamlandı + yapılandırılmış tema/layout/CSS sistemi
+
+13.6.0, son yayınlanan sürümden (v13.5.11) bu yana yapılan tüm değişiklikleri tek sürümde toplar. "Paket runtime'ı vendor'dan çalışır" migrasyonunu hem backend hem frontend'de tamamlar ve admin-panel layout'unu ve CSS'i yapılandırılmış, override edilebilir bir tema sistemine yeniden düzenler. **Görsel değişiklik yok** — varsayılan build (`VITE_SK_THEME=main`) v13.5.11 ile byte-identical'dır. Aşağıdaki bölümler toplanan değişiklikleri alana göre gruplar.
+
+### İzin direktif plugin'i vendor'dan çözülüyor
+
+`v-can` / `v-role` Vue plugin'i (`resources/js/plugins/permission.ts`) artık varsayılan olarak vendor paketinden sunuluyor — kit composable'larının zaten kullandığı çözümün aynısı. `@/plugins/<name>` import'u yerel bir kopya varsa ona, yoksa vendor kopyasına düşer; böylece kit, stub yeniden kopyalamadan direktif düzeltmeleri gönderebilir. **Davranış değişikliği yok**: direktifler aynı ve `app.ts` hâlâ `@/plugins/permission`'ı değişmeden import ediyor.
+
+#### Değişti
+
+- **`resources/js/plugins/permission.ts`** — vendor paketine taşındı. Ölü, kullanılmayan `useCan()` export'u kaldırıldı (canlı composable `@/composables/useCan`'dir); dosya artık yalnızca `PermissionPlugin`'i (`v-can` / `v-role` direktifleri) içeriyor, auto-import bağımlılığı yok.
+- **`vite.config.ts`** — `@/composables/*`'ı aynalayan yeni `@/plugins/*` alias `customResolver`'ı (`resolvePlugin`): önce yerel-override, sonra vendor fallback; düz `@` alias'ından önce sıralı.
+- **`tsconfig.json`** — yeni `@/plugins/*` path eşlemesi (yerel + vendor).
+
+#### Eklendi
+
+- **`sk:publish --tag=plugins`** — izin direktiflerini özelleştirmek için Vue plugin'lerinin yerel, düzenlenebilir bir kopyasını publish eder.
+
+#### Geçiş
+
+İşlem gerekmez — çözüm otomatik. Mevcut `resources/js/plugins/permission.ts`'iniz vendor kopyasını gölgelemeye devam eder; vendor sürümünü almak için silin. `UPGRADE.md`'ye bakın.
+
+---
+
+### Tüm CSS cascade katmanları artık override edilebilir slot
 
 Tema sistemindeki her CSS katmanı artık override edilebilir bir slot'tur. Daha önce `fonts.css`, `_base.scss`, `_auth.scss` ve `utilities.css`, resolver'ın dışında sabit import'lardı; artık `themes/main/` altında yaşıyor ve `scripts/sk-theme-build.mjs` tarafından `tokens`, `layout/*` ve `components/*` ile birlikte doğru cascade sırasında emit ediliyor. **Görsel değişiklik yok** — `VITE_SK_THEME=main` ile varsayılan build v13.5.13 ile byte-identical'dır. Tek fark, `custom` temanın artık `themes/custom/` altına eşleşen bir dosya bırakarak fonts, base reset, auth stilleri ve utility override'ları dahil her katmanı override edebilmesidir.
 
@@ -22,9 +46,7 @@ Herhangi bir işlem gerekmez. `sk:update` güncellenmiş dosyaları iletir. Vars
 
 ---
 
-## 2026-06-06 — v13.5.13
-
-### Minor sürüm — AppShell layout kompozisyonu + build-zamanı tema-override sistemi (`themes/main` / `themes/custom`)
+### AppShell layout kompozisyonu + build-zamanı tema-override sistemi (`themes/main` / `themes/custom`)
 
 v13.5.13, admin panel layout'unu ve CSS'ini yapılandırılmış, override'a hazır bir sisteme yeniden düzenler. **Görsel değişiklik yok** — varsayılan build önceki sürümle byte-identical'dır. Layout kabuğu, yeniden kullanılabilir bir `AppShell.vue` (yapısal omurga, sidebar durumu, adlandırılmış bölgeler) ve standart admin bileşenlerini bağlayan ince bir `AdminLayout.vue` kompozisyonuna bölünür. CSS monoliti (`_admin.scss` ve dağınık `_*.scss` partial'ları) ayrı slot dosyalarından oluşan bir `themes/main/` dizin ağacına dönüştürülür. Yeni opt-in `themes/custom/` dizini ve `scripts/sk-theme-build.mjs` tema resolver'ı, build zamanında slot bazında override'a olanak tanır: `VITE_SK_THEME=custom` ayarlayın, `themes/custom/components/datatable.css` dosyası ekleyin — yalnızca o slot değiştirilir, geri kalanı `main`'e döner. Tam referans ve özel override reçetesi için bkz. `docs/theme.tr.md`.
 
@@ -56,13 +78,11 @@ v13.5.13, admin panel layout'unu ve CSS'ini yapılandırılmış, override'a haz
 
 #### Geçiş
 
-`sk:update` tüm yeni stub'ları iletir. Taşınan dosyalardan hiçbiri özelleştirilmediyse geçiş adımı gerekmez — `npm run build` byte-identical panel üretir. Taşınan bir dosyayı özelleştirdiyseniz, değişikliklerinizi ilgili `themes/main/` slot'una kopyalayın veya izole bir override için `themes/custom/` kullanın. Ayrıntılar için bkz. `docs/UPGRADE.tr.md` (v13.5.12 → v13.5.13).
+`sk:update` tüm yeni stub'ları iletir. Taşınan dosyalardan hiçbiri özelleştirilmediyse geçiş adımı gerekmez — `npm run build` byte-identical panel üretir. Taşınan bir dosyayı özelleştirdiyseniz, değişikliklerinizi ilgili `themes/main/` slot'una kopyalayın veya izole bir override için `themes/custom/` kullanın. Ayrıntılar için bkz. `docs/UPGRADE.tr.md` (v13.5.11 → v13.6.0).
 
 ---
 
-## 2026-06-04 — v13.5.12
-
-### Minor sürüm — Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`
+### Kit composable'ları vendor'dan çalışıyor; local-first resolver; `sk:publish --tag=composables`
 
 v13.5.12 ile 15 kit composable'ı stub scaffold'undan çıkarılarak vendor kütüphanesine taşındı. Artık doğrudan `vendor/lvntr/laravel-starter-kit/resources/js/composables/` üzerinden çalışıyor ve her `composer update` ile güncelleniyor. Import yolları tamamen değişmedi — `@/composables/<name>` önce local dosyayı kontrol eder (varsa tüketici dosyası kazanır), yoksa vendor kopyasına döner; bu nedenle hiçbir import ifadesinin değişmesi gerekmez. `useAdminMenu` ve `index.ts`, tüketicinin ürettiği route dosyalarına ve projeye özgü menü tanımına bağımlı olduğundan düzenlenebilir stub olarak kalmaya devam eder. `TurnstileWidget.vue` da aynı sürümde vendor kütüphanesine taşındı (`@lvntr/components/ui/TurnstileWidget.vue`).
 
@@ -76,9 +96,9 @@ v13.5.12 ile 15 kit composable'ı stub scaffold'undan çıkarılarak vendor küt
 
 - **15 composable stub** — scaffold'dan kaldırıldı. Mevcut projeler etkilenmez (local-first resolver local kopyaları kullanmaya devam eder). Vendor tarafından yönetilen güncellemelere geçmek için: özelleştirmediğiniz composable dosyalarını `resources/js/composables/` dizininden silin; `useAdminMenu.ts`, `index.ts` ve düzenlediğiniz dosyaları koruyun.
 
-### Minor sürüm — Backend runtime sınıfları ve üçüncü-parti config'ler vendor'dan çalışıyor
+### Backend runtime sınıfları ve üçüncü-parti config'ler vendor'dan çalışıyor
 
-Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend tarafında sürdürür. Bir grup yardımcı sınıf, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık app'inize kopyalanmıyor. Mevcut app'ler etkilenmez — `App\…` import'ları çözülmeye devam eder (tam taşınanlar için `class_alias`, geri kalanlar için ince bir `App\` shim), ve önceden publish ettiğiniz bir config kazanmayı sürdürür. Tek zorunlu adım `composer update`'tir. Tam geçiş rehberi için bkz. `docs/UPGRADE.md` (v13.5.3 → v13.5.12).
+Aynı sürüm, v13.5.0'daki "runtime vendor'dan çalışır" geçişini backend tarafında sürdürür. Bir grup yardımcı sınıf, validation kuralı ve middleware publish edilen scaffold'dan çıkıp vendor paketine taşındı; üç üçüncü-parti config dosyası artık app'inize kopyalanmıyor. Mevcut app'ler etkilenmez — `App\…` import'ları çözülmeye devam eder (tam taşınanlar için `class_alias`, geri kalanlar için ince bir `App\` shim), ve önceden publish ettiğiniz bir config kazanmayı sürdürür. Tek zorunlu adım `composer update`'tir. Tam geçiş rehberi için bkz. `docs/UPGRADE.tr.md` (v13.5.11 → v13.6.0).
 
 #### Eklendi
 

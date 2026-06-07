@@ -4,7 +4,7 @@
  * Two responsibilities, both keyed off the same `VITE_SK_THEME` active theme:
  *
  *  1. CSS: generate `resources/css/theme/_active.css` from inside Vite's
- *     lifecycle. The explicit `node scripts/sk-theme-build.mjs && vite …` chain
+ *     lifecycle. The explicit `node …/sk-theme-build.mjs && vite …` chain
  *     in package.json already covers `npm run dev/build`; this plugin
  *     additionally guarantees `_active.css` exists even when `vite`/`vite build`
  *     is invoked DIRECTLY (no npm, any `ignore-scripts` setting) — e.g.
@@ -27,38 +27,36 @@
  */
 
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { buildActiveTheme, resolveThemeName } from './sk-theme-build.mjs';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Resolve the active PrimeVue preset module for the given theme.
  *
- * Mirror of `buildActiveTheme`'s root logic so the kit repo AND an installed
- * consumer (vendor path) resolve identically: project root is the parent of
- * `scripts/` (`options.root ?? join(__dirname, '..')`), and the JS theme dir is
+ * Mirror of `buildActiveTheme`'s root logic so the resolution is consistent:
+ * the CONSUMER project root is `options.root ?? process.cwd()` (NOT relative to
+ * this vendor-resident plugin's own location), and the JS theme dir is
  * `<root>/resources/js/theme` — the same directory the `@` alias would have
  * pointed `@/theme/preset` at. Returns an ABSOLUTE path:
  *
- *   - active theme is not `main` AND `themes/<active>/preset.ts` exists
+ *   - active theme is not `main` AND `<active>/preset.ts` exists
  *       → that override file,
  *   - otherwise → the base `theme/preset.ts` (in place, consumer-customizable).
  *
  * @param {object} [options]
- * @param {string} [options.root]  Project root (parent of `scripts/`).
+ * @param {string} [options.root]  CONSUMER project root. Defaults to
+ *   `process.cwd()`.
  * @param {string} [options.theme] Active theme name.
  * @returns {string} absolute path to the resolved preset module.
  */
 export function resolveActivePreset({ root, theme } = {}) {
-    const projectRoot = root ?? join(__dirname, '..');
+    const projectRoot = root ?? process.cwd();
     const themeDir = join(projectRoot, 'resources', 'js', 'theme');
     const basePreset = join(themeDir, 'preset.ts');
 
     const activeTheme = resolveThemeName(theme);
     if (activeTheme !== 'main') {
-        const override = join(themeDir, 'themes', activeTheme, 'preset.ts');
+        const override = join(themeDir, activeTheme, 'preset.ts');
         if (existsSync(override)) {
             return override;
         }
@@ -69,8 +67,8 @@ export function resolveActivePreset({ root, theme } = {}) {
 
 /**
  * @param {object} [options]
- * @param {string} [options.root]  Project root (parent of `scripts/`). Defaults
- *   to the resolver's own default (directory above the script).
+ * @param {string} [options.root]  CONSUMER project root. Defaults to the
+ *   resolver's own default (`process.cwd()`).
  * @param {string} [options.theme] Active theme name. Defaults to
  *   `process.env.VITE_SK_THEME || 'main'`.
  * @returns {import('vite').Plugin}

@@ -12,7 +12,7 @@ import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import path from 'path';
 import { existsSync } from 'fs';
 // @ts-expect-error — plain .mjs resolver plugin, no bundled types.
-import skTheme, { resolveActivePreset } from './scripts/vite-plugin-sk-theme.mjs';
+import skTheme, { resolveActivePreset } from './vendor/lvntr/laravel-starter-kit/resources/js/theme/vite-plugin-sk-theme.mjs';
 
 // Wayfinder requires both PHP and an artisan file to generate routes.
 // In CI (node-only job) or in the package repo itself, artisan does not
@@ -54,6 +54,30 @@ function resolveComposable(name: string): string | null {
     return null;
 }
 
+// Kit Vue plugins (directives such as v-can / v-role) run from the vendor
+// package by default, mirroring the composables resolution above. A subpath
+// import `@/plugins/<name>` resolves to the consumer-local copy when one exists
+// (customized, or published via `php artisan sk:publish`), otherwise it falls
+// back to the vendor copy. Wired as an alias `customResolver` for the same
+// ordering reason as `@/composables` above — it MUST precede the bare `@` alias.
+function resolvePlugin(name: string): string | null {
+    const dirs = [
+        path.resolve(__dirname, 'resources/js/plugins'),
+        path.resolve(__dirname, 'vendor/lvntr/laravel-starter-kit/resources/js/plugins'),
+    ];
+
+    for (const dir of dirs) {
+        for (const ext of ['.ts', '.js']) {
+            const candidate = path.join(dir, name + ext);
+            if (existsSync(candidate)) {
+                return candidate;
+            }
+        }
+    }
+
+    return null;
+}
+
 // NOTE (stubs perspective): When this file is published to a consumer project
 // via `php artisan sk:install`, __dirname resolves to the consumer project root.
 // All alias paths below therefore point to the vendor directory of the consumer.
@@ -74,8 +98,13 @@ export default defineConfig({
                 replacement: '$1',
                 customResolver: (name: string) => resolveComposable(name),
             },
+            {
+                find: /^@\/plugins\/(.+)$/,
+                replacement: '$1',
+                customResolver: (name: string) => resolvePlugin(name),
+            },
             // `@/theme/preset` → the active theme's PrimeVue preset, chosen at
-            // build time by VITE_SK_THEME (override at themes/<active>/preset.ts,
+            // build time by VITE_SK_THEME (override at <active>/preset.ts,
             // else the base theme/preset.ts). Wired as an alias customResolver —
             // NOT a plugin `resolveId` — for the same reason as @/composables
             // above: Vite's alias plugin expands `@/theme/preset` to the base file

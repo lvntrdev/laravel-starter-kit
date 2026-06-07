@@ -4,205 +4,128 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
-## v13.5.13 → v13.5.14
+## v15.7.0
 
-### Summary
+### Build scripts moved to vendor — consumer wiring update required
 
-This release completes the theme-slot generalisation started in v13.5.13. The four CSS files that were previously fixed imports outside the resolver (`fonts.css`, `_base.scss`, `_auth.scss`, `utilities.css`) now live under `themes/main/` and are emitted by the resolver as regular slots. The cascade order is unchanged. **The default build is byte-identical to v13.5.13.**
+`scripts/sk-theme-build.mjs` and `scripts/vite-plugin-sk-theme.mjs` are no longer copied into your app. They now ship inside the package and are resolved from `vendor/lvntr/laravel-starter-kit/resources/js/theme/` — the same mechanism used by `@lvntr/components` and the kit composables.
 
-No migration is required. Manual steps are only needed if you hand-edited any of the moved files.
+**New installs** (`sk:install`) are not affected — the scripts are never copied.
 
-### Files that moved
+**Existing installs** require the manual steps below.
 
-| Removed | Replaced by |
-|---|---|
-| `resources/css/theme/fonts.css` | `themes/main/fonts.css` |
-| `resources/css/theme/_base.scss` | `themes/main/_base.scss` |
-| `resources/css/theme/_auth.scss` | `themes/main/_auth.scss` |
-| `resources/css/theme/utilities.css` | `themes/main/utilities.css` |
+#### Migration steps
 
-### Files that changed (import cleanup)
+1. Update the package:
 
-| File | Change |
-|---|---|
-| `theme/theme.css` | Fixed `_auth.scss` import removed — resolver emits it. Now contains only `@import './_active.css'`. |
-| `app.css` | Fixed `utilities.css` tail import removed — resolver emits it as the last slot. |
+   ```bash
+   composer update lvntr/laravel-starter-kit
+   php artisan sk:update
+   ```
 
-### Upgrade steps
+   `sk:update` removes the old `scripts/sk-theme-build.mjs` and `scripts/vite-plugin-sk-theme.mjs` copies from your app automatically. If you have **not modified** those files, no further action is needed — skip to step 3.
 
-**If you have not customised any of the moved files:**
+2. **If you modified `scripts/sk-theme-build.mjs` or `scripts/vite-plugin-sk-theme.mjs`** — the files are now vendor-managed. Any local customisations must be moved elsewhere (e.g. a project-local wrapper script that imports and extends the vendor version). Contact the kit maintainer if you need an official override hook.
 
-```bash
-composer update lvntr/laravel-starter-kit
-php artisan sk:update
-npm install
-npm run build
-```
+3. **Update `vite.config.ts`** — change the plugin import from the old local path to the vendor path:
 
-`sk:update` delivers the new file layout and the updated `theme.css` and `app.css`. The build should succeed and the panel should look identical.
+   ```diff
+   - import skTheme from './scripts/vite-plugin-sk-theme.mjs';
+   + import skTheme from './vendor/lvntr/laravel-starter-kit/resources/js/theme/vite-plugin-sk-theme.mjs';
+   ```
 
-**If you have customised `fonts.css`, `_base.scss`, `_auth.scss`, or `utilities.css`:**
+   > If you customised `vite.config.ts`, `sk:update` does not overwrite it automatically. Apply this change by hand.
 
-1. Run `php artisan sk:update` — it will report a hash difference for the moved files.
-2. Copy your customisations into the corresponding `themes/main/` file (see the table above).
-3. If your changes are theme-specific, consider placing them in `themes/custom/` instead (e.g. `themes/custom/fonts.css`). See `docs/theme.md` — Complete slot reference.
-4. Run `npm run build` to verify.
+4. **Update `package.json` scripts** — the `theme:build` script must point to the vendor path; the `dev` and `build` scripts no longer need an explicit `node scripts/...` prefix (the `skTheme()` Vite plugin guarantees theme generation inside the Vite lifecycle):
 
-### Orphaned files (safe to delete)
+   ```diff
+   - "theme:build": "node scripts/sk-theme-build.mjs",
+   - "dev": "node scripts/sk-theme-build.mjs && vite",
+   - "build": "node scripts/sk-theme-build.mjs && vite build && vite build --ssr",
+   + "theme:build": "node vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs",
+   + "dev": "vite",
+   + "build": "vite build && vite build --ssr",
+   ```
 
-`sk:update` adds the new `themes/main/` files but does not remove the old flat-path copies already on disk. After upgrading, these four files are no longer imported by anything and may be deleted to keep the tree clean — leaving them is harmless (nothing imports them):
+   > The `skTheme()` plugin generates `_active.css` inside Vite's transform pipeline (`buildStart` / `configureServer` hooks), so the explicit `&&` prefix is no longer required for normal `dev` and `build` runs. Use `npm run theme:build` for manual or CI-only regeneration without a full build.
 
-- `resources/css/theme/fonts.css`
-- `resources/css/theme/_base.scss`
-- `resources/css/theme/_auth.scss`
-- `resources/css/theme/utilities.css`
+5. Rebuild:
 
-### No visual change
+   ```bash
+   npm run build
+   ```
 
-With `VITE_SK_THEME=main` (the default), the generated `_active.css` imports exactly the same CSS rules in the same order as the v13.5.13 output. Token values, class names, and DOM structure are identical.
+#### No visual change
+
+The resolver logic is unchanged — only the file location moves. The generated `_active.css` output is identical.
 
 ---
 
-## v13.5.12 → v13.5.13
+## v15.6.0
 
-### Summary
+### Theme directory structure flattened — BREAKING
 
-This release reorganises the admin-panel CSS and layout shell. The visual output is **unchanged** — the default build (`VITE_SK_THEME=main`) is byte-identical to the previous version. All layout and component class names, token values, and the DOM structure are preserved. What changes is the file layout: styles that were in a monolithic `_admin.scss` and scattered `_*.scss` partials now live in a structured `themes/main/` directory tree, and the layout shell is split into a reusable `AppShell.vue` + a thin `AdminLayout.vue` composition.
+The `themes/` intermediate directory has been removed from both the CSS and JS theme trees. Consumer apps that reference these paths must migrate manually.
 
-The new opt-in **theme-override system** (`themes/custom/`) lets you replace any CSS slot at build time without touching the base theme or the Vue components.
-
-No migration is required for existing projects that only run `composer update` and `npm install`. Manual steps are only needed if you have **hand-edited** any of the moved files.
-
-### Files that moved (CSS)
-
-| Removed | Replaced by |
+| Before | After |
 |---|---|
-| `resources/css/theme/_admin.scss` | `themes/main/layout/{shell,sidebar,header,page-header,footer}.css` |
-| `resources/css/theme/_datatable.scss` | `themes/main/components/datatable.css` |
-| `resources/css/theme/_formbuilder.scss` | `themes/main/components/formbuilder.css` |
-| `resources/css/theme/_dialog.scss` | `themes/main/components/dialog.css` |
-| `resources/css/theme/_toast.scss` | `themes/main/components/toast.css` |
-| `resources/css/theme/_tag.scss` | `themes/main/components/tag.css` |
-| `resources/css/theme/_card.scss` | `themes/main/components/card.css` |
-| `resources/css/theme/_editor.scss` | `themes/main/components/editor.css` |
-| `resources/css/theme/_tabs.scss` | `themes/main/components/tabs.css` |
-| `resources/css/theme/_menus.scss` | `themes/main/components/menus.css` |
-| `resources/css/theme/_navigation.scss` | `themes/main/components/navigation.css` |
-| `resources/css/theme/_confirm.scss` | `themes/main/components/confirm.css` |
-| `resources/css/theme/_primevue.scss` | `themes/main/components/primevue.css` |
-| `:root` / `.dark` blocks in `_base.scss` | `themes/main/tokens.css` |
-| `theme.css` (explicit slot imports) | `theme.css` (single `@import './_active.css'`) |
+| `resources/css/theme/themes/main/` | `resources/css/theme/main/` |
+| `resources/css/theme/themes/custom/` | `resources/css/theme/custom/` |
+| `resources/js/theme/themes/` | removed — override is now `resources/js/theme/custom/preset.ts` |
 
-### Files that moved (layout)
+Empty placeholder directories are no longer shipped.
 
-`resources/js/layouts/AdminLayout.vue` is now a thin composition around the new `resources/js/layouts/AppShell.vue`. The external prop/slot contract (`title`, `subtitle`, `backUrl`, `default`, `page-actions`) is **identical** — no page needs to change its import or template.
+#### Migration steps
 
-### New files
+1. Run `php artisan sk:update` — this delivers the new `main/` tree under `resources/css/theme/main/`.
 
-| File | Purpose |
+2. **Manually delete** the old directories — `sk:update` does not remove them automatically:
+
+   ```bash
+   rm -rf resources/css/theme/themes/
+   rm -rf resources/js/theme/themes/
+   ```
+
+3. Rebuild the theme and assets:
+
+   ```bash
+   npm run theme:build && npm run build
+   ```
+
+#### If you use `VITE_SK_THEME=custom`
+
+Move your override files to the new locations:
+
+| Before | After |
 |---|---|
-| `resources/js/layouts/AppShell.vue` | Reusable structural shell (sidebar state, responsive margins, named regions) |
-| `resources/css/theme/themes/main/` | Built-in base theme (source of truth for all CSS slots) |
-| `resources/css/theme/themes/custom/` | Empty CSS override theme skeleton (see `themes/custom/README.md` in that directory) |
-| `scripts/sk-theme-build.mjs` | CSS theme resolver — writes `_active.css`; called explicitly by `dev` and `build` |
-| `resources/js/theme/themes/custom/` | Empty PrimeVue preset override skeleton — ships with `.gitkeep` and a `README.md` explaining the override recipe |
-| `scripts/vite-plugin-sk-theme.mjs` | Vite plugin — generates `_active.css` inside Vite's lifecycle and resolves `@/theme/preset` to the active theme's preset at build time |
+| `resources/css/theme/themes/custom/` | `resources/css/theme/custom/` |
+| `resources/js/theme/themes/custom/preset.ts` | `resources/js/theme/custom/preset.ts` |
 
-### Generated artifact
+After moving, re-run `npm run theme:build && npm run build` to verify.
 
-`resources/css/theme/_active.css` is produced by `scripts/sk-theme-build.mjs`. It is:
+#### Default theme — no visual change
 
-- Listed in `.gitignore` — never committed.
-- Regenerated on every `npm run dev` and `npm run build` — the resolver is called explicitly in both scripts (not via npm lifecycle hooks, so it works correctly under `ignore-scripts=true`).
-- Not hash-tracked by `sk:update`.
-
-### `.env.example` — new key
-
-```dotenv
-VITE_SK_THEME=main
-```
-
-Add this line to your `.env` and `.env.example` if it is not already present. The default is `main`; omitting the variable has the same effect.
-
-### `package.json` — resolver chained into `dev` and `build`
-
-The `dev`, `build`, and `theme:build` scripts were updated so the resolver runs explicitly as part of the chain:
-
-```json
-"theme:build": "node scripts/sk-theme-build.mjs",
-"dev": "node scripts/sk-theme-build.mjs && vite",
-"build": "node scripts/sk-theme-build.mjs && vite build && vite build --ssr",
-```
-
-If you manage your own `package.json`, update `dev` and `build` to match this pattern. The resolver must be an explicit `&&` step — **do not use `predev` / `prebuild` lifecycle hooks**, as npm silently skips them when `ignore-scripts=true` (a common security setting in consumer projects and CI), which causes `_active.css` to be absent and the build to fail. `npm run theme:build` is available for generating the file on demand without a full build.
-
-### Upgrade steps
-
-**If you have not customised any of the moved files:**
-
-```bash
-composer update lvntr/laravel-starter-kit
-php artisan sk:update
-npm install
-npm run build
-```
-
-`sk:update` delivers the new stubs (new layout files, CSS tree, resolver script, `.env.example` update, `package.json` hooks). The build should succeed and the panel should look identical.
-
-**If you have customised `_admin.scss` or any `_*.scss` partial:**
-
-1. Run `php artisan sk:update` — it will report a hash difference for the moved files.
-2. Copy your customisations into the corresponding `themes/main/` file (see the table above).
-3. If your changes are extensive, consider placing them in `themes/custom/` instead (see `docs/theme.md` — custom override recipe).
-4. Run `npm run build` to verify.
-
-**If you have customised `AdminLayout.vue`:**
-
-`sk:update` will report a hash difference. The new file is a thin composition around `AppShell`. Apply your customisations to the new version — the external contract (props, slots) is unchanged, so page-level templates need no edits.
-
-### PrimeVue preset — no action required
-
-The PrimeVue preset resolver is fully additive and backward-compatible:
-
-- `resources/js/theme/preset.ts` **stays where it is** — the kit never moves it.
-- `app.ts` continues to import `@/theme/preset` without any change.
-- With `VITE_SK_THEME=main` (or no variable set), the build resolves `@/theme/preset` to the base `preset.ts` — byte-identical behaviour to the previous version.
-- The `themes/custom/preset.ts` override only takes effect when `VITE_SK_THEME=custom` **and** you have created the file. An absent file falls back to the base.
-
-Existing consumers who have customised `preset.ts` continue using their customised file. The resolver does not interfere. To give a custom theme its own PrimeVue palette, see `docs/theme.md` — PrimeVue preset layer.
-
-### No visual change
-
-The reorganisation is purely structural. With `VITE_SK_THEME=main` (the default), the generated `_active.css` imports exactly the same CSS rules in the same order as the previous `theme.css` manifest. Token values (light and dark), class names, and DOM structure are identical.
+Projects using the default `VITE_SK_THEME=main` (or no variable set) have no visual change. The generated `_active.css` output is identical after the migration.
 
 ---
 
-## v13.5.3 → v13.5.12
+## v13.5.11 → v13.6.0
 
 ### Summary
 
-This release continues the "package runtime runs from vendor" migration started in v13.5.0. A further set of backend helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, three third-party config files are no longer published (their required overrides are applied at runtime), and on the frontend 15 composables plus `TurnstileWidget.vue` moved to the vendor library. **Your existing files in `app/`, `config/`, and `resources/js/` are not affected and keep working as-is.** `composer update` is the only required step.
-
-Backward compatibility is guaranteed two ways:
-
-- **Pure-moved PHP classes** (no stub left) resolve through `class_alias()` registered by `StarterKitServiceProvider` — your old `App\…` imports keep working as long as the corresponding `app/…` file is not deleted. The guard *steps aside* when you keep a customised copy, so your version still wins.
-- **Aliased PHP classes** (a thin `App\…` subclass/trait stays in the scaffold) keep the familiar `App\…` import valid while the implementation runs from vendor.
-
-### Upgrade steps
+13.6.0 bundles every published-file change since v13.5.11 (the last released version) into one upgrade. It completes the vendor-runtime migration — backend helper classes, middleware, three third-party configs, 15 composables, `TurnstileWidget.vue`, and the `v-can` / `v-role` permission directive plugin all run from the vendor package — and introduces the structured theme/layout/CSS system: an `AppShell.vue` composition, the `themes/main/` slot tree (every CSS cascade layer is an overridable slot), and the opt-in `themes/custom/` override theme. **No visual change** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. Run the upgrade once with the steps below; the per-area sections that follow are reference detail (apply only the "if you customised…" notes that match your project).
 
 ```bash
 composer update lvntr/laravel-starter-kit
-php artisan migrate          # "Nothing to migrate" — no schema changes
+php artisan sk:update          # delivers the new stubs: layout, CSS theme tree, resolver, .env.example + package.json updates
+php artisan migrate            # "Nothing to migrate" — no schema changes
+npm install
+npm run build                  # panel should look identical
 ```
 
-Optional:
+---
 
-```bash
-php artisan sk:update --dry-run   # reports which moved files still exist in app/ (never forces)
-npm run build                     # frontend smoke test (composables resolve local-first then vendor)
-```
-
-### What moved to vendor
+### Backend vendor move
 
 #### Backend (PHP) — pure move (no stub; resolved via `class_alias`)
 
@@ -238,36 +161,18 @@ PHP traits **cannot** be resolved with `class_alias()`, so traits do not get the
 
 The shipped model/request scaffold already imports these from `Lvntr\StarterKit\…`. **If your project still has a local copy of one of these traits (e.g. `app/Support/HasTranslatableRules.php` from an older version) and you delete it, you must first change every `use` statement that references the `App\…` trait to the vendor namespace** — there is no alias to fall back on.
 
-#### Third-party config — no longer published
-
-`config/activitylog.php`, `config/inertia.php`, and `config/media-library.php` are no longer copied into your app. The kit applies only the overrides it requires at runtime via `StarterKitServiceProvider::applyVendorConfigDefaults()`:
-
-- `media-library.path_generator` → vendor `MediaPathGenerator`, and `media-library.media_model` → `App\Models\Media` (when that model exists) — **required for File Manager Trash / soft-deletes**.
-- `activitylog.include_soft_deleted_subjects` → `true`
-- `inertia.ssr.enabled` → `env('INERTIA_SSR_ENABLED', false)`
-
-Each override is **skipped if you publish your own copy** of that config — publishing remains the escape hatch for full control. Use the upstream package's own publish tag, e.g. `php artisan vendor:publish --tag=medialibrary-config`.
-
-> The previous installer behaviour that AST-injected `App\Support\MediaPathGenerator` into a published `config/media-library.php` has been removed; the path generator is now set at runtime.
-
-#### Frontend
-
-- 15 composables (`useApi`, `useCan`, … `useUrlTab`) run from vendor; `@/composables/<name>` resolves local-first then vendor. `useAdminMenu.ts` and `index.ts` stay as editable stubs.
-- `TurnstileWidget.vue` now ships at `@lvntr/components/ui/TurnstileWidget.vue`.
-
-### What does not change
+#### What does not change
 
 | Area | Status |
 |---|---|
 | Existing `app/…` copies of the moved classes | Preserved, not deleted |
 | `App\…` **class** imports in your code | Keep working (`class_alias` for pure-moved classes; thin shim for `DatatableQueryBuilder` / Rules) |
 | `App\…` **trait** imports (`HasTranslatableRules`, `HasActivityLogging`, `HasMediaCollections`) | No alias — use the vendor namespace (see the traits note above) |
-| A `config/activitylog.php` / `inertia.php` / `media-library.php` you already published | Preserved; your file wins (runtime override skipped) |
 | `@/composables/<name>` import paths | Unchanged |
 | Route names, permission keys, API response envelope | Unchanged |
 | Migration history | "Nothing to migrate" |
 
-### Optional cleanup
+#### Optional cleanup
 
 These steps are entirely optional and can happen later.
 
@@ -291,7 +196,7 @@ rm -f app/Support/HtmlSanitizer.php \
 
 **If you customised any moved class**, keep your `app/…` file: the `class_alias` guard (for pure-moved classes) detects it and steps aside, so your version continues to win. For shimmed classes, customise the shim itself.
 
-### sk:update output
+#### sk:update output
 
 `sk:update` reports the moved files that still exist in your app (informational only — never deleted automatically):
 
@@ -313,9 +218,191 @@ v13.5.0+: package runtime runs from vendor. The following files still exist in y
 
 (The v13.5.0 vendor-resident files — `app/Domain/FileManager/`, `app/Domain/Shared/`, etc. — also appear in the list if still present.)
 
-### New install (v13.5.12+)
+#### New install (v13.6.0+)
 
 A fresh `sk:install` no longer copies these helper classes, middleware, traits, or the three third-party configs into `app/` / `config/`. They run from `vendor/lvntr/laravel-starter-kit/src/` plus the kit's runtime config overrides. The scaffold still ships the thin `App\` shims for `DatatableQueryBuilder` and the two validation Rules so generated domain code keeps its familiar imports; trait helpers (`HasTranslatableRules`) are imported directly from the vendor namespace.
+
+---
+
+### Third-party configs
+
+`config/activitylog.php`, `config/inertia.php`, and `config/media-library.php` are no longer copied into your app. The kit applies only the overrides it requires at runtime via `StarterKitServiceProvider::applyVendorConfigDefaults()`:
+
+- `media-library.path_generator` → vendor `MediaPathGenerator`, and `media-library.media_model` → `App\Models\Media` (when that model exists) — **required for File Manager Trash / soft-deletes**.
+- `activitylog.include_soft_deleted_subjects` → `true`
+- `inertia.ssr.enabled` → `env('INERTIA_SSR_ENABLED', false)`
+
+Each override is **skipped if you publish your own copy** of that config — publishing remains the escape hatch for full control. Use the upstream package's own publish tag, e.g. `php artisan vendor:publish --tag=medialibrary-config`.
+
+> The previous installer behaviour that AST-injected `App\Support\MediaPathGenerator` into a published `config/media-library.php` has been removed; the path generator is now set at runtime.
+
+If you already published any of these configs, your file wins and the runtime override is skipped — no action required.
+
+---
+
+### Frontend composables
+
+15 composables (`useApi`, `useCan`, … `useUrlTab`) run from vendor; `@/composables/<name>` resolves local-first then vendor. `useAdminMenu.ts` and `index.ts` stay as editable stubs.
+
+`TurnstileWidget.vue` now ships at `@lvntr/components/ui/TurnstileWidget.vue`.
+
+---
+
+### Theme / CSS / layout reorganisation
+
+This release reorganises the admin-panel CSS and layout shell. The visual output is **unchanged** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. All layout and component class names, token values, and the DOM structure are preserved. What changes is the file layout: styles that were in a monolithic `_admin.scss` and scattered `_*.scss` partials now live in a structured `themes/main/` directory tree, and the layout shell is split into a reusable `AppShell.vue` + a thin `AdminLayout.vue` composition.
+
+The new opt-in **theme-override system** (`themes/custom/`) lets you replace any CSS slot at build time without touching the base theme or the Vue components.
+
+No migration is required for existing projects that only run `composer update` and `npm install`. Manual steps are only needed if you have **hand-edited** any of the moved files.
+
+#### Files that moved (CSS — from `_admin.scss` / `_*.scss` partials)
+
+| Removed | Replaced by |
+|---|---|
+| `resources/css/theme/_admin.scss` | `themes/main/layout/{shell,sidebar,header,page-header,footer}.css` |
+| `resources/css/theme/_datatable.scss` | `themes/main/components/datatable.css` |
+| `resources/css/theme/_formbuilder.scss` | `themes/main/components/formbuilder.css` |
+| `resources/css/theme/_dialog.scss` | `themes/main/components/dialog.css` |
+| `resources/css/theme/_toast.scss` | `themes/main/components/toast.css` |
+| `resources/css/theme/_tag.scss` | `themes/main/components/tag.css` |
+| `resources/css/theme/_card.scss` | `themes/main/components/card.css` |
+| `resources/css/theme/_editor.scss` | `themes/main/components/editor.css` |
+| `resources/css/theme/_tabs.scss` | `themes/main/components/tabs.css` |
+| `resources/css/theme/_menus.scss` | `themes/main/components/menus.css` |
+| `resources/css/theme/_navigation.scss` | `themes/main/components/navigation.css` |
+| `resources/css/theme/_confirm.scss` | `themes/main/components/confirm.css` |
+| `resources/css/theme/_primevue.scss` | `themes/main/components/primevue.css` |
+| `:root` / `.dark` blocks in `_base.scss` | `themes/main/tokens.css` |
+| `theme.css` (explicit slot imports) | `theme.css` (single `@import './_active.css'`) |
+
+#### Files that moved (CSS — cascade layer completion)
+
+| Removed | Replaced by |
+|---|---|
+| `resources/css/theme/fonts.css` | `themes/main/fonts.css` |
+| `resources/css/theme/_base.scss` | `themes/main/_base.scss` |
+| `resources/css/theme/_auth.scss` | `themes/main/_auth.scss` |
+| `resources/css/theme/utilities.css` | `themes/main/utilities.css` |
+
+#### Files that changed (import cleanup)
+
+| File | Change |
+|---|---|
+| `theme/theme.css` | Fixed `_auth.scss` import removed — resolver emits it. Now contains only `@import './_active.css'`. |
+| `app.css` | Fixed `utilities.css` tail import removed — resolver emits it as the last slot. |
+
+#### Files that moved (layout)
+
+`resources/js/layouts/AdminLayout.vue` is now a thin composition around the new `resources/js/layouts/AppShell.vue`. The external prop/slot contract (`title`, `subtitle`, `backUrl`, `default`, `page-actions`) is **identical** — no page needs to change its import or template.
+
+#### New files
+
+| File | Purpose |
+|---|---|
+| `resources/js/layouts/AppShell.vue` | Reusable structural shell (sidebar state, responsive margins, named regions) |
+| `resources/css/theme/themes/main/` | Built-in base theme (source of truth for all CSS slots) |
+| `resources/css/theme/themes/custom/` | Empty CSS override theme skeleton (see `themes/custom/README.md` in that directory) |
+| `scripts/sk-theme-build.mjs` | CSS theme resolver — writes `_active.css`; called explicitly by `dev` and `build` |
+| `resources/js/theme/themes/custom/` | Empty PrimeVue preset override skeleton — ships with `.gitkeep` and a `README.md` explaining the override recipe |
+| `scripts/vite-plugin-sk-theme.mjs` | Vite plugin — generates `_active.css` inside Vite's lifecycle and resolves `@/theme/preset` to the active theme's preset at build time |
+
+#### Generated artifact
+
+`resources/css/theme/_active.css` is produced by `scripts/sk-theme-build.mjs`. It is:
+
+- Listed in `.gitignore` — never committed.
+- Regenerated on every `npm run dev` and `npm run build` — the resolver is called explicitly in both scripts (not via npm lifecycle hooks, so it works correctly under `ignore-scripts=true`).
+- Not hash-tracked by `sk:update`.
+
+#### `.env.example` — new key
+
+```dotenv
+VITE_SK_THEME=main
+```
+
+Add this line to your `.env` and `.env.example` if it is not already present. The default is `main`; omitting the variable has the same effect.
+
+#### `package.json` — resolver chained into `dev` and `build`
+
+The `dev`, `build`, and `theme:build` scripts were updated so the resolver runs explicitly as part of the chain:
+
+```json
+"theme:build": "node scripts/sk-theme-build.mjs",
+"dev": "node scripts/sk-theme-build.mjs && vite",
+"build": "node scripts/sk-theme-build.mjs && vite build && vite build --ssr",
+```
+
+If you manage your own `package.json`, update `dev` and `build` to match this pattern. The resolver must be an explicit `&&` step — **do not use `predev` / `prebuild` lifecycle hooks**, as npm silently skips them when `ignore-scripts=true` (a common security setting in consumer projects and CI), which causes `_active.css` to be absent and the build to fail. `npm run theme:build` is available for generating the file on demand without a full build.
+
+#### If you have customised any moved CSS file
+
+**Moved from flat `_*.scss` partials:**
+
+1. Run `php artisan sk:update` — it will report a hash difference for the moved files.
+2. Copy your customisations into the corresponding `themes/main/` file (see the tables above).
+3. If your changes are extensive, consider placing them in `themes/custom/` instead (see `docs/theme.md` — custom override recipe).
+4. Run `npm run build` to verify.
+
+**Moved cascade-layer files (`fonts.css`, `_base.scss`, `_auth.scss`, `utilities.css`):**
+
+1. Run `php artisan sk:update` — it will report a hash difference for the moved files.
+2. Copy your customisations into the corresponding `themes/main/` file (see the cascade-layer table above).
+3. If your changes are theme-specific, consider placing them in `themes/custom/` instead (e.g. `themes/custom/fonts.css`). See `docs/theme.md` — Complete slot reference.
+4. Run `npm run build` to verify.
+
+**If you have customised `AdminLayout.vue`:**
+
+`sk:update` will report a hash difference. The new file is a thin composition around `AppShell`. Apply your customisations to the new version — the external contract (props, slots) is unchanged, so page-level templates need no edits.
+
+#### Orphaned files (safe to delete)
+
+`sk:update` adds the new `themes/main/` files but does not remove the old flat-path copies already on disk. After upgrading, these files are no longer imported by anything and may be deleted to keep the tree clean — leaving them is harmless (nothing imports them):
+
+- `resources/css/theme/fonts.css`
+- `resources/css/theme/_base.scss`
+- `resources/css/theme/_auth.scss`
+- `resources/css/theme/utilities.css`
+
+#### PrimeVue preset — no action required
+
+The PrimeVue preset resolver is fully additive and backward-compatible:
+
+- `resources/js/theme/preset.ts` **stays where it is** — the kit never moves it.
+- `app.ts` continues to import `@/theme/preset` without any change.
+- With `VITE_SK_THEME=main` (or no variable set), the build resolves `@/theme/preset` to the base `preset.ts` — byte-identical behaviour to the previous version.
+- The `themes/custom/preset.ts` override only takes effect when `VITE_SK_THEME=custom` **and** you have created the file. An absent file falls back to the base.
+
+Existing consumers who have customised `preset.ts` continue using their customised file. The resolver does not interfere. To give a custom theme its own PrimeVue palette, see `docs/theme.md` — PrimeVue preset layer.
+
+#### No visual change
+
+The reorganisation is purely structural. With `VITE_SK_THEME=main` (the default), the generated `_active.css` imports exactly the same CSS rules in the same order as the v13.5.11 output. Token values (light and dark), class names, and DOM structure are identical.
+
+---
+
+### Permission plugin
+
+The `v-can` / `v-role` permission directive plugin (`resources/js/plugins/permission.ts`) now resolves from the vendor package by default, mirroring how kit composables already work. Your `app.ts` import of `@/plugins/permission` is unchanged; it falls back to the vendor copy when no local file exists. **No behavior change** — the directives are identical.
+
+No migration is required. Existing projects keep their local `resources/js/plugins/permission.ts`, which continues to shadow the vendor copy, so nothing breaks.
+
+#### What changed
+
+| File | Change |
+|---|---|
+| `resources/js/plugins/permission.ts` | Now provided from vendor. Dead `useCan()` export removed (use `@/composables/useCan`); only `PermissionPlugin` (`v-can` / `v-role`) ships. |
+| `vite.config.ts` | New `@/plugins/*` resolver — local copy first, vendor fallback — mirroring `@/composables/*`. |
+| `tsconfig.json` | New `@/plugins/*` path mapping. |
+
+#### Your local copy is now optional
+
+`sk:update` no longer ships `resources/js/plugins/permission.ts` as a stub, but it does **not** delete the copy already in your project. That local copy keeps working — it shadows the vendor version. You can:
+
+- **Delete it** to adopt the vendor-managed version (recommended if you never edited it): `rm resources/js/plugins/permission.ts`.
+- **Keep it** to stay pinned to your copy, or to customise the directives.
+
+To recreate an editable copy later, run `php artisan sk:publish --tag=plugins` — it shadows the vendor version again.
 
 ---
 

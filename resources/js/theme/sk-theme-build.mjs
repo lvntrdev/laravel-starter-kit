@@ -5,18 +5,26 @@
  * Generates `resources/css/theme/_active.css`: a single ordered list of
  * `@import` statements that wire up the ACTIVE theme.
  *
+ * This script ships INSIDE the kit package (vendor-resident at
+ * `resources/js/theme/`), so it must NOT resolve theme files relative to its own
+ * location (`__dirname` = the vendor dir). It resolves them relative to the
+ * CONSUMER project root, which is `process.cwd()` — Vite and node both run from
+ * the project root. The optional `root` option lets a caller pin the base
+ * explicitly (vite.config does this); when omitted, cwd is used.
+ *
  * Two entry points keep this robust against npm config:
- *   - Explicit chain in package.json `dev`/`build` (`node scripts/sk-theme-build.mjs && vite …`)
+ *   - Explicit chain in package.json `dev`/`build`
+ *     (`node vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs && vite …`)
  *     — survives `ignore-scripts=true` because it is a literal command, not an npm hook.
- *   - The Vite plugin in `scripts/vite-plugin-sk-theme.mjs` (imports `buildActiveTheme`)
+ *   - The Vite plugin in `vite-plugin-sk-theme.mjs` (imports `buildActiveTheme`)
  *     — runs even if `vite build` is invoked directly, with no npm involvement at all.
- * Run directly (`node scripts/sk-theme-build.mjs`, e.g. the `theme:build` script) it
- * resolves the theme and logs a one-line summary.
+ * Run directly (e.g. the `theme:build` script) it resolves the theme and logs a
+ * one-line summary.
  *
  * Model: full-replacement + fallback (NOT layered diff).
  *   - The active theme is chosen at build time via `VITE_SK_THEME` (default `main`).
- *   - For every slot found under `themes/main/`, the resolver emits
- *     `themes/<active>/<slot>` IF that file exists, otherwise `themes/main/<slot>`.
+ *   - For every slot found under `main/`, the resolver emits
+ *     `<active>/<slot>` IF that file exists, otherwise `main/<slot>`.
  *   - So a `custom` theme that ships only `components/datatable.css` overrides
  *     just the datatable; every other slot falls back to `main`. EVERY cascade
  *     layer is a slot now — fonts, base, auth and utilities included.
@@ -36,8 +44,6 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Recursively collect stylesheet files (`*.css` and `*.scss`) under `dir`,
@@ -73,7 +79,7 @@ function collectSlots(dir) {
  * Resolve and validate the active theme name from an explicit value, then
  * `VITE_SK_THEME`, then the `main` default.
  *
- * The result is used verbatim as a path segment under `themes/` (both for the
+ * The result is used verbatim as a path segment under `theme/` (both for the
  * CSS slots here and the PrimeVue preset in vite-plugin-sk-theme.mjs), so it
  * MUST NOT be able to escape that directory. We accept only a conservative slug
  * — letters, digits, `-`, `_` — which structurally cannot contain `/`, `\`,
@@ -104,21 +110,24 @@ export function resolveThemeName(theme) {
  * Resolve the active theme and write `resources/css/theme/_active.css`.
  *
  * @param {object} [options]
- * @param {string} [options.root]  Project root (parent of `scripts/`). Defaults
- *   to the directory above this script — the same path the CLI has always used.
+ * @param {string} [options.root]  CONSUMER project root. Defaults to
+ *   `process.cwd()` — the directory Vite/node runs from in the consumer app.
+ *   This is deliberately NOT relative to the script's own location: the script
+ *   is vendor-resident, so `__dirname` would point at the kit package, not the
+ *   consumer's `resources/css/theme/`.
  * @param {string} [options.theme] Active theme name. Defaults to
  *   `process.env.VITE_SK_THEME || 'main'`.
  * @returns {{ outPath: string, slotCount: number, overriddenCount: number }}
  */
 export function buildActiveTheme({ root, theme } = {}) {
-    // Repo/project root is the parent of scripts/.
-    const projectRoot = root ?? join(__dirname, '..');
+    // Consumer project root (where resources/css/theme/ lives). cwd, NOT the
+    // vendor-resident script's own directory.
+    const projectRoot = root ?? process.cwd();
     const themeDir = join(projectRoot, 'resources', 'css', 'theme');
-    const themesDir = join(themeDir, 'themes');
-    const mainDir = join(themesDir, 'main');
+    const mainDir = join(themeDir, 'main');
 
     const activeTheme = resolveThemeName(theme);
-    const activeDir = join(themesDir, activeTheme);
+    const activeDir = join(themeDir, activeTheme);
 
     if (!existsSync(mainDir)) {
         throw new Error(`[sk-theme-build] missing base theme directory: ${mainDir}`);
@@ -161,9 +170,9 @@ export function buildActiveTheme({ root, theme } = {}) {
     const lines = [];
     lines.push('/**');
     lines.push(' * GENERATED FILE — do not edit by hand.');
-    lines.push(' * Produced by scripts/sk-theme-build.mjs (dev/build chain + Vite plugin).');
+    lines.push(' * Produced by the kit theme resolver (sk-theme-build.mjs, dev/build chain + Vite plugin).');
     lines.push(` * Active theme: ${activeTheme} (VITE_SK_THEME). Gitignored, not hash-tracked.`);
-    lines.push(' * Each slot resolves to themes/<active>/<slot> when present, else themes/main/<slot>.');
+    lines.push(' * Each slot resolves to <active>/<slot> when present, else main/<slot>.');
     lines.push(' */');
     lines.push('');
 
@@ -187,12 +196,14 @@ export function buildActiveTheme({ root, theme } = {}) {
 }
 
 // Run-as-main guard: only execute (and log) when invoked directly via
-// `node scripts/sk-theme-build.mjs` (the `theme:build` script and the explicit
-// `&&` chain in dev/build). When imported (Vite plugin), nothing runs on import.
+// `node …/sk-theme-build.mjs` (the `theme:build` script and the explicit `&&`
+// chain in dev/build). When imported (Vite plugin), nothing runs on import.
 if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {
     try {
         const { outPath, slotCount, overriddenCount } = buildActiveTheme();
-        const projectRoot = join(__dirname, '..');
+        // Log the path relative to the consumer project root (cwd), the same
+        // base buildActiveTheme() resolved against above.
+        const projectRoot = process.cwd();
         console.log(
             `[sk-theme-build] → ${outPath.replace(projectRoot + '/', '')} ` +
                 `(${slotCount} slot${slotCount === 1 ? '' : 's'}, ${overriddenCount} override${overriddenCount === 1 ? '' : 's'})`,

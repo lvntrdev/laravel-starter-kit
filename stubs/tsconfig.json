@@ -15,6 +15,10 @@
                 "resources/js/composables/*",
                 "vendor/lvntr/laravel-starter-kit/resources/js/composables/*"
             ],
+            "@/plugins/*": [
+                "resources/js/plugins/*",
+                "vendor/lvntr/laravel-starter-kit/resources/js/plugins/*"
+            ],
             "@/*": [
                 "resources/js/*"
             ],

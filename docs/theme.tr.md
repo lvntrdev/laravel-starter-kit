@@ -3,7 +3,7 @@
 Bu belge şunları kapsar:
 
 - `AppShell` / `AdminLayout` kompozisyon modeli ve yeni layout kurma
-- `themes/main` + `themes/custom` CSS yapısı, build-zamanı resolver ve tam-değiştirme + fallback modeli
+- `main` + `custom` CSS yapısı, build-zamanı resolver ve tam-değiştirme + fallback modeli
 - `VITE_SK_THEME` ile aktivasyon
 - Özel tema ekleme veya tek bir bileşenin stilini değiştirme adım adım reçetesi
 
@@ -100,7 +100,7 @@ Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir. Her ikisi de aynı
 
 | Katman | Ne kapsar | Resolver | Artefakt |
 |---|---|---|---|
-| **CSS tema override'ı** | Layout ölçüleri, renkler, gölgeler, bileşen CSS sınıfları | `scripts/sk-theme-build.mjs`, `_active.css`'i üretir | Üretilen dosya (`_active.css`), gitignore'da |
+| **CSS tema override'ı** | Layout ölçüleri, renkler, gölgeler, bileşen CSS sınıfları | `sk-theme-build.mjs` (vendor-resident), `_active.css`'i üretir | Üretilen dosya (`_active.css`), gitignore'da |
 | **PrimeVue preset** | Birincil palet, yüzey renkleri, border radius, bileşen token'ları (`--p-*` değişkenleri) | `vite.config.ts`'teki alias `customResolver`'ı (`resolveActivePreset`) | Yok — saf JS modül çözümlemesi |
 
 İki katman birbirinden bağımsızdır: preset'e dokunmadan CSS'i override edebilir, ya da tersi. Bir `tokens.css` override'ı genellikle preset'in emit ettiği `--p-*` token'larını okur — aşağıdaki [Bağımlılık zinciri](#bağımlılık-zinciri--tokenlar-ve-preset) bölümüne bakın.
@@ -115,43 +115,46 @@ Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir. Her ikisi de aynı
 resources/css/theme/
 ├── theme.css              # Giriş noktası: yalnızca _active.css'i import eder
 ├── _active.css            # OLUŞTURULAN — elle düzenleme; gitignore'da
-└── themes/
-    ├── main/              # Dahili ana tema (tüm slot'lar için kaynak)
-    │   ├── tokens.css     # CSS custom property'leri: layout ölçüleri, renkler, gölgeler
-    │   ├── fonts.css      # Web font bildirimleri
-    │   ├── _base.scss     # Base reset / tipografi
-    │   ├── layout/
-    │   │   ├── shell.css        # .admin-layout, .admin-main, Vue geçişleri
-    │   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
-    │   │   ├── header.css       # .admin-header*
-    │   │   ├── page-header.css  # .admin-page-header*
-    │   │   └── footer.css       # .admin-footer*
-    │   ├── components/
-    │   │   ├── card.css
-    │   │   ├── confirm.css
-    │   │   ├── datatable.css
-    │   │   ├── dialog.css
-    │   │   ├── editor.css
-    │   │   ├── formbuilder.css
-    │   │   ├── menus.css
-    │   │   ├── navigation.css
-    │   │   ├── primevue.css
-    │   │   ├── tabs.css
-    │   │   ├── tag.css
-    │   │   └── toast.css
-    │   ├── _auth.scss     # Auth layout stilleri
-    │   └── utilities.css  # Tailwind utility override'ları
-    └── custom/            # Override tema (boş gönderilir)
-        └── README.md
+├── main/                  # Dahili ana tema (tüm slot'lar için kaynak)
+│   ├── tokens.css         # CSS custom property'leri: layout ölçüleri, renkler, gölgeler
+│   ├── fonts.css          # Web font bildirimleri
+│   ├── _base.scss         # Base reset / tipografi
+│   ├── layout/
+│   │   ├── shell.css        # .admin-layout, .admin-main, Vue geçişleri
+│   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
+│   │   ├── header.css       # .admin-header*
+│   │   ├── page-header.css  # .admin-page-header*
+│   │   └── footer.css       # .admin-footer*
+│   ├── components/
+│   │   ├── card.css
+│   │   ├── confirm.css
+│   │   ├── datatable.css
+│   │   ├── dialog.css
+│   │   ├── editor.css
+│   │   ├── formbuilder.css
+│   │   ├── menus.css
+│   │   ├── navigation.css
+│   │   ├── primevue.css
+│   │   ├── tabs.css
+│   │   ├── tag.css
+│   │   └── toast.css
+│   ├── _auth.scss         # Auth layout stilleri
+│   └── utilities.css      # Tailwind utility override'ları
+└── custom/                # Override tema — kit ile gönderilmez; siz oluşturursunuz
+    └── (gerektiğinde oluşturun — aşağıdaki reçetelere bakın)
 ```
+
+> Kit artık boş bir `custom/` dizini göndermez. Herhangi bir slot'u override etmek istiyorsanız dizini önce kendiniz oluşturun (aşağıdaki reçetelere bakın).
 
 ### Resolver nasıl çalışır
 
-`scripts/sk-theme-build.mjs`, `dev` ve `build` script'lerinin açık bir parçası olarak çağrılır ve `theme/_active.css`'i üretir. Model **tam-değiştirme + fallback**'tir:
+`sk-theme-build.mjs`, kit tarafından yönetilen ve paketin içinde gelen bir build scriptidir (vendor-resident; `vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs`). Bu dosya sizin sahiplendiğiniz ya da düzenlediğiniz bir dosya değildir — yalnızca `resources/` dizininizdeki tema/slot/preset dosyaları sizin özelleştirme alanınızdır. Script, `dev` ve `build` sırasında `skTheme()` Vite plugin'i tarafından otomatik çağrılır ve `theme/_active.css`'i üretir. Model **tam-değiştirme + fallback**'tir:
 
-1. `themes/main/` slot listesi ve import sırası için kanoniktir.
-2. Her slot için resolver, `themes/<aktif>/<slot>` **dosyası varsa** onu yükler; yoksa `themes/main/<slot>`'a döner.
+1. `main/` slot listesi ve import sırası için kanoniktir.
+2. Her slot için resolver, `<aktif>/<slot>` **dosyası varsa** onu yükler; yoksa `main/<slot>`'a döner.
 3. Sonuç, doğru cascade sırasında her slot için bir `@import` içeren tek bir `_active.css`'tir.
+
+`custom/` dizini hiç yoksa bile build tamamlanır — her slot `main`'e düşer.
 
 Import sırası (orijinal cascade'den korunur):
 
@@ -171,13 +174,19 @@ Aktif temayı `.env`'de belirtin:
 VITE_SK_THEME=custom
 ```
 
-Varsayılan `main`'dir. Değişken yoksa veya boşsa `main` kullanılır. `npm run dev` veya `npm run build` çalıştırın — resolver bu script'lerin açık bir adımı olarak çalışır ve Vite başlamadan önce `_active.css`'i yeniden üretir. Bu yaklaşım, npm lifecycle hook'larına dayanmadığı için `ignore-scripts=true` altında da güvenle çalışır.
+Varsayılan `main`'dir. Değişken yoksa veya boşsa `main` kullanılır. `npm run dev` veya `npm run build` çalıştırın — `skTheme()` Vite plugin'i, Vite herhangi bir asset'i işlemeden önce resolver'ı çalıştırarak `_active.css`'i yeniden üretir. Bu yaklaşım, npm lifecycle hook'larına dayanmadığı için `ignore-scripts=true` altında da güvenle çalışır.
 
-Tam build yapmadan çözümlenen manifesti önizlemek için:
+Tam build yapmadan çözümlenen manifesti önizlemek için `theme:build` npm script'ini kullanın:
 
 ```bash
-node scripts/sk-theme-build.mjs
+npm run theme:build
 # [sk-theme-build] theme="custom" → resources/css/theme/_active.css (22 slot, 1 override)
+```
+
+Ya da vendor script'ini doğrudan çağırın:
+
+```bash
+node vendor/lvntr/laravel-starter-kit/resources/js/theme/sk-theme-build.mjs
 ```
 
 `resources/css/theme/_active.css`'i açarak her slot'un hangi dosyaya çözümlendiğini görebilirsiniz. Override'lanan slot'lar `/* override */` ile işaretlenir.
@@ -188,7 +197,7 @@ node scripts/sk-theme-build.mjs
 
 - `.gitignore`'da listelenmiştir — asla commit etmeyin.
 - `sk:update` tarafından hash-takip edilmez — her `npm run dev` / `npm run build`'de yeniden üretilir.
-- Her iki script'te resolver açık bir adım olarak yer aldığından Vite başlamadan önce her zaman mevcuttur.
+- `skTheme()` plugin'i resolver'ı Vite asset'leri işlemeden önce çalıştırdığı için Vite başlamadan önce her zaman mevcuttur.
 
 ---
 
@@ -198,32 +207,33 @@ node scripts/sk-theme-build.mjs
 
 Datatable'ı başka hiçbir şeye dokunmadan yeniden stillemek için:
 
-1. Override etmek istediğiniz slot'u kopyalayın:
+1. Custom dizinini oluşturun ve override etmek istediğiniz slot'u kopyalayın:
 
    ```bash
-   cp resources/css/theme/themes/main/components/datatable.css \
-      resources/css/theme/themes/custom/components/datatable.css
+   mkdir -p resources/css/theme/custom/components
+   cp resources/css/theme/main/components/datatable.css \
+      resources/css/theme/custom/components/datatable.css
    ```
 
-2. `themes/custom/components/datatable.css`'i düzenleyin. Aynı class adlarını koruyun — Vue bileşenleri onları hedefler.
+2. `custom/components/datatable.css`'i düzenleyin. Aynı class adlarını koruyun — Vue bileşenleri onları hedefler.
 
 3. `.env`'de `VITE_SK_THEME=custom` olarak ayarlayın.
 
-4. `npm run dev` çalıştırın. Resolver `dev` script'inin açık bir adımı olarak çalışır ve `_active.css`'i yeniden üretir; `themes/custom/components/datatable.css`, import listesinde `themes/main/components/datatable.css`'in yerini alır. Diğer tüm slot'lar `main`'den gelmeye devam eder.
+4. `npm run dev` çalıştırın. `skTheme()` plugin'i Vite başlamadan önce `_active.css`'i yeniden üretir; `custom/components/datatable.css`, import listesinde `main/components/datatable.css`'in yerini alır. Diğer tüm slot'lar `main`'den gelmeye devam eder.
 
 Çözümlenen manifesti doğrulayın:
 
 ```
-@import './themes/main/tokens.css';
-@import './themes/main/fonts.css';
-@import './themes/main/_base.scss';
-@import './themes/main/layout/footer.css';
+@import './main/tokens.css';
+@import './main/fonts.css';
+@import './main/_base.scss';
+@import './main/layout/footer.css';
 …
-@import './themes/custom/components/datatable.css'; /* override */
-@import './themes/main/components/dialog.css';
+@import './custom/components/datatable.css'; /* override */
+@import './main/components/dialog.css';
 …
-@import './themes/main/_auth.scss';
-@import './themes/main/utilities.css';
+@import './main/_auth.scss';
+@import './main/utilities.css';
 ```
 
 ### Token setini override etme
@@ -231,8 +241,9 @@ Datatable'ı başka hiçbir şeye dokunmadan yeniden stillemek için:
 Layout ölçülerini, renkleri veya gölgeleri genel olarak değiştirmek için `tokens.css`'i override edin:
 
 ```bash
-cp resources/css/theme/themes/main/tokens.css \
-   resources/css/theme/themes/custom/tokens.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/tokens.css \
+   resources/css/theme/custom/tokens.css
 ```
 
 Custom property'leri düzenleyin. Tüm layout bölgeleri ve bileşenler bu token'ları okur; dolayısıyla bir token değişikliği bağımsız bileşen dosyalarına dokunmadan her yere yayılır.
@@ -240,8 +251,9 @@ Custom property'leri düzenleyin. Tüm layout bölgeleri ve bileşenler bu token
 ### Bir layout bölgesini override etme
 
 ```bash
-cp resources/css/theme/themes/main/layout/sidebar.css \
-   resources/css/theme/themes/custom/layout/sidebar.css
+mkdir -p resources/css/theme/custom/layout
+cp resources/css/theme/main/layout/sidebar.css \
+   resources/css/theme/custom/layout/sidebar.css
 ```
 
 İstediğiniz gibi düzenleyin. Yalnızca sidebar slot'u değiştirilir; layout'un geri kalanı `main`'den gelir.
@@ -251,17 +263,19 @@ cp resources/css/theme/themes/main/layout/sidebar.css \
 Font bildirimleri ve Tailwind utility override'ları artık diğer her slot gibi birer slot'tur. Layout veya bileşenlere dokunmadan kendi fontlarınızı kullanmak için:
 
 ```bash
-cp resources/css/theme/themes/main/fonts.css \
-   resources/css/theme/themes/custom/fonts.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/fonts.css \
+   resources/css/theme/custom/fonts.css
 ```
 
-`themes/custom/fonts.css` içindeki `@font-face` bildirimlerini düzenleyin. Sonraki build'de `_active.css`, `main` sürümü yerine sizin font dosyanızı kullanır; diğer tüm slot'lar `main`'den gelmeye devam eder.
+`custom/fonts.css` içindeki `@font-face` bildirimlerini düzenleyin. Sonraki build'de `_active.css`, `main` sürümü yerine sizin font dosyanızı kullanır; diğer tüm slot'lar `main`'den gelmeye devam eder.
 
 Benzer şekilde Tailwind utility override'ları için:
 
 ```bash
-cp resources/css/theme/themes/main/utilities.css \
-   resources/css/theme/themes/custom/utilities.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/utilities.css \
+   resources/css/theme/custom/utilities.css
 ```
 
 `utilities.css` unlayered olup cascade'de en son emit edildiğinden her katmanlı kurala galip gelir — öncekiyle aynı öncelik davranışı. Serbestçe düzenleyebilirsiniz.
@@ -269,11 +283,12 @@ cp resources/css/theme/themes/main/utilities.css \
 ### Auth stillerini override etme
 
 ```bash
-cp resources/css/theme/themes/main/_auth.scss \
-   resources/css/theme/themes/custom/_auth.scss
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/_auth.scss \
+   resources/css/theme/custom/_auth.scss
 ```
 
-`themes/custom/_auth.scss`'i düzenleyin. `.scss` uzantısı zorunludur — resolver ve Sass derleyicisi uzantı-farkındadır.
+`custom/_auth.scss`'i düzenleyin. `.scss` uzantısı zorunludur — resolver ve Sass derleyicisi uzantı-farkındadır.
 
 ### Tam slot referansı
 
@@ -307,8 +322,9 @@ cp resources/css/theme/themes/main/_auth.scss \
 - Özel tema slot'ları **dosya bütünüyle** değiştirir — cascade diff yoktur. Başlangıç noktası olarak `main` dosyasını kopyalayın.
 - Özel temalar yeni slot ekleyemez. `custom/`'daki `main/`'de eşleşen yolu olmayan bir dosya hiçbir zaman import edilmez.
 - `VITE_SK_THEME=main` (varsayılan) stok panel ile byte-identical bir build üretir — hiçbir custom dosya yüklenmez.
-- Artık ihtiyaç duymadığınız `themes/custom/` dosyalarını kaldırın; resolver otomatik olarak `main`'e döner.
-- `.scss` uzantılı slot'lar (`_base.scss`, `_auth.scss`) `themes/custom/` içinde de aynı uzantıyı taşımalıdır.
+- Kit `custom/` dizini göndermez. Override eklemeden önce dizini kendiniz oluşturun; dizin yoksa her slot `main`'e çözümlenir.
+- Artık ihtiyaç duymadığınız `custom/` dosyalarını kaldırın; resolver otomatik olarak `main`'e döner.
+- `.scss` uzantılı slot'lar (`_base.scss`, `_auth.scss`) `custom/` içinde de aynı uzantıyı taşımalıdır.
 
 ---
 
@@ -318,9 +334,9 @@ cp resources/css/theme/themes/main/_auth.scss \
 
 `resources/js/theme/preset.ts`, PrimeVue styled-mode preset'in tabanıdır — birincil palet, yüzey renkleri, border radius ve bileşen başına token'ları tanımlar. `app.ts` bunu `@/theme/preset` olarak import eder. Import yolu hiçbir zaman değişmez.
 
-`vite.config.ts`'teki alias `customResolver` — `scripts/vite-plugin-sk-theme.mjs`'ten export edilen `resolveActivePreset` helper'ı — `@/theme/preset` specifier'ını build zamanında yakalar:
+`vite.config.ts`'teki alias `customResolver` — kit'in vendor-resident `vite-plugin-sk-theme.mjs`'inden export edilen `resolveActivePreset` helper'ı — `@/theme/preset` specifier'ını build zamanında yakalar:
 
-- `VITE_SK_THEME` değeri `main` **değilse** ve `resources/js/theme/themes/<aktif>/preset.ts` **mevcutsa** → override dosyasına çözümlenir.
+- `VITE_SK_THEME` değeri `main` **değilse** ve `resources/js/theme/<aktif>/preset.ts` **mevcutsa** → override dosyasına çözümlenir.
 - Aksi takdirde → taban `resources/js/theme/preset.ts`'e çözümlenir.
 
 Taban dosya daima yerinde kalır — kit onu asla taşımaz çünkü consumer projesinde en sık özelleştirilen dosyadır.
@@ -329,24 +345,25 @@ Taban dosya daima yerinde kalır — kit onu asla taşımaz çünkü consumer pr
 
 ```
 resources/js/theme/
-├── preset.ts                      # Taban preset (consumer tarafından özelleştirilebilir; yerinde kalır)
-└── themes/
-    └── custom/
-        ├── .gitkeep
-        ├── README.md              # Override reçetesi
-        └── preset.ts              # (siz oluşturursunuz — aşağıdaki reçeteye bakın)
+├── preset.ts              # Taban preset (consumer tarafından özelleştirilebilir; yerinde kalır)
+└── custom/                # Kit ile gönderilmez — gerektiğinde kendiniz oluşturun
+    └── preset.ts          # (siz oluşturursunuz — aşağıdaki reçeteye bakın)
 ```
 
-`themes/custom/` dizini boş olarak gönderilir (yalnızca `.gitkeep` ve `README.md`). `custom` temasının preset'i varsayılan olarak yoktur; bu nedenle taban preset kullanılır ve PrimeVue görünümü stok panelle byte-identical kalır.
+`custom/` dizini kit tarafından gönderilmez. `custom` temasının preset'i varsayılan olarak yoktur; bu nedenle taban preset kullanılır ve PrimeVue görünümü stok panelle byte-identical kalır. Temaya özel preset override'ı ihtiyaç duyduğunuzda dizini kendiniz oluşturun.
 
 ### Custom temaya kendi PrimeVue paletini verme
 
-1. `resources/js/theme/themes/custom/preset.ts` oluşturun. En basit yaklaşım, taban preset'i import edip yalnızca paleti override etmektir:
+1. `resources/js/theme/custom/preset.ts` oluşturun (`custom/` dizini yoksa önce oluşturun). En basit yaklaşım, taban preset'i import edip yalnızca paleti override etmektir:
+
+   ```bash
+   mkdir -p resources/js/theme/custom
+   ```
 
    ```ts
    import { definePreset } from '@primevue/themes';
    import Aura from '@primevue/themes/aura';
-   import AppPreset from '../../preset';
+   import AppPreset from '../preset';
 
    export default definePreset(Aura, {
        ...AppPreset,
@@ -376,12 +393,13 @@ resources/js/theme/
 ### Notlar
 
 - Preset nesnesini **default export** olarak dışa aktarın — `app.ts` bunu PrimeVue'nun `preset` seçeneğine geçirir.
-- Override yalnızca `VITE_SK_THEME=custom` olduğunda ve dosya mevcut olduğunda uygulanır. Diğer her değerde tabana döner.
+- Override yalnızca `VITE_SK_THEME=custom` olduğunda ve `resources/js/theme/custom/preset.ts` mevcut olduğunda uygulanır. Diğer her değerde tabana döner.
+- Kit `resources/js/theme/` altında `custom/` dizini göndermez. Temaya özel preset ihtiyacınızda kendiniz oluşturun.
 - Üretilen artefakt yoktur. Bu saf modül çözümlemesidir — gitignore'a alınacak `_active` dosyası yok, bakılacak npm zinciri yok.
 
 ### Bağımlılık zinciri — token'lar ve preset
 
-`resources/css/theme/themes/main/tokens.css` (ve varsa `themes/custom/tokens.css` override'ı), layout ve bileşenlerin kullandığı `--admin-*` custom property'lerini tanımlar. Bunlar, PrimeVue preset'inin çalışma-zamanında emit ettiği `--p-*` değişkenlerine **canlı referanslardır**:
+`resources/css/theme/main/tokens.css` (ve varsa `custom/tokens.css` override'ı), layout ve bileşenlerin kullandığı `--admin-*` custom property'lerini tanımlar. Bunlar, PrimeVue preset'inin çalışma-zamanında emit ettiği `--p-*` değişkenlerine **canlı referanslardır**:
 
 ```css
 /* tokens.css — admin rolleri PrimeVue preset çıktısına bağlanır */
@@ -394,8 +412,9 @@ Canlı `var()` referansı oldukları için, preset override'ınızda birincil/y�
 `tokens.css`'i yalnızca bir admin rolünün hangi PrimeVue token'ına bağlandığını yeniden eşlemek isterseniz override edin (örn. sidebar'ı farklı bir surface adımından okutmak):
 
 ```bash
-cp resources/css/theme/themes/main/tokens.css \
-   resources/css/theme/themes/custom/tokens.css
+mkdir -p resources/css/theme/custom
+cp resources/css/theme/main/tokens.css \
+   resources/css/theme/custom/tokens.css
 ```
 
 Ardından `--admin-*` property'lerini seçtiğiniz `--p-*` token'larına göre düzenleyin.
@@ -404,7 +423,7 @@ Ardından `--admin-*` property'lerini seçtiğiniz `--p-*` token'larına göre d
 
 ## Karanlık mod
 
-Karanlık mod için CSS custom property'leri `themes/main/tokens.css` içindeki `.dark { … }` bloklarında (ve layout-özel karanlık mod override'larının bulunduğu layout dosyalarında) tanımlanır. `tokens.css`'i override ederseniz, `.dark` bloklarını da kopyalayın.
+Karanlık mod için CSS custom property'leri `main/tokens.css` içindeki `.dark { … }` bloklarında (ve layout-özel karanlık mod override'larının bulunduğu layout dosyalarında) tanımlanır. `tokens.css`'i override ederseniz, `.dark` bloklarını da kopyalayın.
 
 Karanlık mod `useDarkMode` ile değiştirilir — `<html>` üzerine `dark` sınıfı ekler / kaldırır. Ayrı bir build adımı veya CSS dosyası gerekmez.
 

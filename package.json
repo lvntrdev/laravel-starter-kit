@@ -1,33 +1,34 @@
 {
-    "name": "@lvntr/starter-kit",
-    "version": "1.0.0",
-    "description": "Vue 3 components for Lvntr Starter Kit (FormBuilder, DatatableBuilder, TabBuilder, FileManager, Skeleton, UI)",
-    "type": "module",
-    "main": "resources/js/components/Lvntr-Starter-Kit/index.ts",
-    "exports": {
-        ".": "./resources/js/components/Lvntr-Starter-Kit/index.ts",
-        "./FormBuilder": "./resources/js/components/Lvntr-Starter-Kit/FormBuilder/SkForm.vue",
-        "./FormBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/FormBuilder/*",
-        "./DatatableBuilder": "./resources/js/components/Lvntr-Starter-Kit/DatatableBuilder/SkDatatable.vue",
-        "./DatatableBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/DatatableBuilder/*",
-        "./FileManager": "./resources/js/components/Lvntr-Starter-Kit/FileManager/FileManager.vue",
-        "./FileManager/*": "./resources/js/components/Lvntr-Starter-Kit/FileManager/*",
-        "./TabBuilder": "./resources/js/components/Lvntr-Starter-Kit/TabBuilder/SkTabs.vue",
-        "./TabBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/TabBuilder/*",
-        "./Skeleton/*": "./resources/js/components/Lvntr-Starter-Kit/Skeleton/*",
-        "./ui/*": "./resources/js/components/Lvntr-Starter-Kit/ui/*",
-        "./*": "./resources/js/components/Lvntr-Starter-Kit/*"
-    },
-    "files": [
-        "resources/js/components"
-    ],
-    "keywords": [
-        "vue",
-        "primevue",
-        "form-builder",
-        "datatable",
-        "starter-kit",
-        "laravel"
-    ],
-    "license": "PolyForm-Noncommercial-1.0.0"
+  "name": "@lvntr/starter-kit",
+  "version": "13.5.11",
+  "description": "Vue 3 components for Lvntr Starter Kit (FormBuilder, DatatableBuilder, TabBuilder, FileManager, Skeleton, UI)",
+  "type": "module",
+  "main": "resources/js/components/Lvntr-Starter-Kit/index.ts",
+  "exports": {
+    ".": "./resources/js/components/Lvntr-Starter-Kit/index.ts",
+    "./FormBuilder": "./resources/js/components/Lvntr-Starter-Kit/FormBuilder/SkForm.vue",
+    "./FormBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/FormBuilder/*",
+    "./DatatableBuilder": "./resources/js/components/Lvntr-Starter-Kit/DatatableBuilder/SkDatatable.vue",
+    "./DatatableBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/DatatableBuilder/*",
+    "./FileManager": "./resources/js/components/Lvntr-Starter-Kit/FileManager/FileManager.vue",
+    "./FileManager/*": "./resources/js/components/Lvntr-Starter-Kit/FileManager/*",
+    "./TabBuilder": "./resources/js/components/Lvntr-Starter-Kit/TabBuilder/SkTabs.vue",
+    "./TabBuilder/*": "./resources/js/components/Lvntr-Starter-Kit/TabBuilder/*",
+    "./Skeleton/*": "./resources/js/components/Lvntr-Starter-Kit/Skeleton/*",
+    "./ui/*": "./resources/js/components/Lvntr-Starter-Kit/ui/*",
+    "./*": "./resources/js/components/Lvntr-Starter-Kit/*"
+  },
+  "files": [
+    "resources/js/components",
+    "resources/js/theme"
+  ],
+  "keywords": [
+    "vue",
+    "primevue",
+    "form-builder",
+    "datatable",
+    "starter-kit",
+    "laravel"
+  ],
+  "license": "PolyForm-Noncommercial-1.0.0"
 }

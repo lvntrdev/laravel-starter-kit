@@ -80,7 +80,7 @@ test('theme.css _active.css import ediyor ama _active.css yoksa fail döner', fu
 test('theme.css _active.css import ediyor ve _active.css varsa ok döner', function () {
     $dir = makeThemeDir();
     file_put_contents($dir.'/theme.css', "@import './_active.css';\n@import './_auth.scss';\n");
-    file_put_contents($dir.'/_active.css', "@import './themes/main/tokens.css';\n");
+    file_put_contents($dir.'/_active.css', "@import './main/tokens.css';\n");
 
     $report = makeThemeManifestCheck($dir)->run();
 
@@ -111,7 +111,7 @@ test('_active.css tema kökü dışına çıkan (../) import içeriyorsa warn d�
 test('_active.css header teması VITE_SK_THEME ile uyuşmazsa warn döner (stale)', function () {
     $dir = makeThemeDir();
     file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
-    file_put_contents($dir.'/_active.css', " * Active theme: main (VITE_SK_THEME).\n@import './themes/main/tokens.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: main (VITE_SK_THEME).\n@import './main/tokens.css';\n");
 
     // env'de custom aktif ama manifest main için üretilmiş → stale.
     $report = makeThemeManifestCheck($dir, 'custom')->run();
@@ -128,7 +128,7 @@ test('_active.css header teması VITE_SK_THEME ile uyuşmazsa warn döner (stale
 test('_active.css header teması VITE_SK_THEME ile eşleşirse ok (consistent) döner', function () {
     $dir = makeThemeDir();
     file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
-    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './themes/custom/tokens.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './custom/tokens.css';\n");
 
     $report = makeThemeManifestCheck($dir, 'custom')->run();
 
@@ -143,7 +143,7 @@ test('_active.css header teması VITE_SK_THEME ile eşleşirse ok (consistent) d
 test('VITE_SK_THEME okunamıyorsa (null) header eşleşmesi atlanır — yanlış pozitif yok', function () {
     $dir = makeThemeDir();
     file_put_contents($dir.'/theme.css', "@import './_active.css';\n");
-    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './themes/custom/tokens.css';\n");
+    file_put_contents($dir.'/_active.css', " * Active theme: custom (VITE_SK_THEME).\n@import './custom/tokens.css';\n");
 
     // expectedTheme null (env okunamadı / config cache) → karşılaştırma yapılmaz.
     $report = makeThemeManifestCheck($dir, null)->run();

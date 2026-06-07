@@ -2,9 +2,33 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-06-06 — v13.5.14
+## 2026-06-06 — v13.6.0
 
-### Minor release — All CSS cascade layers are now override slots
+### Minor release — Vendor-runtime migration completed + structured theme/layout/CSS system
+
+13.6.0 bundles every change made since the last published release (v13.5.11) into a single version. It completes the "package runtime runs from vendor" migration on both the backend and the frontend, and reorganises the admin-panel layout and CSS into a structured, override-ready theme system. **No visual change** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. The sections below group the bundled changes by area.
+
+### Permission directive plugin resolves from vendor
+
+The `v-can` / `v-role` Vue plugin (`resources/js/plugins/permission.ts`) is now served from the vendor package by default — the same resolution kit composables already use. A `@/plugins/<name>` import resolves to your local copy when one exists, otherwise it falls back to the vendor copy, so the kit can ship directive fixes without a stub re-copy. **No behavior change**: the directives are identical and `app.ts` still imports `@/plugins/permission` unchanged.
+
+#### Changed
+
+- **`resources/js/plugins/permission.ts`** — moved into the vendor package. The dead, unused `useCan()` export was dropped (the live composable is `@/composables/useCan`); the file now ships only `PermissionPlugin` (the `v-can` / `v-role` directives), with no auto-import dependency.
+- **`vite.config.ts`** — new `@/plugins/*` alias `customResolver` (`resolvePlugin`) mirroring `@/composables/*`: local-override-then-vendor fallback, ordered before the bare `@` alias.
+- **`tsconfig.json`** — new `@/plugins/*` path mapping (local + vendor).
+
+#### Added
+
+- **`sk:publish --tag=plugins`** — publish a local, editable copy of the Vue plugins to customise the permission directives.
+
+#### Migration
+
+No action required — resolution is automatic. Your existing `resources/js/plugins/permission.ts` keeps shadowing the vendor copy; delete it to adopt the vendor version. See `UPGRADE.md`.
+
+---
+
+### All CSS cascade layers are now override slots
 
 Every CSS layer in the theme system is now an overridable slot. Previously `fonts.css`, `_base.scss`, `_auth.scss`, and `utilities.css` were fixed imports outside the resolver; they now live under `themes/main/` and are emitted by `scripts/sk-theme-build.mjs` in the correct cascade order alongside `tokens`, `layout/*`, and `components/*`. **No visual change** — the default build with `VITE_SK_THEME=main` is byte-identical to v13.5.13. The only difference is that a `custom` theme can now override any layer, including fonts, base reset, auth styles, and utility overrides, by placing a matching file under `themes/custom/`.
 
@@ -22,9 +46,7 @@ No action required. `sk:update` delivers the updated files. The default build is
 
 ---
 
-## 2026-06-06 — v13.5.13
-
-### Minor release — AppShell layout composition + build-time theme-override system (`themes/main` / `themes/custom`)
+### AppShell layout composition + build-time theme-override system (`themes/main` / `themes/custom`)
 
 v13.5.13 reorganises the admin-panel layout and CSS into a structured, override-ready system. **No visual change** — the default build is byte-identical to the previous version. The layout shell is split into a reusable `AppShell.vue` (structural backbone, sidebar state, named regions) and a thin `AdminLayout.vue` composition that wires in the standard admin components. The CSS monolith (`_admin.scss` + scattered `_*.scss` partials) is dissolved into a `themes/main/` directory tree of individual slot files. A new opt-in `themes/custom/` directory and `scripts/sk-theme-build.mjs` theme resolver enable per-slot overrides at build time: set `VITE_SK_THEME=custom`, place a file in `themes/custom/components/datatable.css`, and only that slot is replaced — everything else falls back to `main`. See `docs/theme.md` for the full reference and custom-override recipe.
 
@@ -56,13 +78,11 @@ v13.5.13 reorganises the admin-panel layout and CSS into a structured, override-
 
 #### Migration
 
-`sk:update` delivers all new stubs. No migration required if no moved file was customised — `npm run build` produces a byte-identical panel. If you customised a moved file, copy your changes into the corresponding `themes/main/` slot or use `themes/custom/` for an isolated override. See `docs/UPGRADE.md` (v13.5.12 → v13.5.13) for details.
+`sk:update` delivers all new stubs. No migration required if no moved file was customised — `npm run build` produces a byte-identical panel. If you customised a moved file, copy your changes into the corresponding `themes/main/` slot or use `themes/custom/` for an isolated override. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0) for details.
 
 ---
 
-## 2026-06-04 — v13.5.12
-
-### Minor release — Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
+### Kit composables run from vendor; local-first resolver; `sk:publish --tag=composables`
 
 v13.5.12 moves 15 kit composables out of the stub scaffold and into the vendor library. They now run directly from `vendor/lvntr/laravel-starter-kit/resources/js/composables/` and are updated with every `composer update`. Import paths are fully unchanged — `@/composables/<name>` resolves local-first (consumer file wins if it exists) then falls back to the vendor copy, so no consumer import statement needs to change. `useAdminMenu` and `index.ts` remain as editable stubs because they depend on the consumer's generated routes and project-specific menu definition. `TurnstileWidget.vue` was likewise moved to the vendor library (`@lvntr/components/ui/TurnstileWidget.vue`).
 
@@ -76,9 +96,9 @@ v13.5.12 moves 15 kit composables out of the stub scaffold and into the vendor l
 
 - **15 composable stubs** — removed from the scaffold. Existing projects are unaffected (local-first resolver keeps using local copies). To opt into vendor-managed upgrades: delete unmodified composable files from `resources/js/composables/`, keeping `useAdminMenu.ts`, `index.ts`, and any file you have customized.
 
-### Minor release — Backend runtime classes & third-party configs run from vendor
+### Backend runtime classes & third-party configs run from vendor
 
-The same release continues the v13.5.0 "runtime runs from vendor" migration on the backend. A set of helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, and three third-party config files are no longer copied into your app. Existing apps are not affected — `App\…` imports keep resolving (via `class_alias` for pure-moved classes, or a thin `App\` shim for the rest), and a config you already published keeps winning. The only required step is `composer update`. See `docs/UPGRADE.md` (v13.5.3 → v13.5.12) for the full migration guide.
+The same release continues the v13.5.0 "runtime runs from vendor" migration on the backend. A set of helper classes, validation rules, and middleware moved out of the published scaffold into the vendor package, and three third-party config files are no longer copied into your app. Existing apps are not affected — `App\…` imports keep resolving (via `class_alias` for pure-moved classes, or a thin `App\` shim for the rest), and a config you already published keeps winning. The only required step is `composer update`. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0) for the full migration guide.
 
 #### Added
 
