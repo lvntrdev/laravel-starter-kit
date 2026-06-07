@@ -4,6 +4,89 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v15.10.0
+
+### Kit translations moved to vendor (Phase 5)
+
+The 44 kit-specific translation files (`sk-*.php`, two locales) have moved from `stubs/lang/` into the package itself (`resources/lang/{en,tr}/sk-*.php`). Pre-compiled JSON (`resources/js/lang/php_en.json` / `php_tr.json`) ships alongside them and is consumed by the frontend i18n setup automatically. Translation files are no longer bulk-copied into your app on a fresh install.
+
+#### How translations are delivered
+
+| Layer | Before v15.10.0 | v15.10.0+ |
+|---|---|---|
+| Frontend (`$t('sk-common.*')`) | `app/lang/*.php` compiled by Vite plugin | Vendor JSON merged with `app/lang` at build time — app wins on collision |
+| PHP backend (`__('sk-common.*')`) | `app/lang/{locale}/sk-*.php` copied by `sk:install` | Vendor `resources/lang/{locale}/sk-*.php` registered by `StarterKitServiceProvider` at boot |
+
+#### Merge priority
+
+The frontend i18n setup (`resources/js/app.ts`) now loads two sources:
+
+1. **Vendor JSON** — `vendor/lvntr/laravel-starter-kit/resources/js/lang/php_{locale}.json` (fallback for any key not overridden in your app)
+2. **App JSON** — `app/lang/*.php` compiled by the Vite i18n plugin into `lang/php_{locale}.json` (takes precedence — your customisations always win)
+
+Missing translations fall back to the vendor default. There is no visible change unless you have customised a `sk-*` key, in which case your version continues to show.
+
+#### New installs (v15.10.0+)
+
+A fresh `sk:install` no longer copies `lang/{en,tr}/sk-*.php` into your app. Kit translations are served from the vendor package. `lang/{en,tr}/validation.php` is still copied — it is the standard Laravel validation override surface and remains in your app.
+
+No extra step is needed.
+
+#### Existing installs — upgrade steps
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+`sk:update` reports any `lang/{locale}/sk-*.php` copies that remain in your app (informational only — they are **never deleted automatically**):
+
+```
+ WARN  These files are now vendor-resident. Your app copies are kept; vendor copies take precedence where no app copy exists.
+
+  • lang/en/sk-activity-log.php
+  • lang/en/sk-api-clients.php
+  • ... (22 files per locale)
+
+  Deleting these files is optional; if present, they continue to take precedence over the vendor default for any keys they define.
+```
+
+Your app keeps working unchanged after the update. Run `npm run build` to pick up the new vendor JSON source in the frontend bundle.
+
+#### Optional cleanup
+
+If you have **not customised** any `sk-*.php` translation files, you can delete the app copies to lean on the vendor default entirely:
+
+```bash
+rm lang/en/sk-*.php
+rm lang/tr/sk-*.php
+```
+
+If you have **customised** one or more files, keep them — or keep only the specific files you modified. Any key defined in `app/lang/{locale}/sk-*.php` overrides the vendor value for that key. Keys absent from your app copy fall back to the vendor default.
+
+#### Customisation and the escape hatch
+
+To publish the vendor translation files into your app for full customisation:
+
+```bash
+php artisan sk:publish lang
+```
+
+This copies the vendor `resources/lang/` into `lang/vendor/starter-kit/` and makes the namespaced `starter-kit::` translations available. For the namespace-less `sk-*` keys used by the frontend and backend, place your overrides directly in `lang/{locale}/sk-*.php` — the merge picks them up automatically.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| Translation content — all `sk-*` strings | Unchanged — only the file location moves |
+| `lang/{locale}/validation.php` | Unchanged — remains in your app (Laravel framework override surface) |
+| Permission keys, route names, API envelope | Unchanged |
+| Frontend `$t('sk-*')` call sites | Unchanged |
+| PHP `__('sk-*')` call sites in vendor runtime | Unchanged — resolved from vendor `resources/lang/` via `StarterKitServiceProvider` |
+
+---
+
 ## v15.9.0
 
 ### Kit migrations moved to vendor (Phase 4)

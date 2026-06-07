@@ -91,19 +91,19 @@ it('system-health-route stub POST run route içeriyor', function (): void {
 // ──────────────────────────────────────────────────────────────────────────────
 
 it('sk-system-health İngilizce lang stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/lang/en/sk-system-health.php';
+    $path = dirname(__DIR__, 3).'/resources/lang/en/sk-system-health.php';
 
     expect(is_file($path))->toBeTrue("Stub bulunamadı: {$path}");
 });
 
 it('sk-system-health Türkçe lang stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/lang/tr/sk-system-health.php';
+    $path = dirname(__DIR__, 3).'/resources/lang/tr/sk-system-health.php';
 
     expect(is_file($path))->toBeTrue("Stub bulunamadı: {$path}");
 });
 
 it('İngilizce lang stub zorunlu anahtarları içeriyor', function (): void {
-    $en = require dirname(__DIR__, 3).'/stubs/lang/en/sk-system-health.php';
+    $en = require dirname(__DIR__, 3).'/resources/lang/en/sk-system-health.php';
 
     $requiredKeys = [
         'title', 'subtitle',
@@ -120,7 +120,7 @@ it('İngilizce lang stub zorunlu anahtarları içeriyor', function (): void {
 });
 
 it('Türkçe lang stub zorunlu anahtarları içeriyor', function (): void {
-    $tr = require dirname(__DIR__, 3).'/stubs/lang/tr/sk-system-health.php';
+    $tr = require dirname(__DIR__, 3).'/resources/lang/tr/sk-system-health.php';
 
     $requiredKeys = [
         'title', 'subtitle',
@@ -137,8 +137,8 @@ it('Türkçe lang stub zorunlu anahtarları içeriyor', function (): void {
 });
 
 it('Türkçe ve İngilizce lang dosyaları aynı anahtar setine sahip', function (): void {
-    $en = require dirname(__DIR__, 3).'/stubs/lang/en/sk-system-health.php';
-    $tr = require dirname(__DIR__, 3).'/stubs/lang/tr/sk-system-health.php';
+    $en = require dirname(__DIR__, 3).'/resources/lang/en/sk-system-health.php';
+    $tr = require dirname(__DIR__, 3).'/resources/lang/tr/sk-system-health.php';
 
     expect(array_keys($en))->toBe(array_keys($tr));
 });

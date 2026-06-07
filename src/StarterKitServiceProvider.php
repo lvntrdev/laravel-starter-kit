@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Translation\FileLoader;
 use Inertia\Inertia;
 use Laravel\Passport\Passport;
 use Lvntr\StarterKit\Domain\ActivityLog\Queries\ActivityLogDatatableQuery;
@@ -104,6 +105,64 @@ class StarterKitServiceProvider extends ServiceProvider
                 class_alias($vendorClass, $appClass);
             }
         }
+
+        // Make the vendor `sk-*` PHP lang files resolvable WITHOUT a namespace
+        // (e.g. __('sk-bulk.result')), so the 21 vendor src/ callers keep working
+        // after the lang bulk-copy is cut (v15.x Faz 5). Registered in register()
+        // — before the translator resolves on the first __() call — by extending
+        // the framework's `translation.loader` so the vendor lang dir is inserted
+        // BETWEEN the framework defaults and the consumer's app/lang path.
+        $this->registerNamespacelessKitTranslations();
+    }
+
+    /**
+     * Insert the vendor `resources/lang` directory into the translation loader's
+     * namespace-less path list so `__('sk-*')` group keys resolve from the package
+     * without a `starter-kit::` prefix.
+     *
+     * Precedence (override invariant): the framework's default loader is built with
+     * paths `[frameworkDefaults, app/lang]` and `FileLoader::loadPaths()` merges them
+     * with `array_replace_recursive` — LAST path wins. We rebuild the loader with
+     * `[frameworkDefaults, vendor/resources/lang, app/lang]`, so a consumer's own
+     * `app/lang/{locale}/sk-*.php` override still wins over the vendor copy, while
+     * the vendor copy wins over (and falls back to) the framework defaults. Missing
+     * app keys fall back to vendor; missing vendor keys fall back to framework.
+     *
+     * This is the PHP half of the two-consumer lang invariant (the Vite/i18n half
+     * lives in stubs/resources/js/app.ts). `validation.php` is intentionally NOT
+     * vendor-resident — it stays a consumer-owned framework-default override stub —
+     * and the existing `starter-kit::` namespace + JSON registration in
+     * registerTranslations() is left untouched.
+     */
+    private function registerNamespacelessKitTranslations(): void
+    {
+        $vendorLangPath = __DIR__.'/../resources/lang';
+
+        $this->app->extend('translation.loader', function ($loader, $app) use ($vendorLangPath) {
+            // Only reorder a FileLoader (the framework default). Custom loaders are
+            // left as-is so we never break a consumer's replacement.
+            if (! $loader instanceof FileLoader) {
+                return $loader;
+            }
+
+            $paths = $loader->paths();
+
+            // Skip if already present (idempotent — defensive against double-extend).
+            if (in_array($vendorLangPath, $paths, true)) {
+                return $loader;
+            }
+
+            // Insert the vendor path just before the LAST entry (the app/lang path),
+            // so app overrides keep winning. If the shape is unexpected (no app path),
+            // fall back to appending — vendor still resolves, app override unaffected.
+            if (count($paths) >= 1) {
+                array_splice($paths, count($paths) - 1, 0, [$vendorLangPath]);
+            } else {
+                $paths[] = $vendorLangPath;
+            }
+
+            return new FileLoader($app['files'], $paths);
+        });
     }
 
     /**
@@ -518,8 +577,15 @@ class StarterKitServiceProvider extends ServiceProvider
 
     /**
      * Register translation/lang files.
-     * Loaded from package namespace: __('starter-kit::admin.menu.dashboard')
-     * Users can override by publishing to lang/vendor/starter-kit/
+     *
+     * Two resolution paths for the SAME vendor `resources/lang` directory:
+     *  - Namespaced: __('starter-kit::admin.menu.dashboard') via loadTranslationsFrom.
+     *  - Namespace-less: __('sk-bulk.result') via registerNamespacelessKitTranslations()
+     *    (called in register(); inserts the vendor lang dir into the loader's path
+     *    list before app/lang so consumer overrides win).
+     *
+     * Users can override by publishing to lang/vendor/starter-kit/ (namespaced) or by
+     * placing app/lang/{locale}/sk-*.php (namespace-less, app wins — see register()).
      */
     private function registerTranslations(): void
     {

@@ -4,6 +4,89 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v15.10.0
+
+### Kit çevirileri vendor'a taşındı (Faz 5)
+
+44 adet kit-özel çeviri dosyası (`sk-*.php`, iki locale) `stubs/lang/` yerine paket içine (`resources/lang/{en,tr}/sk-*.php`) taşındı. Önceden derlenmiş JSON (`resources/js/lang/php_en.json` / `php_tr.json`) bunlarla birlikte dağıtılıyor ve frontend i18n setup'ı tarafından otomatik tüketiliyor. Çeviri dosyaları artık fresh install'da uygulamanıza toplu olarak kopyalanmıyor.
+
+#### Çeviriler nasıl dağıtılıyor
+
+| Katman | v15.10.0 öncesi | v15.10.0+ |
+|---|---|---|
+| Frontend (`$t('sk-common.*')`) | `app/lang/*.php` Vite plugin tarafından derlenir | Vendor JSON, build zamanında `app/lang` ile merge edilir — çakışmada app kazanır |
+| PHP backend (`__('sk-common.*')`) | `sk:install`'ın kopyaladığı `app/lang/{locale}/sk-*.php` | `StarterKitServiceProvider` boot'ta vendor `resources/lang/{locale}/sk-*.php`'yi kaydeder |
+
+#### Merge önceliği
+
+Frontend i18n setup'ı (`resources/js/app.ts`) artık iki kaynak yükler:
+
+1. **Vendor JSON** — `vendor/lvntr/laravel-starter-kit/resources/js/lang/php_{locale}.json` (uygulamanızda override edilmeyen her key için fallback)
+2. **App JSON** — Vite i18n plugin'inin `app/lang/*.php`'den ürettiği `lang/php_{locale}.json` (öncelikli — özelleştirmeleriniz her zaman kazanır)
+
+Eksik çeviriler vendor varsayılanına düşer. Bir `sk-*` key'ini özelleştirmediyseniz görünür bir değişiklik olmaz; özelleştirdiyseniz kendi versiyonunuz gösterilmeye devam eder.
+
+#### Yeni kurulumlar (v15.10.0+)
+
+`sk:install` artık `lang/{en,tr}/sk-*.php` dosyalarını uygulamanıza kopyalamaz. Kit çevirileri vendor paketinden sunulur. `lang/{en,tr}/validation.php` hâlâ kopyalanır — bu, standart Laravel validation override yüzeyidir ve uygulamanızda kalmaya devam eder.
+
+Ekstra bir adım gerekmez.
+
+#### Mevcut kurulumlar — geçiş adımları
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+`sk:update`, uygulamanızda kalan `lang/{locale}/sk-*.php` kopyalarını raporlar (yalnızca bilgilendirici — **otomatik olarak asla silinmez**):
+
+```
+ WARN  These files are now vendor-resident. Your app copies are kept; vendor copies take precedence where no app copy exists.
+
+  • lang/en/sk-activity-log.php
+  • lang/en/sk-api-clients.php
+  • ... (locale başına 22 dosya)
+
+  Deleting these files is optional; if present, they continue to take precedence over the vendor default for any keys they define.
+```
+
+Uygulamanız güncellemeden sonra değişmeden çalışmaya devam eder. Frontend bundle'ında yeni vendor JSON kaynağını almak için `npm run build` komutunu çalıştırın.
+
+#### İsteğe bağlı temizlik
+
+Hiçbir `sk-*.php` çeviri dosyasını **özelleştirmediyseniz**, tamamen vendor varsayılanına bırakmak için app kopyalarını silebilirsiniz:
+
+```bash
+rm lang/en/sk-*.php
+rm lang/tr/sk-*.php
+```
+
+Bir ya da birden fazla dosyayı **özelleştirdiyseniz**, bunları koruyun — ya da yalnızca değiştirdiğiniz dosyaları saklayın. `app/lang/{locale}/sk-*.php` içinde tanımlı her key, o key için vendor değerini geçersiz kılar. App kopyanızda bulunmayan key'ler vendor varsayılanına düşer.
+
+#### Özelleştirme ve kaçış kapısı
+
+Vendor çeviri dosyalarını tam özelleştirme için uygulamanıza yayınlamak üzere:
+
+```bash
+php artisan sk:publish lang
+```
+
+Bu komut, vendor `resources/lang/` içeriğini `lang/vendor/starter-kit/` konumuna kopyalar ve namespace'li `starter-kit::` çevirilerini kullanıma açar. Frontend ve backend'in kullandığı namespace-siz `sk-*` key'leri için override'larınızı doğrudan `lang/{locale}/sk-*.php` içine koyun — merge bunları otomatik alır.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Çeviri içeriği — tüm `sk-*` string'leri | Değişmez — yalnızca dosya konumu taşınır |
+| `lang/{locale}/validation.php` | Değişmez — uygulamanızda kalır (Laravel framework override yüzeyi) |
+| Permission key'leri, route isimleri, API zarfı | Değişmez |
+| Frontend `$t('sk-*')` çağrı yerleri | Değişmez |
+| Vendor runtime'daki PHP `__('sk-*')` çağrı yerleri | Değişmez — `StarterKitServiceProvider` aracılığıyla vendor `resources/lang/` üzerinden çözülür |
+
+---
+
 ## v15.9.0
 
 ### Kit migration'ları vendor'a taşındı (Faz 4)

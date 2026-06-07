@@ -160,7 +160,7 @@ test('permission-resources.php display_names api-clients/api-tokens içeriyor', 
 
 test('sk-api-clients lang dosyaları (en/tr) mevcut ve doğru yapıda', function (): void {
     foreach (['en', 'tr'] as $locale) {
-        $path = dirname(__DIR__, 3)."/stubs/lang/{$locale}/sk-api-clients.php";
+        $path = dirname(__DIR__, 3)."/resources/lang/{$locale}/sk-api-clients.php";
         expect(file_exists($path))->toBeTrue("sk-api-clients.php [{$locale}] bulunamadı.");
 
         $lang = require $path;
@@ -175,7 +175,7 @@ test('sk-api-clients lang dosyaları (en/tr) mevcut ve doğru yapıda', function
 
 test('sk-api-tokens lang dosyaları (en/tr) mevcut ve doğru yapıda', function (): void {
     foreach (['en', 'tr'] as $locale) {
-        $path = dirname(__DIR__, 3)."/stubs/lang/{$locale}/sk-api-tokens.php";
+        $path = dirname(__DIR__, 3)."/resources/lang/{$locale}/sk-api-tokens.php";
         expect(file_exists($path))->toBeTrue("sk-api-tokens.php [{$locale}] bulunamadı.");
 
         $lang = require $path;

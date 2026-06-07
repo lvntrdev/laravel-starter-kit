@@ -3,6 +3,9 @@
   "version": "13.5.11",
   "description": "Vue 3 components for Lvntr Starter Kit (FormBuilder, DatatableBuilder, TabBuilder, FileManager, Skeleton, UI)",
   "type": "module",
+  "scripts": {
+    "lang:build": "node resources/js/lang/sk-lang-build.mjs"
+  },
   "main": "resources/js/components/Lvntr-Starter-Kit/index.ts",
   "exports": {
     ".": "./resources/js/components/Lvntr-Starter-Kit/index.ts",
@@ -20,7 +23,8 @@
   },
   "files": [
     "resources/js/components",
-    "resources/js/theme"
+    "resources/js/theme",
+    "resources/js/lang"
   ],
   "keywords": [
     "vue",

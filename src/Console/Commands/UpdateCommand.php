@@ -73,6 +73,61 @@ class UpdateCommand extends Command
         'config/media-library.php',
         'config/activitylog.php',
         'config/inertia.php',
+        // v15.x+ (Faz 5): the kit's `sk-*` UI translations are now vendor-resident
+        // (vendor/lvntr/laravel-starter-kit/resources/lang/{en,tr}/sk-*.php) and the
+        // install bulk-copy was removed. The vendor copies resolve namespace-less at
+        // runtime (StarterKitServiceProvider::registerNamespacelessKitTranslations)
+        // and feed the frontend via a pre-compiled JSON merged app-wins in app.ts.
+        // Existing consumers may still have app/lang copies (possibly customized
+        // translations) — these are NOT force-deleted. They are reported here only;
+        // any app copy keeps WINNING over the vendor copy (override invariant), and
+        // new vendor keys still flow in for keys the app copy does not define.
+        // `lang/{en,tr}/validation.php` is intentionally NOT listed: it stays a
+        // consumer-owned framework-default override stub.
+        'lang/en/sk-activity-log.php',
+        'lang/en/sk-api-clients.php',
+        'lang/en/sk-api-route.php',
+        'lang/en/sk-api-tokens.php',
+        'lang/en/sk-auth.php',
+        'lang/en/sk-avatar.php',
+        'lang/en/sk-bulk.php',
+        'lang/en/sk-button.php',
+        'lang/en/sk-common.php',
+        'lang/en/sk-datatable.php',
+        'lang/en/sk-editor.php',
+        'lang/en/sk-file-manager.php',
+        'lang/en/sk-file.php',
+        'lang/en/sk-layout.php',
+        'lang/en/sk-log.php',
+        'lang/en/sk-menu.php',
+        'lang/en/sk-message.php',
+        'lang/en/sk-profile.php',
+        'lang/en/sk-role.php',
+        'lang/en/sk-setting.php',
+        'lang/en/sk-system-health.php',
+        'lang/en/sk-user.php',
+        'lang/tr/sk-activity-log.php',
+        'lang/tr/sk-api-clients.php',
+        'lang/tr/sk-api-route.php',
+        'lang/tr/sk-api-tokens.php',
+        'lang/tr/sk-auth.php',
+        'lang/tr/sk-avatar.php',
+        'lang/tr/sk-bulk.php',
+        'lang/tr/sk-button.php',
+        'lang/tr/sk-common.php',
+        'lang/tr/sk-datatable.php',
+        'lang/tr/sk-editor.php',
+        'lang/tr/sk-file-manager.php',
+        'lang/tr/sk-file.php',
+        'lang/tr/sk-layout.php',
+        'lang/tr/sk-log.php',
+        'lang/tr/sk-menu.php',
+        'lang/tr/sk-message.php',
+        'lang/tr/sk-profile.php',
+        'lang/tr/sk-role.php',
+        'lang/tr/sk-setting.php',
+        'lang/tr/sk-system-health.php',
+        'lang/tr/sk-user.php',
     ];
 
     /**
@@ -1089,6 +1144,15 @@ PHP;
 
         $this->newLine();
         $this->line('  <fg=gray>Deleting these files is optional; vendor copies take precedence.</>');
+
+        // Translations are the inverse of the runtime paths above: a consumer's
+        // app/lang/sk-*.php copy WINS over the vendor copy (override invariant),
+        // so deleting a customized translation reverts it to the vendor default.
+        if (collect($present)->contains(fn (string $path): bool => str_starts_with($path, 'lang/'))) {
+            $this->line('  <fg=gray>Exception — lang/.../sk-*.php: your app copy still WINS (override); the vendor</>');
+            $this->line('  <fg=gray>copy is only a fallback. Deleting a customized translation reverts to default.</>');
+        }
+
         $this->line('  <fg=gray>See: docs/migrate-existing-project-to-vendor.md</>');
         $this->newLine();
     }

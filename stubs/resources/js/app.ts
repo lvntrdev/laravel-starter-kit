@@ -35,11 +35,24 @@ createInertiaApp({
         return title ? `${title} - ${appName}` : appName;
     },
     withApp(app, { ssr }) {
-        // Tek eager glob — SSR'da sync resolve sart, client'ta Promise.resolve ile sarmalanir.
-        // Dual static+dynamic glob Vite "dynamic import will not move module into another chunk"
-        // uyarisi cikariyor; lang JSON'lari kucuk oldugu icin tek bundle'a almak maliyetsiz.
-        const langs = import.meta.glob<Record<string, string>>('../../lang/*.json', { eager: true });
-        const resolveLang = (lang: string) => langs[`../../lang/php_${lang}.json`];
+        // i18n iki katmandan birlesir; app her zaman kazanir, eksik anahtar vendor'dan duser:
+        //   1. VENDOR (fallback) — kit'in `sk-*` cevirileri, pakette onceden derlenmis JSON
+        //      olarak gelir (`@lvntr/lang/php_{locale}.json` →
+        //      vendor/lvntr/laravel-starter-kit/resources/js/lang/). Kaynak PHP
+        //      `resources/lang/{en,tr}/sk-*.php`; `sk-lang-build.mjs` ile uretilir.
+        //   2. APP (override) — tuketicinin `lang/` dizininden `laravel-vue-i18n` Vite
+        //      plugin'inin urettigi `php_{locale}.json` (framework default + `validation.php`
+        //      + tuketicinin ekledigi/ezdigi her `sk-*` anahtari).
+        // Iki eager glob — SSR'da sync resolve sart, client'ta Promise.resolve ile sarmalanir.
+        // lang JSON'lari kucuk oldugu icin tek bundle'a almak maliyetsiz.
+        const appLangs = import.meta.glob<Record<string, string>>('../../lang/*.json', { eager: true });
+        const vendorLangs = import.meta.glob<Record<string, string>>('@lvntr/lang/*.json', { eager: true });
+        const resolveLang = (lang: string): Record<string, string> => {
+            const vendor = vendorLangs[`/vendor/lvntr/laravel-starter-kit/resources/js/lang/php_${lang}.json`] ?? {};
+            const appLang = appLangs[`../../lang/php_${lang}.json`] ?? {};
+            // App son spread = app kazanir; app'te olmayan anahtar vendor'dan gelir (fallback).
+            return { ...vendor, ...appLang };
+        };
         app.use(i18nVue, {
             resolve: ssr ? resolveLang : (lang: string) => Promise.resolve(resolveLang(lang)),
         })

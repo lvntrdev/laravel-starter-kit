@@ -58,6 +58,13 @@ class InstallCommand extends Command
      * Paths that may be skipped if they already exist (user-customizable on re-install).
      * Everything NOT in this list will always be overwritten, even without --force.
      *
+     * v15.x+ (Faz 5): the kit's `sk-*` UI translations are no longer shipped under
+     * stubs/lang — they are vendor-resident (resources/lang/{en,tr}/sk-*.php) and
+     * resolved namespace-less at runtime, so publishDirectory never copies them.
+     * `lang/` is still preservable because stubs/lang/{en,tr}/validation.php (the
+     * consumer-owned framework-default override stub) DOES still ship and must be
+     * kept when the consumer has customized it on re-install.
+     *
      * @var list<string>
      */
     private array $preservablePaths = [
