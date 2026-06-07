@@ -823,10 +823,15 @@ class InstallCommand extends Command
 
         // Generated type declarations (unplugin auto-import / components resolver)
         // and the theme resolver's generated manifest (sk-theme-build.mjs output).
+        // package-lock.json: the stub-side npm lockfile must never land in a consumer
+        // app — installFrontend() regenerates it via `npm install`, and copying the
+        // kit's lock would pin the consumer to the kit's exact dependency graph and
+        // break `npm ci` against their own package.json.
         $ignoredExact = [
             'auto-imports.d.ts',
             'components.d.ts',
             'resources/css/theme/_active.css',
+            'package-lock.json',
         ];
 
         if (in_array($normalizedPath, $ignoredExact, true)) {

@@ -30,6 +30,7 @@ it('skips locally-reproduced artifacts on update', function (string $path): void
     'resources/js/routes/index.ts',
     'auto-imports.d.ts',
     'components.d.ts',
+    'package-lock.json',
     'vendor/autoload.php',
     'resources/js/.DS_Store',
 ]);
@@ -56,6 +57,7 @@ it('stays in lockstep with InstallCommand for the shared artifact set', function
     'resources/js/routes/index.ts',
     'auto-imports.d.ts',
     'components.d.ts',
+    'package-lock.json',
     'resources/js/env.d.ts',
     'app/Models/User.php',
 ]);

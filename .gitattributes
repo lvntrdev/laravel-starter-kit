@@ -17,4 +17,5 @@
 /stubs/vendor/** export-ignore
 /stubs/auto-imports.d.ts export-ignore
 /stubs/components.d.ts export-ignore
+/stubs/package-lock.json export-ignore
 .DS_Store export-ignore
