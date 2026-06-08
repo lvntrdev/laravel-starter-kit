@@ -134,7 +134,7 @@ Notes:
 
 ## Tag (PrimeVue)
 
-The kit standardizes on PrimeVue's `<Tag>`, repainted to the SK palette. It is auto-imported (no import needed), and its `severity` accepts the 6 PrimeVue severities **and** every Tailwind color name — so you get the full palette with no component patch (the theme targets the `data-p` attribute PrimeVue emits). `SkDatatable` tag columns render through this same `<Tag>`.
+The kit standardizes on PrimeVue's `<Tag>`, repainted to the SK palette. It is auto-imported (no import needed), and its `severity` accepts the 6 PrimeVue severities plus the supported SK palette names — so you get the full palette with no component patch (the theme targets the `data-p` attribute PrimeVue emits). `SkDatatable` tag columns render through this same `<Tag>`.
 
 ```vue
 <template>
@@ -148,7 +148,8 @@ The kit standardizes on PrimeVue's `<Tag>`, repainted to the SK palette. It is a
 Severity values:
 
 - the 6 built-ins: `success`, `info`, `warn`, `danger`, `secondary`, `contrast`
-- any Tailwind family: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
+- Tailwind families: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
+- SK custom families: `mauve`, `olive`, `mist`, `taupe`
 
 Variants — opt-in via `class`, since PrimeVue Tag has no variant prop:
 

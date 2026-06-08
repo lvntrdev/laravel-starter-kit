@@ -9,9 +9,9 @@ use Inertia\Response;
 /**
  * Developer-facing showcase of the kit's UI components (PrimeVue + SK).
  *
- * Gated behind the "components.read" permission (derived from the route name
- * "components.index" by the CheckResourcePermission middleware). Seed it with
- * `php artisan sk:seed-permissions`. Only system_admin receives it by default.
+ * Gated by the "system_admin" role in routes/web/components-route.php. That
+ * route file is excluded from the dynamic CheckResourcePermission middleware,
+ * so it does not require a seeded "components.read" permission.
  */
 class ComponentShowcaseController extends Controller
 {

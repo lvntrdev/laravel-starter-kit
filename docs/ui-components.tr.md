@@ -134,7 +134,7 @@ Notlar:
 
 ## Tag (PrimeVue)
 
-Kit, PrimeVue'nun `<Tag>` bileşenini standart alır ve SK paletine göre yeniden boyar. Auto-import'tur (ayrıca import gerekmez) ve `severity` hem 6 PrimeVue severity'sini **hem de** her Tailwind renk adını kabul eder — yani bileşeni patch'lemeden tüm palete erişirsin (tema, PrimeVue'nun yaydığı `data-p` attribute'unu hedefler). `SkDatatable` tag kolonları da aynı `<Tag>` üzerinden render edilir.
+Kit, PrimeVue'nun `<Tag>` bileşenini standart alır ve SK paletine göre yeniden boyar. Auto-import'tur (ayrıca import gerekmez) ve `severity` hem 6 PrimeVue severity'sini hem de desteklenen SK palet adlarını kabul eder — yani bileşeni patch'lemeden tüm palete erişirsin (tema, PrimeVue'nun yaydığı `data-p` attribute'unu hedefler). `SkDatatable` tag kolonları da aynı `<Tag>` üzerinden render edilir.
 
 ```vue
 <template>
@@ -148,7 +148,8 @@ Kit, PrimeVue'nun `<Tag>` bileşenini standart alır ve SK paletine göre yenide
 Severity değerleri:
 
 - 6 yerleşik: `success`, `info`, `warn`, `danger`, `secondary`, `contrast`
-- her Tailwind ailesi: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
+- Tailwind aileleri: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
+- SK özel aileleri: `mauve`, `olive`, `mist`, `taupe`
 
 Varyantlar — PrimeVue Tag'in varyant prop'u olmadığından `class` ile opt-in:
 

@@ -297,7 +297,7 @@ final class BulkDeleteRoleAction implements BulkAction
 - `row`: the full row object
 - `value`: the resolved value for the current column key
 
-Use PrimeVue's `<Tag>` (auto-imported, no import needed) when you want slot content to match the built-in badge styling. `severity` accepts the 6 PrimeVue severities **and** any Tailwind color name (e.g. `indigo`, `emerald`); soft/outlined are opt-in via the `p-tag-soft` / `p-tag-outlined` classes:
+Use PrimeVue's `<Tag>` (auto-imported, no import needed) when you want slot content to match the built-in badge styling. `severity` accepts the 6 PrimeVue severities and supported SK palette names (e.g. `indigo`, `emerald`); soft/outlined are opt-in via the `p-tag-soft` / `p-tag-outlined` classes:
 
 ```vue
 <template>

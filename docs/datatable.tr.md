@@ -297,7 +297,7 @@ final class BulkDeleteRoleAction implements BulkAction
 - `row`: satırın tüm objesi
 - `value`: ilgili kolon anahtarı için çözülen değer
 
-Slot içeriğinin dahili badge görünümü ile aynı olmasını istiyorsan PrimeVue'nun `<Tag>` bileşenini kullan (auto-import, ayrıca import gerekmez). `severity` hem 6 PrimeVue severity'sini **hem de** herhangi bir Tailwind renk adını (ör. `indigo`, `emerald`) kabul eder; soft/outlined `p-tag-soft` / `p-tag-outlined` sınıflarıyla opt-in'dir:
+Slot içeriğinin dahili badge görünümü ile aynı olmasını istiyorsan PrimeVue'nun `<Tag>` bileşenini kullan (auto-import, ayrıca import gerekmez). `severity` hem 6 PrimeVue severity'sini hem de desteklenen SK palet adlarını (ör. `indigo`, `emerald`) kabul eder; soft/outlined `p-tag-soft` / `p-tag-outlined` sınıflarıyla opt-in'dir:
 
 ```vue
 <template>
