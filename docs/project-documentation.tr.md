@@ -157,7 +157,7 @@ Mevcut UI akışı, ayrı bir enum paylaşım katmanından ziyade veritabanı ta
 - `useDefinition()`, bunları `GET /definitions` üzerinden tüketir
 - definition kayıtları label, severity ve opsiyonel icon metadatası taşır
 - `SkDatatable` ve `SkForm`, `.tag('definition').tagKey('userStatus')` ve `.definitionOptions('gender')` gibi tanımlarla bu key'lere doğrudan bağlanabilir
-- `SkDatatable`, definition tag'lerini `SkTag` ile render eder; böylece DB tabanlı metadata kolon seviyesindeki `colors()`, `icons()` ve tag stil yardımcıları ile birleştirilebilir
+- `SkDatatable`, definition tag'lerini PrimeVue `<Tag>` ile render eder; böylece DB tabanlı metadata kolon seviyesindeki `colors()`, `icons()` ve tag stil yardımcıları ile birleştirilebilir
 
 ### Flash Mesajları
 

@@ -59,7 +59,7 @@ export interface ColumnConfig {
     render?: (row: unknown, escape: (str: string) => string) => string;
     tag?: 'definition';
     tagKey?: string;
-    /** Tailwind color map for SkTag – keys are matched against the tagKey value. */
+    /** Tailwind color map for the tag – keys are matched against the tagKey value. */
     colors?: Record<string, TagColor>;
     /** Icon map – keys are matched against the tagKey value (e.g. { active: 'pi pi-check' }). */
     icons?: Record<string, string>;

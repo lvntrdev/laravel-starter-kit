@@ -9,7 +9,7 @@ The starter kit includes a small set of reusable UI helpers built on top of Prim
 - `ImageLightbox`
 - `FilePreviewModal`
 - `SkCard`
-- `SkTag`
+- PrimeVue `Tag` (SK-themed)
 - `ConfirmDialogComponent`
 - `ToastComponent`
 - skeleton helpers: `PageLoading`, `SkeletonBox`, `SkeletonCard`, `SkeletonTable`, `SkeletonText`
@@ -132,40 +132,33 @@ Notes:
 - `SkCard` is `inheritAttrs: false` internally but forwards `class` onto the Card root via `useAttrs`, so `<SkCard class="my-cls">` works as expected (plain class fallthrough is otherwise blocked by PrimeVue Card's own `inheritAttrs: false`).
 - The divider only renders when the caption is present and `divider` is `true` (default). A card without a title and subtitle gets no divider line.
 
-## SkTag
+## Tag (PrimeVue)
 
-`SkTag` is the shared badge/tag helper used by `SkDatatable` and is a good drop-in option in custom cells when PrimeVue `Tag` is too limited.
+The kit standardizes on PrimeVue's `<Tag>`, repainted to the SK palette. It is auto-imported (no import needed), and its `severity` accepts the 6 PrimeVue severities **and** every Tailwind color name — so you get the full palette with no component patch (the theme targets the `data-p` attribute PrimeVue emits). `SkDatatable` tag columns render through this same `<Tag>`.
 
 ```vue
-<script setup lang="ts">
-    import SkTag from '@lvntr/components/ui/SkTag.vue';
-</script>
-
 <template>
-    <SkTag value="Active" severity="success" />
-    <SkTag value="Pending" color="amber" soft rounded />
-    <SkTag value="Verified" icon="pi pi-check" color="emerald" outlined />
-    <SkTag value="External" icon="pi pi-arrow-right" icon-pos="right" color="sky" />
+    <Tag value="Active" severity="success" />
+    <Tag value="Pending" severity="amber" rounded class="p-tag-soft" />
+    <Tag value="Verified" icon="pi pi-check" severity="emerald" class="p-tag-outlined" />
+    <Tag value="Indigo" severity="indigo" />
 </template>
 ```
 
-Supported props:
+Severity values:
 
-- `value`
-- `icon`
-- `iconPos` — `'left'` (default) or `'right'`
-- `severity` — PrimeVue-style severity or Tailwind palette key
-- `color` — Tailwind palette key, overrides the severity mapping
-- `soft`
-- `rounded`
-- `outlined`
+- the 6 built-ins: `success`, `info`, `warn`, `danger`, `secondary`, `contrast`
+- any Tailwind family: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
 
-Behavior notes:
+Variants — opt-in via `class`, since PrimeVue Tag has no variant prop:
 
-- `severity` accepts PrimeVue-style severities (`success`, `warn`, `danger`, `info`, `secondary`, `contrast`) and Tailwind palette keys such as `emerald` or `violet`
-- `color` overrides the severity mapping when you need an exact palette choice
-- `soft`, `rounded`, and `outlined` can be combined freely
-- the shared theme loads solid, soft, and outlined variants and keeps them aligned in light and dark mode
+- `p-tag-soft` — lighter, tinted fill
+- `p-tag-outlined` — border only
+- `p-tag-dot` — leading status dot
+- `p-tag-sm` / `p-tag-lg` — sizes
+- `rounded` (native prop) — pill shape
+
+All variants are themed for light and dark mode. See the **Components → Tag** showcase page (`/components`) for every variant and color.
 
 ## AvatarUpload
 

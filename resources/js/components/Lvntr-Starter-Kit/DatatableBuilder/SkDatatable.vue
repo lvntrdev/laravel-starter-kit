@@ -5,6 +5,7 @@
     import { Link } from '@inertiajs/vue3';
     import type {
         ActionConfig,
+        ColumnConfig,
         DataTableConfig,
         DataTableResponse,
         FilterConfig,
@@ -538,6 +539,27 @@
         return action.visible ? action.visible(row) : true;
     }
 
+    /**
+     * Resolve the definition-driven tag descriptor (label / severity / icon) for a
+     * cell, in one pass. `colors`/`icons` column maps override the definition. The
+     * resulting `severity` may be a PrimeVue severity OR a Tailwind color name —
+     * the unlayered `.p-tag[data-p~="…"]` theme rules colour both (see tag.css).
+     */
+    function resolveTag(
+        row: unknown,
+        column: ColumnConfig,
+    ): { label?: string; severity?: string; icon?: string } {
+        const defValue = getNestedValue(row, column.key) as string | number | boolean;
+        const mapKey = getNestedValue(row, column.tagKey ?? column.key) as string;
+        const def = definition.find(column.tagKey!, defValue);
+
+        return {
+            label: def?.label,
+            severity: column.colors?.[mapKey] ?? def?.severity ?? undefined,
+            icon: column.icons?.[mapKey] ?? def?.icon ?? undefined,
+        };
+    }
+
     const hasActions = computed(() => props.config.actions.length > 0 || props.config.menuActions.length > 0);
     const hasMenuActions = computed(() => props.config.menuActions.length > 0);
     const showIdColumn = computed(() => props.config.idColumn?.visible !== false);
@@ -1024,40 +1046,42 @@
                                             :row="row"
                                             :value="getNestedValue(row, column.key)"
                                         />
-                                        <SkTag
-                                            v-else-if="column.tag === 'definition'"
-                                            :value="
-                                                definition.find(
-                                                    column.tagKey!,
-                                                    getNestedValue(row, column.key) as string | number | boolean,
-                                                )?.label
-                                            "
-                                            :severity="
-                                                definition.find(
-                                                    column.tagKey!,
-                                                    getNestedValue(row, column.key) as string | number | boolean,
-                                                )?.severity as any
-                                            "
-                                            :color="
-                                                column.colors?.[
-                                                    getNestedValue(row, column.tagKey ?? column.key) as string
-                                                ]
-                                            "
-                                            :icon="
-                                                column.icons?.[
-                                                    getNestedValue(row, column.tagKey ?? column.key) as string
-                                                ] ??
-                                                    definition.find(
-                                                        column.tagKey!,
-                                                        getNestedValue(row, column.key) as string | number | boolean,
-                                                    )?.icon ??
-                                                    undefined
-                                            "
-                                            :icon-pos="column.tagIconPos"
-                                            :soft="column.tagSoft"
-                                            :rounded="column.tagRounded"
-                                            :outlined="column.tagOutlined"
-                                        />
+                                        <!-- Definition-driven tag rendered through PrimeVue <Tag>.
+                                             `v-for over [resolveTag(...)]` resolves the descriptor
+                                             once per cell. soft/outlined are opt-in CSS classes
+                                             (PrimeVue Tag has no such props); icon-right uses the
+                                             default slot, icon-left uses the native value/icon props
+                                             so PrimeVue's own markup renders. -->
+                                        <template v-else-if="column.tag === 'definition'">
+                                            <template
+                                                v-for="t in [resolveTag(row, column)]"
+                                                :key="column.key"
+                                            >
+                                                <Tag
+                                                    v-if="column.tagIconPos === 'right'"
+                                                    :severity="(t.severity as any)"
+                                                    :rounded="column.tagRounded"
+                                                    :class="{
+                                                        'p-tag-soft': column.tagSoft,
+                                                        'p-tag-outlined': column.tagOutlined,
+                                                    }"
+                                                >
+                                                    <span class="p-tag-label">{{ t.label }}</span>
+                                                    <i v-if="t.icon" :class="t.icon" class="p-tag-icon" />
+                                                </Tag>
+                                                <Tag
+                                                    v-else
+                                                    :value="t.label"
+                                                    :severity="(t.severity as any)"
+                                                    :icon="t.icon"
+                                                    :rounded="column.tagRounded"
+                                                    :class="{
+                                                        'p-tag-soft': column.tagSoft,
+                                                        'p-tag-outlined': column.tagOutlined,
+                                                    }"
+                                                />
+                                            </template>
+                                        </template>
                                         <!-- eslint-disable-next-line vue/no-v-html -- column.render is author-defined in the datatable config, not user input; the escapeHtml helper must be used by the author for any untrusted values -->
                                         <span v-else-if="column.render" v-html="column.render(row, escapeHtml)" />
                                         <template v-else>

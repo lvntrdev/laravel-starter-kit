@@ -9,7 +9,7 @@ Starter kit, PrimeVue üzerine kurulu tekrar kullanılabilir bir UI yardımcı s
 - `ImageLightbox`
 - `FilePreviewModal`
 - `SkCard`
-- `SkTag`
+- PrimeVue `Tag` (SK temalı)
 - `ConfirmDialogComponent`
 - `ToastComponent`
 - skeleton yardımcıları: `PageLoading`, `SkeletonBox`, `SkeletonCard`, `SkeletonTable`, `SkeletonText`
@@ -132,40 +132,33 @@ Notlar:
 - `SkCard` içeride `inheritAttrs: false`'dir ama `useAttrs` ile dış `class` fallthrough'unu Card root'una iletir; böylece `<SkCard class="my-cls">` beklendiği gibi çalışır (aksi halde PrimeVue Card'ın kendi `inheritAttrs: false`'i class düşmesini engellerdi).
 - Divider yalnızca caption mevcutsa ve `divider` `true` ise (varsayılan) çizilir. Title ve subtitle olmayan bir card'da çizgi olmaz.
 
-## SkTag
+## Tag (PrimeVue)
 
-`SkTag`, `SkDatatable` tarafında kullanılan ortak badge/tag bileşenidir. PrimeVue `Tag` yetersiz kaldığında özel hücrelerde de doğrudan kullanılabilir.
+Kit, PrimeVue'nun `<Tag>` bileşenini standart alır ve SK paletine göre yeniden boyar. Auto-import'tur (ayrıca import gerekmez) ve `severity` hem 6 PrimeVue severity'sini **hem de** her Tailwind renk adını kabul eder — yani bileşeni patch'lemeden tüm palete erişirsin (tema, PrimeVue'nun yaydığı `data-p` attribute'unu hedefler). `SkDatatable` tag kolonları da aynı `<Tag>` üzerinden render edilir.
 
 ```vue
-<script setup lang="ts">
-    import SkTag from '@lvntr/components/ui/SkTag.vue';
-</script>
-
 <template>
-    <SkTag value="Active" severity="success" />
-    <SkTag value="Pending" color="amber" soft rounded />
-    <SkTag value="Verified" icon="pi pi-check" color="emerald" outlined />
-    <SkTag value="External" icon="pi pi-arrow-right" icon-pos="right" color="sky" />
+    <Tag value="Active" severity="success" />
+    <Tag value="Pending" severity="amber" rounded class="p-tag-soft" />
+    <Tag value="Verified" icon="pi pi-check" severity="emerald" class="p-tag-outlined" />
+    <Tag value="Indigo" severity="indigo" />
 </template>
 ```
 
-Desteklenen prop'lar:
+Severity değerleri:
 
-- `value`
-- `icon`
-- `iconPos` — `'left'` (varsayılan) veya `'right'`
-- `severity` — PrimeVue benzeri severity veya Tailwind palette anahtarı
-- `color` — Tailwind palette anahtarı, severity eşlemesini override eder
-- `soft`
-- `rounded`
-- `outlined`
+- 6 yerleşik: `success`, `info`, `warn`, `danger`, `secondary`, `contrast`
+- her Tailwind ailesi: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`
 
-Davranış notları:
+Varyantlar — PrimeVue Tag'in varyant prop'u olmadığından `class` ile opt-in:
 
-- `severity`, PrimeVue benzeri değerleri (`success`, `warn`, `danger`, `info`, `secondary`, `contrast`) ve `emerald`, `violet` gibi Tailwind renk anahtarlarını kabul eder
-- tam bir palette seçmek istiyorsan `color`, severity eşlemesini override eder
-- `soft`, `rounded` ve `outlined` serbestçe birlikte kullanılabilir
-- ortak tema, solid, soft ve outlined varyantları birlikte yükler ve light/dark modda tutarlı görünüm sağlar
+- `p-tag-soft` — daha açık, tonlu dolgu
+- `p-tag-outlined` — yalnızca kenarlık
+- `p-tag-dot` — baştaki durum noktası
+- `p-tag-sm` / `p-tag-lg` — boyutlar
+- `rounded` (native prop) — hap (pill) şekli
+
+Tüm varyantlar light ve dark mod için temalıdır. Her varyant ve renk için **Bileşenler → Tag** showcase sayfasına (`/components`) bak.
 
 ## AvatarUpload
 

@@ -39,7 +39,6 @@ export { default as ImageLightbox } from './ui/ImageLightbox.vue';
 export { default as FilePreviewModal } from './ui/FilePreviewModal.vue';
 export { default as ToggleFeatureCard } from './ui/ToggleFeatureCard.vue';
 export { default as MimePickerField } from './ui/MimePickerField.vue';
-export { default as SkTag } from './ui/SkTag.vue';
 export { default as SkCard } from './ui/SkCard.vue';
 export { default as TurnstileWidget } from './ui/TurnstileWidget.vue';
 

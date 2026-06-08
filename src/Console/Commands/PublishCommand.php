@@ -52,7 +52,7 @@ class PublishCommand extends Command
         'ui' => [
             'source' => 'resources/js/components/Lvntr-Starter-Kit/ui',
             'destination' => 'resources/js/components/Lvntr-Starter-Kit/ui',
-            'label' => 'UI (AppDialog, AvatarUpload, ConfirmDialogComponent, SkTag, ToastComponent)',
+            'label' => 'UI (AppDialog, AvatarUpload, ConfirmDialogComponent, SkCard, ToastComponent)',
             'group' => 'components',
         ],
         'filemanager' => [

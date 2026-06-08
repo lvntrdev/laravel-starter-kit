@@ -157,7 +157,7 @@ The current UI favors database-backed definitions over a separate enum-sharing l
 - `useDefinition()` reads them from `GET /definitions`
 - definition records carry label, severity, and optional icon metadata
 - `SkDatatable` and `SkForm` can bind directly to definition keys such as `.tag('definition').tagKey('userStatus')` and `.definitionOptions('gender')`
-- `SkDatatable` renders definition tags through `SkTag`, so DB-driven metadata can be combined with column-level `colors()`, `icons()`, and tag style helpers
+- `SkDatatable` renders definition tags through PrimeVue's `<Tag>`, so DB-driven metadata can be combined with column-level `colors()`, `icons()`, and tag style helpers
 
 ### Flash Messages
 

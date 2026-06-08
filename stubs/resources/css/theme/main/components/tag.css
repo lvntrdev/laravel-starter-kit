@@ -1,470 +1,259 @@
 /**
- * SkTag — Tailwind-powered Tag Styles
+ * Tag — PrimeVue <Tag> repainted to the SK palette.
  *
- * Color variants (solid & soft) for all Tailwind palette colors.
- * Dark mode supported via :root.dark selector.
+ * Filled / soft / outlined / rounded / dot / size variants for the 6 built-in
+ * severities AND every Tailwind palette color. Dark mode via :root.dark.
+ *
+ *     <Tag severity="indigo" value="…" />                 (filled)
+ *     <Tag severity="rose"  value="…" class="p-tag-soft" />
+ *     <Tag severity="blue"  value="…" class="p-tag-outlined" rounded />
+ *
+ * See the section header below for how the data-p severity colouring works.
  */
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   BASE
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ============================================================================
+   PrimeVue Tag — Tailwind color severities (real <Tag> component)
+   ----------------------------------------------------------------------------
+   PrimeVue 4 renders the `severity` prop into a `data-p` attribute:
 
-.sk-tag {
-    @apply inline-flex items-center gap-1.5 rounded px-2.5 py-2 leading-none whitespace-nowrap select-none transition-colors duration-150;
-}
+       <Tag severity="indigo" value="Secondary" />
+         → <span class="p-tag" data-p="indigo">…
 
-.sk-tag--rounded {
-    @apply rounded-full;
-}
+   so we can colour ANY severity name — the 6 built-ins AND every Tailwind
+   family (+ the custom mauve/olive/mist/taupe) — purely from CSS, with no
+   component patch. A single `--tag-c` drives every variant (filled / soft /
+   outlined); `--tag-fg` overrides the label colour for light fills (yellow).
 
-.sk-tag__icon {
-    @apply text-[0.65rem];
-}
+   These rules are UNLAYERED (app.css imports the theme outside the `primevue`
+   cssLayer), so they win over PrimeVue's own Tag severity styling. The built-in
+   severities are intentionally repainted to the SK palette for a consistent look.
 
-.sk-tag__value {
-    @apply leading-none;
-}
+   Variants are opt-in via `class` on <Tag> (PrimeVue Tag has no variant prop):
+       <Tag severity="indigo" value="…" class="p-tag-soft" rounded />
+       <Tag severity="rose"  value="…" class="p-tag-outlined" />
+       <Tag severity="blue"  value="…" class="p-tag-sm" />
+   ============================================================================ */
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   COLOR MIXIN — Solid (default) & Soft
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* --- Red --- */
-.sk-tag--red {
-    @apply bg-red-500 text-white;
+/* ── Base restyle (matches the SK design) ───────────────────────────────── */
+.p-tag {
+    --tag-fg: #fff;
+    --tag-surface: var(--p-surface-0, #fff);
+    gap: 0.32rem;
+    padding: 0.22rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.005em;
 }
-.sk-tag--red.sk-tag--soft {
-    @apply bg-red-100 text-red-700;
+.p-tag .p-tag-icon {
+    font-size: 11px;
 }
-.sk-tag--red.sk-tag--outlined {
-    @apply bg-transparent text-red-600 ring-1 ring-red-400 ring-inset;
-}
-:root.dark .sk-tag--red {
-    @apply bg-red-600 text-white;
-}
-:root.dark .sk-tag--red.sk-tag--soft {
-    @apply bg-red-500/20 text-red-300;
-}
-:root.dark .sk-tag--red.sk-tag--outlined {
-    @apply bg-transparent text-red-400 ring-red-500;
-}
-
-/* --- Orange --- */
-.sk-tag--orange {
-    @apply bg-orange-500 text-white;
-}
-.sk-tag--orange.sk-tag--soft {
-    @apply bg-orange-100 text-orange-700;
-}
-.sk-tag--orange.sk-tag--outlined {
-    @apply bg-transparent text-orange-600 ring-1 ring-orange-400 ring-inset;
-}
-:root.dark .sk-tag--orange {
-    @apply bg-orange-600 text-white;
-}
-:root.dark .sk-tag--orange.sk-tag--soft {
-    @apply bg-orange-500/20 text-orange-300;
-}
-:root.dark .sk-tag--orange.sk-tag--outlined {
-    @apply bg-transparent text-orange-400 ring-orange-500;
+.p-tag-rounded {
+    border-radius: 999px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
 }
 
-/* --- Amber --- */
-.sk-tag--amber {
-    @apply bg-amber-500 text-white;
+/* ── Built-in severities → SK palette ───────────────────────────────────── */
+.p-tag[data-p~='secondary'] {
+    --tag-c: #64748b;
 }
-.sk-tag--amber.sk-tag--soft {
-    @apply bg-amber-100 text-amber-700;
+.p-tag[data-p~='success'] {
+    --tag-c: #16a34a;
 }
-.sk-tag--amber.sk-tag--outlined {
-    @apply bg-transparent text-amber-600 ring-1 ring-amber-400 ring-inset;
+.p-tag[data-p~='info'] {
+    --tag-c: #2563eb;
 }
-:root.dark .sk-tag--amber {
-    @apply bg-amber-600 text-white;
+.p-tag[data-p~='warn'] {
+    --tag-c: #d97706;
 }
-:root.dark .sk-tag--amber.sk-tag--soft {
-    @apply bg-amber-500/20 text-amber-300;
+.p-tag[data-p~='danger'] {
+    --tag-c: #dc2626;
 }
-:root.dark .sk-tag--amber.sk-tag--outlined {
-    @apply bg-transparent text-amber-400 ring-amber-500;
-}
-
-/* --- Yellow --- */
-.sk-tag--yellow {
-    @apply bg-yellow-400 text-yellow-900;
-}
-.sk-tag--yellow.sk-tag--soft {
-    @apply bg-yellow-100 text-yellow-700;
-}
-.sk-tag--yellow.sk-tag--outlined {
-    @apply bg-transparent text-yellow-600 ring-1 ring-yellow-400 ring-inset;
-}
-:root.dark .sk-tag--yellow {
-    @apply bg-yellow-500 text-yellow-950;
-}
-:root.dark .sk-tag--yellow.sk-tag--soft {
-    @apply bg-yellow-500/20 text-yellow-300;
-}
-:root.dark .sk-tag--yellow.sk-tag--outlined {
-    @apply bg-transparent text-yellow-400 ring-yellow-500;
+.p-tag[data-p~='contrast'] {
+    --tag-c: #0f172a;
 }
 
-/* --- Lime --- */
-.sk-tag--lime {
-    @apply bg-lime-500 text-white;
+/* ── Tailwind families (+ custom mauve / olive / mist / taupe) ───────────── */
+.p-tag[data-p~='slate'] {
+    --tag-c: #0f172a;
 }
-.sk-tag--lime.sk-tag--soft {
-    @apply bg-lime-100 text-lime-700;
+.p-tag[data-p~='gray'] {
+    --tag-c: #4b5563;
 }
-.sk-tag--lime.sk-tag--outlined {
-    @apply bg-transparent text-lime-600 ring-1 ring-lime-400 ring-inset;
+.p-tag[data-p~='zinc'] {
+    --tag-c: #52525b;
 }
-:root.dark .sk-tag--lime {
-    @apply bg-lime-600 text-white;
+.p-tag[data-p~='neutral'] {
+    --tag-c: #525252;
 }
-:root.dark .sk-tag--lime.sk-tag--soft {
-    @apply bg-lime-500/20 text-lime-300;
+.p-tag[data-p~='stone'] {
+    --tag-c: #57534e;
 }
-:root.dark .sk-tag--lime.sk-tag--outlined {
-    @apply bg-transparent text-lime-400 ring-lime-500;
+.p-tag[data-p~='mauve'] {
+    --tag-c: #594c5b;
 }
-
-/* --- Green --- */
-.sk-tag--green {
-    @apply bg-green-500 text-white;
+.p-tag[data-p~='olive'] {
+    --tag-c: #5b5b4b;
 }
-.sk-tag--green.sk-tag--soft {
-    @apply bg-green-100 text-green-700;
+.p-tag[data-p~='mist'] {
+    --tag-c: #4b585b;
 }
-.sk-tag--green.sk-tag--outlined {
-    @apply bg-transparent text-green-600 ring-1 ring-green-400 ring-inset;
+.p-tag[data-p~='taupe'] {
+    --tag-c: #5b4f4b;
 }
-:root.dark .sk-tag--green {
-    @apply bg-green-600 text-white;
+.p-tag[data-p~='red'] {
+    --tag-c: #dc2626;
 }
-:root.dark .sk-tag--green.sk-tag--soft {
-    @apply bg-green-500/20 text-green-300;
+.p-tag[data-p~='orange'] {
+    --tag-c: #ea580c;
 }
-:root.dark .sk-tag--green.sk-tag--outlined {
-    @apply bg-transparent text-green-400 ring-green-500;
+.p-tag[data-p~='amber'] {
+    --tag-c: #d97706;
 }
-
-/* --- Emerald --- */
-.sk-tag--emerald {
-    @apply bg-emerald-500 text-white;
+.p-tag[data-p~='yellow'] {
+    --tag-c: #eab308;
+    --tag-fg: #1c1917;
 }
-.sk-tag--emerald.sk-tag--soft {
-    @apply bg-emerald-100 text-emerald-700;
+.p-tag[data-p~='lime'] {
+    --tag-c: #65a30d;
 }
-.sk-tag--emerald.sk-tag--outlined {
-    @apply bg-transparent text-emerald-600 ring-1 ring-emerald-400 ring-inset;
+.p-tag[data-p~='green'] {
+    --tag-c: #22c55e;
 }
-:root.dark .sk-tag--emerald {
-    @apply bg-emerald-600 text-white;
+.p-tag[data-p~='emerald'] {
+    --tag-c: #059669;
 }
-:root.dark .sk-tag--emerald.sk-tag--soft {
-    @apply bg-emerald-500/20 text-emerald-300;
+.p-tag[data-p~='teal'] {
+    --tag-c: #0d9488;
 }
-:root.dark .sk-tag--emerald.sk-tag--outlined {
-    @apply bg-transparent text-emerald-400 ring-emerald-500;
+.p-tag[data-p~='cyan'] {
+    --tag-c: #0891b2;
 }
-
-/* --- Teal --- */
-.sk-tag--teal {
-    @apply bg-teal-500 text-white;
+.p-tag[data-p~='sky'] {
+    --tag-c: #0284c7;
 }
-.sk-tag--teal.sk-tag--soft {
-    @apply bg-teal-100 text-teal-700;
+.p-tag[data-p~='blue'] {
+    --tag-c: #2563eb;
 }
-.sk-tag--teal.sk-tag--outlined {
-    @apply bg-transparent text-teal-600 ring-1 ring-teal-400 ring-inset;
+.p-tag[data-p~='indigo'] {
+    --tag-c: #4f46e5;
 }
-:root.dark .sk-tag--teal {
-    @apply bg-teal-600 text-white;
+.p-tag[data-p~='violet'] {
+    --tag-c: #7c3aed;
 }
-:root.dark .sk-tag--teal.sk-tag--soft {
-    @apply bg-teal-500/20 text-teal-300;
+.p-tag[data-p~='purple'] {
+    --tag-c: #9333ea;
 }
-:root.dark .sk-tag--teal.sk-tag--outlined {
-    @apply bg-transparent text-teal-400 ring-teal-500;
+.p-tag[data-p~='fuchsia'] {
+    --tag-c: #c026d3;
 }
-
-/* --- Cyan --- */
-.sk-tag--cyan {
-    @apply bg-cyan-500 text-white;
+.p-tag[data-p~='pink'] {
+    --tag-c: #db2777;
 }
-.sk-tag--cyan.sk-tag--soft {
-    @apply bg-cyan-100 text-cyan-700;
-}
-.sk-tag--cyan.sk-tag--outlined {
-    @apply bg-transparent text-cyan-600 ring-1 ring-cyan-400 ring-inset;
-}
-:root.dark .sk-tag--cyan {
-    @apply bg-cyan-600 text-white;
-}
-:root.dark .sk-tag--cyan.sk-tag--soft {
-    @apply bg-cyan-500/20 text-cyan-300;
-}
-:root.dark .sk-tag--cyan.sk-tag--outlined {
-    @apply bg-transparent text-cyan-400 ring-cyan-500;
+.p-tag[data-p~='rose'] {
+    --tag-c: #e11d48;
 }
 
-/* --- Sky --- */
-.sk-tag--sky {
-    @apply bg-sky-500 text-white;
-}
-.sk-tag--sky.sk-tag--soft {
-    @apply bg-sky-100 text-sky-700;
-}
-.sk-tag--sky.sk-tag--outlined {
-    @apply bg-transparent text-sky-600 ring-1 ring-sky-400 ring-inset;
-}
-:root.dark .sk-tag--sky {
-    @apply bg-sky-600 text-white;
-}
-:root.dark .sk-tag--sky.sk-tag--soft {
-    @apply bg-sky-500/20 text-sky-300;
-}
-:root.dark .sk-tag--sky.sk-tag--outlined {
-    @apply bg-transparent text-sky-400 ring-sky-500;
+/* ── Filled (default) — applies only to the themed severities above, so an
+      un-themed <Tag> (no severity / primary) keeps PrimeVue's own styling ── */
+.p-tag:where(
+        [data-p~='secondary'], [data-p~='success'], [data-p~='info'], [data-p~='warn'], [data-p~='danger'], [data-p~='contrast'],
+        [data-p~='slate'], [data-p~='gray'], [data-p~='zinc'], [data-p~='neutral'], [data-p~='stone'],
+        [data-p~='mauve'], [data-p~='olive'], [data-p~='mist'], [data-p~='taupe'],
+        [data-p~='red'], [data-p~='orange'], [data-p~='amber'], [data-p~='yellow'], [data-p~='lime'],
+        [data-p~='green'], [data-p~='emerald'], [data-p~='teal'], [data-p~='cyan'], [data-p~='sky'],
+        [data-p~='blue'], [data-p~='indigo'], [data-p~='violet'], [data-p~='purple'], [data-p~='fuchsia'],
+        [data-p~='pink'], [data-p~='rose']
+    ) {
+    background: var(--tag-c);
+    color: var(--tag-fg);
+    border-color: transparent;
 }
 
-/* --- Blue --- */
-.sk-tag--blue {
-    @apply bg-blue-500 text-white;
+/* ── Soft / tonal — class="p-tag-soft" (specificity beats the filled rule) ─ */
+.p-tag.p-tag-soft {
+    background: color-mix(in srgb, var(--tag-c) 13%, var(--tag-surface));
+    color: color-mix(in srgb, var(--tag-c) 72%, #000);
+    border-color: color-mix(in srgb, var(--tag-c) 22%, transparent);
 }
-.sk-tag--blue.sk-tag--soft {
-    @apply bg-blue-100 text-blue-700;
-}
-.sk-tag--blue.sk-tag--outlined {
-    @apply bg-transparent text-blue-600 ring-1 ring-blue-400 ring-inset;
-}
-:root.dark .sk-tag--blue {
-    @apply bg-blue-600 text-white;
-}
-:root.dark .sk-tag--blue.sk-tag--soft {
-    @apply bg-blue-500/20 text-blue-300;
-}
-:root.dark .sk-tag--blue.sk-tag--outlined {
-    @apply bg-transparent text-blue-400 ring-blue-500;
+:root.dark .p-tag.p-tag-soft {
+    background: color-mix(in srgb, var(--tag-c) 22%, transparent);
+    color: color-mix(in srgb, var(--tag-c), white 42%);
+    border-color: color-mix(in srgb, var(--tag-c) 34%, transparent);
 }
 
-/* --- Indigo --- */
-.sk-tag--indigo {
-    @apply bg-indigo-500 text-white;
+/* ── Outlined — class="p-tag-outlined" (specificity beats the filled rule) ─ */
+.p-tag.p-tag-outlined {
+    background: transparent;
+    color: color-mix(in srgb, var(--tag-c) 80%, #000);
+    border-color: color-mix(in srgb, var(--tag-c) 48%, transparent);
 }
-.sk-tag--indigo.sk-tag--soft {
-    @apply bg-indigo-100 text-indigo-700;
-}
-.sk-tag--indigo.sk-tag--outlined {
-    @apply bg-transparent text-indigo-600 ring-1 ring-indigo-400 ring-inset;
-}
-:root.dark .sk-tag--indigo {
-    @apply bg-indigo-600 text-white;
-}
-:root.dark .sk-tag--indigo.sk-tag--soft {
-    @apply bg-indigo-500/20 text-indigo-300;
-}
-:root.dark .sk-tag--indigo.sk-tag--outlined {
-    @apply bg-transparent text-indigo-400 ring-indigo-500;
+:root.dark .p-tag.p-tag-outlined {
+    color: color-mix(in srgb, var(--tag-c), white 38%);
+    border-color: color-mix(in srgb, var(--tag-c) 58%, transparent);
 }
 
-/* --- Violet --- */
-.sk-tag--violet {
-    @apply bg-violet-500 text-white;
-}
-.sk-tag--violet.sk-tag--soft {
-    @apply bg-violet-100 text-violet-700;
-}
-.sk-tag--violet.sk-tag--outlined {
-    @apply bg-transparent text-violet-600 ring-1 ring-violet-400 ring-inset;
-}
-:root.dark .sk-tag--violet {
-    @apply bg-violet-600 text-white;
-}
-:root.dark .sk-tag--violet.sk-tag--soft {
-    @apply bg-violet-500/20 text-violet-300;
-}
-:root.dark .sk-tag--violet.sk-tag--outlined {
-    @apply bg-transparent text-violet-400 ring-violet-500;
+/* ── Leading status dot — class="p-tag-dot" ─────────────────────────────── */
+.p-tag-dot::before {
+    content: '';
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.85;
 }
 
-/* --- Purple --- */
-.sk-tag--purple {
-    @apply bg-purple-500 text-white;
+/* ── Sizes — class="p-tag-sm" / "p-tag-lg" ──────────────────────────────── */
+.p-tag-sm {
+    padding: 0.12rem 0.42rem;
+    gap: 0.24rem;
+    font-size: 10.5px;
 }
-.sk-tag--purple.sk-tag--soft {
-    @apply bg-purple-100 text-purple-700;
+.p-tag-sm .p-tag-icon {
+    font-size: 9.5px;
 }
-.sk-tag--purple.sk-tag--outlined {
-    @apply bg-transparent text-purple-600 ring-1 ring-purple-400 ring-inset;
+.p-tag-lg {
+    padding: 0.34rem 0.7rem;
+    gap: 0.38rem;
+    font-size: 13.5px;
 }
-:root.dark .sk-tag--purple {
-    @apply bg-purple-600 text-white;
-}
-:root.dark .sk-tag--purple.sk-tag--soft {
-    @apply bg-purple-500/20 text-purple-300;
-}
-:root.dark .sk-tag--purple.sk-tag--outlined {
-    @apply bg-transparent text-purple-400 ring-purple-500;
+.p-tag-lg .p-tag-icon {
+    font-size: 13px;
 }
 
-/* --- Fuchsia --- */
-.sk-tag--fuchsia {
-    @apply bg-fuchsia-500 text-white;
+/* ── Removable close affordance (place inside the default slot) ──────────── */
+.p-tag-x {
+    display: inline-grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    margin: 0 -2px 0 1px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 9px;
+    opacity: 0.65;
+    cursor: pointer;
+    transition:
+        opacity 0.15s,
+        background 0.15s;
 }
-.sk-tag--fuchsia.sk-tag--soft {
-    @apply bg-fuchsia-100 text-fuchsia-700;
-}
-.sk-tag--fuchsia.sk-tag--outlined {
-    @apply bg-transparent text-fuchsia-600 ring-1 ring-fuchsia-400 ring-inset;
-}
-:root.dark .sk-tag--fuchsia {
-    @apply bg-fuchsia-600 text-white;
-}
-:root.dark .sk-tag--fuchsia.sk-tag--soft {
-    @apply bg-fuchsia-500/20 text-fuchsia-300;
-}
-:root.dark .sk-tag--fuchsia.sk-tag--outlined {
-    @apply bg-transparent text-fuchsia-400 ring-fuchsia-500;
-}
-
-/* --- Pink --- */
-.sk-tag--pink {
-    @apply bg-pink-500 text-white;
-}
-.sk-tag--pink.sk-tag--soft {
-    @apply bg-pink-100 text-pink-700;
-}
-.sk-tag--pink.sk-tag--outlined {
-    @apply bg-transparent text-pink-600 ring-1 ring-pink-400 ring-inset;
-}
-:root.dark .sk-tag--pink {
-    @apply bg-pink-600 text-white;
-}
-:root.dark .sk-tag--pink.sk-tag--soft {
-    @apply bg-pink-500/20 text-pink-300;
-}
-:root.dark .sk-tag--pink.sk-tag--outlined {
-    @apply bg-transparent text-pink-400 ring-pink-500;
+.p-tag-x:hover {
+    opacity: 1;
+    background: color-mix(in srgb, currentColor 24%, transparent);
 }
 
-/* --- Rose --- */
-.sk-tag--rose {
-    @apply bg-rose-500 text-white;
+/* ── Dark mode: lift the near-black neutrals + flip contrast so filled tags
+      stay legible on the dark panel ──────────────────────────────────────── */
+:root.dark .p-tag[data-p~='slate'] {
+    --tag-c: #475569;
 }
-.sk-tag--rose.sk-tag--soft {
-    @apply bg-rose-100 text-rose-700;
-}
-.sk-tag--rose.sk-tag--outlined {
-    @apply bg-transparent text-rose-600 ring-1 ring-rose-400 ring-inset;
-}
-:root.dark .sk-tag--rose {
-    @apply bg-rose-600 text-white;
-}
-:root.dark .sk-tag--rose.sk-tag--soft {
-    @apply bg-rose-500/20 text-rose-300;
-}
-:root.dark .sk-tag--rose.sk-tag--outlined {
-    @apply bg-transparent text-rose-400 ring-rose-500;
-}
-
-/* --- Slate --- */
-.sk-tag--slate {
-    @apply bg-slate-500 text-white;
-}
-.sk-tag--slate.sk-tag--soft {
-    @apply bg-slate-100 text-slate-700;
-}
-.sk-tag--slate.sk-tag--outlined {
-    @apply bg-transparent text-slate-600 ring-1 ring-slate-400 ring-inset;
-}
-:root.dark .sk-tag--slate {
-    @apply bg-slate-600 text-white;
-}
-:root.dark .sk-tag--slate.sk-tag--soft {
-    @apply bg-slate-500/20 text-slate-300;
-}
-:root.dark .sk-tag--slate.sk-tag--outlined {
-    @apply bg-transparent text-slate-400 ring-slate-500;
-}
-
-/* --- Gray --- */
-.sk-tag--gray {
-    @apply bg-gray-500 text-white;
-}
-.sk-tag--gray.sk-tag--soft {
-    @apply bg-gray-100 text-gray-700;
-}
-.sk-tag--gray.sk-tag--outlined {
-    @apply bg-transparent text-gray-600 ring-1 ring-gray-400 ring-inset;
-}
-:root.dark .sk-tag--gray {
-    @apply bg-gray-600 text-white;
-}
-:root.dark .sk-tag--gray.sk-tag--soft {
-    @apply bg-gray-500/20 text-gray-300;
-}
-:root.dark .sk-tag--gray.sk-tag--outlined {
-    @apply bg-transparent text-gray-400 ring-gray-500;
-}
-
-/* --- Zinc --- */
-.sk-tag--zinc {
-    @apply bg-zinc-700 text-white;
-}
-.sk-tag--zinc.sk-tag--soft {
-    @apply bg-zinc-100 text-zinc-700;
-}
-.sk-tag--zinc.sk-tag--outlined {
-    @apply bg-transparent text-zinc-600 ring-1 ring-zinc-400 ring-inset;
-}
-:root.dark .sk-tag--zinc {
-    @apply bg-zinc-300 text-zinc-900;
-}
-:root.dark .sk-tag--zinc.sk-tag--soft {
-    @apply bg-zinc-500/20 text-zinc-300;
-}
-:root.dark .sk-tag--zinc.sk-tag--outlined {
-    @apply bg-transparent text-zinc-400 ring-zinc-500;
-}
-
-/* --- Neutral --- */
-.sk-tag--neutral {
-    @apply bg-neutral-500 text-white;
-}
-.sk-tag--neutral.sk-tag--soft {
-    @apply bg-neutral-100 text-neutral-700;
-}
-.sk-tag--neutral.sk-tag--outlined {
-    @apply bg-transparent text-neutral-600 ring-1 ring-neutral-400 ring-inset;
-}
-:root.dark .sk-tag--neutral {
-    @apply bg-neutral-600 text-white;
-}
-:root.dark .sk-tag--neutral.sk-tag--soft {
-    @apply bg-neutral-500/20 text-neutral-300;
-}
-:root.dark .sk-tag--neutral.sk-tag--outlined {
-    @apply bg-transparent text-neutral-400 ring-neutral-500;
-}
-
-/* --- Stone --- */
-.sk-tag--stone {
-    @apply bg-stone-500 text-white;
-}
-.sk-tag--stone.sk-tag--soft {
-    @apply bg-stone-100 text-stone-700;
-}
-.sk-tag--stone.sk-tag--outlined {
-    @apply bg-transparent text-stone-600 ring-1 ring-stone-400 ring-inset;
-}
-:root.dark .sk-tag--stone {
-    @apply bg-stone-600 text-white;
-}
-:root.dark .sk-tag--stone.sk-tag--soft {
-    @apply bg-stone-500/20 text-stone-300;
-}
-:root.dark .sk-tag--stone.sk-tag--outlined {
-    @apply bg-transparent text-stone-400 ring-stone-500;
+:root.dark .p-tag[data-p~='contrast'] {
+    --tag-c: #e5e7eb;
+    --tag-fg: #111827;
 }

@@ -42,7 +42,7 @@ export class ColumnBuilder<_T = unknown> {
         return this;
     }
 
-    /** Render cell as SkTag with severity/label from DB definitions. */
+    /** Render cell as a PrimeVue Tag with severity/label from DB definitions. */
     tag(type: 'definition', tagKey?: string): this {
         this.config.tag = type;
         if (tagKey) {
@@ -57,7 +57,7 @@ export class ColumnBuilder<_T = unknown> {
         return this;
     }
 
-    /** Tailwind color map for SkTag – overrides definition severity color. */
+    /** Tailwind color map for the tag – overrides the definition severity color. */
     colors(map: Record<string, TagColor>): this {
         this.config.colors = map;
         return this;

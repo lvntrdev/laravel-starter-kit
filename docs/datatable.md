@@ -297,17 +297,13 @@ final class BulkDeleteRoleAction implements BulkAction
 - `row`: the full row object
 - `value`: the resolved value for the current column key
 
-Import `SkTag` when you want slot content to match the built-in badge styling:
+Use PrimeVue's `<Tag>` (auto-imported, no import needed) when you want slot content to match the built-in badge styling. `severity` accepts the 6 PrimeVue severities **and** any Tailwind color name (e.g. `indigo`, `emerald`); soft/outlined are opt-in via the `p-tag-soft` / `p-tag-outlined` classes:
 
 ```vue
-<script setup lang="ts">
-    import SkTag from '@lvntr/components/ui/SkTag.vue';
-</script>
-
 <template>
     <SkDatatable :config="tableConfig">
         <template #cell-status="{ row, value }">
-            <SkTag :value="String(value)" :severity="row.is_active ? 'success' : 'danger'" soft rounded />
+            <Tag :value="String(value)" :severity="row.is_active ? 'success' : 'danger'" rounded class="p-tag-soft" />
         </template>
     </SkDatatable>
 </template>
@@ -373,7 +369,7 @@ For larger modules, keep datatable logic in `app/Domain/*/Queries/*DatatableQuer
 
 - server-side search, sort, pagination, and filters
 - automatic definition loading for tag columns and definition-backed filters
-- definition-based tag labels, severities, and icons rendered through `SkTag`
+- definition-based tag labels, severities, and icons rendered through PrimeVue's `<Tag>`
 - query string sync for shareable table URLs
 - `sessionStorage` persistence between reloads
 - optional refresh bus integration through `refresh-key`

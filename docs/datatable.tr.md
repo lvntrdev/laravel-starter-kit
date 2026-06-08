@@ -297,17 +297,13 @@ final class BulkDeleteRoleAction implements BulkAction
 - `row`: satırın tüm objesi
 - `value`: ilgili kolon anahtarı için çözülen değer
 
-Slot içeriğinin dahili badge görünümü ile aynı olmasını istiyorsan `SkTag` import et:
+Slot içeriğinin dahili badge görünümü ile aynı olmasını istiyorsan PrimeVue'nun `<Tag>` bileşenini kullan (auto-import, ayrıca import gerekmez). `severity` hem 6 PrimeVue severity'sini **hem de** herhangi bir Tailwind renk adını (ör. `indigo`, `emerald`) kabul eder; soft/outlined `p-tag-soft` / `p-tag-outlined` sınıflarıyla opt-in'dir:
 
 ```vue
-<script setup lang="ts">
-    import SkTag from '@lvntr/components/ui/SkTag.vue';
-</script>
-
 <template>
     <SkDatatable :config="tableConfig">
         <template #cell-status="{ row, value }">
-            <SkTag :value="String(value)" :severity="row.is_active ? 'success' : 'danger'" soft rounded />
+            <Tag :value="String(value)" :severity="row.is_active ? 'success' : 'danger'" rounded class="p-tag-soft" />
         </template>
     </SkDatatable>
 </template>
@@ -375,7 +371,7 @@ Büyük modüllerde datatable mantığını `app/Domain/*/Queries/*DatatableQuer
 
 - server-side arama, sıralama, sayfalama ve filtreleme
 - tag kolonları ve definition tabanlı filtreler için otomatik definition yükleme
-- `SkTag` üzerinden definition tabanlı label, severity ve icon gösterimi
+- PrimeVue `<Tag>` üzerinden definition tabanlı label, severity ve icon gösterimi
 - paylaşılabilir tablo URL'leri için query string senkronizasyonu
 - sayfa yenilemelerinde `sessionStorage` kalıcılığı
 - `refresh-key` ile opsiyonel refresh bus entegrasyonu
