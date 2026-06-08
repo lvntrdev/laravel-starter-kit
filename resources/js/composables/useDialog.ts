@@ -31,6 +31,17 @@ import { useApi } from './useApi';
  *       },
  *   });
  *
+ * Footer slots (two component regions — far-left and just-before the buttons):
+ *   dialog.open(Form, {}, 'Başlık', {
+ *       footer: {
+ *           startSlot: MetaInfo,          // far-left region
+ *           endSlot: ExtraAction,         // just left of Cancel/Confirm
+ *           endSlotProps: { id },
+ *           confirmLabel: 'Kaydet',
+ *           onConfirm: () => save(),
+ *       },
+ *   });
+ *
  * Edit with async data fetch:
  *   dialog.openAsync(UserForm, '/admin/users/1/data', 'Edit User', {
  *       refreshKey: 'users-table',
@@ -61,6 +72,14 @@ export interface DialogFooter {
     disabled?: boolean;
     /** Show a spinner on the confirm button and block clicks. */
     loading?: boolean;
+    /** Component rendered at the far-left of the footer (before the hint/info region). */
+    startSlot?: Component;
+    /** Props forwarded to {@link startSlot}. */
+    startSlotProps?: Record<string, unknown>;
+    /** Component rendered just to the left of the Cancel/Confirm buttons. */
+    endSlot?: Component;
+    /** Props forwarded to {@link endSlot}. */
+    endSlotProps?: Record<string, unknown>;
 }
 
 interface DialogState {
@@ -116,6 +135,21 @@ const state = reactive<DialogState>({
  */
 let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * markRaw the footer's slot components so reactive() doesn't wrap them
+ * (Vue warns when a component definition is made reactive). Returns a fresh
+ * object — never mutates the caller's footer.
+ */
+function normalizeFooter(footer: DialogFooter | null): DialogFooter | null {
+    if (!footer) return null;
+
+    const next: DialogFooter = { ...footer };
+    if (next.startSlot) next.startSlot = markRaw(next.startSlot);
+    if (next.endSlot) next.endSlot = markRaw(next.endSlot);
+
+    return next;
+}
+
 export function useDialog() {
     const bus = useRefreshBus();
     const api = useApi();
@@ -162,7 +196,7 @@ export function useDialog() {
         state.subtitle = options.subtitle ?? '';
         state.icon = options.icon ?? '';
         state.width = options.width ?? '640px';
-        state.footer = options.footer ?? null;
+        state.footer = normalizeFooter(options.footer ?? null);
         state.loading = false;
         state.visible = true;
     }
@@ -231,13 +265,13 @@ export function useDialog() {
      * from inside the rendered component without re-opening the dialog).
      */
     function setFooter(footer: DialogFooter | null): void {
-        state.footer = footer;
+        state.footer = normalizeFooter(footer);
     }
 
     /** Merge partial changes into the existing footer. No-op when no footer set. */
     function patchFooter(partial: Partial<DialogFooter>): void {
         if (!state.footer) return;
-        state.footer = { ...state.footer, ...partial };
+        state.footer = normalizeFooter({ ...state.footer, ...partial });
     }
 
     return { open, openAsync, close, setLoading, setFooter, patchFooter, state };

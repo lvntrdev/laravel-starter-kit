@@ -39,6 +39,8 @@
 
     function openCreateDialog() {
         dialog.open(UserForm, { inDialog: true, roleOptions: props.roleOptions }, trans('sk-user.create'), {
+            icon: 'pi pi-user-plus',
+            subtitle: 'Yeni kullanıcı oluştur',
             refreshKey: REFRESH_KEY,
         });
     }
@@ -47,6 +49,8 @@
 
     function openEditDialog(userId: string) {
         dialog.open(UserForm, { userId, inDialog: true, roleOptions: props.roleOptions }, trans('sk-user.edit'), {
+            icon: 'pi pi-user-edit',
+            subtitle: 'Kullanıcı bilgilerini güncelle',
             refreshKey: REFRESH_KEY,
         });
     }

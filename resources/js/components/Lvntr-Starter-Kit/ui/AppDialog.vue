@@ -88,7 +88,16 @@
 
                 <!-- Footer (opt-in via state.footer) -->
                 <footer v-if="state.footer" class="sk-dlg__foot">
-                    <div class="sk-dlg__info">
+                    <!-- Far-left slot -->
+                    <component
+                        :is="state.footer.startSlot"
+                        v-if="state.footer.startSlot"
+                        v-bind="state.footer.startSlotProps"
+                        class="sk-dlg__slot sk-dlg__slot--start"
+                    />
+
+                    <!-- Built-in hint (icon + text) -->
+                    <div v-if="state.footer.icon || state.footer.text" class="sk-dlg__info">
                         <i
                             v-if="state.footer.icon"
                             class="sk-dlg__info-icon"
@@ -97,6 +106,17 @@
                         />
                         <span v-if="state.footer.text">{{ state.footer.text }}</span>
                     </div>
+
+                    <span class="sk-dlg__foot-spacer" />
+
+                    <!-- Slot just before the action buttons -->
+                    <component
+                        :is="state.footer.endSlot"
+                        v-if="state.footer.endSlot"
+                        v-bind="state.footer.endSlotProps"
+                        class="sk-dlg__slot sk-dlg__slot--end"
+                    />
+
                     <div class="sk-dlg__actions">
                         <Button
                             v-if="!state.footer.hideCancel"

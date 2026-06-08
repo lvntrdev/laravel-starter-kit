@@ -25,26 +25,22 @@
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    DIALOG ROOT
-   `padding: 0` and a custom shadow defined in preset.ts; here we just
-   add the inset highlight and tighten dark-mode bg.
+   Clean shell — no drop shadow, just a 1px hairline border and a 4px
+   corner radius (matches the model_clean reference design).
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dlg.p-dialog {
     background: var(--p-surface-0);
-    border: 0;
+    border: 1px solid var(--p-surface-200);
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.6) inset,
-        0 24px 60px -20px rgba(15, 14, 25, 0.35),
-        0 6px 20px -6px rgba(15, 14, 25, 0.18);
+    box-shadow: none;
 }
 
 :root.dark .sk-dlg.p-dialog {
     background: var(--p-surface-900);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.04) inset,
-        0 24px 60px -20px rgba(0, 0, 0, 0.65),
-        0 6px 20px -6px rgba(0, 0, 0, 0.45);
+    border-color: var(--p-surface-800);
+    box-shadow: none;
 }
 
 /* ── Rise animation — override Material's default scale-fade ─────── */
@@ -94,15 +90,15 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.875rem;
-    padding: 1.25rem 2rem 1.125rem;
+    padding: 1.125rem 2rem;
     border-bottom: 1px solid var(--p-surface-200);
-    background: var(--p-surface-0);
+    background: theme('colors.slate.100');
     flex-shrink: 0;
 }
 
 :root.dark .sk-dlg__head {
     border-color: var(--p-surface-700);
-    background: var(--p-surface-900);
+    background: var(--p-surface-950);
 }
 
 .sk-dlg__title-group {
@@ -114,30 +110,24 @@
 }
 
 .sk-dlg__lead {
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 6px;
+    width: 2.375rem;
+    height: 2.375rem;
+    border-radius: 4px;
     display: grid;
     place-items: center;
-    color: #fff;
-    background: linear-gradient(135deg, var(--p-primary-500) 0%, var(--p-primary-300) 100%);
+    color: var(--p-primary-color);
+    background: var(--p-primary-50);
     flex-shrink: 0;
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.25) inset,
-        0 4px 12px -4px color-mix(in srgb, var(--p-primary-500) 55%, transparent);
 }
 
 .sk-dlg__lead i {
-    font-size: 1.25rem;
+    font-size: 1.0625rem;
     line-height: 1;
 }
 
 :root.dark .sk-dlg__lead {
-    background: linear-gradient(135deg, var(--p-primary-400) 0%, var(--p-primary-200) 100%);
-    color: var(--p-surface-950);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.15) inset,
-        0 4px 12px -4px color-mix(in srgb, var(--p-primary-400) 50%, transparent);
+    color: var(--p-primary-300);
+    background: color-mix(in srgb, var(--p-primary-500) 14%, transparent);
 }
 
 .sk-dlg__title-block {
@@ -147,8 +137,8 @@
 
 .sk-dlg__title {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.0625rem;
+    font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.3;
     color: var(--p-surface-900);
@@ -179,7 +169,7 @@
 .sk-dlg__close {
     width: 2.5rem;
     height: 2.5rem;
-    border-radius: 6px;
+    border-radius: 4px;
     background: transparent;
     border: 0;
     cursor: pointer;
@@ -245,11 +235,38 @@
 .sk-dlg__body:has(.sk-fb--dialog) {
     padding-bottom: 0;
     scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .sk-dlg__body:has(.sk-fb--dialog)::-webkit-scrollbar {
     width: 0;
     height: 0;
+}
+
+/* Flex-fill chain — dialog body → form card → card body → form → fields grid.
+   The native SkCard is a plain block (unlike the old PrimeVue card, which
+   stretched via its flex `p-card`/`p-card-body`), so without this the form
+   stays content-height and a gap opens below the sticky action bar whenever
+   the dialog is taller than the form. `flex: 1 0 auto` lets each wrapper grow
+   into spare height but never shrink below its content (so a tall form still
+   overflows the body and scrolls). `:has(> .sk-fb--dialog)` pins the stretch
+   to the form's OWN card body — nested section cards stay untouched. */
+.sk-dlg__body:has(.sk-fb--dialog) > .sk-card,
+.sk-dlg__body:has(.sk-fb--dialog) .sk-card__body:has(> .sk-fb--dialog) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+}
+
+.sk-dlg__body:has(.sk-fb--dialog) .sk-fb--dialog {
+    flex: 1 0 auto;
+}
+
+/* The fields grid soaks up the spare height, pushing the action bar to the
+   bottom while keeping its own `mt-6` breathing room above. */
+.sk-dlg__body:has(.sk-fb--dialog) .sk-fb--dialog > .sk-fb__grid {
+    flex: 1 0 auto;
 }
 
 :root.dark .sk-dlg__body {
@@ -290,8 +307,7 @@
 .sk-dlg__foot {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.625rem;
     padding: 0.875rem 2rem;
     border-top: 1px solid var(--p-surface-200);
     background: theme('colors.slate.100');
@@ -301,6 +317,18 @@
 :root.dark .sk-dlg__foot {
     border-color: var(--p-surface-700);
     background: var(--p-surface-950);
+}
+
+/* Pushes the end slot + action buttons to the right; the start slot and the
+   built-in hint stay on the left (model_clean footer layout). */
+.sk-dlg__foot-spacer {
+    flex: 1 1 auto;
+}
+
+.sk-dlg__slot {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
 }
 
 .sk-dlg__info {
