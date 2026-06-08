@@ -373,7 +373,7 @@ Paylaşım bağlantısı işlemleri iki ayrı izin kullanır:
 - Spatie Media Library
 - sabit context bazlı disk yerleşimi için özel `MediaPathGenerator`
 - istek başına yetkilendirme için `FileManagerAuthorizer`
-- `app/Domain/FileManager/Support/` içindeki `ContextRegistry` + `ContextDefinition`
+- `src/Domain/FileManager/Support/` içindeki `ContextRegistry` + `ContextDefinition` (vendor-resident; namespace `Lvntr\StarterKit\Domain\FileManager\Support\`)
 
 ## Tam Sayfa Montajı
 

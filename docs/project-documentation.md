@@ -13,22 +13,25 @@ This document gives the high-level map of the starter kit after installation. It
 
 ### Main Domain Modules
 
-**Scaffolded into your app (`app/Domain/`)** — controllers, FormRequests, models, and routes for these are also generated into `app/`:
+**App-owned surface after install** — controllers, FormRequests, models, routes, and Vue pages are scaffolded into `app/` / `resources/` where the module needs them. The domain runtime itself is split by module:
 
-- `app/Domain/Auth`
-- `app/Domain/User`
-- `app/Domain/Role`
-- `app/Domain/Setting`
-- `app/Domain/ApiRoute`
+- `Auth` is fully app-side (`app/Domain/Auth`)
+- `User` and `Role` keep only the app-owned `BulkActions` slice under `app/Domain/...`; the core runtime is vendor-resident
+- `Setting`, `ApiRoute`, and `ApiClient` expose app-owned HTTP/UI surface where applicable, but their domain runtime runs from the vendor package
 
-**Vendor-resident (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — their runtime layer (Actions, DTOs, Queries, Events, Listeners, Services) runs from the package and is not copied into your app on a fresh install. `App\Domain\<Module>\...` imports stay working through `class_alias`; a local `app/Domain/<Module>/` copy, if present, takes precedence:
+**Vendor-resident runtime domains (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — Actions, DTOs, Queries, Events, Listeners, and Services for these modules run from the package and are not copied into your app on a fresh install. `App\Domain\<Module>\...` imports stay working through `class_alias`; a local `app/Domain/<Module>/` copy from an eject or older install takes precedence:
 
-- `Session`
-- `Media`
 - `ActivityLog`
+- `ApiClient`
+- `ApiRoute`
 - `FileManager`
 - `Logs`
+- `Media`
+- `Role`
+- `Session`
+- `Setting`
 - `Shared`
+- `User`
 
 See [ddd.md](./ddd.md) for the full vendor-resident model and reconcile steps.
 
@@ -43,7 +46,7 @@ See [ddd.md](./ddd.md) for the full vendor-resident model and reconcile steps.
 
 ### Domain Events
 
-`app/Providers/DomainServiceProvider.php` registers event-listener pairs such as:
+Kit-provided audit event/listener pairs for vendor-resident `User`, `Role`, and `Logs` runtime are registered in `StarterKitServiceProvider::registerEventListeners()` with vendor FQCNs:
 
 - `UserCreated -> LogUserCreated`
 - `UserUpdated -> LogUserUpdated`
@@ -53,7 +56,7 @@ See [ddd.md](./ddd.md) for the full vendor-resident model and reconcile steps.
 - `RoleDeleted -> LogRoleDeleted`
 - `LogFilesDeleted -> LogActivityForLogFilesDeleted`
 
-This keeps side effects outside the main action classes.
+The scaffolded `app/Providers/DomainServiceProvider.php` is left for your own application events. `sk:eject` can add bindings there when you copy a kit domain back into `app/Domain/`.
 
 ## Frontend Areas
 
@@ -166,15 +169,47 @@ Project-specific composables live under `resources/js/composables/`. The admin s
 
 ## Suggested Reading
 
-- [project-info.md](./project-info.md)
-- [install.md](./install.md)
-- [ddd.md](./ddd.md)
-- [roles-permissions.md](./roles-permissions.md)
-- [api.md](./api.md)
-- [datatable.md](./datatable.md)
-- [formbuilder.md](./formbuilder.md)
-- [api-routes.md](./api-routes.md)
-- [files.md](./files.md)
-- [logs.md](./logs.md)
-- [i18n.md](./i18n.md)
-- [composables.md](./composables.md)
+**Getting started**
+
+- [welcome.md](./welcome.md) — what the kit is and what ships inside it
+- [project-info.md](./project-info.md) — stack and high-level project overview
+- [install.md](./install.md) — installation flow
+- [update.md](./update.md) — pulling updated stubs (hash-tracked)
+- [UPGRADE.md](./UPGRADE.md) — version upgrade notes
+
+**Backend & DDD**
+
+- [ddd.md](./ddd.md) — domain layout and the vendor-resident model
+- [auth.md](./auth.md) — Fortify (web) + Passport (API) authentication
+- [roles-permissions.md](./roles-permissions.md) — permission resources and seeding
+- [api.md](./api.md) — API response envelope and conventions
+- [api-clients.md](./api-clients.md) — Passport clients & token management
+- [api-routes.md](./api-routes.md) — API route inventory screen
+- [module-routes.md](./module-routes.md) — modular route registry
+- [definitions.md](./definitions.md) — shared label/value lookups
+- [settings.md](./settings.md) — application settings module
+- [activity-logs.md](./activity-logs.md) — audit/activity logging
+- [logs.md](./logs.md) — application log viewer
+
+**Frontend & UI builders**
+
+- [formbuilder.md](./formbuilder.md) — FormBuilder (FB)
+- [datatable.md](./datatable.md) — DatatableBuilder (DB)
+- [tabs.md](./tabs.md) — TabBuilder (TB)
+- [composables.md](./composables.md) — Vue composables
+- [admin-components.md](./admin-components.md) — admin page style guide
+- [ui-components.md](./ui-components.md) — reusable UI primitives
+- [theme.md](./theme.md) — theme system
+- [wayfinder.md](./wayfinder.md) — type-safe route helpers
+
+**Features**
+
+- [file-manager.md](./file-manager.md) — file manager
+- [files.md](./files.md) — file uploads
+- [i18n.md](./i18n.md) — internationalization
+- [translatable-fields.md](./translatable-fields.md) — multi-language model fields
+
+**Tooling**
+
+- [artisan-commands.md](./artisan-commands.md) — `sk:*` command reference
+- [claude-skills.md](./claude-skills.md) — shipped Claude Code skills

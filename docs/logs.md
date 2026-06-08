@@ -50,8 +50,10 @@ Each entry collapses to a level chip + timestamp + first part of the message. Ex
 
 ## Domain layer
 
+The Logs domain is **vendor-resident** — its runtime layer runs from the package (`src/Domain/Logs/`, namespace `Lvntr\StarterKit\Domain\Logs\`) and is not scaffolded into your app. `App\Domain\Logs\...` imports keep working through `class_alias`.
+
 ```
-app/Domain/Logs/
+src/Domain/Logs/   (Lvntr\StarterKit\Domain\Logs\)
 ├── DTOs/
 │   ├── LogFileDTO.php          # name, path, size_bytes, modified_at, channel_type, is_active
 │   ├── LogEntryDTO.php         # timestamp, level, env, message, context, stack, is_raw
@@ -70,7 +72,7 @@ app/Domain/Logs/
     └── LaravelLogParser.php    # stateless line parser; multiline stack-trace aware
 ```
 
-`LogFilesDeleted → LogActivityForLogFilesDeleted` is wired in `App\Providers\DomainServiceProvider::boot()`.
+`LogFilesDeleted → LogActivityForLogFilesDeleted` is wired in `StarterKitServiceProvider::registerEventListeners()` (vendor), with both sides bound to the vendor FQCN so the dispatched event matches the registration key.
 
 ### Streaming entry reader
 

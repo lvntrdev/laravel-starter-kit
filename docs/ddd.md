@@ -12,11 +12,11 @@ Typical structure after installation:
 
 ```text
 app/Domain/
-├── ApiRoute/
 ├── Auth/
 ├── Role/
-├── Setting/
+│   └── BulkActions/
 └── User/
+    └── BulkActions/
 ```
 
 Domains that are fully managed by the package and run from vendor are not scaffolded into `app/` on a fresh install. See [Vendor-resident domains](#vendor-resident-domains) below.
@@ -33,10 +33,15 @@ The following domains have their **runtime layer** (Actions, DTOs, Queries, Even
 | `Logs` | `Lvntr\StarterKit\Domain\Logs\` |
 | `Session` | `Lvntr\StarterKit\Domain\Session\` |
 | `Media` | `Lvntr\StarterKit\Domain\Media\` |
+| `ApiClient` | `Lvntr\StarterKit\Domain\ApiClient\` |
+| `ApiRoute` | `Lvntr\StarterKit\Domain\ApiRoute\` |
+| `Role` | `Lvntr\StarterKit\Domain\Role\` |
+| `Setting` | `Lvntr\StarterKit\Domain\Setting\` |
+| `User` | `Lvntr\StarterKit\Domain\User\` |
 
 **Import compatibility:** controllers and providers that use `App\Domain\<Module>\...` import paths continue to work — `StarterKitServiceProvider` registers `class_alias` entries that resolve them to the vendor namespace. A local `app/Domain/<Module>/` copy, if present, always takes precedence (the guard skips the alias when the file exists on disk).
 
-**Consumer-facing surface stays in `app/`:** Controllers, FormRequests, Models, Vue pages, and route files for vendor-resident domains are still scaffolded into your app. Only the runtime/business-logic layer is vendor-managed.
+**Consumer-facing surface stays in `app/`:** For user-facing modules, Controllers, FormRequests, Models, Vue pages, and route files are still scaffolded into your app. Only the runtime/business-logic layer is vendor-managed.
 
 **Existing app copies:** if your project was installed before a domain moved to vendor, your existing `app/Domain/<Module>/` files are preserved and continue to work. Removing them is optional — see [UPGRADE.md](./UPGRADE.md) for reconcile steps.
 
@@ -68,7 +73,7 @@ Typical flow:
 - keep complex writes in Actions
 - keep reusable list logic in Queries
 - keep side effects in Listeners
-- keep shared cross-domain code under `app/Domain/Shared`
+- keep kit-level shared cross-domain code under `src/Domain/Shared`; use `app/Domain/Shared` only for project-owned or ejected code
 
 ## Why It Helps
 
@@ -127,4 +132,3 @@ php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,
 # Full
 php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
-

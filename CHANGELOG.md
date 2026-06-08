@@ -552,7 +552,7 @@ php artisan sk:update
 
 ## [13.5.0] - 2026-05-05
 
-The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [docs/UPGRADE.md](docs/UPGRADE_.md).
+The starter kit runtime moves entirely to vendor. FileManager backend, shared base classes, traits, helpers, middleware, ApiResponse and the route loader now live under `vendor/lvntr/laravel-starter-kit/src/` with the `Lvntr\StarterKit\` namespace. The frontend component library is also now canonical inside the package, consumed by the app via vendor symlink. Existing apps only need `composer update`; no file changes, no route names break, and `php artisan migrate` returns "Nothing to migrate". Frontend migration to vendor is fully opt-in. Upgrade instructions: [docs/UPGRADE.md](docs/UPGRADE.md).
 
 ### Changed
 
@@ -609,7 +609,7 @@ No breaking changes in this release. Guarantees for existing consumers:
 3. **Migration history untouched.** The 3 vendor migration filenames and contents match what existing users already have in their DB. `php artisan migrate` returns "Nothing to migrate".
 4. **Config is additive.** New keys added; no existing key was removed or renamed.
 5. **Frontend `@lvntr` alias untouched.** The package does not modify `vite.config.ts`.
-6. **Existing consumer apps are unaffected.** Apps with their own `resources/js/components/Lvntr-Starter-Kit/` copy and their own Vite alias continue to work unchanged after `composer update`. Frontend cleanup is fully opt-in (see [docs/UPGRADE.md](docs/UPGRADE_.md)).
+6. **Existing consumer apps are unaffected.** Apps with their own `resources/js/components/Lvntr-Starter-Kit/` copy and their own Vite alias continue to work unchanged after `composer update`. Frontend cleanup is fully opt-in (see [docs/UPGRADE.md](docs/UPGRADE.md)).
 
 ### Upgrade
 
@@ -618,7 +618,7 @@ composer update lvntr/laravel-starter-kit
 php artisan migrate
 ```
 
-Detailed instructions and optional frontend cleanup: [docs/UPGRADE.md](docs/UPGRADE_.md)
+Detailed instructions and optional frontend cleanup: [docs/UPGRADE.md](docs/UPGRADE.md)
 
 Existing `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Helpers/sk-helpers.php` and related files stay in place and continue to work. Migrating them to the vendor versions is completely optional.
 

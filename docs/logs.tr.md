@@ -50,8 +50,10 @@ Her kayıt level chip + timestamp + mesajın baş kısmı olarak çökertilmiş 
 
 ## Domain Katmanı
 
+Logs domain'i **vendor-resident**'tir — runtime katmanı paket içinden çalışır (`src/Domain/Logs/`, namespace `Lvntr\StarterKit\Domain\Logs\`) ve uygulamanıza scaffold edilmez. `App\Domain\Logs\...` import'ları `class_alias` ile çalışmaya devam eder.
+
 ```
-app/Domain/Logs/
+src/Domain/Logs/   (Lvntr\StarterKit\Domain\Logs\)
 ├── DTOs/
 │   ├── LogFileDTO.php          # name, path, size_bytes, modified_at, channel_type, is_active
 │   ├── LogEntryDTO.php         # timestamp, level, env, message, context, stack, is_raw
@@ -70,7 +72,7 @@ app/Domain/Logs/
     └── LaravelLogParser.php    # stateless satır parser'ı; çok satırlı stack trace farkındalığı var
 ```
 
-`LogFilesDeleted → LogActivityForLogFilesDeleted` eşleşmesi `App\Providers\DomainServiceProvider::boot()` içinde register edilir.
+`LogFilesDeleted → LogActivityForLogFilesDeleted` eşleşmesi `StarterKitServiceProvider::registerEventListeners()` (vendor) içinde register edilir; her iki taraf da vendor FQCN'ine bağlanır, böylece dispatch edilen event registration anahtarıyla eşleşir.
 
 ### Streaming Kayıt Okuyucu
 

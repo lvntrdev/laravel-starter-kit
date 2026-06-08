@@ -47,9 +47,11 @@ Page actions:
 
 ## Backend Structure
 
-- Controller: `app/Http/Controllers/Admin/ApiRouteController.php`
-- Query: `app/Domain/ApiRoute/Queries/ApiRouteListQuery.php`
-- Action: `app/Domain/ApiRoute/Actions/RegenerateApiDocsAction.php`
+- Controller: `app/Http/Controllers/Admin/ApiRouteController.php` (scaffolded into your app)
+- Query: `Lvntr\StarterKit\Domain\ApiRoute\Queries\ApiRouteListQuery` (vendor-resident, `src/Domain/ApiRoute/`)
+- Action: `Lvntr\StarterKit\Domain\ApiRoute\Actions\RegenerateApiDocsAction` (vendor-resident, `src/Domain/ApiRoute/`)
+
+The ApiRoute runtime layer runs from the package; `App\Domain\ApiRoute\...` imports keep working through `class_alias`.
 
 The controller renders the list view through Inertia and returns the regenerate result through the standard `ApiResponse` envelope.
 

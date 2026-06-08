@@ -47,9 +47,11 @@ Sayfanın üst kısmındaki aksiyonlar:
 
 ## Backend Yapısı
 
-- Controller: `app/Http/Controllers/Admin/ApiRouteController.php`
-- Query: `app/Domain/ApiRoute/Queries/ApiRouteListQuery.php`
-- Action: `app/Domain/ApiRoute/Actions/RegenerateApiDocsAction.php`
+- Controller: `app/Http/Controllers/Admin/ApiRouteController.php` (uygulamanıza scaffold edilir)
+- Query: `Lvntr\StarterKit\Domain\ApiRoute\Queries\ApiRouteListQuery` (vendor-resident, `src/Domain/ApiRoute/`)
+- Action: `Lvntr\StarterKit\Domain\ApiRoute\Actions\RegenerateApiDocsAction` (vendor-resident, `src/Domain/ApiRoute/`)
+
+ApiRoute runtime katmanı paket içinden çalışır; `App\Domain\ApiRoute\...` import'ları `class_alias` ile çalışmaya devam eder.
 
 Controller, liste ekranını Inertia ile render eder; yeniden üretme işlemini ise standart `ApiResponse` zarfı ile döner.
 

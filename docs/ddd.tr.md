@@ -12,11 +12,11 @@ Kurulumdan sonra tipik yapı şöyledir:
 
 ```text
 app/Domain/
-├── ApiRoute/
 ├── Auth/
 ├── Role/
-├── Setting/
+│   └── BulkActions/
 └── User/
+    └── BulkActions/
 ```
 
 Tamamen paket tarafından yönetilen ve vendor'dan çalışan domain'ler, fresh install'da `app/`'e scaffold edilmez. Ayrıntılar için aşağıdaki [Vendor-resident domain'ler](#vendor-resident-domainler) bölümüne bakın.
@@ -33,10 +33,15 @@ Aşağıdaki domain'lerin **runtime katmanı** (Actions, DTOs, Queries, Events, 
 | `Logs` | `Lvntr\StarterKit\Domain\Logs\` |
 | `Session` | `Lvntr\StarterKit\Domain\Session\` |
 | `Media` | `Lvntr\StarterKit\Domain\Media\` |
+| `ApiClient` | `Lvntr\StarterKit\Domain\ApiClient\` |
+| `ApiRoute` | `Lvntr\StarterKit\Domain\ApiRoute\` |
+| `Role` | `Lvntr\StarterKit\Domain\Role\` |
+| `Setting` | `Lvntr\StarterKit\Domain\Setting\` |
+| `User` | `Lvntr\StarterKit\Domain\User\` |
 
 **Import uyumluluğu:** `App\Domain\<Module>\...` import yollarını kullanan controller ve provider'lar çalışmaya devam eder — `StarterKitServiceProvider`, bunları vendor namespace'ine çözen `class_alias` girişlerini kaydeder. Yerel `app/Domain/<Module>/` kopyası varsa her zaman öncelik alır (dosya diskte varken guard alias'ı atlar).
 
-**Tüketici yüzeyi `app/`'te kalır:** Vendor-resident domain'lere ait Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları ve route dosyaları hâlâ uygulamanıza scaffold edilir. Yalnızca runtime / iş-mantığı katmanı vendor tarafından yönetilir.
+**Tüketici yüzeyi `app/`'te kalır:** Kullanıcıya dönük modüllerde Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları ve route dosyaları hâlâ uygulamanıza scaffold edilir. Yalnızca runtime / iş-mantığı katmanı vendor tarafından yönetilir.
 
 **Mevcut uygulama kopyaları:** projeniz bir domain vendor'a taşınmadan önce kurulduysa mevcut `app/Domain/<Module>/` dosyalarınız korunur ve çalışmaya devam eder. Bunları silmek isteğe bağlıdır — reconcile adımları için [UPGRADE.md](./UPGRADE.tr.md) belgelerine bakın.
 
@@ -68,7 +73,7 @@ Tipik akış:
 - karmaşık yazma işlemlerini Action içine alın
 - tekrar kullanılan liste mantığını Query içinde tutun
 - yan etkileri Listener katmanına taşıyın
-- domainler arası ortak kodu `app/Domain/Shared` altında toplayın
+- kit seviyesindeki domainler arası ortak kodu `src/Domain/Shared` altında tutun; `app/Domain/Shared` yolunu yalnızca proje sahipli veya eject edilmiş kod için kullanın
 
 ## Neden Faydalı
 
@@ -127,4 +132,3 @@ php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,
 # Tam
 php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
-

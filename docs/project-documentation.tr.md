@@ -4,7 +4,7 @@ Bu döküman, kurulumdan sonra starter kit'in yüksek seviyeli haritasını veri
 
 ## Backend Alanları
 
-- iş mantığı için `app/Domain/`
+- uygulamanıza scaffold edilen iş mantığı için `app/Domain/`; vendor-managed domain'lerin runtime katmanı paket içinde `src/Domain/` (`Lvntr\StarterKit\Domain\`) altında yaşar
 - web ve API giriş noktaları için `app/Http/Controllers/`
 - API yanıt biçimlendirmesi için `app/Http/Responses/`
 - Eloquent modelleri için `app/Models/`
@@ -13,30 +13,40 @@ Bu döküman, kurulumdan sonra starter kit'in yüksek seviyeli haritasını veri
 
 ### Ana Domain Modülleri
 
-- `app/Domain/Auth`
-- `app/Domain/User`
-- `app/Domain/Role`
-- `app/Domain/Setting`
-- `app/Domain/Session`
-- `app/Domain/Media`
-- `app/Domain/ActivityLog`
-- `app/Domain/ApiRoute`
-- `app/Domain/FileManager`
-- `app/Domain/Logs`
-- `app/Domain/Shared`
+**Kurulum sonrası app-owned yüzey** — modül ihtiyaç duyuyorsa controller, FormRequest, model, route ve Vue sayfaları `app/` / `resources/` altına scaffold edilir. Domain runtime'ının kendisi modüle göre ayrılır:
+
+- `Auth` tamamen app tarafındadır (`app/Domain/Auth`)
+- `User` ve `Role`, `app/Domain/...` altında yalnızca app-owned `BulkActions` dilimini tutar; ana runtime vendor-resident'tır
+- `Setting`, `ApiRoute` ve `ApiClient` gerektiği yerde app-owned HTTP/UI yüzeyi sağlar, fakat domain runtime vendor paketinden çalışır
+
+**Vendor-resident runtime domain'leri (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — bu modüllerin Actions, DTOs, Queries, Events, Listeners ve Services katmanları paket içinden çalışır ve temiz kurulumda uygulamanıza kopyalanmaz. `App\Domain\<Module>\...` import'ları `class_alias` ile çalışmaya devam eder; eject ya da eski kurulumdan kalan yerel `app/Domain/<Module>/` kopyası varsa önceliklidir:
+
+- `ActivityLog`
+- `ApiClient`
+- `ApiRoute`
+- `FileManager`
+- `Logs`
+- `Media`
+- `Role`
+- `Session`
+- `Setting`
+- `Shared`
+- `User`
+
+Tam vendor-resident model ve reconcile adımları için [ddd.md](./ddd.tr.md) dosyasına bakın.
 
 ### Tipik Request Akışı
 
 1. Route, ince tutulmuş bir controller'a gider.
 2. Gerekliyse validasyon Form Request ile yapılır.
 3. Veri, ilgili özellik DTO kullanıyorsa DTO'ya dönüştürülür.
-4. İş mantığı `app/Domain/.../Actions` altındaki action sınıflarında çalışır.
+4. İş mantığı action sınıflarında çalışır — scaffold edilen domain'ler için `app/Domain/.../Actions`, vendor-resident olanlar için `src/Domain/.../Actions` (vendor namespace) altında.
 5. Listeleme ve filtreleme için Query sınıfları kullanılır.
 6. Cevaplar Inertia veya `to_api()` ile döndürülür.
 
 ### Domain Event'leri
 
-`app/Providers/DomainServiceProvider.php` şu eşleşmeleri kaydeder:
+Vendor-resident `User`, `Role` ve `Logs` runtime'ına ait kit audit event/listener eşleşmeleri vendor FQCN'leriyle `StarterKitServiceProvider::registerEventListeners()` içinde kaydedilir:
 
 - `UserCreated -> LogUserCreated`
 - `UserUpdated -> LogUserUpdated`
@@ -46,7 +56,7 @@ Bu döküman, kurulumdan sonra starter kit'in yüksek seviyeli haritasını veri
 - `RoleDeleted -> LogRoleDeleted`
 - `LogFilesDeleted -> LogActivityForLogFilesDeleted`
 
-Bu sayede yan etkiler ana action sınıflarının dışında kalır.
+Scaffold edilen `app/Providers/DomainServiceProvider.php` kendi uygulama event'leriniz için bırakılır. `sk:eject`, bir kit domain'ini tekrar `app/Domain/` altına kopyaladığınızda buraya binding ekleyebilir.
 
 ## Frontend Alanları
 
@@ -143,7 +153,7 @@ Bazı admin ekranları kendi route dosyalarında ayrılmıştır:
 Mevcut UI akışı, ayrı bir enum paylaşım katmanından ziyade veritabanı tabanlı definitions sistemini merkezde tutar.
 
 - `_02_DefinitionSeeder.php`, `userStatus`, `gender`, `identityType` ve `yesNo` gibi key'leri seed eder
-- `App\Domain\Shared\Services\DefinitionService`, definition kayıtlarını locale bazlı gruplayıp cache'ler
+- `DefinitionService` (vendor-resident `Lvntr\StarterKit\Domain\Shared\Services\`, `App\Domain\Shared\Services\DefinitionService` alias'ı üzerinden erişilebilir) definition kayıtlarını locale bazlı gruplayıp cache'ler
 - `useDefinition()`, bunları `GET /definitions` üzerinden tüketir
 - definition kayıtları label, severity ve opsiyonel icon metadatası taşır
 - `SkDatatable` ve `SkForm`, `.tag('definition').tagKey('userStatus')` ve `.definitionOptions('gender')` gibi tanımlarla bu key'lere doğrudan bağlanabilir
@@ -159,15 +169,47 @@ Projeye özel composable'lar `resources/js/composables/` altında tutulur. Admin
 
 ## Önerilen Okuma
 
-- [project-info.tr.md](./project-info.tr.md)
-- [install.tr.md](./install.tr.md)
-- [ddd.tr.md](./ddd.tr.md)
-- [roles-permissions.tr.md](./roles-permissions.tr.md)
-- [api.tr.md](./api.tr.md)
-- [datatable.tr.md](./datatable.tr.md)
-- [formbuilder.tr.md](./formbuilder.tr.md)
-- [api-routes.tr.md](./api-routes.tr.md)
-- [files.tr.md](./files.tr.md)
-- [logs.tr.md](./logs.tr.md)
-- [i18n.tr.md](./i18n.tr.md)
-- [composables.tr.md](./composables.tr.md)
+**Başlangıç**
+
+- [welcome.tr.md](./welcome.tr.md) — kit nedir ve içinde ne gelir
+- [project-info.tr.md](./project-info.tr.md) — stack ve yüksek seviyeli proje özeti
+- [install.tr.md](./install.tr.md) — kurulum akışı
+- [update.tr.md](./update.tr.md) — güncel stub'ları çekme (hash tabanlı)
+- [UPGRADE.tr.md](./UPGRADE.tr.md) — sürüm yükseltme notları
+
+**Backend & DDD**
+
+- [ddd.tr.md](./ddd.tr.md) — domain yerleşimi ve vendor-resident model
+- [auth.tr.md](./auth.tr.md) — Fortify (web) + Passport (API) kimlik doğrulama
+- [roles-permissions.tr.md](./roles-permissions.tr.md) — permission resource'ları ve seed
+- [api.tr.md](./api.tr.md) — API yanıt zarfı ve konvansiyonlar
+- [api-clients.tr.md](./api-clients.tr.md) — Passport client & token yönetimi
+- [api-routes.tr.md](./api-routes.tr.md) — API route envanteri ekranı
+- [module-routes.tr.md](./module-routes.tr.md) — modüler route registry
+- [definitions.tr.md](./definitions.tr.md) — ortak label/value lookup'ları
+- [settings.tr.md](./settings.tr.md) — uygulama ayarları modülü
+- [activity-logs.tr.md](./activity-logs.tr.md) — audit/aktivite loglama
+- [logs.tr.md](./logs.tr.md) — uygulama log görüntüleyici
+
+**Frontend & UI builder'lar**
+
+- [formbuilder.tr.md](./formbuilder.tr.md) — FormBuilder (FB)
+- [datatable.tr.md](./datatable.tr.md) — DatatableBuilder (DB)
+- [tabs.tr.md](./tabs.tr.md) — TabBuilder (TB)
+- [composables.tr.md](./composables.tr.md) — Vue composable'ları
+- [admin-components.tr.md](./admin-components.tr.md) — admin sayfa stil rehberi
+- [ui-components.tr.md](./ui-components.tr.md) — tekrar kullanılabilir UI primitive'leri
+- [theme.tr.md](./theme.tr.md) — tema sistemi
+- [wayfinder.tr.md](./wayfinder.tr.md) — tip güvenli route helper'ları
+
+**Özellikler**
+
+- [file-manager.tr.md](./file-manager.tr.md) — dosya yöneticisi
+- [files.tr.md](./files.tr.md) — dosya yükleme
+- [i18n.tr.md](./i18n.tr.md) — uluslararasılaştırma
+- [translatable-fields.tr.md](./translatable-fields.tr.md) — çok dilli model alanları
+
+**Araçlar**
+
+- [artisan-commands.tr.md](./artisan-commands.tr.md) — `sk:*` komut referansı
+- [claude-skills.tr.md](./claude-skills.tr.md) — paketle gelen Claude Code skill'leri

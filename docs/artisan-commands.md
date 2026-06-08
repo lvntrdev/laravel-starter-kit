@@ -24,7 +24,7 @@ This document is the command reference for the starter kit. Architectural notes 
 
 ## `sk:doctor`
 
-Runs 12 environment health checks and reports the result of each.
+Runs a series of environment health checks and reports the result of each.
 
 ```bash
 php artisan sk:doctor

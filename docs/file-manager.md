@@ -375,7 +375,7 @@ Share link operations use two dedicated permissions:
 - Spatie Media Library
 - custom `MediaPathGenerator` for stable per-context disk layout
 - `FileManagerAuthorizer` for per-request authorization
-- `ContextRegistry` + `ContextDefinition` in `app/Domain/FileManager/Support/`
+- `ContextRegistry` + `ContextDefinition` in `src/Domain/FileManager/Support/` (vendor-resident; namespace `Lvntr\StarterKit\Domain\FileManager\Support\`)
 
 ## Full-Page Mounting
 
