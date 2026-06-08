@@ -2,7 +2,8 @@
     import systemHealth from '@/routes/system-health';
     import { useApi } from '@/composables/useApi';
     import { trans } from 'laravel-vue-i18n';
-    import { Button, Card } from 'primevue';
+    import { Button } from 'primevue';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
     import { useToast } from 'primevue/usetoast';
     import { computed, onMounted, ref, watch } from 'vue';
 
@@ -160,22 +161,20 @@
 </script>
 
 <template>
-    <Card>
-        <template #title>
-            <div class="flex items-center justify-between gap-4">
-                <span>{{ $t('sk-system-health.title') }}</span>
-                <Button
-                    :label="running ? $t('sk-system-health.running') : $t('sk-system-health.run_button')"
-                    icon="pi pi-refresh"
-                    :loading="running"
-                    :disabled="running"
-                    size="small"
-                    @click="runChecks"
-                />
-            </div>
-        </template>
+    <SkCard>
+        <template #title>{{ $t('sk-system-health.title') }}</template>
         <template #subtitle>
             {{ $t('sk-system-health.subtitle') }}
+        </template>
+        <template #actions>
+            <Button
+                :label="running ? $t('sk-system-health.running') : $t('sk-system-health.run_button')"
+                icon="pi pi-refresh"
+                :loading="running"
+                :disabled="running"
+                size="small"
+                @click="runChecks"
+            />
         </template>
         <template #content>
             <div
@@ -293,5 +292,5 @@
                 </section>
             </template>
         </template>
-    </Card>
+    </SkCard>
 </template>

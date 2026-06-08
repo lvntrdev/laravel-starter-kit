@@ -3,7 +3,8 @@
     import adminRoles from '@/routes/roles';
     import { router, useForm } from '@inertiajs/vue3';
     import { trans } from 'laravel-vue-i18n';
-    import { Button, Card, Checkbox, InputText, Message } from 'primevue';
+    import { Button, Checkbox, InputText, Message } from 'primevue';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
 
     interface PermissionGroup {
         label: string;
@@ -245,7 +246,7 @@
 
 <template>
     <form class="space-y-6" @submit.prevent="submit">
-        <Card>
+        <SkCard>
             <template #content>
                 <!-- Role Name -->
                 <div>
@@ -289,9 +290,9 @@
                     </div>
                 </div>
             </template>
-        </Card>
+        </SkCard>
 
-        <Card>
+        <SkCard>
             <template #title>
                 {{ trans('sk-role.permissions') }}
             </template>
@@ -453,6 +454,6 @@
                     />
                 </div>
             </template>
-        </Card>
+        </SkCard>
     </form>
 </template>

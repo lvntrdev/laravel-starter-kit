@@ -3,6 +3,7 @@
     import { router } from '@inertiajs/vue3';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
     import adminSettings from '@/routes/settings';
     import { trans } from 'laravel-vue-i18n';
     import { useConfirm } from '@/composables/useConfirm';
@@ -168,7 +169,7 @@
 
 <template>
     <!-- Logo Upload -->
-    <Card class="mb-6">
+    <SkCard class="mb-6">
         <template #title>
             {{ $t('sk-setting.general.logo') }}
         </template>
@@ -224,7 +225,7 @@
                 @change="onFileSelected"
             >
         </template>
-    </Card>
+    </SkCard>
 
     <!-- General Settings Form -->
     <SkForm :config="formConfig" />

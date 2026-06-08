@@ -2,35 +2,140 @@
     @apply rounded bg-red-500 dark:bg-gray-800 p-4 shadow dark:shadow-gray-900 text-slate-900 dark:text-gray-100 xl:p-8;
 }
 
-/* PrimeVue Card — caption/content spacing */
-.p-card .p-card-body {
-    .p-card-caption + .p-card-content {
-        @apply mt-6;
-    }
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SkCard — native content-card surface (used by SkForm, SkDatatable,
+   SkTabs, etc.). No PrimeVue Card dependency — plain div structure:
+
+     .sk-card
+       └ .sk-card__head      (optional · title + subtitle + actions)
+       └ .sk-card__body      (always)
+       └ .sk-card__foot      (optional)
+
+   Spacing / typography follow the Card design reference; colors map to
+   kit PrimeVue surface tokens with a `:root.dark` override.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-card {
+    @apply overflow-hidden rounded;
+    background: var(--p-surface-0);
+    border: 1px solid var(--p-surface-200);
+}
+
+:root.dark .sk-card {
+    background: var(--p-surface-900);
+    border-color: var(--p-surface-700);
+}
+
+/* ── Transparent — invisible wrapper (no surface chrome) ───────────── */
+.sk-card--transparent,
+:root.dark .sk-card--transparent {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SkCard — shared Card wrapper (used by SkForm, SkDatatable, etc.)
+   HEAD
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-.sk-card__title-row {
-    @apply flex w-full items-center justify-between gap-3;
+.sk-card__head {
+    /* 18px 24px */
+    @apply px-6 py-[18px];
 }
 
-.sk-card__title-text {
-    @apply inline-flex min-w-0 items-center gap-2;
+.sk-card__head--divider {
+    border-bottom: 1px solid var(--p-surface-200);
 }
 
-.sk-card__title-end {
+:root.dark .sk-card__head--divider {
+    border-color: var(--p-surface-700);
+}
+
+/* Transparent cards carry no internal divider line. */
+.sk-card--transparent .sk-card__head--divider,
+:root.dark .sk-card--transparent .sk-card__head--divider {
+    border-bottom: 0;
+}
+
+/* Row head — title group on the left, actions on the right. */
+.sk-card__head--row {
+    @apply flex items-center gap-3.5;
+}
+
+.sk-card__head-main {
+    @apply min-w-0 flex-1;
+}
+
+.sk-card__actions {
     @apply inline-flex shrink-0 items-center gap-2;
 }
 
-/* Divider — bottom border under the caption (title + subtitle) block */
-.sk-card--divider .p-card-caption {
-    @apply pb-3 mb-1 border-b;
-    border-color: var(--p-surface-200);
+/* ── Title / subtitle ─────────────────────────────────────────────── */
+.sk-card__title {
+    @apply inline-flex min-w-0 items-center gap-2 text-base font-semibold;
+    letter-spacing: -0.01em;
+    color: var(--p-surface-900);
 }
 
-:root.dark .sk-card--divider .p-card-caption {
+:root.dark .sk-card__title {
+    color: var(--p-surface-0);
+}
+
+.sk-card__subtitle {
+    @apply mt-1 text-[13px] leading-normal;
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-card__subtitle {
+    color: var(--p-surface-400);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BODY
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-card__body {
+    /* 22px 24px */
+    @apply px-6 py-[22px];
+}
+
+/* Flush — content sits flush against the card edges (tables, toolbars,
+   vertical-tab nav that manage their own padding). */
+.sk-card--flush .sk-card__body {
+    @apply p-0;
+}
+
+/* Transparent wrapper carries no body padding. */
+.sk-card--transparent .sk-card__body {
+    @apply p-0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-card__foot {
+    /* 14px 24px */
+    @apply flex items-center gap-2.5 px-6 py-[14px];
+    border-top: 1px solid var(--p-surface-200);
+}
+
+:root.dark .sk-card__foot {
     border-color: var(--p-surface-700);
+}
+
+.sk-card--transparent .sk-card__foot {
+    @apply px-0;
+    border-top: 0;
+}
+
+/* Hint text in the foot — pushes following actions to the right. */
+.sk-card__foot-hint {
+    @apply mr-auto text-[13px];
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-card__foot-hint {
+    color: var(--p-surface-400);
 }

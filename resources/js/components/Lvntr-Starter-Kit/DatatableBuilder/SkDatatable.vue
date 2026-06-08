@@ -15,6 +15,7 @@
     import type { MenuItem } from 'primevue/menuitem';
     import Ripple from 'primevue/ripple';
     import Tooltip from 'primevue/tooltip';
+    import SkCard from '../ui/SkCard.vue';
 
     // Explicit binding so the template's `v-tooltip` / `v-ripple` compile to a
     // direct reference rather than a dynamic `resolveDirective(...)` call —
@@ -693,32 +694,15 @@
 
     defineExpose({ refresh: fetchData, pageData: data, total: computed(() => meta.value.total) });
 
-    // ── Card passthrough ─────────────────────────────────────────────────────────
-
-    const cardPt = computed(() => {
-        const noPad = { style: 'padding: 0' };
-        if (props.config.isCard) {
-            // isCard true → Card visible (bg/shadow)
-            // caption (title+subtitle) gets the same padding as a standard Card body;
-            // content stays edge-to-edge so the table toolbar spans full width.
-            return {
-                root: {},
-                body: noPad,
-                caption: { style: 'padding: var(--p-card-body-padding) var(--p-card-body-padding) 0' },
-                content: noPad,
-            };
-        }
-        // Default → transparent wrapper
-        return {
-            root: { style: 'background: transparent; box-shadow: none; border: 0; padding: 0' },
-            body: noPad,
-            content: noPad,
-        };
-    });
+    // ── Card sarmalayıcı ───────────────────────────────────────────────────────────
+    // isCard true  → görünür kart; içerik kenara-yaslı (toolbar tam genişlikte) → flush.
+    //                Başlık padding'i SkCard head'inden gelir.
+    // isCard false → şeffaf sarmalayıcı (yüzey yok), içerik kenara-yaslı → transparent + flush.
+    const isCardSurface = computed(() => props.config.isCard);
 </script>
 
 <template>
-    <Card :pt="cardPt">
+    <SkCard :transparent="!isCardSurface" :flush="true">
         <template v-if="config.cardTitle" #title>
             {{ $t(config.cardTitle) }}
         </template>
@@ -1233,5 +1217,5 @@
                 </div>
             </Popover>
         </template>
-    </Card>
+    </SkCard>
 </template>

@@ -9,18 +9,22 @@
         /** Shorthand for the subtitle slot — rendered as plain text. Pass a translated string. */
         subtitle?: string;
         /**
-         * Render the card without background, border, shadow or padding —
-         * useful as an invisible wrapper inside dialogs or other surfaces.
+         * Render the card without surface — bg, border, radius and padding are
+         * all dropped. Useful as an invisible wrapper inside dialogs or other
+         * surfaces that already provide their own chrome.
          */
         transparent?: boolean;
         /**
-         * Show a bottom divider line below the caption block (title + subtitle)
-         * so it reads as a distinct header above the content. Defaults to `true`.
+         * Show a bottom divider line below the head (title + subtitle / actions)
+         * so it reads as a distinct header above the body. Defaults to `true`.
          */
         divider?: boolean;
-        /** Extra PrimeVue Card passthrough. Merged with internal pt; consumer wins on conflicts. */
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        pt?: Record<string, any>;
+        /**
+         * Remove the body padding so content sits flush against the card edges.
+         * Useful for tables, toolbars or vertical-tab navigation that manage
+         * their own internal spacing.
+         */
+        flush?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -28,79 +32,82 @@
         subtitle: undefined,
         transparent: false,
         divider: true,
-        pt: undefined,
+        flush: false,
     });
 
     const slots = useSlots();
     const attrs = useAttrs();
 
-    const hasTitle = computed(() => !!props.title || !!slots.title || !!slots['title-end']);
+    // ── Head visibility ─────────────────────────────────────────────────
+    const hasTitle = computed(() => !!props.title || !!slots.title);
     const hasSubtitle = computed(() => !!props.subtitle || !!slots.subtitle);
+    // `title-end` is a back-compat alias for `actions` — both render to the
+    // right-hand region of the head.
+    const hasActions = computed(() => !!slots.actions || !!slots['title-end']);
+    const hasHeader = computed(() => !!slots.header);
+    const hasHead = computed(
+        () => hasHeader.value || hasTitle.value || hasSubtitle.value || hasActions.value,
+    );
 
+    // Head becomes a flex row only when there is a right-hand region to lay out.
+    const isRowHead = computed(() => hasActions.value);
+
+    // ── Foot visibility ─────────────────────────────────────────────────
+    const hasFoot = computed(() => !!slots.footer);
+
+    // ── Root class ──────────────────────────────────────────────────────
     const rootClass = computed(() => {
         const classes: unknown[] = ['sk-card'];
         if (props.transparent) classes.push('sk-card--transparent');
-        if (props.divider && (hasTitle.value || hasSubtitle.value)) {
-            classes.push('sk-card--divider');
-        }
+        if (props.flush) classes.push('sk-card--flush');
         if (attrs.class) classes.push(attrs.class);
         return classes;
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mergedPt = computed<Record<string, any>>(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const base: Record<string, any> = {
-            root: { class: rootClass.value },
-        };
-        if (props.transparent) {
-            base.root = {
-                ...base.root,
-                style: 'background: transparent; box-shadow: none; border: 0; padding: 0',
-            };
-            base.body = { style: 'padding: 0' };
-            base.content = { style: 'padding: 0' };
-        }
-        if (!props.pt) return base;
-        // Shallow merge — consumer overrides win.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const out: Record<string, any> = { ...base };
-        for (const key of Object.keys(props.pt)) {
-            out[key] = { ...(base[key] ?? {}), ...props.pt[key] };
-        }
-        return out;
+    const headClass = computed(() => {
+        const classes: unknown[] = ['sk-card__head'];
+        if (isRowHead.value) classes.push('sk-card__head--row');
+        // The divider only makes sense when there is a head to separate from the body.
+        if (props.divider) classes.push('sk-card__head--divider');
+        return classes;
     });
 </script>
 
 <template>
-    <Card :pt="mergedPt">
-        <template v-if="$slots.header" #header>
-            <slot name="header" />
-        </template>
+    <div :class="rootClass">
+        <!-- ── Head ──────────────────────────────────────────────────── -->
+        <div v-if="hasHead" :class="headClass">
+            <!-- Full custom head override -->
+            <slot v-if="hasHeader" name="header" />
 
-        <template v-if="hasTitle" #title>
-            <div class="sk-card__title-row">
-                <span class="sk-card__title-text">
-                    <slot name="title">{{ title }}</slot>
-                </span>
-                <span v-if="$slots['title-end']" class="sk-card__title-end">
-                    <slot name="title-end" />
-                </span>
-            </div>
-        </template>
+            <!-- Structured head: title / subtitle group (+ optional actions) -->
+            <template v-else>
+                <div class="sk-card__head-main">
+                    <div v-if="hasTitle" class="sk-card__title">
+                        <slot name="title">{{ title }}</slot>
+                    </div>
+                    <div v-if="hasSubtitle" class="sk-card__subtitle">
+                        <slot name="subtitle">{{ subtitle }}</slot>
+                    </div>
+                </div>
+                <div v-if="hasActions" class="sk-card__actions">
+                    <slot name="actions">
+                        <slot name="title-end" />
+                    </slot>
+                </div>
+            </template>
+        </div>
 
-        <template v-if="hasSubtitle" #subtitle>
-            <slot name="subtitle">{{ subtitle }}</slot>
-        </template>
-
-        <template #content>
+        <!-- ── Body ──────────────────────────────────────────────────── -->
+        <div class="sk-card__body">
             <slot name="content">
                 <slot />
             </slot>
-        </template>
+        </div>
 
-        <template v-if="$slots.footer" #footer>
+        <!-- ── Foot ──────────────────────────────────────────────────── -->
+        <div v-if="hasFoot" class="sk-card__foot">
             <slot name="footer" />
-        </template>
-    </Card>
+        </div>
+    </div>
 </template>

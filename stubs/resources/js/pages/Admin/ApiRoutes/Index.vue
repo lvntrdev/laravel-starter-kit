@@ -5,6 +5,7 @@
     import { useApi } from '@/composables/useApi';
     import apiRoutes from '@/routes/api-routes';
     import { useToast } from 'primevue/usetoast';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
 
     interface RouteItem {
         method: string;
@@ -161,7 +162,7 @@
 
         <div class="space-y-6">
             <!-- API Endpoints -->
-            <Card>
+            <SkCard>
                 <template #title>
                     {{ $t('sk-api-route.api_endpoints') }}
                 </template>
@@ -232,10 +233,10 @@
                         </table>
                     </div>
                 </template>
-            </Card>
+            </SkCard>
 
             <!-- Service Endpoints -->
-            <Card>
+            <SkCard>
                 <template #title>
                     {{ $t('sk-api-route.service_endpoints') }}
                 </template>
@@ -306,7 +307,7 @@
                         </table>
                     </div>
                 </template>
-            </Card>
+            </SkCard>
         </div>
     </AdminLayout>
 </template>

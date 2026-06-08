@@ -26,15 +26,11 @@
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   CARD WRAPPER PADDING OVERRIDE (PrimeVue defaults are too large)
+   vtab nav kartı: body'ye dar inset (varsayılan kart padding'i fazla)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-.sk-vtab-card.p-card .p-card-body {
+.sk-vtab-card .sk-card__body {
     @apply p-2;
-}
-
-.sk-vtab-card.p-card .p-card-content {
-    @apply p-0;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -2,6 +2,7 @@
     import { useForm } from '@inertiajs/vue3';
     import axios, { type AxiosError } from 'axios';
     import browserSessions from '@/routes/browser-sessions';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
 
     interface SessionDevice {
         browser: string;
@@ -75,7 +76,7 @@
 
 <template>
     <div>
-        <Card>
+        <SkCard>
             <template #title>
                 {{ $t('sk-profile.sessions_title') }}
             </template>
@@ -176,7 +177,7 @@
                     </div>
                 </div>
             </template>
-        </Card>
+        </SkCard>
 
         <!-- Log Out Other Sessions Dialog -->
         <Dialog

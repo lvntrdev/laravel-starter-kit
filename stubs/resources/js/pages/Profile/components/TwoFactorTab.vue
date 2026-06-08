@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { useForm, router } from '@inertiajs/vue3';
     import axios, { type AxiosError } from 'axios';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
 
     interface Props {
         twoFactorEnabled: boolean;
@@ -180,7 +181,7 @@
 
 <template>
     <div>
-        <Card>
+        <SkCard>
             <template #title>
                 {{ $t('sk-profile.two_factor_title') }}
             </template>
@@ -347,7 +348,7 @@
                     </div>
                 </div>
             </template>
-        </Card>
+        </SkCard>
 
         <!-- Password Confirmation Dialog -->
         <Dialog

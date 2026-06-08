@@ -2,6 +2,7 @@
     import { router } from '@inertiajs/vue3';
     import { useConfirm } from '@/composables/useConfirm';
     import { trans } from 'laravel-vue-i18n';
+    import SkCard from './SkCard.vue';
 
     interface Props {
         avatarUrl?: string | null;
@@ -100,18 +101,6 @@
         }
     }
 
-    const transparentCard = { style: 'background: transparent; box-shadow: none; border: 0; padding: 0' };
-    const cardPt = computed(() => {
-        if (!props.isCard) {
-            return {
-                root: transparentCard,
-                body: { style: 'padding: 0' },
-                content: { style: 'padding: 0' },
-            };
-        }
-        return {};
-    });
-
     function removeAvatar() {
         confirmDelete(async () => {
             uploading.value = true;
@@ -143,7 +132,7 @@
 </script>
 
 <template>
-    <Card :pt="cardPt">
+    <SkCard :transparent="!isCard">
         <template #content>
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <!-- Avatar -->
@@ -210,5 +199,5 @@
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected">
             </div>
         </template>
-    </Card>
+    </SkCard>
 </template>

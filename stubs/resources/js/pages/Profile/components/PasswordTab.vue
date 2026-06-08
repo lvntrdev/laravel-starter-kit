@@ -2,6 +2,7 @@
     import userPassword from '@/routes/user-password';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import SkCard from '@lvntr/components/ui/SkCard.vue';
     import { trans } from 'laravel-vue-i18n';
 
     const formConfig = computed(() =>
@@ -25,7 +26,7 @@
 </script>
 
 <template>
-    <Card>
+    <SkCard>
         <template #title>
             {{ $t('sk-profile.password_title') }}
         </template>
@@ -35,5 +36,5 @@
         <template #content>
             <SkForm :config="formConfig" />
         </template>
-    </Card>
+    </SkCard>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { useCan, useUrlTab } from '@/composables';
     import type { TabBuilderConfig, TabItemConfig } from './core';
+    import SkCard from '../ui/SkCard.vue';
 
     interface Props {
         config: TabBuilderConfig;
@@ -33,15 +34,10 @@
         return typeof tab.disabled === 'function' ? tab.disabled() : tab.disabled;
     }
 
-    const transparentCard = { style: 'background: transparent; box-shadow: none; border: 0; padding: 0' };
-    const noPad = { style: 'padding: 0' };
-
-    function tabCardPt(tab: TabItemConfig) {
-        const showCard = tab.isCard ?? props.config.isCard ?? false;
-        if (!showCard) {
-            return { root: transparentCard, body: noPad, content: noPad };
-        }
-        return {};
+    // Sekme görünür bir kart mı? (tab override > config > varsayılan false)
+    // false → şeffaf, kenara-yaslı (transparent + flush); true → düz görünür kart.
+    function tabIsCard(tab: TabItemConfig): boolean {
+        return tab.isCard ?? props.config.isCard ?? false;
     }
 
     defineSlots<
@@ -68,7 +64,7 @@
                 <slot name="sidebar-header" />
             </div>
 
-            <Card class="sk-vtab-card">
+            <SkCard class="sk-vtab-card">
                 <template #content>
                     <nav class="sk-vtab-nav">
                         <button
@@ -110,7 +106,7 @@
                         </button>
                     </nav>
                 </template>
-            </Card>
+            </SkCard>
 
             <!-- Sidebar footer slot: extra content below tabs -->
             <div v-if="$slots['sidebar-footer']" class="sk-vtab-footer">
@@ -120,7 +116,11 @@
 
         <div class="sk-tabs-vertical__content">
             <template v-for="tab in visibleTabs" :key="tab.key">
-                <Card v-if="isActive(tab.key)" :pt="tabCardPt(tab)">
+                <SkCard
+                    v-if="isActive(tab.key)"
+                    :transparent="!tabIsCard(tab)"
+                    :flush="!tabIsCard(tab)"
+                >
                     <template v-if="tab.cardTitle ?? config.cardTitle" #title>
                         {{ $t(tab.cardTitle ?? config.cardTitle!) }}
                     </template>
@@ -130,7 +130,7 @@
                     <template #content>
                         <slot :name="tab.key" :tab="tab" :is-active="true" />
                     </template>
-                </Card>
+                </SkCard>
             </template>
         </div>
     </div>
@@ -146,7 +146,7 @@
 
         <TabPanels>
             <TabPanel v-for="tab in visibleTabs" :key="tab.key" :value="tab.key">
-                <Card :pt="tabCardPt(tab)">
+                <SkCard :transparent="!tabIsCard(tab)" :flush="!tabIsCard(tab)">
                     <template v-if="tab.cardTitle ?? config.cardTitle" #title>
                         {{ $t(tab.cardTitle ?? config.cardTitle!) }}
                     </template>
@@ -158,7 +158,7 @@
                             <slot :name="tab.key" :tab="tab" :is-active="isActive(tab.key)" />
                         </div>
                     </template>
-                </Card>
+                </SkCard>
             </TabPanel>
         </TabPanels>
     </Tabs>
