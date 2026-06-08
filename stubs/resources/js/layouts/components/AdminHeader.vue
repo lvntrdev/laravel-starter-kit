@@ -3,6 +3,8 @@
     import { usePage, router } from '@inertiajs/vue3';
     import type { MenuItem } from 'primevue/menuitem';
     import type { User } from '@/types';
+    import { ACCENT_COLORS, ACCENT_SWATCH } from '@/composables/useAccentColor';
+    import type { AccentColor, SidebarStyle } from '@/composables/useAccentColor';
     import { trans } from 'laravel-vue-i18n';
     import locale from '@/routes/locale';
 
@@ -10,6 +12,8 @@
         collapsed: boolean;
         isMobile: boolean;
         isDark: boolean;
+        accent: AccentColor;
+        sidebarStyle: SidebarStyle;
     }
 
     defineProps<Props>();
@@ -17,6 +21,8 @@
     const emit = defineEmits<{
         toggleSidebar: [];
         toggleDark: [];
+        setAccent: [color: AccentColor];
+        setSidebarStyle: [style: SidebarStyle];
     }>();
 
     const page = usePage();
@@ -86,6 +92,21 @@
     function toggleUserMenu(event: Event): void {
         userMenuRef.value?.toggle(event);
     }
+
+    // Appearance popover — dark mode + accent color picker.
+    const appearanceRef = ref();
+
+    function toggleAppearance(event: Event): void {
+        appearanceRef.value?.toggle(event);
+    }
+
+    function selectAccent(color: AccentColor): void {
+        emit('setAccent', color);
+    }
+
+    function selectSidebarStyle(style: SidebarStyle): void {
+        emit('setSidebarStyle', style);
+    }
 </script>
 
 <template>
@@ -140,13 +161,130 @@
                 </Menu>
             </template>
 
+            <!-- Appearance: dark mode + accent color picker -->
             <button
                 class="admin-header__btn"
-                :title="isDark ? $t('sk-layout.light_mode') : $t('sk-layout.dark_mode')"
-                @click="emit('toggleDark')"
+                :title="$t('sk-layout.appearance')"
+                @click="toggleAppearance"
             >
-                <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" />
+                <i class="pi pi-palette" />
             </button>
+            <Popover ref="appearanceRef">
+                <div class="w-[360px] max-w-[90vw]">
+                    <!-- Dark mode -->
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-surface-800 dark:text-surface-0">
+                                {{ $t('sk-layout.dark_mode') }}
+                            </span>
+                            <span class="text-xs text-surface-500">
+                                {{ $t('sk-layout.dark_mode_hint') }}
+                            </span>
+                        </div>
+                        <ToggleSwitch :model-value="isDark" @update:model-value="emit('toggleDark')" />
+                    </div>
+
+                    <hr class="my-4 border-surface-200 dark:border-surface-700">
+
+                    <!-- Sidebar style: colored vs light (light mode only) -->
+                    <div class="mb-3 flex flex-col">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-surface-500">
+                            {{ $t('sk-layout.sidebar_style') }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            class="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition"
+                            :class="
+                                sidebarStyle === 'colored'
+                                    ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10'
+                                    : 'border-surface-200 hover:border-surface-300 dark:border-surface-700 dark:hover:border-surface-600'
+                            "
+                            @click="selectSidebarStyle('colored')"
+                        >
+                            <span
+                                class="h-5 w-5 shrink-0 rounded-md shadow-sm ring-1 ring-inset ring-black/10 dark:ring-white/15"
+                                style="background: var(--p-primary-color)"
+                            />
+                            <span
+                                class="text-sm font-medium"
+                                :class="sidebarStyle === 'colored' ? 'text-surface-800 dark:text-surface-0' : 'text-surface-500'"
+                            >
+                                {{ $t('sk-layout.sidebar_style_colored') }}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition"
+                            :class="
+                                sidebarStyle === 'light'
+                                    ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10'
+                                    : 'border-surface-200 hover:border-surface-300 dark:border-surface-700 dark:hover:border-surface-600'
+                            "
+                            @click="selectSidebarStyle('light')"
+                        >
+                            <span class="h-5 w-5 shrink-0 rounded-md border border-surface-300 bg-surface-0 shadow-sm dark:border-surface-500" />
+                            <span
+                                class="text-sm font-medium"
+                                :class="sidebarStyle === 'light' ? 'text-surface-800 dark:text-surface-0' : 'text-surface-500'"
+                            >
+                                {{ $t('sk-layout.sidebar_style_light') }}
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Sidebar color theme -->
+                    <div class="mb-3 mt-5 flex flex-col">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-surface-500">
+                            {{ $t('sk-layout.accent_color') }}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-6 gap-x-2 gap-y-3">
+                        <!-- Default -->
+                        <button
+                            type="button"
+                            class="flex flex-col items-center gap-1"
+                            :title="$t('sk-layout.color_default')"
+                            @click="selectAccent('default')"
+                        >
+                            <span
+                                class="flex h-12 w-full items-center justify-center rounded-lg border border-surface-200 bg-surface-0 text-surface-400 transition dark:border-surface-700 dark:bg-surface-800"
+                                :class="{ 'ring-2 ring-primary-500 ring-offset-1 ring-offset-surface-0 dark:ring-offset-surface-900': accent === 'default' }"
+                            >
+                                <i class="pi pi-ban" />
+                            </span>
+                            <span class="w-full truncate text-center text-[0.7rem] text-surface-500">
+                                {{ $t('sk-layout.color_default') }}
+                            </span>
+                        </button>
+
+                        <!-- Colors -->
+                        <button
+                            v-for="color in ACCENT_COLORS"
+                            :key="color"
+                            type="button"
+                            class="flex flex-col items-center gap-1"
+                            :title="color"
+                            @click="selectAccent(color)"
+                        >
+                            <span
+                                class="flex h-12 w-full items-center justify-center rounded-lg text-white shadow-sm transition"
+                                :style="{ background: ACCENT_SWATCH[color] }"
+                                :class="{ 'ring-2 ring-surface-900 ring-offset-1 ring-offset-surface-0 dark:ring-surface-0 dark:ring-offset-surface-900': accent === color }"
+                            >
+                                <i v-if="accent === color" class="pi pi-check text-sm" />
+                            </span>
+                            <span class="w-full truncate text-center text-[0.7rem] capitalize text-surface-500">
+                                {{ color }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </Popover>
 
             <button class="admin-header__btn" :title="$t('sk-layout.notifications')">
                 <i class="pi pi-bell" />

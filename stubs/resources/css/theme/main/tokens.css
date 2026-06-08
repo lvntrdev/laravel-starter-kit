@@ -61,3 +61,46 @@
 
     --admin-content-bg: var(--p-surface-950);
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ACCENT-COLORED SIDEBAR (light mode only)
+   ─────────────────────────────────────────────────────────────────
+   Active when `useAccentColor` sets the `data-sk-accent` marker on <html>
+   (the picked PrimeVue primary is applied via updatePrimaryPalette, exposing
+   --p-primary-*). The sidebar takes a deep tint of that primary, and the item
+   hover is derived from the sidebar background so it harmonises instead of
+   staying a neutral grey.
+
+   Scoped to `:not(.dark)` on purpose: in DARK mode the sidebar stays the neutral
+   dark surface (the base `.dark` tokens) — only the primary/active item/buttons
+   carry the accent there, not the whole sidebar background. `:not(.dark)` raises
+   specificity to (0,3,0) so it beats :root (0,1,0) in light, and simply stops
+   matching in dark so `.dark` (0,1,0) wins.
+
+   Also gated on `:not([data-sk-sidebar='light'])`: when the user picks the LIGHT
+   sidebar style this rule stops matching, letting the light override below win. */
+:root[data-sk-accent]:not([data-sk-sidebar='light']):not(.dark) {
+    --admin-sidebar-bg: var(--p-primary-950);
+    --admin-sidebar-logo-bg: color-mix(in srgb, var(--p-primary-950), #000 28%);
+    --admin-sidebar-border: color-mix(in srgb, var(--p-primary-400), transparent 82%);
+    --admin-sidebar-item-hover-bg: color-mix(in srgb, #fff 9%, var(--admin-sidebar-bg));
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LIGHT SIDEBAR STYLE (light mode only)
+   ─────────────────────────────────────────────────────────────────
+   Active when `useAccentColor` sets `data-sk-sidebar="light"` on <html>. The
+   sidebar becomes a white surface with dark text, regardless of the accent —
+   only the active item keeps the primary fill. Scoped to `:not(.dark)`: in DARK
+   mode the sidebar stays the neutral dark surface (the style switch is a
+   light-mode-only treatment). (0,3,0) beats the base :root (0,1,0). */
+:root[data-sk-sidebar='light']:not(.dark) {
+    --admin-sidebar-bg: var(--p-surface-0);
+    --admin-sidebar-text: var(--p-surface-700);
+    --admin-sidebar-text-muted: var(--p-surface-400);
+    --admin-sidebar-item-hover-bg: var(--p-surface-100);
+    --admin-sidebar-item-active-bg: var(--p-primary-color);
+    --admin-sidebar-item-active-text: #ffffff;
+    --admin-sidebar-border: var(--p-surface-200);
+    --admin-sidebar-logo-bg: var(--p-surface-50);
+}

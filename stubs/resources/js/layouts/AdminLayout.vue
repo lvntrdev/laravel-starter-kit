@@ -1,5 +1,6 @@
 <!-- resources/js/layouts/AdminLayout.vue -->
 <script setup lang="ts">
+    import { useAccentColor } from '@/composables/useAccentColor';
     import { useDarkMode } from '@/composables/useDarkMode';
     import { useFlash } from '@/composables/useFlash';
     import AppShell from '@/layouts/AppShell.vue';
@@ -27,6 +28,7 @@
     });
 
     const { isDark, toggleDark } = useDarkMode();
+    const { accent, setAccent, sidebarStyle, setSidebarStyle } = useAccentColor();
     const { flash } = useFlash();
     const toast = useToast();
 
@@ -93,8 +95,12 @@
                 :collapsed="collapsed"
                 :is-mobile="isMobile"
                 :is-dark="isDark"
+                :accent="accent"
+                :sidebar-style="sidebarStyle"
                 @toggle-sidebar="toggle"
                 @toggle-dark="toggleDark"
+                @set-accent="setAccent"
+                @set-sidebar-style="setSidebarStyle"
             />
         </template>
 
