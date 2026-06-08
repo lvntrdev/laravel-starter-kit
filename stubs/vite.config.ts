@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import inertia from '@inertiajs/vite';
 import vue from '@vitejs/plugin-vue';
@@ -85,6 +86,18 @@ function resolvePlugin(name: string): string | null {
 // during local package development) are followed correctly without breaking HMR.
 // For Levent's own sibling-dev workflow the alias is the same — vendor/lvntr/...
 // is a symlink to ../starter-kit-package thanks to the Composer path repository.
+
+// Propagate `VITE_SK_THEME` from `.env` into `process.env` so the PrimeVue
+// preset resolver (`resolveActivePreset`, wired as an alias customResolver
+// below) honors `.env`-based theme activation too — not just `import.meta.env`.
+// Vite loads `.env` into `import.meta.env`/`config.env` but NOT `process.env`;
+// the sk-theme CSS plugin reads `config.env` directly, this covers the preset
+// side and any direct `vite build` where the var lives only in `.env`.
+const skThemeMode = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+const skThemeEnv = loadEnv(skThemeMode, process.cwd(), 'VITE_SK_THEME');
+if (skThemeEnv.VITE_SK_THEME && !process.env.VITE_SK_THEME) {
+    process.env.VITE_SK_THEME = skThemeEnv.VITE_SK_THEME;
+}
 
 export default defineConfig({
     resolve: {

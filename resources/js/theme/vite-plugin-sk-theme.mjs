@@ -74,9 +74,19 @@ export function resolveActivePreset({ root, theme } = {}) {
  * @returns {import('vite').Plugin}
  */
 export default function skTheme(options = {}) {
+    // The active theme, resolved once `configResolved` fires. An explicit
+    // `skTheme({ theme })` option always wins; otherwise we honor `VITE_SK_THEME`
+    // from Vite's loaded env (`config.env`), which carries the value whether it
+    // was set in `.env` or in the shell. This is what makes `.env`-based
+    // activation reach the CSS resolver: Vite loads `.env` into `import.meta.env`
+    // (and `config.env`) but NOT into `process.env`, so without this the resolver
+    // — which falls back to `process.env.VITE_SK_THEME` — never saw a `.env`-only
+    // value and silently resolved to `main`.
+    let resolvedTheme = options.theme;
+
     const generate = () => {
         try {
-            buildActiveTheme(options);
+            buildActiveTheme({ ...options, theme: resolvedTheme });
         } catch (err) {
             // Surface the missing-base-theme error loudly; Vite would otherwise
             // fail later with an opaque "Can't resolve './_active.css'".
@@ -93,7 +103,11 @@ export default function skTheme(options = {}) {
         // alias customResolver in vite.config.ts (see resolveActivePreset's note).
         enforce: 'pre',
         // Earliest reliable point: config is known, no module resolved yet.
-        configResolved() {
+        // `config.env` holds the VITE_-prefixed vars Vite loaded from `.env`.
+        configResolved(config) {
+            if (resolvedTheme == null && config?.env?.VITE_SK_THEME) {
+                resolvedTheme = config.env.VITE_SK_THEME;
+            }
             generate();
         },
         // Re-assert on every build start (incremental rebuilds, the SSR pass).
