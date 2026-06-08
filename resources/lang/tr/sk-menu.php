@@ -22,4 +22,6 @@ return [
     'laravel_docs' => 'Laravel Dokümanları',
     'kits_docs' => 'Starter Kit Dokümanları',
     'developer_docs' => 'Geliştirici Dokümanları',
+    'components' => 'Bileşenler',
+    'tag' => 'Tag',
 ];

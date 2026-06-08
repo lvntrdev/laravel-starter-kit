@@ -62,6 +62,16 @@ export function useAdminMenu() {
             permission: 'settings.read',
         },
         {
+            title: 'sk-menu.components',
+            section: true,
+        },
+        {
+            title: 'sk-menu.tag',
+            icon: 'pi pi-tag',
+            href: '/components',
+            role: 'system_admin',
+        },
+        {
             title: 'sk-menu.developer',
             section: true,
         },
