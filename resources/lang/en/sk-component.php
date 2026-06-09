@@ -33,7 +33,7 @@ return [
     'tag' => [
         'title' => 'Tags',
         'subtitle' => 'Tag component — all variants and colors.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> defines the tag\'s color. Alongside the built-in severities, every Tailwind color family can be used directly as a <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> — e.g. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Tag severity="indigo" value="Secondary" /&gt;</code>.',
+        'intro' => 'severity defines the tag\'s color. Alongside the built-in severities, every Tailwind color family can be used directly as a severity — e.g. severity="indigo".',
         'sections' => [
             'filled' => [
                 'title' => 'Severities · Filled',
@@ -76,7 +76,7 @@ return [
     'button' => [
         'title' => 'Buttons',
         'subtitle' => 'Button component — severity, variants and Tailwind colors.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> defines the button\'s color. Alongside the built-in severities, every Tailwind color family (including the custom <strong>mauve · olive · mist · taupe</strong> added in v4.2) can be used directly as a <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> — e.g. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Button severity="indigo" label="Save" /&gt;</code>. Works with all of the filled, outlined, text, raised, rounded and icon-only variants.',
+        'intro' => 'severity defines the button\'s color. Alongside the built-in severities, every Tailwind color family (including the custom mauve · olive · mist · taupe) can be used directly as a severity — e.g. severity="indigo". Works with all of the filled, outlined, text, raised, rounded and icon-only variants.',
         'sections' => [
             'severities' => [
                 'title' => 'PrimeVue · Severities',
@@ -105,7 +105,7 @@ return [
     'message' => [
         'title' => 'Messages',
         'subtitle' => 'Message & InlineMessage components — all variants and colors.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> defines the message\'s color. Alongside the built-in severities, every Tailwind color family (including the custom <strong>mauve · olive · mist · taupe</strong>) can be used directly as a <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> — e.g. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Message severity="indigo"&gt;</code>. The default banner is the calm accent style; add <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">class="p-message-fill"</code> for the solid filled look, or the built-in <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">variant="outlined" / "simple"</code>.',
+        'intro' => 'severity defines the message\'s color. Alongside the built-in severities, every Tailwind color family (including the custom mauve · olive · mist · taupe) can be used directly as a severity — e.g. severity="indigo". The default banner is the calm accent style; add class="p-message-fill" for the solid filled look, or the built-in variant="outlined" / "simple".',
         'sections' => [
             'filled' => [
                 'title' => 'Severities · Filled',
@@ -140,6 +140,63 @@ return [
             'danger' => ['title' => 'Error', 'desc' => 'An error occurred while saving, please try again.'],
             'secondary' => ['title' => 'Secondary', 'desc' => 'Changes were saved as a draft.'],
             'contrast' => ['title' => 'Contrast', 'desc' => 'A high-contrast notification message.'],
+        ],
+    ],
+
+    'toast' => [
+        'title' => 'Toast',
+        'subtitle' => 'Toast notifications — all severities, variants and colors.',
+        'intro' => 'severity defines the toast type. Alongside the built-in severities, every Tailwind color family (including the custom mauve · olive · mist · taupe) can be used directly as a severity — e.g. toast.add({ severity: "indigo" }). The default look is the lightly tinted accent card; pass styleClass: "sk-toast-solid" for the filled look, or styleClass: "sk-toast-outlined" for the outlined one.',
+        'sections' => [
+            'severity' => [
+                'title' => 'Severity',
+                'desc' => 'severity defines the toast type — the lightly tinted default variant, with a circular ring icon and progress bar.',
+            ],
+            'variants' => [
+                'title' => 'Outlined & Solid',
+                'desc' => 'Outlined: flat surface, colored ring icon. Solid: fully colored card, white ring icon and text.',
+            ],
+            'sticky' => [
+                'title' => 'Sticky / Actions',
+                'desc' => 'A toast that must wait for the user, carrying pill-shaped confirm buttons — a delete confirmation or a single inline action.',
+            ],
+            'colors' => [
+                'title' => 'All Tailwind Colors',
+                'desc' => ':count color families (including mauve · olive · mist · taupe) as toasts — the 600 shade paints the ring icon and accent.',
+                'badge' => ':count colors',
+            ],
+            'live' => [
+                'title' => 'Live Preview',
+                'desc' => 'Fire real toast notifications — these buttons use the runtime ToastComponent.',
+                'update' => 'Action toast',
+                'delete' => 'Delete confirm',
+            ],
+        ],
+        'items' => [
+            'success' => ['summary' => 'Success', 'detail' => 'The record was created successfully.'],
+            'info' => ['summary' => 'Info', 'detail' => 'Your profile was updated.'],
+            'warn' => ['summary' => 'Warning', 'detail' => 'Your disk space is 90% full.'],
+            'error' => ['summary' => 'Error', 'detail' => 'The operation failed, please try again.'],
+            'secondary' => ['summary' => 'Secondary', 'detail' => 'Changes were saved as a draft.'],
+            'contrast' => ['summary' => 'Contrast', 'detail' => 'A high-contrast notification.'],
+        ],
+        'sticky' => [
+            'delete' => [
+                'summary' => 'Delete record?',
+                'detail' => 'This action cannot be undone.',
+                'confirm' => 'Delete',
+                'cancel' => 'Cancel',
+            ],
+            'update' => [
+                'summary' => 'New version ready',
+                'detail' => 'Please restart the app.',
+                'confirm' => 'Update',
+                'cancel' => 'Later',
+            ],
+            'retry' => [
+                'summary' => 'Connection lost.',
+                'retry' => 'Retry',
+            ],
         ],
     ],
 

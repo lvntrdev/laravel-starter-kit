@@ -37,4 +37,11 @@ class ComponentShowcaseController extends Controller
         // "Message.vue", so it does not self-reference the <Message> it renders.
         return Inertia::render('Admin/Components/MessageShowcase');
     }
+
+    public function toast(): Response
+    {
+        // Same filename-collision caveat: the page is "ToastShowcase", never
+        // "Toast.vue", so it does not self-reference the <Toast> it renders.
+        return Inertia::render('Admin/Components/ToastShowcase');
+    }
 }

@@ -33,7 +33,7 @@ return [
     'tag' => [
         'title' => 'Etiketler',
         'subtitle' => 'Tag bileşeni — tüm varyantlar ve renkler.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> türü etiketin rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi doğrudan bir <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Tag severity="indigo" value="Secondary" /&gt;</code>.',
+        'intro' => 'severity türü etiketin rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi doğrudan bir severity olarak kullanılabilir — ör. severity="indigo".',
         'sections' => [
             'filled' => [
                 'title' => 'Önem Dereceleri · Dolu',
@@ -76,7 +76,7 @@ return [
     'button' => [
         'title' => 'Butonlar',
         'subtitle' => 'Button bileşeni — severity, varyantlar ve Tailwind renkleri.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> türü butonun rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi (v4.2 ile gelen <strong>mauve · olive · mist · taupe</strong> dahil) doğrudan bir <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Button severity="indigo" label="Kaydet" /&gt;</code>. Dolu, çerçeveli, metin, yükseltilmiş, yuvarlatılmış ve yalnızca-ikon varyantlarının tamamıyla çalışır.',
+        'intro' => 'severity türü butonun rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi (özel mauve · olive · mist · taupe dahil) doğrudan bir severity olarak kullanılabilir — ör. severity="indigo". Dolu, çerçeveli, metin, yükseltilmiş, yuvarlatılmış ve yalnızca-ikon varyantlarının tamamıyla çalışır.',
         'sections' => [
             'severities' => [
                 'title' => 'PrimeVue · Önem Dereceleri',
@@ -105,7 +105,7 @@ return [
     'message' => [
         'title' => 'Mesajlar',
         'subtitle' => 'Message & InlineMessage bileşenleri — tüm varyantlar ve renkler.',
-        'intro' => '<code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> türü mesajın rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi (özel <strong>mauve · olive · mist · taupe</strong> dahil) doğrudan bir <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code> olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Message severity="indigo"&gt;</code>. Varsayılan banner sakin vurgu (accent) stilidir; dolu görünüm için <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">class="p-message-fill"</code> ekleyin ya da yerleşik <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">variant="outlined" / "simple"</code> kullanın.',
+        'intro' => 'severity türü mesajın rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi (özel mauve · olive · mist · taupe dahil) doğrudan bir severity olarak kullanılabilir — ör. severity="indigo". Varsayılan banner sakin vurgu (accent) stilidir; dolu görünüm için class="p-message-fill" ekleyin ya da variant="outlined" / "simple" kullanın.',
         'sections' => [
             'filled' => [
                 'title' => 'Önem Dereceleri · Dolu',
@@ -140,6 +140,63 @@ return [
             'danger' => ['title' => 'Hata', 'desc' => 'Kaydetme sırasında bir hata oluştu, tekrar deneyin.'],
             'secondary' => ['title' => 'İkincil', 'desc' => 'Değişiklikler taslak olarak kaydedildi.'],
             'contrast' => ['title' => 'Kontrast', 'desc' => 'Yüksek kontrastlı bir bildirim mesajı.'],
+        ],
+    ],
+
+    'toast' => [
+        'title' => 'Toast',
+        'subtitle' => 'Toast bildirimleri — tüm önem dereceleri, varyantlar ve renkler.',
+        'intro' => 'severity toast türünü belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi (özel mauve · olive · mist · taupe dahil) doğrudan bir severity olarak kullanılabilir — ör. toast.add({ severity: "indigo" }). Varsayılan görünüm hafif tonlu vurgu kartıdır; dolu görünüm için styleClass: "sk-toast-solid", çerçeveli için styleClass: "sk-toast-outlined" geçin.',
+        'sections' => [
+            'severity' => [
+                'title' => 'Önem Derecesi',
+                'desc' => 'severity toast türünü tanımlar — hafif tonlu varsayılan varyant, dairesel halka ikon ve ilerleme çubuğu ile.',
+            ],
+            'variants' => [
+                'title' => 'Çerçeveli & Dolu',
+                'desc' => 'Çerçeveli: düz zemin, renkli halka ikon. Dolu: tümüyle renkli kart, beyaz halka ikon ve metin.',
+            ],
+            'sticky' => [
+                'title' => 'Eylemli (Sticky)',
+                'desc' => 'Kapanmadan beklemesi gereken, hap biçimli onay düğmeleri taşıyan toast — silme onayı ya da tek satırlık bir eylem.',
+            ],
+            'colors' => [
+                'title' => 'Tüm Tailwind Renkleri',
+                'desc' => ':count renk ailesi (mauve · olive · mist · taupe dahil) toast olarak — 600 tonu halka ikonu ve vurguyu boyar.',
+                'badge' => ':count renk',
+            ],
+            'live' => [
+                'title' => 'Canlı Önizleme',
+                'desc' => 'Gerçek toast bildirimlerini tetikleyin — bu düğmeler çalışma anındaki ToastComponent\'i kullanır.',
+                'update' => 'Eylemli toast',
+                'delete' => 'Silme onayı',
+            ],
+        ],
+        'items' => [
+            'success' => ['summary' => 'Başarılı', 'detail' => 'Kayıt başarıyla oluşturuldu.'],
+            'info' => ['summary' => 'Bilgi', 'detail' => 'Profiliniz güncellendi.'],
+            'warn' => ['summary' => 'Uyarı', 'detail' => 'Disk alanınızın %90\'ı doldu.'],
+            'error' => ['summary' => 'Hata', 'detail' => 'İşlem tamamlanamadı, tekrar deneyin.'],
+            'secondary' => ['summary' => 'İkincil', 'detail' => 'Değişiklikler taslak olarak kaydedildi.'],
+            'contrast' => ['summary' => 'Kontrast', 'detail' => 'Yüksek kontrastlı bir bildirim.'],
+        ],
+        'sticky' => [
+            'delete' => [
+                'summary' => 'Kaydı sil?',
+                'detail' => 'Bu işlem geri alınamaz.',
+                'confirm' => 'Sil',
+                'cancel' => 'Vazgeç',
+            ],
+            'update' => [
+                'summary' => 'Yeni sürüm hazır',
+                'detail' => 'Uygulamayı yeniden başlatın.',
+                'confirm' => 'Güncelle',
+                'cancel' => 'Sonra',
+            ],
+            'retry' => [
+                'summary' => 'Bağlantı kesildi.',
+                'retry' => 'Yeniden dene',
+            ],
         ],
     ],
 

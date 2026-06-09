@@ -1,92 +1,451 @@
-.toast-container {
-    @apply flex w-full items-center rounded-md p-4 shadow-2xl;
+/**
+ * Toast — PrimeVue <Toast> rendered through the kit's custom #container template
+ * (ui/ToastComponent.vue), repainted to the SK palette.
+ *
+ * Floating notification cards coloured by `severity`, for the 6 built-in
+ * severities AND every Tailwind palette family (+ the custom mauve / olive /
+ * mist / taupe). A single `--toast-c` drives every look; the design's signature
+ * circular ring icon, accent-tinted surface, progress life-bar and pill action
+ * buttons all read from it. The 600-shade hexes match the Tag/Button/Message
+ * palette so a <Tag severity="indigo">, a <Button severity="indigo"> and a
+ * `toast.add({ severity: 'indigo' })` read identically.
+ *
+ *     toast.add({ severity: 'success', summary: '…', detail: '…', life: 4000 })   (accent — default)
+ *     toast.add({ severity: 'rose',  styleClass: 'sk-toast-solid' })              (solid filled card)
+ *     toast.add({ severity: 'blue',  styleClass: 'sk-toast-outlined' })           (outlined)
+ *     toast.add({ severity: 'warn',  actions: [{ label: 'Sil', primary: true }] })(sticky w/ pills)
+ *
+ * Because the template is a custom container, PrimeVue's own severity markup is
+ * bypassed — colouring is purely via the `sk-toast-<severity>` class the template
+ * emits, so no `data-p` hook is needed (unlike Message/Button). These rules are
+ * UNLAYERED (app.css imports the theme outside the `primevue` cssLayer) so they
+ * win over Aura's toast styling.
+ *
+ * Surface/text/border read from PrimeVue Aura tokens (--p-content-background,
+ * --p-text-color, --p-text-muted-color, --p-content-border-color) so the card
+ * tracks the active theme and dark mode automatically.
+ */
 
-    .toast-close {
-        @apply ml-auto flex cursor-pointer items-center text-2xl text-white/70 transition-all duration-200 hover:text-white;
-        span {
-            @apply mr-3 pl-3 text-4xl;
-        }
+/* Neutralise the PrimeVue message wrapper — the custom container *is* the card,
+   so the wrapper must add no surface, border or padding of its own. */
+.p-toast .p-toast-message {
+    margin: 0 0 1rem 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    border-radius: 6px;
+}
+
+/* Defaults — set BEFORE the per-severity tokens so a severity class (equal
+   specificity, declared later) wins. Putting these on the `.sk-toast` card
+   block below instead would clobber every severity, since that block comes
+   after the tokens in source order. Unlike Message/Button (whose tokens use a
+   higher-specificity [data-p] hook), the toast tokens are plain classes, so
+   source order is what decides — hence the split. */
+.sk-toast {
+    --toast-c: #475569;
+    --toast-fg: #fff;
+    --toast-surface: var(--p-content-background, #fff);
+}
+
+/* ── Per-severity accent tokens (matches the Tag/Button/Message 600 palette) ── */
+.sk-toast-success {
+    --toast-c: #16a34a;
+}
+.sk-toast-info {
+    --toast-c: #2563eb;
+}
+.sk-toast-warn {
+    --toast-c: #d97706;
+}
+.sk-toast-error,
+.sk-toast-danger {
+    --toast-c: #dc2626;
+}
+.sk-toast-secondary {
+    --toast-c: #475569;
+}
+.sk-toast-contrast {
+    --toast-c: #1f2937;
+}
+
+/* ── Tailwind families (+ custom mauve / olive / mist / taupe) ──────────────── */
+.sk-toast-slate {
+    --toast-c: #0f172a;
+}
+.sk-toast-gray {
+    --toast-c: #4b5563;
+}
+.sk-toast-zinc {
+    --toast-c: #52525b;
+}
+.sk-toast-neutral {
+    --toast-c: #525252;
+}
+.sk-toast-stone {
+    --toast-c: #57534e;
+}
+.sk-toast-mauve {
+    --toast-c: #594c5b;
+}
+.sk-toast-olive {
+    --toast-c: #5b5b4b;
+}
+.sk-toast-mist {
+    --toast-c: #4b585b;
+}
+.sk-toast-taupe {
+    --toast-c: #5b4f4b;
+}
+.sk-toast-red {
+    --toast-c: #dc2626;
+}
+.sk-toast-orange {
+    --toast-c: #ea580c;
+}
+.sk-toast-amber {
+    --toast-c: #d97706;
+}
+.sk-toast-yellow {
+    --toast-c: #eab308;
+    --toast-fg: #1c1917;
+}
+.sk-toast-lime {
+    --toast-c: #65a30d;
+}
+.sk-toast-green {
+    --toast-c: #22c55e;
+}
+.sk-toast-emerald {
+    --toast-c: #059669;
+}
+.sk-toast-teal {
+    --toast-c: #0d9488;
+}
+.sk-toast-cyan {
+    --toast-c: #0891b2;
+}
+.sk-toast-sky {
+    --toast-c: #0284c7;
+}
+.sk-toast-blue {
+    --toast-c: #2563eb;
+}
+.sk-toast-indigo {
+    --toast-c: #4f46e5;
+}
+.sk-toast-violet {
+    --toast-c: #7c3aed;
+}
+.sk-toast-purple {
+    --toast-c: #9333ea;
+}
+.sk-toast-fuchsia {
+    --toast-c: #c026d3;
+}
+.sk-toast-pink {
+    --toast-c: #db2777;
+}
+.sk-toast-rose {
+    --toast-c: #e11d48;
+}
+
+/* ============================================================================
+   Card
+   ============================================================================ */
+.sk-toast {
+    /* Token defaults (--toast-c / --toast-fg / --toast-surface) are declared in
+       the block above, ahead of the per-severity tokens, so severities win. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: 100%;
+    max-width: 440px;
+    padding: 13px 15px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--toast-c) 13%, var(--toast-surface));
+    border: 1px solid color-mix(in srgb, var(--toast-c) 22%, transparent);
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+}
+
+/* Circular icon badge with a decorative ring arc wrapping the glyph. */
+.sk-toast-icon {
+    position: relative;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--toast-c);
+    color: #fff;
+    font-size: 14px;
+    --toast-ring: color-mix(in srgb, #fff 60%, transparent);
+}
+/* The thin spinner-style ring (one quadrant left open as a gap). */
+.sk-toast-icon::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    border: 1.6px solid var(--toast-ring);
+    border-top-color: transparent;
+    transform: rotate(-42deg);
+}
+
+.sk-toast-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.sk-toast-summary {
+    font-size: 14px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--toast-c), black 18%);
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+}
+.sk-toast-detail {
+    font-size: 12.75px;
+    color: var(--p-text-muted-color, #64748b);
+    line-height: 1.5;
+    margin-top: 2px;
+}
+
+/* ── Action row (sticky / confirm-style toast) — pill buttons aligned right ── */
+.sk-toast-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 11px;
+    justify-content: flex-end;
+    margin-right: -41px;
+}
+/* Toasts carrying actions: icon + close hug the top, buttons sit at the bottom. */
+.sk-toast:has(.sk-toast-actions) {
+    align-items: flex-start;
+}
+.sk-toast:has(.sk-toast-actions) .sk-toast-close {
+    align-self: flex-start;
+}
+.sk-toast-btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        color 0.15s;
+}
+.sk-toast-btn-solid {
+    background: var(--toast-c);
+    color: var(--toast-fg);
+}
+.sk-toast-btn-solid:hover {
+    background: color-mix(in srgb, var(--toast-c), black 12%);
+}
+.sk-toast-btn-ghost {
+    background: transparent;
+    color: var(--p-text-muted-color, #64748b);
+    border-color: var(--p-content-border-color, #e2e8f0);
+}
+.sk-toast-btn-ghost:hover {
+    background: color-mix(in srgb, var(--toast-c) 10%, transparent);
+    color: var(--toast-c);
+}
+
+/* ── Quiet ghost close button ──────────────────────────────────────────────── */
+.sk-toast-close {
+    flex: 0 0 auto;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 0;
+    background: transparent;
+    color: var(--p-text-muted-color, #64748b);
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 -2px 0 0;
+    transition:
+        background 0.15s,
+        color 0.15s;
+}
+.sk-toast-close:hover {
+    background: color-mix(in srgb, var(--toast-c) 12%, transparent);
+    color: var(--toast-c);
+}
+
+/* ── Progress life-bar — shrinks left→right over the toast's `life` (ms) ────── */
+.sk-toast-progress {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 7px;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--toast-c) 18%, transparent);
+    overflow: hidden;
+}
+.sk-toast-progress > span {
+    display: block;
+    height: 100%;
+    width: 100%;
+    border-radius: 999px;
+    background: var(--toast-c);
+    transform-origin: left center;
+    animation: sk-toast-life linear forwards;
+}
+@keyframes sk-toast-life {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+/* Give progress toasts room so text doesn't collide with the bar. */
+.sk-toast:has(.sk-toast-progress) {
+    padding-bottom: 17px;
+}
+
+/* ── OUTLINED variant — flat surface, accent ring, accent glyph ─────────────── */
+.sk-toast-outlined {
+    background: var(--toast-surface);
+    border: 1.5px solid color-mix(in srgb, var(--toast-c) 40%, transparent);
+}
+.sk-toast-outlined .sk-toast-icon {
+    background: color-mix(in srgb, var(--toast-c) 13%, transparent);
+    color: var(--toast-c);
+    --toast-ring: color-mix(in srgb, var(--toast-c) 50%, transparent);
+}
+.sk-toast-outlined .sk-toast-summary {
+    color: var(--p-text-color, #1c1917);
+}
+
+/* ── SOLID variant — fully accent-filled card, white text + white ring icon ─── */
+.sk-toast-solid {
+    background: var(--toast-c);
+    border-color: transparent;
+}
+.sk-toast-solid .sk-toast-icon {
+    background: color-mix(in srgb, #fff 18%, transparent);
+    color: var(--toast-fg);
+    --toast-ring: color-mix(in srgb, #fff 75%, transparent);
+}
+.sk-toast-solid .sk-toast-summary {
+    color: var(--toast-fg);
+}
+.sk-toast-solid .sk-toast-detail {
+    color: color-mix(in srgb, var(--toast-fg) 82%, transparent);
+}
+.sk-toast-solid .sk-toast-close {
+    color: color-mix(in srgb, var(--toast-fg) 85%, transparent);
+}
+.sk-toast-solid .sk-toast-close:hover {
+    background: rgb(255 255 255 / 0.18);
+    color: var(--toast-fg);
+}
+.sk-toast-solid .sk-toast-progress {
+    background: rgb(255 255 255 / 0.28);
+}
+.sk-toast-solid .sk-toast-progress > span {
+    background: var(--toast-fg);
+}
+.sk-toast-solid .sk-toast-btn-ghost {
+    color: var(--toast-fg);
+    border-color: color-mix(in srgb, var(--toast-fg) 55%, transparent);
+}
+.sk-toast-solid .sk-toast-btn-ghost:hover {
+    background: rgb(255 255 255 / 0.16);
+    color: var(--toast-fg);
+}
+
+/* ── Contrast → high-contrast SOLID card by default (near-black slate-900) ────
+   Other severities use a light accent tint; contrast is meant to stand out, so
+   its default (non-outlined) variant is a filled slate-900 card with
+   light-on-dark content driven by --toast-fg — the dark block below flips
+   --toast-fg so the card inverts to near-white on the dark panel. Outlined
+   contrast (.sk-toast-contrast.sk-toast-outlined) is excluded and keeps its ring
+   look. The `.sk-toast` prefix lifts specificity so it wins over the base/dark
+   default-variant rules. */
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) {
+    --toast-c: #0f172a; /* slate-900 */
+    --toast-fg: #fff;
+    background: var(--toast-c);
+    border-color: transparent;
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-icon {
+    background: color-mix(in srgb, var(--toast-fg) 18%, transparent);
+    color: var(--toast-fg);
+    --toast-ring: color-mix(in srgb, var(--toast-fg) 75%, transparent);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-summary {
+    color: var(--toast-fg);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-detail {
+    color: color-mix(in srgb, var(--toast-fg) 82%, transparent);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-close {
+    color: color-mix(in srgb, var(--toast-fg) 85%, transparent);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-close:hover {
+    background: color-mix(in srgb, var(--toast-fg) 18%, transparent);
+    color: var(--toast-fg);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-progress {
+    background: color-mix(in srgb, var(--toast-fg) 28%, transparent);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-progress > span {
+    background: var(--toast-fg);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-btn-solid {
+    background: var(--toast-fg);
+    color: var(--toast-c);
+}
+.sk-toast.sk-toast-contrast:not(.sk-toast-outlined) .sk-toast-btn-ghost {
+    color: var(--toast-fg);
+    border-color: color-mix(in srgb, var(--toast-fg) 55%, transparent);
+}
+
+/* ============================================================================
+   Dark mode — summary lifts off the tinted surface; near-black neutrals
+   (contrast) flip light so their filled chip stays legible on the dark panel.
+   ============================================================================ */
+:root.dark {
+    .sk-toast-summary {
+        color: color-mix(in srgb, var(--toast-c), white 32%);
     }
 
-    .toast-icon {
-        @apply mr-4 text-3xl;
+    /* Default (tinted) variant — translucent fill on the dark panel. */
+    .sk-toast:not(.sk-toast-outlined):not(.sk-toast-solid) {
+        background: color-mix(in srgb, var(--toast-c) 22%, transparent);
+        border-color: color-mix(in srgb, var(--toast-c) 34%, transparent);
     }
 
-    &.error {
-        @apply bg-red-500 text-white;
-        .toast-close {
-            i {
-                @apply text-red-300 hover:text-red-200;
-            }
-
-            span {
-                @apply text-red-400;
-            }
-        }
+    .sk-toast-outlined .sk-toast-summary {
+        color: var(--p-text-color, #f1f5f9);
     }
 
-    &.success {
-        @apply bg-green-500 text-white;
-        .toast-close {
-            i {
-                @apply text-green-300 hover:text-green-200;
-            }
-
-            span {
-                @apply text-green-400;
-            }
-        }
+    /* Contrast inverts on the dark panel: the near-black light-mode card becomes
+       a near-white one, and --toast-fg flips to near-black so its content stays
+       legible. Outlined contrast just needs the light ring colour. Placed after
+       the default-variant dark rule above so it wins at equal specificity. */
+    .sk-toast-contrast {
+        --toast-c: #e5e7eb; /* slate-200 — outlined ring on dark */
     }
-
-    &.info {
-        @apply bg-blue-500 text-white;
-        .toast-close {
-            i {
-                @apply text-blue-300 hover:text-blue-200;
-            }
-
-            span {
-                @apply text-blue-400;
-            }
-        }
-    }
-
-    &.warn {
-        @apply bg-orange-500 text-white;
-        .toast-close {
-            i {
-                @apply text-orange-300 hover:text-orange-200;
-            }
-
-            span {
-                @apply text-orange-400;
-            }
-        }
-    }
-
-    &.light {
-        @apply bg-slate-300 text-slate-600;
-        .toast-close {
-            i {
-                @apply text-slate-400 hover:text-slate-600;
-            }
-
-            span {
-                @apply text-slate-400;
-            }
-        }
-    }
-
-    &.dark {
-        @apply bg-slate-700 text-white;
-        .toast-close {
-            i {
-                @apply text-slate-300 hover:text-slate-200;
-            }
-
-            span {
-                @apply text-slate-400;
-            }
-        }
+    .sk-toast.sk-toast-contrast:not(.sk-toast-outlined) {
+        --toast-c: #e5e7eb;
+        --toast-fg: #111827;
+        background: var(--toast-c);
+        border-color: transparent;
     }
 }

@@ -17,4 +17,5 @@ Route::middleware('role:system_admin')
         Route::get('tag', 'tag')->name('tag');
         Route::get('buttons', 'buttons')->name('buttons');
         Route::get('messages', 'messages')->name('messages');
+        Route::get('toast', 'toast')->name('toast');
     });

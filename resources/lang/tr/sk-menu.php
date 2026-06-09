@@ -26,4 +26,5 @@ return [
     'tag' => 'Tag',
     'buttons' => 'Butonlar',
     'message' => 'Mesajlar',
+    'toast' => 'Toast',
 ];

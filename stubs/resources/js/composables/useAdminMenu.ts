@@ -84,6 +84,12 @@ export function useAdminMenu() {
             role: 'system_admin',
         },
         {
+            title: 'sk-menu.toast',
+            icon: 'pi pi-bell',
+            href: '/components/toast',
+            role: 'system_admin',
+        },
+        {
             title: 'sk-menu.developer',
             section: true,
         },
