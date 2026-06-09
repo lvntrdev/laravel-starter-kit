@@ -35,12 +35,14 @@
             </a>
         </template>
 
-        <p class="mb-6 max-w-[640px] text-[13.5px] leading-relaxed text-surface-500 dark:text-surface-400">
-            <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
-            türü etiketin rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi
-            doğrudan bir <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
-            olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Tag severity="indigo" value="Secondary" /&gt;</code>.
-        </p>
+        <Message severity="info" :closable="false" class="mb-6">
+            <span class="text-[13.5px] leading-relaxed">
+                <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
+                türü etiketin rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi
+                doğrudan bir <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
+                olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Tag severity="indigo" value="Secondary" /&gt;</code>.
+            </span>
+        </Message>
 
         <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
             <!-- 01 · Filled (default) -->

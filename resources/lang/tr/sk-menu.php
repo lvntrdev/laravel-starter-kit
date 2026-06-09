@@ -24,4 +24,5 @@ return [
     'developer_docs' => 'Geliştirici Dokümanları',
     'components' => 'Bileşenler',
     'tag' => 'Tag',
+    'buttons' => 'Butonlar',
 ];

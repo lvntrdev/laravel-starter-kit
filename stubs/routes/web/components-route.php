@@ -12,5 +12,8 @@ Route::middleware('role:system_admin')
     ->name('components.')
     ->controller(ComponentShowcaseController::class)
     ->group(function () {
-        Route::get('/', 'index')->name('index');
+        // Bare /components → the first showcase (Tag), so the old URL keeps working.
+        Route::redirect('/', '/components/tag')->name('index');
+        Route::get('tag', 'tag')->name('tag');
+        Route::get('buttons', 'buttons')->name('buttons');
     });

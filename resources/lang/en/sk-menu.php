@@ -24,4 +24,5 @@ return [
     'developer_docs' => 'Developer Docs',
     'components' => 'Components',
     'tag' => 'Tag',
+    'buttons' => 'Buttons',
 ];

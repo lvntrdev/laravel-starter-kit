@@ -1,0 +1,241 @@
+/**
+ * Button — PrimeVue <Button> extended with Tailwind color severities.
+ *
+ * Every Tailwind palette family (+ the custom mauve / olive / mist / taupe)
+ * becomes a usable `severity`, painting the full native variant set — filled,
+ * outlined, text, link, raised, rounded and icon-only — in light & dark mode:
+ *
+ *     <Button severity="indigo" label="Kaydet" />                 (filled)
+ *     <Button severity="rose"   label="Sil"    outlined />
+ *     <Button severity="teal"   icon="pi pi-check" rounded />
+ *
+ * The 6 built-in PrimeVue severities (secondary / success / info / warn /
+ * danger / contrast) are deliberately LEFT ALONE — they keep PrimeVue's own
+ * styling, exactly like the design's "PrimeVue native" column. Only the new
+ * Tailwind families below are themed here.
+ *
+ * ── How the colouring works ──────────────────────────────────────────────────
+ * PrimeVue 4 renders the `severity` prop into a dedicated attribute and the
+ * variant flags (outlined / text / raised / …) into a space-separated `data-p`:
+ *
+ *     <Button severity="indigo" outlined />
+ *       → <button class="p-button" data-p-severity="indigo" data-p="… outlined">
+ *
+ * so a custom severity can be coloured purely from CSS — no component patch.
+ * A single `--btn-c` (600 shade) drives every variant; `--btn-h` (700 shade) is
+ * the hover/active fill; `--btn-fg` overrides the label colour on light fills
+ * (yellow). The 600/700 hexes match the Tag palette (components/tag.css) so a
+ * <Tag severity="indigo"> and a <Button severity="indigo"> read identically.
+ *
+ * These rules are UNLAYERED (app.css imports the theme outside the `primevue`
+ * cssLayer), so they win over PrimeVue's own severity styling regardless of
+ * specificity — same mechanism as components/tag.css.
+ */
+
+/* ── Per-family colour tokens (600 base / 700 hover, matches the Tag palette) ─ */
+.p-button[data-p-severity='slate'] {
+    --btn-c: #0f172a;
+    --btn-h: #020617;
+}
+.p-button[data-p-severity='gray'] {
+    --btn-c: #4b5563;
+    --btn-h: #374151;
+}
+.p-button[data-p-severity='zinc'] {
+    --btn-c: #52525b;
+    --btn-h: #3f3f46;
+}
+.p-button[data-p-severity='neutral'] {
+    --btn-c: #525252;
+    --btn-h: #404040;
+}
+.p-button[data-p-severity='stone'] {
+    --btn-c: #57534e;
+    --btn-h: #44403c;
+}
+.p-button[data-p-severity='mauve'] {
+    --btn-c: #594c5b;
+    --btn-h: #463947;
+}
+.p-button[data-p-severity='olive'] {
+    --btn-c: #5b5b4b;
+    --btn-h: #474739;
+}
+.p-button[data-p-severity='mist'] {
+    --btn-c: #4b585b;
+    --btn-h: #394447;
+}
+.p-button[data-p-severity='taupe'] {
+    --btn-c: #5b4f4b;
+    --btn-h: #473c39;
+}
+.p-button[data-p-severity='red'] {
+    --btn-c: #dc2626;
+    --btn-h: #b91c1c;
+}
+.p-button[data-p-severity='orange'] {
+    --btn-c: #ea580c;
+    --btn-h: #c2410c;
+}
+.p-button[data-p-severity='amber'] {
+    --btn-c: #d97706;
+    --btn-h: #b45309;
+}
+.p-button[data-p-severity='yellow'] {
+    --btn-c: #eab308;
+    --btn-h: #ca8a04;
+    --btn-fg: #1c1917;
+}
+.p-button[data-p-severity='lime'] {
+    --btn-c: #65a30d;
+    --btn-h: #4d7c0f;
+}
+.p-button[data-p-severity='green'] {
+    --btn-c: #22c55e;
+    --btn-h: #16a34a;
+}
+.p-button[data-p-severity='emerald'] {
+    --btn-c: #059669;
+    --btn-h: #047857;
+}
+.p-button[data-p-severity='teal'] {
+    --btn-c: #0d9488;
+    --btn-h: #0f766e;
+}
+.p-button[data-p-severity='cyan'] {
+    --btn-c: #0891b2;
+    --btn-h: #0e7490;
+}
+.p-button[data-p-severity='sky'] {
+    --btn-c: #0284c7;
+    --btn-h: #0369a1;
+}
+.p-button[data-p-severity='blue'] {
+    --btn-c: #2563eb;
+    --btn-h: #1d4ed8;
+}
+.p-button[data-p-severity='indigo'] {
+    --btn-c: #4f46e5;
+    --btn-h: #4338ca;
+}
+.p-button[data-p-severity='violet'] {
+    --btn-c: #7c3aed;
+    --btn-h: #6d28d9;
+}
+.p-button[data-p-severity='purple'] {
+    --btn-c: #9333ea;
+    --btn-h: #7e22ce;
+}
+.p-button[data-p-severity='fuchsia'] {
+    --btn-c: #c026d3;
+    --btn-h: #a21caf;
+}
+.p-button[data-p-severity='pink'] {
+    --btn-c: #db2777;
+    --btn-h: #be185d;
+}
+.p-button[data-p-severity='rose'] {
+    --btn-c: #e11d48;
+    --btn-h: #be123c;
+}
+
+/* ── Variant painting — applies only to the themed families above ──────────────
+   `:where(<list>)` keeps the gate at zero specificity; the unlayered cascade is
+   what makes these win over PrimeVue. Each variant is selected by PrimeVue's
+   native `data-p` tokens, so `outlined` / `text` / `link` / `raised` / `rounded`
+   props all work unchanged — only the colour is ours. */
+.p-button:where(
+        [data-p-severity='slate'], [data-p-severity='gray'], [data-p-severity='zinc'], [data-p-severity='neutral'], [data-p-severity='stone'],
+        [data-p-severity='mauve'], [data-p-severity='olive'], [data-p-severity='mist'], [data-p-severity='taupe'],
+        [data-p-severity='red'], [data-p-severity='orange'], [data-p-severity='amber'], [data-p-severity='yellow'], [data-p-severity='lime'],
+        [data-p-severity='green'], [data-p-severity='emerald'], [data-p-severity='teal'], [data-p-severity='cyan'], [data-p-severity='sky'],
+        [data-p-severity='blue'], [data-p-severity='indigo'], [data-p-severity='violet'], [data-p-severity='purple'], [data-p-severity='fuchsia'],
+        [data-p-severity='pink'], [data-p-severity='rose']
+    ) {
+    /* Filled (default) — every variant token absent */
+    &:not([data-p~='outlined']):not([data-p~='text']):not([data-p~='link']) {
+        background: var(--btn-c);
+        border-color: var(--btn-c);
+        color: var(--btn-fg, #fff);
+
+        &:not(:disabled):hover,
+        &:not(:disabled):active {
+            background: var(--btn-h);
+            border-color: var(--btn-h);
+        }
+    }
+
+    /* Outlined */
+    &[data-p~='outlined'] {
+        background: transparent;
+        border-color: color-mix(in srgb, var(--btn-c) 48%, transparent);
+        color: var(--btn-c);
+
+        &:not(:disabled):hover {
+            background: color-mix(in srgb, var(--btn-c) 8%, transparent);
+            border-color: var(--btn-c);
+        }
+    }
+
+    /* Text */
+    &[data-p~='text'] {
+        background: transparent;
+        border-color: transparent;
+        color: var(--btn-c);
+
+        &:not(:disabled):hover {
+            background: color-mix(in srgb, var(--btn-c) 10%, transparent);
+        }
+    }
+
+    /* Link */
+    &[data-p~='link'] {
+        color: var(--btn-c);
+    }
+
+    /* Raised — subtle themed elevation so the variant stays meaningful */
+    &[data-p~='raised'] {
+        box-shadow:
+            0 1px 2px 0 color-mix(in srgb, var(--btn-c) 32%, transparent),
+            0 1px 1px -1px color-mix(in srgb, var(--btn-c) 44%, transparent);
+    }
+}
+
+/* ── Dark mode: lift outlined / text / link foregrounds so they stay legible on
+      the dark panel; filled keeps its 600 fill (slate is lifted below) ───────── */
+:root.dark
+    .p-button:where(
+        [data-p-severity='slate'], [data-p-severity='gray'], [data-p-severity='zinc'], [data-p-severity='neutral'], [data-p-severity='stone'],
+        [data-p-severity='mauve'], [data-p-severity='olive'], [data-p-severity='mist'], [data-p-severity='taupe'],
+        [data-p-severity='red'], [data-p-severity='orange'], [data-p-severity='amber'], [data-p-severity='yellow'], [data-p-severity='lime'],
+        [data-p-severity='green'], [data-p-severity='emerald'], [data-p-severity='teal'], [data-p-severity='cyan'], [data-p-severity='sky'],
+        [data-p-severity='blue'], [data-p-severity='indigo'], [data-p-severity='violet'], [data-p-severity='purple'], [data-p-severity='fuchsia'],
+        [data-p-severity='pink'], [data-p-severity='rose']
+    ) {
+    &[data-p~='outlined'] {
+        border-color: color-mix(in srgb, var(--btn-c) 58%, transparent);
+        color: color-mix(in srgb, var(--btn-c), white 38%);
+
+        &:not(:disabled):hover {
+            background: color-mix(in srgb, var(--btn-c) 16%, transparent);
+        }
+    }
+
+    &[data-p~='text'] {
+        color: color-mix(in srgb, var(--btn-c), white 38%);
+
+        &:not(:disabled):hover {
+            background: color-mix(in srgb, var(--btn-c) 18%, transparent);
+        }
+    }
+
+    &[data-p~='link'] {
+        color: color-mix(in srgb, var(--btn-c), white 38%);
+    }
+}
+
+/* Lift the near-black slate fill so a filled slate button reads on the dark panel */
+:root.dark .p-button[data-p-severity='slate'] {
+    --btn-c: #475569;
+    --btn-h: #334155;
+}

@@ -68,7 +68,13 @@ export function useAdminMenu() {
         {
             title: 'sk-menu.tag',
             icon: 'pi pi-tag',
-            href: '/components',
+            href: '/components/tag',
+            role: 'system_admin',
+        },
+        {
+            title: 'sk-menu.buttons',
+            icon: 'pi pi-stop',
+            href: '/components/buttons',
             role: 'system_admin',
         },
         {
