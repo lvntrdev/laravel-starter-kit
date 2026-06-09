@@ -106,6 +106,7 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 - `FB.inputNumber()`
 - `FB.inputOtp()`
 - `FB.inputMask()`
+- `FB.datePicker()`
 - `FB.select()`
 - `FB.multiselect()`
 - `FB.radio()`
@@ -194,6 +195,34 @@ FB.inputMask().key('phone').mask('(999) 999-9999').placeholder('sk-common.placeh
 
 `unmask(true)` aktif olduğunda modelde tutulan değer, maske karakterleri olmadan döner.
 
+## DatePicker Alan API'si
+
+`FB.datePicker()`, tarih, tarih-saat, aralık, çoklu tarih, ay ve yıl girişleri için PrimeVue `DatePicker` render eder.
+
+- `placeholder(string | boolean)`
+- `dateFormat(string)` — PrimeVue tarih formatı, varsayılan `'dd/mm/yy'`.
+- `selectionMode('single' | 'range' | 'multiple')`
+- `showTime(boolean)`
+- `hourFormat('12' | '24')`
+- `showIcon(boolean)`
+- `iconDisplay('input' | 'button')`
+- `minDate(Date)`
+- `maxDate(Date)`
+- `showButtonBar(boolean)`
+- `numberOfMonths(number)`
+- `view('date' | 'month' | 'year')`
+- `inline(boolean)`
+
+```ts
+FB.datePicker()
+    .key('published_at')
+    .label('Yayın tarihi')
+    .showIcon()
+    .showTime()
+    .hourFormat('24')
+    .dateFormat('dd/mm/yy');
+```
+
 ## Password Alan API'si
 
 `FB.password()`, opsiyonel güç göstergesi, crypto-safe üretici ve tutarlı göz toggle'ı ile gelen bir parola input'u üretir.
@@ -208,10 +237,10 @@ FB.inputMask().key('phone').mask('(999) 999-9999').placeholder('sk-common.placeh
 
     FB.password().key('password').generator({
         length: 20,
-        includeSymbols: true,
-        includeNumbers: true,
-        includeUppercase: true,
-        includeLowercase: true,
+        mixedCase: true,
+        letters: true,
+        numbers: true,
+        symbols: true,
     });
     ```
 
@@ -235,17 +264,19 @@ FB.password().key('password').generator({ length: 24 });
 
 `FB.editor()`, Tiptap v3 tabanlı bir WYSIWYG editör'ü FormBuilder alanı olarak render eder. İçerik sanitize edilmiş HTML olarak saklanır — `App\Support\HtmlSanitizer` hem yazma hem okuma yolunda allowlist dışındaki tag, attribute ve URL scheme'lerini süzer.
 
-- `preset('minimal' | 'standard' | 'full')` — toolbar düzeni. `minimal` bold / italic / link; `standard` başlıkları, listeleri, hizalamayı ve rengi ekler; `full` tablo, task list, görsel gömme ve horizontal rule'u aktive eder. Varsayılan `'standard'`.
+- `toolbar('minimal' | 'standard' | 'full')` — toolbar düzeni. `minimal` bold / italic / link; `standard` başlıkları, listeleri, hizalamayı ve rengi ekler; `full` tablo, task list, görsel gömme ve horizontal rule'u aktive eder. Varsayılan `'standard'`.
 - `placeholder(string)` — editor boşken gösterilen çeviri anahtarı.
-- `minHeight(string)` — editor gövdesi için CSS `min-height` (varsayılan `'180px'`).
-- `imageUpload({ folderName?, maxSizeKb?, acceptedMimes? })` — inline görsel upload'ını konfigüre eder. `folderName`, bu editör üzerinden yüklenen her görseli mevcut FileManager context'inde tek bir root-level klasör altında gruplar (örn. her welcome-message görseli "Welcome Message" altına gider). Server-side `folder_name` validator'ı ile aynı regex: yalnızca harf, rakam, boşluk, tire, altçizgi.
+- `minHeight(string)` — editor gövdesi için CSS `min-height` (varsayılan `'10rem'`).
+- `imageUpload({ context, contextId?, folderId?, folderName?, acceptedMimes? })` — File Manager üzerinden inline görsel upload'ını konfigüre eder. `context` zorunludur ve File Manager context registry içinde kayıtlı olmalıdır. `folderName`, bu editör üzerinden yüklenen her görseli ilgili context'te tek bir root-level klasör altında gruplar (örn. her welcome-message görseli "Welcome Message" altına gider). Server-side `folder_name` validator'ı ile aynı regex: yalnızca harf, rakam, boşluk, tire, altçizgi.
+- `links(boolean)` — link toolbar butonunu ve paste auto-linking davranışını açar. Varsayılan `false`.
+- `treatEmptyAsBlank(boolean)` — editör boşken `<p></p>` yerine boş string üretir. Varsayılan `true`.
 
 ```ts
 FB.editor()
     .key('welcome_message')
-    .preset('standard')
+    .toolbar('standard')
     .placeholder('sk-setting.general.welcome_message_placeholder')
-    .imageUpload({ folderName: 'Welcome Message' });
+    .imageUpload({ context: 'global', folderName: 'Welcome Message' });
 ```
 
 ### Sanitize edilmiş içeriği render etme

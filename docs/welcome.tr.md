@@ -20,7 +20,7 @@ Spatie Permission ile rol tabanlı erişim kontrolü sağlanır. Kaynak bazlı y
 
 ## Ayarlar Paneli
 
-Genel, kimlik doğrulama, mail, depolama, dosya yöneticisi ve güvenlik ayarları tek panelden yönetilir. Uygulama davranışını kod değişikliği yapmadan kontrol etmek için merkezi bir alan sunar.
+Genel, kimlik doğrulama, mail, depolama, dosya yöneticisi, API entegrasyonları, API istemcileri/token'ları ve System Health yüzeyleri tek panelden yönetilir. Uygulama davranışını kod değişikliği yapmadan kontrol etmek için merkezi bir alan sunar.
 
 ## Dosya Yönetimi
 

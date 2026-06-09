@@ -20,7 +20,7 @@ Role-based access control is provided through Spatie Permission. With resource-s
 
 ## Settings Panel
 
-General, authentication, mail, storage, file-manager, and security settings are managed from a single panel. It provides a central place to control application behavior without changing code.
+General, authentication, mail, storage, file-manager, API integration, API client/token, and System Health surfaces are managed from a single panel. It provides a central place to control application behavior without changing code.
 
 ## File Management
 

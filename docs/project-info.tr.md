@@ -19,7 +19,7 @@ Bu starter kit, boş bir panel yerine üretime yakın bir temel sunan, admin oda
 - Login, register ve forgot-password akışları için Cloudflare Turnstile desteği
 - Personal access token kullanan Passport tabanlı API kimlik doğrulama
 - Rol ve yetki yönetimi
-- Genel, auth, mail, storage, file manager ve Turnstile sekmelerine sahip ayarlar paneli
+- Genel, auth, mail, storage, file manager, API entegrasyonları, API istemcileri, API token'ları ve System Health sekmelerine sahip ayarlar paneli
 - İşlem kayıtları, definitions sistemi, ApiRoutes admin modülü ve global dosyalar çalışma alanı
 - DataTable, FormBuilder ve Tabs gibi tekrar kullanılabilir builder bileşenleri
 - İş mantığını temiz büyütmek için domain odaklı proje yapısı

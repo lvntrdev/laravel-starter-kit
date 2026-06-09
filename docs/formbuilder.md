@@ -106,6 +106,7 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 - `FB.inputNumber()`
 - `FB.inputOtp()`
 - `FB.inputMask()`
+- `FB.datePicker()`
 - `FB.select()`
 - `FB.multiselect()`
 - `FB.radio()`
@@ -194,6 +195,34 @@ FB.inputMask().key('phone').mask('(999) 999-9999').placeholder('sk-common.placeh
 
 When `unmask(true)` is enabled, the stored model value is returned without mask characters.
 
+## DatePicker Field API
+
+`FB.datePicker()` renders PrimeVue `DatePicker` for date, date-time, range, multiple-date, month, and year inputs.
+
+- `placeholder(string | boolean)`
+- `dateFormat(string)` — PrimeVue date format, default `'dd/mm/yy'`.
+- `selectionMode('single' | 'range' | 'multiple')`
+- `showTime(boolean)`
+- `hourFormat('12' | '24')`
+- `showIcon(boolean)`
+- `iconDisplay('input' | 'button')`
+- `minDate(Date)`
+- `maxDate(Date)`
+- `showButtonBar(boolean)`
+- `numberOfMonths(number)`
+- `view('date' | 'month' | 'year')`
+- `inline(boolean)`
+
+```ts
+FB.datePicker()
+    .key('published_at')
+    .label('Published at')
+    .showIcon()
+    .showTime()
+    .hourFormat('24')
+    .dateFormat('dd/mm/yy');
+```
+
 ## Password Field API
 
 `FB.password()` renders a password input with an optional strength meter, a crypto-safe generator, and a consistent eye toggle.
@@ -208,10 +237,10 @@ When `unmask(true)` is enabled, the stored model value is returned without mask 
 
     FB.password().key('password').generator({
         length: 20,
-        includeSymbols: true,
-        includeNumbers: true,
-        includeUppercase: true,
-        includeLowercase: true,
+        mixedCase: true,
+        letters: true,
+        numbers: true,
+        symbols: true,
     });
     ```
 
@@ -235,17 +264,19 @@ FB.password().key('password').generator({ length: 24 });
 
 `FB.editor()` renders a Tiptap v3 WYSIWYG editor as a FormBuilder field. Content is stored as sanitized HTML — `App\Support\HtmlSanitizer` strips tags, attributes, and URL schemes outside the allowlist on both write and read paths.
 
-- `preset('minimal' | 'standard' | 'full')` — toolbar layout. `minimal` covers bold / italic / link; `standard` adds headings, lists, alignment and color; `full` enables tables, task lists, image embedding and horizontal rule. Default `'standard'`.
+- `toolbar('minimal' | 'standard' | 'full')` — toolbar layout. `minimal` covers bold / italic / link; `standard` adds headings, lists, alignment and color; `full` enables tables, task lists, image embedding and horizontal rule. Default `'standard'`.
 - `placeholder(string)` — translation key rendered when the editor is empty.
-- `minHeight(string)` — CSS `min-height` for the editor body (default `'180px'`).
-- `imageUpload({ folderName?, maxSizeKb?, acceptedMimes? })` — configure inline image uploads. `folderName` groups every image uploaded through this editor under a single root-level folder in the current FileManager context (e.g. every welcome-message image goes under "Welcome Message"). Accepts the same regex as the server-side `folder_name` validator: letters, digits, space, dash, underscore only.
+- `minHeight(string)` — CSS `min-height` for the editor body (default `'10rem'`).
+- `imageUpload({ context, contextId?, folderId?, folderName?, acceptedMimes? })` — configure inline image uploads through File Manager. `context` is required and must be registered in the File Manager context registry. `folderName` groups every image uploaded through this editor under a single root-level folder in that context (e.g. every welcome-message image goes under "Welcome Message"). Accepts the same regex as the server-side `folder_name` validator: letters, digits, space, dash, underscore only.
+- `links(boolean)` — enables the link toolbar button and paste auto-linking. Default `false`.
+- `treatEmptyAsBlank(boolean)` — emits an empty string instead of `<p></p>` when the editor is empty. Default `true`.
 
 ```ts
 FB.editor()
     .key('welcome_message')
-    .preset('standard')
+    .toolbar('standard')
     .placeholder('sk-setting.general.welcome_message_placeholder')
-    .imageUpload({ folderName: 'Welcome Message' });
+    .imageUpload({ context: 'global', folderName: 'Welcome Message' });
 ```
 
 ### Rendering sanitized content

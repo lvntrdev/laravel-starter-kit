@@ -89,11 +89,29 @@ Detaylı adım adım rehber: [starter-kit.lvntr.dev/docs/install](https://starte
 - Node.js 18+
 - MySQL veya MariaDB
 
+## Uyumluluk & Sürümleme
+
+Paketin major sürümü desteklenen Laravel major sürümüyle hizalanır. Her
+Laravel major sürümü kendi bakım branch'ine ve `vN.x.y` tag akışına
+sahiptir; mevcut consumer constraint'leri kendi major hattında kalır ve
+daha yeni Laravel hedefinden kırıcı değişiklik almaz.
+
+| Laravel | Constraint                                            | Branch  | Durum  |
+|---------|-------------------------------------------------------|---------|--------|
+| 13.x    | `composer require lvntr/laravel-starter-kit:^13.0`    | `13.x`  | aktif  |
+
+`main` şu anda aktif major hattı takip eder (`13.x`). Gelecekte yeni bir
+Laravel sürümü hedeflendiğinde `main` sonraki major geliştirme hattına
+geçer; önceki major'un `N.x` branch'i ise backport almaya devam eder.
+
 ## Dökümantasyon
 
 Kurulum, güncelleme akışı, domain scaffolding, FormBuilder / DatatableBuilder / TabBuilder API'ları, composable'lar, dosya yöneticisi, roller ve yetkiler, OAuth2 API, aktivite kayıtları, ayarlar — her şey resmi sitede:
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
+
+- [Sürümler arası yükseltme](docs/UPGRADE.tr.md)
+- [Changelog](./CHANGELOG.md)
 
 ## Komutlar
 

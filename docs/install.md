@@ -138,7 +138,7 @@ After installation, confirm these areas work:
 - dashboard access
 - user and role management pages
 - profile security page (password, 2FA, browser sessions, avatar)
-- settings page tabs: General, Auth, Mail, Storage, File Manager, Turnstile
+- settings page tabs: General, Auth, Mail, Storage, File Manager, API Integrations, API Clients, API Tokens, System Health
 - file manager
 - `/api/v1/auth/login` and `/api/v1/auth/me`
 

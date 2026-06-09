@@ -10,7 +10,10 @@ Settings modülü, operasyonel yapılandırmayı admin panel içinde merkezi hal
 - `storage` — media disk seçimi ve S3 uyumlu / AWS kimlik bilgileri
 - `file_manager` — yükleme boyutu, kabul edilen MIME listesi, ses/video toggle'ları
 - `turnstile` — özellik toggle'ı, site key ve secret key
-- `api_clients` — Postman ve Apidog senkronizasyon kimlik bilgileri; tek sekme içinde iki yapılandırma kartı
+- `api_integrations` — Postman ve Apidog senkronizasyon kimlik bilgileri; tek sekme içinde iki yapılandırma kartı
+- `api_clients` — Passport OAuth2 istemcilerini listeleme, oluşturma, güncelleme ve silme
+- `api_tokens` — Personal Access Token listeleme, iptal etme ve tek seferlik token oluşturma
+- `system_health` — sistem yöneticileri için Settings içinde `sk:doctor` sonuçları
 
 ## Saklama Modeli
 
@@ -45,6 +48,7 @@ Admin modülü şu route'ları sunar:
 - `settings.testMail`
 - `settings.upload.logo` — `POST settings/logo`
 - `settings.delete.logo` — `DELETE settings/logo`
+- `system-health.run` — **Settings → System Health** sekmesinden `POST /system-health/run`
 
 ## Çalışma Zamanı Notları
 
@@ -56,6 +60,9 @@ Admin modülü şu route'ları sunar:
 - logo yükleme/silme uçları artık standart `ApiResponse` zarfını kullanır
 - Auth sekmesinde iki faktörü kapatmak, değişiklik gönderilmeden önce yöneticiye onay sorar; çünkü kullanıcı güvenliğini etkiler
 - Turnstile ayarları login, register ve forgot-password formlarındaki challenge davranışını besler
+- API entegrasyon ayarları Postman ve Apidog sync kimlik bilgilerini saklar; secret alanlar diğer sırlar gibi şifrelenir ve `*_is_set` bayraklarını kullanır
+- API client ve token yönetimi, Passport admin route'larıyla çalışan ayrı Settings sekmeleridir; yeni oluşturulan secret/token değerleri yalnızca bir kez gösterilir ve sonradan geri getirilemez
+- System Health bir Settings sekmesi olarak render edilir ve raporunu `sk:doctor --json` çıktısından alır
 - test-mail hataları sunucu tarafında loglanır ve ham SMTP exception detayı kullanıcıya gösterilmez
 - **Genel** sekmesindeki `welcome_message` alanı `FB.editor()` ile yazılır; içerik hem yazılırken (FormRequest `prepareForValidation` hook'u) hem okunurken (DashboardController defense-in-depth geçişi) `App\Support\HtmlSanitizer` üzerinden sanitize edilerek admin dashboard'da render edilir
 - `SettingService::setValue()` / `setGroup()` fonksiyonları `HTML_SAFE_KEYS` whitelist'indeki anahtarları `HtmlSanitizer::clean()`'den geçirir — FormRequest, tinker, scheduled command ve queue job'lar aynı sanitizer'ı kullanır, böylece normal setting API'si üzerinden sanitize edilmemiş HTML DB'ye yazılamaz

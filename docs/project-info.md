@@ -19,7 +19,7 @@ This starter kit is an admin-first Laravel 13 package that gives a new project a
 - Cloudflare Turnstile support for login, register, and forgot-password flows
 - Passport-based API authentication with personal access tokens
 - Role and permission management
-- Settings panel with general, auth, mail, storage, file manager, and Turnstile sections
+- Settings panel with general, auth, mail, storage, file manager, API integrations, API clients, API tokens, and System Health sections
 - Activity logs, definitions system, ApiRoutes admin module, and a global files workspace
 - Reusable builder components such as DataTable, FormBuilder, and Tabs
 - Domain-first application structure for scaling business logic cleanly

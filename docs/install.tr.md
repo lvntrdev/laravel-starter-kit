@@ -138,7 +138,7 @@ Kurulumdan sonra şu alanları kontrol edin:
 - dashboard erişimi
 - kullanıcı ve rol yönetimi sayfaları
 - profil güvenliği sayfası (şifre, 2FA, tarayıcı oturumları, avatar)
-- ayarlar sayfasındaki sekmeler: General, Auth, Mail, Storage, File Manager, Turnstile
+- ayarlar sayfasındaki sekmeler: General, Auth, Mail, Storage, File Manager, API Integrations, API Clients, API Tokens, System Health
 - dosya yöneticisi
 - `/api/v1/auth/login` ve `/api/v1/auth/me`
 
