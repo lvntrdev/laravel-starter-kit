@@ -127,12 +127,14 @@ resources/css/theme/
 │   │   └── footer.css       # .admin-footer*
 │   ├── components/
 │   │   ├── card.css
+│   │   ├── button.css
 │   │   ├── confirm.css
 │   │   ├── datatable.css
 │   │   ├── dialog.css
 │   │   ├── editor.css
 │   │   ├── formbuilder.css
 │   │   ├── menus.css
+│   │   ├── message.css
 │   │   ├── navigation.css
 │   │   ├── primevue.css
 │   │   ├── tabs.css
@@ -180,7 +182,7 @@ To preview the resolved manifest without a full build, use the `theme:build` npm
 
 ```bash
 npm run theme:build
-# [sk-theme-build] theme="custom" → resources/css/theme/_active.css (22 slots, 1 override)
+# [sk-theme-build] → resources/css/theme/_active.css (24 slots, 1 override)
 ```
 
 Or invoke the vendor script directly:
@@ -362,10 +364,10 @@ The `custom/` directory is not shipped by the kit. The `custom` theme's preset i
 
    ```ts
    import { definePreset } from '@primevue/themes';
-   import Aura from '@primevue/themes/aura';
+   import Material from '@primevue/themes/material';
    import AppPreset from '../preset';
 
-   export default definePreset(Aura, {
+   export default definePreset(Material, {
        ...AppPreset,
        semantic: {
            ...AppPreset.semantic,

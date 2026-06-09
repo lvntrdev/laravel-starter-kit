@@ -127,12 +127,14 @@ resources/css/theme/
 │   │   └── footer.css       # .admin-footer*
 │   ├── components/
 │   │   ├── card.css
+│   │   ├── button.css
 │   │   ├── confirm.css
 │   │   ├── datatable.css
 │   │   ├── dialog.css
 │   │   ├── editor.css
 │   │   ├── formbuilder.css
 │   │   ├── menus.css
+│   │   ├── message.css
 │   │   ├── navigation.css
 │   │   ├── primevue.css
 │   │   ├── tabs.css
@@ -180,7 +182,7 @@ Tam build yapmadan çözümlenen manifesti önizlemek için `theme:build` npm sc
 
 ```bash
 npm run theme:build
-# [sk-theme-build] theme="custom" → resources/css/theme/_active.css (22 slot, 1 override)
+# [sk-theme-build] → resources/css/theme/_active.css (24 slot, 1 override)
 ```
 
 Ya da vendor script'ini doğrudan çağırın:
@@ -362,10 +364,10 @@ resources/js/theme/
 
    ```ts
    import { definePreset } from '@primevue/themes';
-   import Aura from '@primevue/themes/aura';
+   import Material from '@primevue/themes/material';
    import AppPreset from '../preset';
 
-   export default definePreset(Aura, {
+   export default definePreset(Material, {
        ...AppPreset,
        semantic: {
            ...AppPreset.semantic,

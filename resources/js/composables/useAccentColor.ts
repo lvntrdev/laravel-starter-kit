@@ -44,7 +44,7 @@ export type SidebarStyle = (typeof SIDEBAR_STYLES)[number];
  * `tailwindcss/theme.css`. Inlined on purpose:
  *   - Tailwind tree-shakes unused `--color-*` variables, so `var(--color-indigo-500)`
  *     is NOT reliably present at runtime; and
- *   - the kit's PrimeVue preset extends Aura, whose `{indigo.x}` primitives are
+ *   - the kit's PrimeVue preset extends Material, whose `{indigo.x}` primitives are
  *     Tailwind v3 hex — not the v4 oklch tones used across the rest of the UI.
  * Inlining the v4 oklch palettes guarantees the accent colors match the app's
  * genuine Tailwind v4 tones.
@@ -93,15 +93,15 @@ export const ACCENT_SWATCH: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * Kit default primary scale — Aura's stock primary (emerald), matching
- * `resources/js/theme/preset.ts` which was reset to Aura defaults (no custom
- * primary override). Uses `{emerald.x}` token references so `updatePrimaryPalette`
- * resolves them against the active Aura preset. Kept in sync manually because
+ * Kit default primary scale — blue, matching `resources/js/theme/preset.ts`
+ * which extends Material with no custom primary override. Uses `{blue.x}` token
+ * references so `updatePrimaryPalette` resolves them against the active Material
+ * preset. Kept in sync manually because
  * resetting the accent to "default" needs explicit values to hand back.
  */
 const DEFAULT_PRIMARY: Record<number, string> = {
-    50: '{emerald.50}', 100: '{emerald.100}', 200: '{emerald.200}', 300: '{emerald.300}', 400: '{emerald.400}',
-    500: '{emerald.500}', 600: '{emerald.600}', 700: '{emerald.700}', 800: '{emerald.800}', 900: '{emerald.900}', 950: '{emerald.950}',
+    50: '{blue.50}', 100: '{blue.100}', 200: '{blue.200}', 300: '{blue.300}', 400: '{blue.400}',
+    500: '{blue.500}', 600: '{blue.600}', 700: '{blue.700}', 800: '{blue.800}', 900: '{blue.900}', 950: '{blue.950}',
 };
 
 export function useAccentColor() {
