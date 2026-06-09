@@ -55,9 +55,11 @@
     border-color: var(--p-surface-700);
 }
 
-/* Transparent cards carry no internal divider line. */
-.sk-card--transparent .sk-card__head--divider,
-:root.dark .sk-card--transparent .sk-card__head--divider {
+/* Transparent cards carry no internal divider line. Scoped with `>` so a
+   transparent wrapper (e.g. the default SkTabs content card) does not strip
+   the divider from nested inner cards. */
+.sk-card--transparent > .sk-card__head--divider,
+:root.dark .sk-card--transparent > .sk-card__head--divider {
     border-bottom: 0;
 }
 
@@ -104,13 +106,16 @@
 }
 
 /* Flush — content sits flush against the card edges (tables, toolbars,
-   vertical-tab nav that manage their own padding). */
-.sk-card--flush .sk-card__body {
+   vertical-tab nav that manage their own padding). `>` keeps the reset on this
+   card's own body, not nested inner card bodies. */
+.sk-card--flush > .sk-card__body {
     @apply p-0;
 }
 
-/* Transparent wrapper carries no body padding. */
-.sk-card--transparent .sk-card__body {
+/* Transparent wrapper carries no body padding. `>` so the reset stays on the
+   wrapper itself and does not leak into nested inner cards (e.g. the SkForm /
+   content cards rendered inside a transparent SkTabs panel). */
+.sk-card--transparent > .sk-card__body {
     @apply p-0;
 }
 
@@ -128,7 +133,7 @@
     border-color: var(--p-surface-700);
 }
 
-.sk-card--transparent .sk-card__foot {
+.sk-card--transparent > .sk-card__foot {
     @apply px-0;
     border-top: 0;
 }
