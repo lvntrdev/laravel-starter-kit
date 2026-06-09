@@ -39,9 +39,9 @@
     --tag-fg: #fff;
     --tag-surface: var(--p-surface-0, #fff);
     gap: 0.32rem;
-    padding: 0.22rem 0.5rem;
+    padding: 0.5rem; /* paddingY = paddingX (eşit, kullanıcı isteği); eskiden 0.22rem 0.5rem */
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: var(--p-tag-border-radius); /* PrimeVue orijinali — Aura {content.border.radius} = 6px; eskiden custom 3px */
     font-size: 12px;
     font-weight: 600;
     line-height: 1.2;
@@ -239,9 +239,6 @@
     font-size: 9px;
     opacity: 0.65;
     cursor: pointer;
-    transition:
-        opacity 0.15s,
-        background 0.15s;
 }
 .p-tag-x:hover {
     opacity: 1;

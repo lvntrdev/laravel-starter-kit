@@ -11,9 +11,14 @@
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    BASE LAYER
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/* PrimeVue button padding override — Material theme ignores component token overrides */
+/* PrimeVue button line-height reset.
+   Aura buttons set no own line-height, so they inherit the global `html`
+   rule (1.5715) below — which inflated the button to 38px (1.5715×14 = 22px
+   line-box + 7px×2 padding + 2px border). 1.25 restores Aura's compact ~33px.
+   Padding-y is intentionally NOT overridden here: Aura already ties button
+   padding to {form.field.padding.y}, so the old Material-era override is redundant. */
 .p-button {
-    --p-button-padding-y: var(--p-form-field-padding-y);
+    line-height: 1.25;
 }
 
 @layer base {

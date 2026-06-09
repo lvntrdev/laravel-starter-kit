@@ -44,9 +44,10 @@ export type SidebarStyle = (typeof SIDEBAR_STYLES)[number];
  * `tailwindcss/theme.css`. Inlined on purpose:
  *   - Tailwind tree-shakes unused `--color-*` variables, so `var(--color-indigo-500)`
  *     is NOT reliably present at runtime; and
- *   - the kit's PrimeVue preset extends Material, so its `{indigo.x}` primitives are
- *     Material Design colors, not Tailwind.
- * Inlining guarantees the accent colors are genuine Tailwind tones.
+ *   - the kit's PrimeVue preset extends Aura, whose `{indigo.x}` primitives are
+ *     Tailwind v3 hex — not the v4 oklch tones used across the rest of the UI.
+ * Inlining the v4 oklch palettes guarantees the accent colors match the app's
+ * genuine Tailwind v4 tones.
  */
 export const TAILWIND_PALETTES: Record<string, Record<number, string>> = {
     slate: { 50: 'oklch(98.4% 0.003 247.858)', 100: 'oklch(96.8% 0.007 247.896)', 200: 'oklch(92.9% 0.013 255.508)', 300: 'oklch(86.9% 0.022 252.894)', 400: 'oklch(70.4% 0.04 256.788)', 500: 'oklch(55.4% 0.046 257.417)', 600: 'oklch(44.6% 0.043 257.281)', 700: 'oklch(37.2% 0.044 257.287)', 800: 'oklch(27.9% 0.041 260.031)', 900: 'oklch(20.8% 0.042 265.755)', 950: 'oklch(12.9% 0.042 264.695)' },
@@ -92,13 +93,15 @@ export const ACCENT_SWATCH: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * Kit default primary scale — mirrors `resources/js/theme/preset.ts`
- * (semantic.primary). Kept in sync manually because resetting to "default"
- * needs explicit values to hand back to `updatePrimaryPalette`.
+ * Kit default primary scale — Aura's stock primary (emerald), matching
+ * `resources/js/theme/preset.ts` which was reset to Aura defaults (no custom
+ * primary override). Uses `{emerald.x}` token references so `updatePrimaryPalette`
+ * resolves them against the active Aura preset. Kept in sync manually because
+ * resetting the accent to "default" needs explicit values to hand back.
  */
 const DEFAULT_PRIMARY: Record<number, string> = {
-    50: '#E6F0FF', 100: '#CCE0FF', 200: '#99C2FF', 300: '#66A3FF', 400: '#3385FF',
-    500: '#0069FF', 600: '#0054CC', 700: '#003F99', 800: '#002A66', 900: '#001A40', 950: '#001029',
+    50: '{emerald.50}', 100: '{emerald.100}', 200: '{emerald.200}', 300: '{emerald.300}', 400: '{emerald.400}',
+    500: '{emerald.500}', 600: '{emerald.600}', 700: '{emerald.700}', 800: '{emerald.800}', 900: '{emerald.900}', 950: '{emerald.950}',
 };
 
 export function useAccentColor() {

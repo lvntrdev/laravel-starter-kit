@@ -188,7 +188,21 @@
     --msg-fg: #fff;
     --msg-surface: var(--p-content-background, #fff);
     border-radius: 6px;
-    overflow: hidden;
+
+    /* No enter/leave animation. PrimeVue wraps Message in `<Transition appear>`
+       and animates `grid-template-rows: 0fr→1fr` + opacity on mount/close;
+       disabled here so themed messages appear instantly (matches the
+       no-animation Tag treatment). !important to beat the injected
+       `.p-message-enter-active` / `.p-message-leave-active` keyframes. */
+    animation: none !important;
+
+    /* NOTE: deliberately NO `overflow: hidden` here. PrimeVue's root is
+       `display:grid; grid-template-rows:1fr` with a `min-height:0` wrapper and an
+       `appear` enter animation (0fr→1fr). Setting overflow:hidden on the grid
+       turns it into a scroll container, which removes the `fr` track's
+       content-based minimum — so on icon-less messages the 1fr row collapses to
+       zero and the clip leaves a thin coloured line. border-radius alone rounds
+       both the border and the fill, so the clip was never needed. */
 
     /* ── Default variant → accent bar (tinted bg + bold coloured left edge) ── */
     &:not([data-p~='outlined']):not([data-p~='simple']):not(.p-message-fill) {
@@ -236,11 +250,11 @@
         padding: 0.85rem 0.95rem;
     }
 
-    /* Stacked title + description (showcase puts a bold title + muted desc). */
+    /* Title + description. The slot stacks via block children — do NOT make this
+       a flex column: PrimeVue's root is `display:grid; grid-template-rows:1fr`
+       with a `min-height:0` wrapper, and a nested flex column collapses that 1fr
+       track to zero on icon-less messages (the box would shrink to a thin line). */
     & .p-message-text {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
         line-height: 1.45;
         font-size: 13.5px;
     }
@@ -266,9 +280,6 @@
         color: inherit;
         opacity: 0.6;
         border-radius: 6px;
-        transition:
-            opacity 0.15s,
-            background 0.15s;
 
         &:hover {
             opacity: 1;

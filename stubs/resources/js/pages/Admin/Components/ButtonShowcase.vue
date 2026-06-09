@@ -2,9 +2,11 @@
     import { Head } from '@inertiajs/vue3';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
+    import { trans } from 'laravel-vue-i18n';
 
     // Built-in PrimeVue severities — kept as PrimeVue's own styling (the theme
-    // only ADDS the Tailwind families, it does not repaint these).
+    // only ADDS the Tailwind families, it does not repaint these). The `label`
+    // is the severity API name itself, so it stays literal (not translated).
     const severities = [
         { sev: undefined, label: 'Primary' },
         { sev: 'secondary', label: 'Secondary' },
@@ -29,24 +31,17 @@
 </script>
 
 <template>
-    <Head title="Butonlar" />
+    <Head :title="$t('sk-component.button.title')" />
 
-    <AdminLayout title="Butonlar" subtitle="Button bileşeni — severity, varyantlar ve Tailwind renkleri.">
+    <AdminLayout :title="$t('sk-component.button.title')" :subtitle="$t('sk-component.button.subtitle')">
         <template #page-actions>
             <a href="https://primevue.org/button/" target="_blank" rel="noopener noreferrer">
-                <Button label="Dokümantasyon" icon="pi pi-book" outlined size="small" />
+                <Button :label="$t('sk-component.docs')" icon="pi pi-book" outlined size="small" />
             </a>
         </template>
 
         <Message severity="info" :closable="false" class="mb-6">
-            <span class="text-[13.5px] leading-relaxed">
-                <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
-                türü butonun rengini belirler. Yerleşik önem dereceleri ile birlikte her Tailwind renk ailesi
-                (v4.2 ile gelen <strong>mauve · olive · mist · taupe</strong> dahil) doğrudan bir
-                <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">severity</code>
-                olarak kullanılabilir — ör. <code class="rounded bg-surface-100 px-1 py-px font-mono text-[11.5px] text-surface-600 dark:bg-surface-800 dark:text-surface-300">&lt;Button severity="indigo" label="Kaydet" /&gt;</code>.
-                Dolu, çerçeveli, metin, yükseltilmiş, yuvarlatılmış ve yalnızca-ikon varyantlarının tamamıyla çalışır.
-            </span>
+            <span class="text-[13.5px] leading-relaxed">{{ trans('sk-component.button.intro') }}</span>
         </Message>
 
         <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
@@ -56,8 +51,8 @@
                     <span class="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-md font-mono text-[11.5px] font-semibold"
                           :style="{ color: 'var(--p-primary-color)', background: 'color-mix(in srgb, var(--p-primary-color) 10%, transparent)' }">01</span>
                     <div>
-                        <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">PrimeVue · Önem Dereceleri</h3>
-                        <p class="mt-0.5 text-[12.5px] leading-relaxed text-surface-500 dark:text-surface-400">Yerleşik severity'ler PrimeVue stiliyle korunur — dolu, çerçeveli ve metin.</p>
+                        <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">{{ $t('sk-component.button.sections.severities.title') }}</h3>
+                        <p class="mt-0.5 text-[12.5px] leading-relaxed text-surface-500 dark:text-surface-400">{{ $t('sk-component.button.sections.severities.desc') }}</p>
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
@@ -79,32 +74,32 @@
                     <span class="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-md font-mono text-[11.5px] font-semibold"
                           :style="{ color: 'var(--p-primary-color)', background: 'color-mix(in srgb, var(--p-primary-color) 10%, transparent)' }">02</span>
                     <div>
-                        <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">Varyantlar</h3>
-                        <p class="mt-0.5 text-[12.5px] leading-relaxed text-surface-500 dark:text-surface-400">İkon, yuvarlatılmış, yalnızca-ikon, boyutlar ve durumlar.</p>
+                        <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">{{ $t('sk-component.button.sections.variants.title') }}</h3>
+                        <p class="mt-0.5 text-[12.5px] leading-relaxed text-surface-500 dark:text-surface-400">{{ $t('sk-component.button.sections.variants.desc') }}</p>
                     </div>
                 </div>
                 <div class="flex flex-col gap-3.5">
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <Button label="Kaydet" icon="pi pi-check" />
-                        <Button label="İleri" icon="pi pi-arrow-right" icon-pos="right" />
-                        <Button label="Sil" icon="pi pi-trash" severity="danger" outlined />
+                        <Button :label="$t('sk-component.button.actions.save')" icon="pi pi-check" />
+                        <Button :label="$t('sk-component.button.actions.next')" icon="pi pi-arrow-right" icon-pos="right" />
+                        <Button :label="$t('sk-component.button.actions.delete')" icon="pi pi-trash" severity="danger" outlined />
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5">
                         <Button label="Pill" rounded />
                         <Button label="Pill" severity="secondary" rounded outlined />
-                        <Button icon="pi pi-heart" severity="danger" rounded aria-label="Beğen" />
-                        <Button icon="pi pi-check" aria-label="Onayla" />
-                        <Button icon="pi pi-cog" severity="secondary" outlined aria-label="Ayarlar" />
-                        <Button icon="pi pi-bookmark" text aria-label="Yer imi" />
+                        <Button icon="pi pi-heart" severity="danger" rounded :aria-label="$t('sk-component.button.aria.like')" />
+                        <Button icon="pi pi-check" :aria-label="$t('sk-component.button.aria.confirm')" />
+                        <Button icon="pi pi-cog" severity="secondary" outlined :aria-label="$t('sk-component.button.aria.settings')" />
+                        <Button icon="pi pi-bookmark" text :aria-label="$t('sk-component.button.aria.bookmark')" />
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <Button label="Küçük" icon="pi pi-check" size="small" />
-                        <Button label="Normal" icon="pi pi-check" />
-                        <Button label="Büyük" icon="pi pi-check" size="large" />
+                        <Button :label="$t('sk-component.sizes.small')" icon="pi pi-check" size="small" />
+                        <Button :label="$t('sk-component.sizes.normal')" icon="pi pi-check" />
+                        <Button :label="$t('sk-component.sizes.large')" icon="pi pi-check" size="large" />
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <Button label="Yükleniyor" loading />
-                        <Button label="Pasif" disabled />
+                        <Button :label="$t('sk-component.button.actions.loading')" loading />
+                        <Button :label="$t('sk-component.button.actions.disabled')" disabled />
                     </div>
                 </div>
             </SkCard>
@@ -123,7 +118,7 @@
                 <div class="flex flex-col gap-3.5">
                     <!-- Filled -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">Filled</span>
+                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">{{ $t('sk-component.variants.filled') }}</span>
                         <div class="flex flex-wrap items-center gap-2.5">
                             <Button :severity="c" :label="cap(c)" />
                             <Button :severity="c" :label="cap(c)" icon="pi pi-check" />
@@ -132,7 +127,7 @@
                     </div>
                     <!-- Raised / Rounded -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">Raised · Rounded</span>
+                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">{{ $t('sk-component.variants.raised_rounded') }}</span>
                         <div class="flex flex-wrap items-center gap-2.5">
                             <Button :severity="c" :label="cap(c)" raised />
                             <Button :severity="c" label="Pill" rounded />
@@ -141,16 +136,16 @@
                     </div>
                     <!-- Outlined / Text -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">Outlined · Text</span>
+                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">{{ $t('sk-component.variants.outlined_text') }}</span>
                         <div class="flex flex-wrap items-center gap-2.5">
-                            <Button :severity="c" label="Outline" outlined />
-                            <Button :severity="c" label="Outline" icon="pi pi-arrow-right" icon-pos="right" outlined />
-                            <Button :severity="c" label="Text" text />
+                            <Button :severity="c" :label="$t('sk-component.variants.outlined')" outlined />
+                            <Button :severity="c" :label="$t('sk-component.variants.outlined')" icon="pi pi-arrow-right" icon-pos="right" outlined />
+                            <Button :severity="c" :label="$t('sk-component.variants.text')" text />
                         </div>
                     </div>
                     <!-- Icon only -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">Icon Only</span>
+                        <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">{{ $t('sk-component.variants.icon_only') }}</span>
                         <div class="flex flex-wrap items-center gap-2.5">
                             <Button :severity="c" icon="pi pi-check" :aria-label="c" />
                             <Button :severity="c" icon="pi pi-star" rounded :aria-label="c" />

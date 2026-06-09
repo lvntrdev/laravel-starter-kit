@@ -1,18 +1,8 @@
 <script setup lang="ts">
-    import { computed } from 'vue';
     import { Head } from '@inertiajs/vue3';
-    import { trans } from 'laravel-vue-i18n';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
-
-    // Intro banner copy. Only render the <Message> when this resolves to real
-    // content — a missing/empty translation must NOT leave a hollow message box
-    // (an empty Message still paints its accent border as a thin line).
-    const intro = computed<string>(() => {
-        const key = 'sk-component.message.intro';
-        const value = trans(key);
-        return value && value !== key ? value : '';
-    });
+    import { trans } from 'laravel-vue-i18n';
 
     // Built-in PrimeVue severities, repainted to the SK palette in the theme CSS.
     // The icon mirrors the design's banner motifs; title/desc are translated.
@@ -48,8 +38,8 @@
             </a>
         </template>
 
-        <Message v-if="intro" severity="info" :closable="false" class="mb-6">
-            <span class="text-[13.5px] leading-relaxed" v-html="intro" />
+        <Message severity="info" :closable="false" class="mb-6">
+            <span class="text-[13.5px] leading-relaxed">{{ trans('sk-component.message.intro') }}</span>
         </Message>
 
         <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
