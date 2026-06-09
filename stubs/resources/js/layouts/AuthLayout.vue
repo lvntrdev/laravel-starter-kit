@@ -7,6 +7,7 @@
 
     import { computed } from 'vue';
     import { useDarkMode } from '@/composables/useDarkMode';
+    import { useAccentColor } from '@/composables/useAccentColor';
     import { Head, usePage } from '@inertiajs/vue3';
 
     withDefaults(defineProps<Props>(), {
@@ -15,6 +16,12 @@
     });
 
     const { isDark, toggleDark } = useDarkMode();
+
+    // Re-apply the accent saved in localStorage (e.g. indigo picked in the admin)
+    // so the login screen matches the user's last choice. With no saved accent it
+    // falls back to 'default' (blue). onMounted inside the composable does the work;
+    // never touches the DOM during SSR.
+    useAccentColor();
     const appName = computed(() => (usePage().props.appName as string) || 'Laravel');
     const appLogo = computed(() => usePage().props.appLogo as string | null);
 </script>

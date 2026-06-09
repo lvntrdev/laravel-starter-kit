@@ -93,11 +93,11 @@ export const ACCENT_SWATCH: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * Kit default primary scale — blue, matching `resources/js/theme/preset.ts`
- * which extends Material with no custom primary override. Uses `{blue.x}` token
- * references so `updatePrimaryPalette` resolves them against the active Material
- * preset. Kept in sync manually because
- * resetting the accent to "default" needs explicit values to hand back.
+ * Kit default primary scale — blue, matching the `semantic.primary` override in
+ * `resources/js/theme/preset.ts` (the single source of truth for the default
+ * primary). Uses `{blue.x}` token references so `updatePrimaryPalette` resolves
+ * them against the active Material preset. Kept in sync with preset.ts manually
+ * because resetting the accent to "default" needs explicit values to hand back.
  */
 const DEFAULT_PRIMARY: Record<number, string> = {
     50: '{blue.50}', 100: '{blue.100}', 200: '{blue.200}', 300: '{blue.300}', 400: '{blue.400}',
