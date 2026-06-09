@@ -25,4 +25,5 @@ return [
     'components' => 'Components',
     'tag' => 'Tag',
     'buttons' => 'Buttons',
+    'message' => 'Messages',
 ];

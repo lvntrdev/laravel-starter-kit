@@ -16,4 +16,5 @@ Route::middleware('role:system_admin')
         Route::redirect('/', '/components/tag')->name('index');
         Route::get('tag', 'tag')->name('tag');
         Route::get('buttons', 'buttons')->name('buttons');
+        Route::get('messages', 'messages')->name('messages');
     });

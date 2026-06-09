@@ -78,6 +78,12 @@ export function useAdminMenu() {
             role: 'system_admin',
         },
         {
+            title: 'sk-menu.message',
+            icon: 'pi pi-comment',
+            href: '/components/messages',
+            role: 'system_admin',
+        },
+        {
             title: 'sk-menu.developer',
             section: true,
         },

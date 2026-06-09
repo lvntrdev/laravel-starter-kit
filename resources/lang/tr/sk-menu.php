@@ -25,4 +25,5 @@ return [
     'components' => 'Bileşenler',
     'tag' => 'Tag',
     'buttons' => 'Butonlar',
+    'message' => 'Mesajlar',
 ];

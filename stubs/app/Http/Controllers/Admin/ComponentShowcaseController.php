@@ -30,4 +30,11 @@ class ComponentShowcaseController extends Controller
         // never "Button.vue", so it does not self-reference the <Button> it renders.
         return Inertia::render('Admin/Components/ButtonShowcase');
     }
+
+    public function messages(): Response
+    {
+        // Same filename-collision caveat: the page is "MessageShowcase", never
+        // "Message.vue", so it does not self-reference the <Message> it renders.
+        return Inertia::render('Admin/Components/MessageShowcase');
+    }
 }

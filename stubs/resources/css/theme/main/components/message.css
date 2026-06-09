@@ -1,0 +1,385 @@
+/**
+ * Message & InlineMessage — PrimeVue components repainted to the SK palette.
+ *
+ * Inline notifications coloured by `severity`, for the 6 built-in severities AND
+ * every Tailwind palette family (+ the custom mauve / olive / mist / taupe). A
+ * single `--msg-c` drives every look; `--msg-fg` overrides the label on light
+ * fills (yellow). The 600-shade hexes match the Tag/Button palette
+ * (components/tag.css, components/button.css) so a <Tag severity="indigo">, a
+ * <Button severity="indigo"> and a <Message severity="indigo"> read identically.
+ *
+ *     <Message severity="indigo">…</Message>                       (accent — default)
+ *     <Message severity="rose"  class="p-message-fill">…</Message> (solid filled banner)
+ *     <Message severity="blue"  variant="outlined">…</Message>     (outlined)
+ *     <Message severity="teal"  variant="simple">…</Message>       (no chrome)
+ *     <InlineMessage severity="amber">…</InlineMessage>            (compact soft chip)
+ *
+ * ── How the colouring works ──────────────────────────────────────────────────
+ * PrimeVue 4 renders Message's `severity` (and the `outlined` / `simple` variant
+ * flags) into a space-separated `data-p` attribute on every part:
+ *
+ *     <Message severity="info" variant="outlined" />
+ *       → <div class="p-message" data-p="outlined info">…
+ *
+ * so any severity name can be coloured purely from CSS — no component patch.
+ * InlineMessage has no `data-p`; it interpolates the severity straight into a
+ * class (`p-inlinemessage-<severity>`), which works for Tailwind names too, so
+ * each colour token below targets BOTH `.p-message[data-p~='x']` and
+ * `.p-inlinemessage-x` to keep one source of truth.
+ *
+ * These rules are UNLAYERED (app.css imports the theme outside the `primevue`
+ * cssLayer), so they win over PrimeVue's own severity styling — same mechanism
+ * as components/tag.css and components/button.css. The default variant is the
+ * calm accent-bar look; the design's solid banner is the opt-in .p-message-fill.
+ */
+
+/* ── Per-severity colour tokens (matches the Tag/Button 600 palette) ─────────
+   Each rule sets --msg-c on BOTH the Message (data-p) and the InlineMessage
+   (class) selector, so the two components stay perfectly in sync. */
+.p-message[data-p~='secondary'],
+.p-inlinemessage-secondary {
+    --msg-c: #64748b;
+}
+.p-message[data-p~='success'],
+.p-inlinemessage-success {
+    --msg-c: #16a34a;
+}
+.p-message[data-p~='info'],
+.p-inlinemessage-info {
+    --msg-c: #2563eb;
+}
+.p-message[data-p~='warn'],
+.p-inlinemessage-warn {
+    --msg-c: #d97706;
+}
+.p-message[data-p~='danger'],
+.p-message[data-p~='error'],
+.p-inlinemessage-danger,
+.p-inlinemessage-error {
+    --msg-c: #dc2626;
+}
+.p-message[data-p~='contrast'],
+.p-inlinemessage-contrast {
+    --msg-c: #0f172a;
+}
+
+/* ── Tailwind families (+ custom mauve / olive / mist / taupe) ───────────────── */
+.p-message[data-p~='slate'],
+.p-inlinemessage-slate {
+    --msg-c: #0f172a;
+}
+.p-message[data-p~='gray'],
+.p-inlinemessage-gray {
+    --msg-c: #4b5563;
+}
+.p-message[data-p~='zinc'],
+.p-inlinemessage-zinc {
+    --msg-c: #52525b;
+}
+.p-message[data-p~='neutral'],
+.p-inlinemessage-neutral {
+    --msg-c: #525252;
+}
+.p-message[data-p~='stone'],
+.p-inlinemessage-stone {
+    --msg-c: #57534e;
+}
+.p-message[data-p~='mauve'],
+.p-inlinemessage-mauve {
+    --msg-c: #594c5b;
+}
+.p-message[data-p~='olive'],
+.p-inlinemessage-olive {
+    --msg-c: #5b5b4b;
+}
+.p-message[data-p~='mist'],
+.p-inlinemessage-mist {
+    --msg-c: #4b585b;
+}
+.p-message[data-p~='taupe'],
+.p-inlinemessage-taupe {
+    --msg-c: #5b4f4b;
+}
+.p-message[data-p~='red'],
+.p-inlinemessage-red {
+    --msg-c: #dc2626;
+}
+.p-message[data-p~='orange'],
+.p-inlinemessage-orange {
+    --msg-c: #ea580c;
+}
+.p-message[data-p~='amber'],
+.p-inlinemessage-amber {
+    --msg-c: #d97706;
+}
+.p-message[data-p~='yellow'],
+.p-inlinemessage-yellow {
+    --msg-c: #eab308;
+}
+.p-message[data-p~='lime'],
+.p-inlinemessage-lime {
+    --msg-c: #65a30d;
+}
+.p-message[data-p~='green'],
+.p-inlinemessage-green {
+    --msg-c: #22c55e;
+}
+.p-message[data-p~='emerald'],
+.p-inlinemessage-emerald {
+    --msg-c: #059669;
+}
+.p-message[data-p~='teal'],
+.p-inlinemessage-teal {
+    --msg-c: #0d9488;
+}
+.p-message[data-p~='cyan'],
+.p-inlinemessage-cyan {
+    --msg-c: #0891b2;
+}
+.p-message[data-p~='sky'],
+.p-inlinemessage-sky {
+    --msg-c: #0284c7;
+}
+.p-message[data-p~='blue'],
+.p-inlinemessage-blue {
+    --msg-c: #2563eb;
+}
+.p-message[data-p~='indigo'],
+.p-inlinemessage-indigo {
+    --msg-c: #4f46e5;
+}
+.p-message[data-p~='violet'],
+.p-inlinemessage-violet {
+    --msg-c: #7c3aed;
+}
+.p-message[data-p~='purple'],
+.p-inlinemessage-purple {
+    --msg-c: #9333ea;
+}
+.p-message[data-p~='fuchsia'],
+.p-inlinemessage-fuchsia {
+    --msg-c: #c026d3;
+}
+.p-message[data-p~='pink'],
+.p-inlinemessage-pink {
+    --msg-c: #db2777;
+}
+.p-message[data-p~='rose'],
+.p-inlinemessage-rose {
+    --msg-c: #e11d48;
+}
+
+/* ============================================================================
+   Message
+   ============================================================================ */
+
+/* Themed-severity gate — every selector below scopes to this list so an
+   un-themed <Message> (no severity) keeps PrimeVue's own styling. Zero
+   specificity via :where(); the unlayered cascade is what makes it win. */
+.p-message:where(
+        [data-p~='secondary'], [data-p~='success'], [data-p~='info'], [data-p~='warn'], [data-p~='danger'], [data-p~='error'], [data-p~='contrast'],
+        [data-p~='slate'], [data-p~='gray'], [data-p~='zinc'], [data-p~='neutral'], [data-p~='stone'],
+        [data-p~='mauve'], [data-p~='olive'], [data-p~='mist'], [data-p~='taupe'],
+        [data-p~='red'], [data-p~='orange'], [data-p~='amber'], [data-p~='yellow'], [data-p~='lime'],
+        [data-p~='green'], [data-p~='emerald'], [data-p~='teal'], [data-p~='cyan'], [data-p~='sky'],
+        [data-p~='blue'], [data-p~='indigo'], [data-p~='violet'], [data-p~='purple'], [data-p~='fuchsia'],
+        [data-p~='pink'], [data-p~='rose']
+    ) {
+    --msg-fg: #fff;
+    --msg-surface: var(--p-content-background, #fff);
+    border-radius: 6px;
+    overflow: hidden;
+
+    /* ── Default variant → accent bar (tinted bg + bold coloured left edge) ── */
+    &:not([data-p~='outlined']):not([data-p~='simple']):not(.p-message-fill) {
+        background: color-mix(in srgb, var(--msg-c) 9%, var(--msg-surface));
+        border: 1px solid color-mix(in srgb, var(--msg-c) 20%, transparent);
+        border-left: 4px solid var(--msg-c);
+        color: var(--p-text-color, #1c1917);
+    }
+
+    /* ── .p-message-fill → solid filled banner (the design hero) ──────────── */
+    &.p-message-fill {
+        background: var(--msg-c);
+        border: 1px solid transparent;
+        color: var(--msg-fg);
+    }
+
+    /* ── Outlined variant → transparent, coloured ring ────────────────────── */
+    &[data-p~='outlined'] {
+        background: transparent;
+        border: 1px solid color-mix(in srgb, var(--msg-c) 45%, transparent);
+        color: color-mix(in srgb, var(--msg-c) 82%, #000);
+    }
+
+    /* ── Simple variant → no chrome, just coloured content ────────────────── */
+    &[data-p~='simple'] {
+        background: transparent;
+        border: 0;
+        color: color-mix(in srgb, var(--msg-c) 82%, #000);
+    }
+}
+
+/* Content padding + layout (top-aligned, matches the design banner). */
+.p-message:where(
+        [data-p~='secondary'], [data-p~='success'], [data-p~='info'], [data-p~='warn'], [data-p~='danger'], [data-p~='error'], [data-p~='contrast'],
+        [data-p~='slate'], [data-p~='gray'], [data-p~='zinc'], [data-p~='neutral'], [data-p~='stone'],
+        [data-p~='mauve'], [data-p~='olive'], [data-p~='mist'], [data-p~='taupe'],
+        [data-p~='red'], [data-p~='orange'], [data-p~='amber'], [data-p~='yellow'], [data-p~='lime'],
+        [data-p~='green'], [data-p~='emerald'], [data-p~='teal'], [data-p~='cyan'], [data-p~='sky'],
+        [data-p~='blue'], [data-p~='indigo'], [data-p~='violet'], [data-p~='purple'], [data-p~='fuchsia'],
+        [data-p~='pink'], [data-p~='rose']
+    ) {
+    & .p-message-content {
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.85rem 0.95rem;
+    }
+
+    /* Stacked title + description (showcase puts a bold title + muted desc). */
+    & .p-message-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        line-height: 1.45;
+        font-size: 13.5px;
+    }
+
+    /* Circular ring icon badge — the design's signature motif. */
+    & .p-message-icon {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        border-radius: 50%;
+        font-size: 15px;
+        background: color-mix(in srgb, var(--msg-c) 14%, transparent);
+        box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--msg-c) 32%, transparent);
+        color: var(--msg-c);
+    }
+
+    /* Close button — calm by default, lifts on hover. */
+    & .p-message-close-button {
+        flex: 0 0 auto;
+        color: inherit;
+        opacity: 0.6;
+        border-radius: 6px;
+        transition:
+            opacity 0.15s,
+            background 0.15s;
+
+        &:hover {
+            opacity: 1;
+            background: color-mix(in srgb, currentColor 14%, transparent);
+        }
+    }
+}
+
+/* Filled banner → flip the icon chip and close button to white-on-colour. */
+.p-message.p-message-fill {
+    & .p-message-icon {
+        background: rgba(255, 255, 255, 0.18);
+        box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+        color: var(--msg-fg);
+    }
+
+    & .p-message-text {
+        color: var(--msg-fg);
+    }
+}
+
+/* Outlined / simple → tint the icon chip to match the transparent surface. */
+.p-message:where([data-p~='outlined'], [data-p~='simple']) .p-message-icon {
+    background: color-mix(in srgb, var(--msg-c) 12%, transparent);
+}
+
+/* ============================================================================
+   InlineMessage — compact soft chip (icon + short text, no close).
+   ============================================================================ */
+.p-inlinemessage:where(
+        .p-inlinemessage-secondary, .p-inlinemessage-success, .p-inlinemessage-info, .p-inlinemessage-warn, .p-inlinemessage-danger, .p-inlinemessage-error, .p-inlinemessage-contrast,
+        .p-inlinemessage-slate, .p-inlinemessage-gray, .p-inlinemessage-zinc, .p-inlinemessage-neutral, .p-inlinemessage-stone,
+        .p-inlinemessage-mauve, .p-inlinemessage-olive, .p-inlinemessage-mist, .p-inlinemessage-taupe,
+        .p-inlinemessage-red, .p-inlinemessage-orange, .p-inlinemessage-amber, .p-inlinemessage-yellow, .p-inlinemessage-lime,
+        .p-inlinemessage-green, .p-inlinemessage-emerald, .p-inlinemessage-teal, .p-inlinemessage-cyan, .p-inlinemessage-sky,
+        .p-inlinemessage-blue, .p-inlinemessage-indigo, .p-inlinemessage-violet, .p-inlinemessage-purple, .p-inlinemessage-fuchsia,
+        .p-inlinemessage-pink, .p-inlinemessage-rose
+    ) {
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: color-mix(in srgb, var(--msg-c) 12%, var(--p-content-background, #fff));
+    border: 1px solid color-mix(in srgb, var(--msg-c) 22%, transparent);
+    color: color-mix(in srgb, var(--msg-c) 78%, #000);
+
+    & .p-inlinemessage-icon {
+        color: var(--msg-c);
+        font-size: 14px;
+    }
+}
+
+/* ============================================================================
+   Dark mode — tinted surfaces flip to translucent fills; near-black neutrals
+   (slate / contrast) lift so filled banners stay legible on the dark panel.
+   ============================================================================ */
+:root.dark {
+    .p-message:where(
+            [data-p~='secondary'], [data-p~='success'], [data-p~='info'], [data-p~='warn'], [data-p~='danger'], [data-p~='error'], [data-p~='contrast'],
+            [data-p~='slate'], [data-p~='gray'], [data-p~='zinc'], [data-p~='neutral'], [data-p~='stone'],
+            [data-p~='mauve'], [data-p~='olive'], [data-p~='mist'], [data-p~='taupe'],
+            [data-p~='red'], [data-p~='orange'], [data-p~='amber'], [data-p~='yellow'], [data-p~='lime'],
+            [data-p~='green'], [data-p~='emerald'], [data-p~='teal'], [data-p~='cyan'], [data-p~='sky'],
+            [data-p~='blue'], [data-p~='indigo'], [data-p~='violet'], [data-p~='purple'], [data-p~='fuchsia'],
+            [data-p~='pink'], [data-p~='rose']
+        ) {
+        &:not([data-p~='outlined']):not([data-p~='simple']):not(.p-message-fill) {
+            background: color-mix(in srgb, var(--msg-c) 20%, transparent);
+            border-color: color-mix(in srgb, var(--msg-c) 32%, transparent);
+            color: color-mix(in srgb, var(--msg-c), white 60%);
+        }
+
+        &[data-p~='outlined'] {
+            border-color: color-mix(in srgb, var(--msg-c) 55%, transparent);
+            color: color-mix(in srgb, var(--msg-c), white 42%);
+        }
+
+        &[data-p~='simple'] {
+            color: color-mix(in srgb, var(--msg-c), white 42%);
+        }
+
+        & .p-message-icon {
+            color: color-mix(in srgb, var(--msg-c), white 30%);
+            background: color-mix(in srgb, var(--msg-c) 26%, transparent);
+            box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--msg-c) 44%, transparent);
+        }
+    }
+
+    /* Lift the near-black neutrals so a filled slate/contrast banner reads. */
+    .p-message[data-p~='slate'],
+    .p-message[data-p~='contrast'] {
+        --msg-c: #475569;
+    }
+
+    /* InlineMessage — translucent fill on the dark panel. */
+    .p-inlinemessage:where(
+            .p-inlinemessage-secondary, .p-inlinemessage-success, .p-inlinemessage-info, .p-inlinemessage-warn, .p-inlinemessage-danger, .p-inlinemessage-error, .p-inlinemessage-contrast,
+            .p-inlinemessage-slate, .p-inlinemessage-gray, .p-inlinemessage-zinc, .p-inlinemessage-neutral, .p-inlinemessage-stone,
+            .p-inlinemessage-mauve, .p-inlinemessage-olive, .p-inlinemessage-mist, .p-inlinemessage-taupe,
+            .p-inlinemessage-red, .p-inlinemessage-orange, .p-inlinemessage-amber, .p-inlinemessage-yellow, .p-inlinemessage-lime,
+            .p-inlinemessage-green, .p-inlinemessage-emerald, .p-inlinemessage-teal, .p-inlinemessage-cyan, .p-inlinemessage-sky,
+            .p-inlinemessage-blue, .p-inlinemessage-indigo, .p-inlinemessage-violet, .p-inlinemessage-purple, .p-inlinemessage-fuchsia,
+            .p-inlinemessage-pink, .p-inlinemessage-rose
+        ) {
+        background: color-mix(in srgb, var(--msg-c) 24%, transparent);
+        border-color: color-mix(in srgb, var(--msg-c) 36%, transparent);
+        color: color-mix(in srgb, var(--msg-c), white 48%);
+
+        & .p-inlinemessage-icon {
+            color: color-mix(in srgb, var(--msg-c), white 30%);
+        }
+    }
+}
