@@ -90,7 +90,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.875rem;
-    padding: 1.125rem 2rem;
+    padding: 1.125rem 1.5rem;
     border-bottom: 1px solid var(--p-surface-200);
     background: theme('colors.slate.100');
     flex-shrink: 0;
@@ -187,12 +187,12 @@
 }
 
 .sk-dlg__close:hover {
-    background: var(--p-surface-100);
+    background: var(--p-surface-200);
     color: var(--p-surface-900);
 }
 
 .sk-dlg__close:active {
-    background: var(--p-surface-200);
+    background: var(--p-surface-300);
 }
 
 .sk-dlg__close:focus-visible {
@@ -205,12 +205,12 @@
 }
 
 :root.dark .sk-dlg__close:hover {
-    background: var(--p-surface-800);
+    background: var(--p-surface-700);
     color: var(--p-surface-0);
 }
 
 :root.dark .sk-dlg__close:active {
-    background: var(--p-surface-700);
+    background: var(--p-surface-600);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -220,7 +220,7 @@
 .sk-dlg__body {
     flex: 1 1 auto;
     overflow: auto;
-    padding: 1.5rem 2rem;
+    padding: 1.5rem;
     background: var(--p-surface-0);
     min-height: 0;
     color: var(--p-surface-700);
@@ -233,6 +233,9 @@
    action bar's `-mx-8` extension lands edge-to-edge with no gap on the
    right. Scrolling still works via wheel/trackpad (macOS-style overlay). */
 .sk-dlg__body:has(.sk-fb--dialog) {
+    /* Form'un sticky action bar'ı dialog'un alt kenarına yapışsın diye
+       padding-bottom sıfırlanır. Yatay boşluk global 1.5rem'den gelir;
+       action bar `-mx-6 px-6` ile bu değeri iptal edip kenara yapışır. */
     padding-bottom: 0;
     scrollbar-width: none;
     display: flex;
@@ -308,7 +311,7 @@
     display: flex;
     align-items: center;
     gap: 0.625rem;
-    padding: 0.875rem 2rem;
+    padding: 0.875rem 1.5rem;
     border-top: 1px solid var(--p-surface-200);
     background: theme('colors.slate.100');
     flex-shrink: 0;
@@ -365,4 +368,16 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+}
+
+/* Cancel/Close (secondary text) hover'ını belirginleştir — slate footer
+   üzerinde varsayılan hover çok soluk kalıyor. */
+.sk-dlg__actions .p-button-secondary.p-button-text:not(:disabled):hover {
+    background: var(--p-surface-200);
+    color: var(--p-surface-900);
+}
+
+:root.dark .sk-dlg__actions .p-button-secondary.p-button-text:not(:disabled):hover {
+    background: var(--p-surface-700);
+    color: var(--p-surface-0);
 }

@@ -67,9 +67,15 @@
             activityLogs.show.url(activity.id),
             trans('sk-activity-log.detail_title'),
             {
+                icon: 'pi pi-history',
                 mapResponse: (data) => ({ data }),
+                // View-only dialog: global slate footer'ı kullan — tek "Kapat"
+                // (cancel butonu kapatır), confirm gizli. Form footer'ıyla aynı chrome.
+                footer: {
+                    cancelLabel: trans('sk-button.close'),
+                    hideConfirm: true,
+                },
             },
-            { onCancel: () => dialog.close() },
         );
     }
 

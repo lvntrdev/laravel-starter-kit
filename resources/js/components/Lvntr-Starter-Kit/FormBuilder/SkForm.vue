@@ -735,7 +735,8 @@
                             :label="cancelLabel"
                             :icon="cancelIcon"
                             severity="secondary"
-                            outlined
+                            :outlined="!isDialogMode"
+                            :text="isDialogMode"
                             type="button"
                             @click="handleCancel"
                         />

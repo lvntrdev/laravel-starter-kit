@@ -68,6 +68,8 @@ export interface DialogFooter {
     onConfirm?: () => void | Promise<void>;
     /** Hide the cancel button entirely. */
     hideCancel?: boolean;
+    /** Hide the confirm button entirely — for view-only dialogs whose single action is "Close". */
+    hideConfirm?: boolean;
     /** Disable the confirm button. */
     disabled?: boolean;
     /** Show a spinner on the confirm button and block clicks. */

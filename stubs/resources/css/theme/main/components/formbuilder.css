@@ -63,13 +63,24 @@
 }
 
 .sk-fb--dialog .sk-fb__actions--bottom {
-    @apply -mx-8 px-8 py-3.5 rounded-b-md mt-6;
+    @apply -mx-6 px-6 py-3.5 rounded-b-md mt-6;
     margin-bottom: 0;
 }
 
 .sk-fb--dialog .sk-fb__actions--top {
-    @apply -mx-8 px-8 py-3.5 rounded-t-md mb-6;
+    @apply -mx-6 px-6 py-3.5 rounded-t-md mb-6;
     margin-top: 0;
+}
+
+/* İptal (secondary text) hover'ı slate footer üzerinde belirgin olsun. */
+.sk-fb--dialog .sk-fb__actions .p-button-secondary.p-button-text:not(:disabled):hover {
+    background: var(--p-surface-200);
+    color: var(--p-surface-900);
+}
+
+:root.dark .sk-fb--dialog .sk-fb__actions .p-button-secondary.p-button-text:not(:disabled):hover {
+    background: var(--p-surface-700);
+    color: var(--p-surface-0);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

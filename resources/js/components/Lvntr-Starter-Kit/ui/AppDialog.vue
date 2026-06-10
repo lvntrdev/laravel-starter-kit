@@ -126,6 +126,7 @@
                             @click="closeCallback"
                         />
                         <Button
+                            v-if="!state.footer.hideConfirm"
                             :label="confirmLabel"
                             :icon="confirmIcon"
                             :severity="confirmSeverity"

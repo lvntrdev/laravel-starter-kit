@@ -25,10 +25,6 @@
 
     const props = defineProps<Props>();
 
-    const emit = defineEmits<{
-        cancel: [];
-    }>();
-
     const pageLocale = document.documentElement.lang || 'en-US';
 
     function modelShortName(fqcn: string | null): string {
@@ -62,7 +58,7 @@
 </script>
 
 <template>
-    <div class="space-y-5 p-1">
+    <div class="space-y-5">
         <!-- Header info -->
         <div class="grid grid-cols-2 gap-4">
             <div>
@@ -178,17 +174,6 @@
             <pre
                 class="overflow-auto rounded bg-surface-50 p-3 text-xs text-surface-700 dark:bg-surface-800 dark:text-surface-300"
             >{{ JSON.stringify(data.properties, null, 2) }}</pre>
-        </div>
-
-        <!-- Close button -->
-        <div class="flex justify-end pt-2">
-            <Button
-                :label="$t('sk-button.close')"
-                icon="pi pi-times"
-                severity="secondary"
-                outlined
-                @click="emit('cancel')"
-            />
         </div>
     </div>
 </template>
