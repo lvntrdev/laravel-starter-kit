@@ -42,9 +42,30 @@ class UpdateRoleRequest extends FormRequest
             'display_name' => ['required', 'array'],
             'display_name.*' => ['required', 'string', 'max:255'],
             'group' => ['nullable', 'string', 'max:255'],
+            'color' => ['required', 'string', Rule::in(StoreRoleRequest::TAG_COLORS)],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ];
+    }
+
+    /**
+     * Human-readable attribute names — per-locale display_name keys would
+     * otherwise surface as raw "display_name.en" in validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        $attributes = [
+            'name' => __('validation.attributes.role_name'),
+            'color' => __('sk-role.color'),
+        ];
+
+        foreach (array_keys(config('app.languages', [])) as $locale) {
+            $attributes["display_name.{$locale}"] = __('validation.attributes.display_name').' ('.strtoupper($locale).')';
+        }
+
+        return $attributes;
     }
 
     /**

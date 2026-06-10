@@ -19,6 +19,7 @@ readonly class RoleDTO extends BaseDTO
         public array $displayName = [],
         public array $permissions = [],
         public ?string $group = null,
+        public ?string $color = null,
     ) {}
 
     /**
@@ -33,6 +34,7 @@ readonly class RoleDTO extends BaseDTO
             displayName: $data['display_name'] ?? [],
             permissions: $data['permissions'] ?? [],
             group: $data['group'] ?? null,
+            color: $data['color'] ?? null,
         );
     }
 
@@ -48,6 +50,7 @@ readonly class RoleDTO extends BaseDTO
             'guard_name' => 'web',
             'display_name' => $this->displayName,
             'group' => $this->group,
+            'color' => $this->color,
         ];
     }
 }

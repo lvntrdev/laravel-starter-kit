@@ -21,6 +21,7 @@ class RoleResource extends JsonResource
             'name' => $this->name,
             'display_name' => $this->display_name,
             'group' => $this->group,
+            'color' => $this->color,
             'sort_order' => $this->sort_order,
             'guard_name' => $this->guard_name,
             'seeded_permissions' => $this->seeded_permissions,

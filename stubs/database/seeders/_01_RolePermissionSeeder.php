@@ -199,6 +199,7 @@ class _01_RolePermissionSeeder extends Seeder
         $rolePermissions = config('permission-resources.role_permissions', []);
         $roleDisplayNames = config('permission-resources.display_names.roles', []);
         $roleGroups = config('permission-resources.role_groups', []);
+        $roleColors = config('permission-resources.role_colors', []);
 
         foreach (RoleEnum::cases() as $index => $roleEnum) {
             $isNew = ! Role::where('name', $roleEnum->value)->where('guard_name', 'web')->exists();
@@ -213,6 +214,9 @@ class _01_RolePermissionSeeder extends Seeder
             ];
             if ($displayName) {
                 $updateData['display_name'] = $displayName;
+            }
+            if (isset($roleColors[$roleEnum->value])) {
+                $updateData['color'] = $roleColors[$roleEnum->value];
             }
             $role->update($updateData);
 

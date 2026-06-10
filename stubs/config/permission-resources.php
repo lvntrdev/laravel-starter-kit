@@ -123,6 +123,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Role Colors
+    |--------------------------------------------------------------------------
+    |
+    | Tag color for each default role — a Tailwind color name (indigo, emerald,
+    | rose, …) or a PrimeVue severity. Seeded into the roles table and used by
+    | the role tags in the admin UI.
+    |
+    */
+
+    'role_colors' => [
+        'system_admin' => 'rose',
+        'admin' => 'indigo',
+        'user' => 'slate',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Role Permissions
     |--------------------------------------------------------------------------
     |

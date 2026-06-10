@@ -12,6 +12,7 @@
         id: number;
         name: string;
         display_name?: Record<string, string>;
+        color?: string | null;
         permissions: string[];
     }
 

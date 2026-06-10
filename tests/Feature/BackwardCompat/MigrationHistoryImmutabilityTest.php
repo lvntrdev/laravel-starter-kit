@@ -84,6 +84,9 @@ it('does not contain unexpected migration files in the vendor directory', functi
         '2026_03_14_080933_create_settings_table.php',
         '2026_04_13_100200_add_folder_id_to_media_table.php',
         '2026_05_02_094121_add_soft_deletes_to_media_table.php',
+        // v13.6.0: role tag colors — nullable `color` column on the roles table,
+        // seeded from config/permission-resources.php → role_colors.
+        '2026_06_10_000001_add_color_to_roles_table.php',
     ];
 
     $actual = collect(scandir($migrationDir))

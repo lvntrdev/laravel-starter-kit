@@ -19,6 +19,7 @@
     interface Role {
         id: number;
         name: string;
+        color: string | null;
         sort_order: number;
         permissions_count: number;
         users_count: number;
@@ -111,7 +112,7 @@
     const tableConfig = DB.table<Role>()
         .route(roles.dtApi.url())
         .addColumns(
-            DB.column<Role>().key('name'),
+            DB.column<Role>().key('name').tag('value').tagSeverityKey('color').tagSoft(),
             DB.column<Role>()
                 .label(trans('sk-role.permissions'))
                 .key('permissions_count')
@@ -192,50 +193,27 @@
             :selection="selection"
             @load="onTableLoad"
         >
-            <!-- Bulk action toolbar — shown only when rows are selected -->
-            <template v-if="selection.hasSelection.value || selection.isAllFilteredMode.value" #toolbar>
-                <div class="sk-dt-bulk-toolbar">
-                    <span class="sk-dt-bulk-toolbar__count">
-                        <template v-if="selection.isAllFilteredMode.value">
-                            {{
-                                $t('sk-datatable.bulk_selected_all_filtered', {
-                                    count: String(selection.selectedCount.value),
-                                })
-                            }}
-                        </template>
-                        <template v-else>
-                            {{ $t('sk-datatable.bulk_selected', { count: String(selection.selectedCount.value) }) }}
-                        </template>
-                    </span>
+            <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
+            <template #bulk-actions>
+                <Button
+                    v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
+                    :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
+                    size="small"
+                    severity="secondary"
+                    variant="text"
+                    @click="selection.selectAllFiltered()"
+                />
 
-                    <Button
-                        v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
-                        :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
-                        size="small"
-                        severity="secondary"
-                        variant="text"
-                        @click="selection.selectAllFiltered()"
-                    />
-
-                    <Button
-                        v-if="can('roles.delete')"
-                        :label="$t('sk-datatable.bulk_delete')"
-                        icon="pi pi-trash"
-                        size="small"
-                        severity="danger"
-                        :loading="selection.submitting.value"
-                        @click="confirmBulkDelete(totalFiltered)"
-                    />
-
-                    <Button
-                        :label="$t('sk-datatable.bulk_clear_selection')"
-                        size="small"
-                        severity="secondary"
-                        variant="outlined"
-                        icon="pi pi-times"
-                        @click="selection.clearSelection()"
-                    />
-                </div>
+                <Button
+                    v-if="can('roles.delete')"
+                    :label="$t('sk-datatable.bulk_delete')"
+                    icon="pi pi-trash"
+                    size="small"
+                    severity="danger"
+                    variant="text"
+                    :loading="selection.submitting.value"
+                    @click="confirmBulkDelete(totalFiltered)"
+                />
             </template>
         </SkDatatable>
     </AdminLayout>

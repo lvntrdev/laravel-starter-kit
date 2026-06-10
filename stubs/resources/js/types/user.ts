@@ -10,6 +10,7 @@ export interface User {
     email: string;
     status: UserStatus;
     role?: string | null;
+    role_color?: string | null;
     avatar_url: string | null;
     email_verified_at: string | null;
     created_at: string;

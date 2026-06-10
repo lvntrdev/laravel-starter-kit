@@ -314,6 +314,7 @@ class UpdateCommand extends Command
         // 4b. Inject filesystem config if missing (added in later versions)
         if (! $dryRun) {
             $this->injectFilesystemsConfig();
+            $this->injectRoleColorsConfig();
             $this->migrateLegacyHelpersFile();
             $this->rewriteHelpersAutoload();
         }
@@ -333,6 +334,20 @@ class UpdateCommand extends Command
                     return $this->callSilently('migrate', ['--force' => true]) === 0;
                 }, 'Running new migrations...');
                 $this->components->info('Migrations completed.');
+            }
+        }
+
+        // 5b. role_colors was just injected → the roles.color column (vendor-resident
+        // migration) and a seeder run are needed for the colors to appear.
+        if (! $dryRun && in_array('config/permission-resources.php (injected role_colors)', $this->updated, true)) {
+            if (confirm('Role colors added. Run migrate + sk:seed-permissions to apply them now?', default: true)) {
+                spin(function () {
+                    return $this->callSilently('migrate', ['--force' => true]) === 0;
+                }, 'Running migrations...');
+                spin(function () {
+                    return $this->callSilently('sk:seed-permissions') === 0;
+                }, 'Seeding role colors...');
+                $this->components->info('Role colors applied.');
             }
         }
 
@@ -984,6 +999,63 @@ PHP;
         $this->files->put($configPath, $content);
 
         $this->updated[] = 'config/filesystems.php (injected DO Spaces disk)';
+    }
+
+    /**
+     * Inject the role_colors block into config/permission-resources.php if missing.
+     * The config is user-modifiable (never overwritten on update), so new keys
+     * added by the kit must be injected — same pattern as the DO Spaces disk.
+     */
+    private function injectRoleColorsConfig(): void
+    {
+        $configPath = config_path('permission-resources.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $content = $this->files->get($configPath);
+
+        if (str_contains($content, "'role_colors'")) {
+            return;
+        }
+
+        // Anchor: insert right after the role_groups array closes.
+        $groupsPos = strpos($content, "'role_groups'");
+        if ($groupsPos === false) {
+            return;
+        }
+
+        $closingPos = strpos($content, "\n    ],", $groupsPos);
+        if ($closingPos === false) {
+            return;
+        }
+
+        $block = <<<'PHP'
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role Colors
+    |--------------------------------------------------------------------------
+    |
+    | Tag color for each default role — a Tailwind color name (indigo, emerald,
+    | rose, …) or a PrimeVue severity. Seeded into the roles table and used by
+    | the role tags in the admin UI.
+    |
+    */
+
+    'role_colors' => [
+        'system_admin' => 'rose',
+        'admin' => 'indigo',
+        'user' => 'slate',
+    ],
+PHP;
+
+        $content = substr_replace($content, "\n    ],\n".$block, $closingPos, strlen("\n    ],"));
+
+        $this->files->put($configPath, $content);
+
+        $this->updated[] = 'config/permission-resources.php (injected role_colors)';
     }
 
     /**

@@ -33,6 +33,7 @@ class UserResource extends JsonResource
 
             // Conditional: only when loaded
             'role' => $this->whenLoaded('roles', fn () => $this->roles->first()?->name),
+            'role_color' => $this->whenLoaded('roles', fn () => $this->roles->first()?->color),
         ];
     }
 }

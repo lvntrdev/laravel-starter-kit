@@ -1,10 +1,12 @@
 <!-- resources/js/components/Admin/RoleForm.vue -->
 <script setup lang="ts">
     import adminRoles from '@/routes/roles';
-    import { router, useForm } from '@inertiajs/vue3';
+    import { useForm } from '@inertiajs/vue3';
     import { trans } from 'laravel-vue-i18n';
-    import { Button, Checkbox, InputText, Message } from 'primevue';
+    import { Button, Checkbox, Message } from 'primevue';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
+    import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import { FB } from '@lvntr/components/FormBuilder/core';
 
     interface PermissionGroup {
         label: string;
@@ -15,6 +17,7 @@
         id?: number;
         name: string;
         display_name?: Record<string, string>;
+        color?: string | null;
         permissions: string[];
     }
 
@@ -24,7 +27,6 @@
         availableLocales?: Record<string, string>;
         userPermissions?: string[] | null;
         inDialog?: boolean;
-        showBack?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -33,7 +35,6 @@
         availableLocales: () => ({}),
         userPermissions: null,
         inDialog: false,
-        showBack: false,
     });
 
     /** null = system_admin, can grant everything */
@@ -43,8 +44,6 @@
         if (canGrantAll.value) return true;
         return props.userPermissions!.includes(permission);
     }
-
-    const showCancelButton = computed(() => props.inDialog || props.showBack);
 
     const emit = defineEmits<{
         success: [];
@@ -58,8 +57,37 @@
         display_name: Object.fromEntries(
             Object.keys(props.availableLocales).map((locale) => [locale, props.role?.display_name?.[locale] ?? '']),
         ),
+        color: props.role?.color ?? '',
         permissions: props.role?.permissions ?? ([] as string[]),
     });
+
+    // ── Basic info via FormBuilder (external v-model mode — submit stays here) ──
+
+    const basics = ref<Record<string, unknown>>({
+        name: form.name,
+        display_name: { ...form.display_name },
+        color: form.color,
+    });
+
+    const basicsConfig = FB.form()
+        .layout('vertical')
+        .cols(1)
+        .isCard(false)
+        .addFields(
+            FB.inputText()
+                .key('name')
+                .label('validation.attributes.role_name')
+                .placeholder('sk-role.role_name_placeholder')
+                .required(),
+            FB.translatableText().key('display_name').label('validation.attributes.display_name').required(),
+            FB.colorSelector()
+                .key('color')
+                .label('sk-role.color')
+                .format('name')
+                .hint('sk-role.color_hint')
+                .required(),
+        )
+        .build();
 
     // Flatten all permissions across all groups for global operations
     const allPermissionsFlat = computed(() => {
@@ -84,6 +112,10 @@
     });
 
     function submit() {
+        form.name = basics.value.name as string;
+        form.display_name = basics.value.display_name as Record<string, string>;
+        form.color = (basics.value.color as string) ?? '';
+
         if (isEdit.value) {
             form.put(adminRoles.update.url({ id: props.role!.id! }), {
                 onSuccess: () => emit('success'),
@@ -95,13 +127,6 @@
         }
     }
 
-    function cancel() {
-        if (props.inDialog) {
-            emit('cancel');
-        } else {
-            router.visit('/admin/roles');
-        }
-    }
 
     function togglePermission(permission: string) {
         if (!canGrant(permission)) return;
@@ -240,111 +265,90 @@
     const hasPermissions = computed(() => Object.keys(props.permissionsByGroup).length > 0);
 
     defineExpose({
-        reset: () => form.reset(),
+        reset: () => {
+            form.reset();
+            basics.value = { name: form.name, display_name: { ...form.display_name }, color: form.color };
+        },
     });
 </script>
 
 <template>
     <form class="space-y-6" @submit.prevent="submit">
-        <SkCard>
+        <SkCard :title="trans('sk-role.basic_info')" :subtitle="trans('sk-role.basic_info_description')">
             <template #content>
-                <!-- Role Name -->
-                <div>
-                    <label for="role-name" class="block font-bold text-surface-700 dark:text-surface-300 mb-2">
-                        {{ trans('validation.attributes.role_name') }}
-                    </label>
-                    <InputText
-                        id="role-name"
-                        v-model="form.name"
-                        :placeholder="trans('sk-role.role_name_placeholder')"
-                        class="w-full"
-                        :invalid="!!form.errors.name"
-                    />
-                    <small v-if="form.errors.name" class="text-red-500">{{ form.errors.name }}</small>
-                </div>
-
-                <!-- Display Names per Locale -->
-                <div v-if="Object.keys(availableLocales).length > 0" class="mt-6">
-                    <label class="block font-bold text-surface-700 dark:text-surface-300 mb-2">
-                        {{ trans('validation.attributes.display_name') }}
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div v-for="(label, locale) in availableLocales" :key="locale">
-                            <label
-                                :for="`display-name-${locale}`"
-                                class="block font-medium text-surface-500 dark:text-surface-400 mb-1 uppercase"
-                            >
-                                {{ label }}
-                            </label>
-                            <InputText
-                                :id="`display-name-${locale}`"
-                                v-model="form.display_name[locale]"
-                                :placeholder="`${trans('sk-role.display_name')} (${label})`"
-                                class="w-full"
-                                :invalid="!!form.errors[`display_name.${locale}`]"
-                            />
-                            <small v-if="form.errors[`display_name.${locale}`]" class="text-red-500">
-                                {{ form.errors[`display_name.${locale}`] }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
+                <SkForm v-model="basics" :config="basicsConfig" :errors="form.errors as Record<string, string>" />
             </template>
         </SkCard>
 
-        <SkCard>
-            <template #title>
-                {{ trans('sk-role.permissions') }}
+        <SkCard :title="trans('sk-role.permissions')" :subtitle="trans('sk-role.permissions_description')">
+            <template #title-end>
+                <span class="text-xs font-medium text-surface-400 dark:text-surface-500 whitespace-nowrap">
+                    {{
+                        trans('sk-role.permission_count', {
+                            selected: String(form.permissions.length),
+                            total: String(allPermissionsFlat.length),
+                        })
+                    }}
+                </span>
             </template>
             <template #content>
                 <!-- Permissions Table -->
                 <div v-if="hasPermissions">
-                    <div class="overflow-x-auto rounded-lg border border-surface-200 dark:border-surface-700">
+                    <div class="overflow-x-auto">
                         <table class="w-full">
                             <thead>
-                                <tr class="bg-surface-50 dark:bg-surface-800">
-                                    <th class="px-4 py-3 text-left font-semibold uppercase text-surface-500 min-w-40">
+                                <tr class="bg-surface-50 dark:bg-surface-800/60">
+                                    <th
+                                        class="px-4 py-3 text-left align-bottom text-xs font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500 min-w-40"
+                                    >
                                         {{ trans('sk-role.resource') }}
                                     </th>
                                     <th class="px-2 py-3 text-center min-w-15">
-                                        <Checkbox
-                                            :model-value="
-                                                form.permissions.length === allPermissionsFlat.length &&
-                                                    allPermissionsFlat.length > 0
-                                            "
-                                            :binary="true"
-                                            :indeterminate="
-                                                form.permissions.length > 0 &&
-                                                    form.permissions.length < allPermissionsFlat.length
-                                            "
-                                            :disabled="!canGrantAll && allPermissionsFlat.every((p) => !canGrant(p))"
-                                            @update:model-value="
-                                                () => {
-                                                    const grantable = allPermissionsFlat.filter(canGrant);
-                                                    const allChecked = grantable.every((p) =>
-                                                        form.permissions.includes(p),
-                                                    );
-                                                    if (allChecked) {
-                                                        form.permissions = form.permissions.filter(
-                                                            (p) => !grantable.includes(p),
+                                        <div class="flex flex-col items-center gap-1.5">
+                                            <span
+                                                class="text-xs font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500"
+                                            >
+                                                {{ trans('sk-common.all') }}
+                                            </span>
+                                            <Checkbox
+                                                :model-value="
+                                                    form.permissions.length === allPermissionsFlat.length &&
+                                                        allPermissionsFlat.length > 0
+                                                "
+                                                :binary="true"
+                                                :indeterminate="
+                                                    form.permissions.length > 0 &&
+                                                        form.permissions.length < allPermissionsFlat.length
+                                                "
+                                                :disabled="!canGrantAll && allPermissionsFlat.every((p) => !canGrant(p))"
+                                                @update:model-value="
+                                                    () => {
+                                                        const grantable = allPermissionsFlat.filter(canGrant);
+                                                        const allChecked = grantable.every((p) =>
+                                                            form.permissions.includes(p),
                                                         );
-                                                    } else {
-                                                        const toAdd = grantable.filter(
-                                                            (p) => !form.permissions.includes(p),
-                                                        );
-                                                        form.permissions.push(...toAdd);
+                                                        if (allChecked) {
+                                                            form.permissions = form.permissions.filter(
+                                                                (p) => !grantable.includes(p),
+                                                            );
+                                                        } else {
+                                                            const toAdd = grantable.filter(
+                                                                (p) => !form.permissions.includes(p),
+                                                            );
+                                                            form.permissions.push(...toAdd);
+                                                        }
                                                     }
-                                                }
-                                            "
-                                        />
+                                                "
+                                            />
+                                        </div>
                                     </th>
-                                    <th
-                                        v-for="ability in allAbilities"
-                                        :key="ability"
-                                        class="px-2 py-3 text-center font-semibold uppercase text-surface-500 min-w-20"
-                                    >
-                                        <div class="flex flex-col items-center gap-1">
-                                            <span>{{ translateAbility(ability) }}</span>
+                                    <th v-for="ability in allAbilities" :key="ability" class="px-2 py-3 text-center min-w-20">
+                                        <div class="flex flex-col items-center gap-1.5">
+                                            <span
+                                                class="text-xs font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500"
+                                            >
+                                                {{ translateAbility(ability) }}
+                                            </span>
                                             <Checkbox
                                                 :model-value="isAbilityColumnAllChecked(ability)"
                                                 :binary="true"
@@ -364,9 +368,9 @@
                             <tbody>
                                 <template v-for="(group, groupKey) in permissionsByGroup" :key="groupKey">
                                     <!-- Group Header Row -->
-                                    <tr class="bg-surface-100 dark:bg-surface-700/50">
+                                    <tr class="border-t border-surface-200 dark:border-surface-700 bg-surface-50/60 dark:bg-surface-800/40">
                                         <td
-                                            class="px-4 py-2 font-semibold text-surface-900 dark:text-surface-100 uppercase tracking-wide"
+                                            class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-surface-500 dark:text-surface-400"
                                         >
                                             {{ group.label }}
                                         </td>
@@ -434,25 +438,22 @@
                 <Message v-else severity="info" :closable="false">
                     {{ trans('sk-role.no_permissions_available') }}
                 </Message>
-
-                <!-- Actions -->
-                <div class="flex justify-end gap-2 pt-4">
-                    <Button
-                        v-if="showCancelButton"
-                        type="button"
-                        :label="inDialog ? trans('sk-button.cancel') : trans('sk-button.back')"
-                        :icon="inDialog ? undefined : 'pi pi-arrow-left'"
-                        severity="secondary"
-                        outlined
-                        @click="cancel"
-                    />
-                    <Button
-                        type="submit"
-                        :label="isEdit ? trans('sk-button.update') : trans('sk-button.save')"
-                        :icon="isEdit ? 'pi pi-save' : 'pi pi-save'"
-                        :loading="form.processing"
-                    />
-                </div>
+            </template>
+            <template #footer>
+                <span class="sk-card__foot-hint">
+                    {{
+                        trans('sk-role.permission_count_selected', {
+                            selected: String(form.permissions.length),
+                            total: String(allPermissionsFlat.length),
+                        })
+                    }}
+                </span>
+                <Button
+                    type="submit"
+                    :label="isEdit ? trans('sk-button.update') : trans('sk-button.save')"
+                    icon="pi pi-save"
+                    :loading="form.processing"
+                />
             </template>
         </SkCard>
     </form>

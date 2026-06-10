@@ -15,6 +15,13 @@ return [
     'no_permissions_available' => 'No permissions have been defined yet.',
     'delete_confirm' => 'Are you sure you want to delete the role ":name"?',
     'sync_permissions' => 'Sync Permissions',
+    'basic_info' => 'Basic Information',
+    'basic_info_description' => "The role's system name and user-facing display name.",
+    'permissions_description' => 'Select what this role can do on each resource.',
+    'color' => 'Tag Color',
+    'color_hint' => 'Used by the role tag shown in tables.',
+    'permission_count' => ':selected / :total permissions',
+    'permission_count_selected' => ':selected / :total permissions selected.',
 
     'resources' => [
         'users' => 'Users',

@@ -15,7 +15,7 @@ use App\Models\User;
 class RoleSelectOptionsQuery
 {
     /**
-     * @return list<array{label: string, value: string}>
+     * @return list<array{label: string, value: string, color: string|null}>
      */
     public function get(User $user): array
     {
@@ -34,9 +34,12 @@ class RoleSelectOptionsQuery
             $query->where('sort_order', '>=', (int) $userMinSortOrder);
         }
 
+        $locale = app()->getLocale();
+
         return $query->get()->map(fn (Role $role) => [
-            'label' => ucfirst(str_replace('_', ' ', $role->name)),
+            'label' => $role->display_name[$locale] ?? ucfirst(str_replace('_', ' ', $role->name)),
             'value' => $role->name,
+            'color' => $role->color,
         ])->values()->all();
     }
 }

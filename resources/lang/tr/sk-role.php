@@ -15,6 +15,13 @@ return [
     'no_permissions_available' => 'Henüz tanımlanmış bir izin yok.',
     'delete_confirm' => '":name" rolünü silmek istediğinizden emin misiniz?',
     'sync_permissions' => 'İzinleri Senkronize Et',
+    'basic_info' => 'Temel Bilgiler',
+    'basic_info_description' => 'Rolün sistem adı ve kullanıcılara görünen adı.',
+    'permissions_description' => 'Bu rolün her kaynak üzerinde yapabileceği işlemleri seçin.',
+    'color' => 'Etiket Rengi',
+    'color_hint' => 'Tablolarda gösterilen rol etiketinde kullanılır.',
+    'permission_count' => ':selected / :total izin',
+    'permission_count_selected' => ':selected / :total izin seçili.',
 
     'resources' => [
         'users' => 'Kullanıcılar',

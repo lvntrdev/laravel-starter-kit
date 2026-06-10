@@ -41,7 +41,17 @@ class UserDatatableQuery
                 'email',
                 'status',
                 'created_at',
+                'updated_at',
             ])
+            ->columns([
+                ['key' => 'full_name', 'locked' => true],
+                'email',
+                ['key' => 'role', 'sortable' => false],
+                'status',
+                'created_at',
+                ['key' => 'updated_at', 'label' => 'sk-common.updated_at', 'visible' => false],
+            ])
+            ->alwaysInclude(['full_name', 'role_color'])
             ->filterable([
                 'status',
                 AllowedFilter::callback('role', function (Builder $q, $value) {

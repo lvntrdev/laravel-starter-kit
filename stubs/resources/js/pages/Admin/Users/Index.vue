@@ -15,7 +15,7 @@
     import { Button } from 'primevue';
 
     interface Props {
-        roleOptions: { label: string; value: string }[];
+        roleOptions: { label: string; value: string; color: string | null }[];
     }
 
     const props = defineProps<Props>();
@@ -99,6 +99,8 @@
 
     const tableConfig = DB.table<User>()
         .route(users.dtApi.url())
+        .title('sk-menu.users')
+        .subtitle('sk-user.subtitle')
         // .searchable(true)
         .sortable(true)
         // .isCard(false)
@@ -107,13 +109,20 @@
         .addColumns(
             DB.column<User>().label('sk-common.full_name').key('full_name'),
             DB.column<User>().key('email'),
-            DB.column<User>().label('sk-common.role').key('role'),
+            DB.column<User>()
+                .label('sk-common.role')
+                .key('role')
+                .tag('value')
+                .tagLabels(Object.fromEntries(props.roleOptions.map((o) => [o.value, o.label])))
+                .tagSeverityKey('role_color')
+                .tagSoft(),
             DB.column<User>().key('status').tag('definition').tagKey('userStatus').tagOutlined(),
             DB.column<User>().label('sk-common.created_at').key('created_at'),
         )
         .addFilters(
-            DB.filter().key('status').definitionOptions('userStatus'),
-            DB.filter().key('role').label('sk-common.role').type('select').options(props.roleOptions),
+            // inline() → header'da pill olarak; aynı filtreler filtre popover'ında da listelenir
+            DB.filter().key('status').definitionOptions('userStatus').inline(),
+            DB.filter().key('role').label('sk-common.role').type('select').options(props.roleOptions).inline(),
         )
         .addActions(
             DB.action<User>()
@@ -163,54 +172,29 @@
             :selection="selection"
             @load="onTableLoad"
         >
-            <!-- Bulk action toolbar — shown only when rows are selected -->
-            <template v-if="selection.hasSelection.value || selection.isAllFilteredMode.value" #toolbar>
-                <div class="sk-dt-bulk-toolbar">
-                    <!-- Selected count label -->
-                    <span class="sk-dt-bulk-toolbar__count">
-                        <template v-if="selection.isAllFilteredMode.value">
-                            {{
-                                $t('sk-datatable.bulk_selected_all_filtered', {
-                                    count: String(selection.selectedCount.value),
-                                })
-                            }}
-                        </template>
-                        <template v-else>
-                            {{ $t('sk-datatable.bulk_selected', { count: String(selection.selectedCount.value) }) }}
-                        </template>
-                    </span>
+            <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
+            <template #bulk-actions>
+                <!-- Select all filtered (cross-page) -->
+                <Button
+                    v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
+                    :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
+                    size="small"
+                    severity="secondary"
+                    variant="text"
+                    @click="selection.selectAllFiltered()"
+                />
 
-                    <!-- Select all filtered (cross-page) -->
-                    <Button
-                        v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
-                        :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
-                        size="small"
-                        severity="secondary"
-                        variant="text"
-                        @click="selection.selectAllFiltered()"
-                    />
-
-                    <!-- Bulk delete -->
-                    <Button
-                        v-if="can('users.delete')"
-                        :label="$t('sk-datatable.bulk_delete')"
-                        icon="pi pi-trash"
-                        size="small"
-                        severity="danger"
-                        :loading="selection.submitting.value"
-                        @click="confirmBulkDelete(totalFiltered)"
-                    />
-
-                    <!-- Clear selection -->
-                    <Button
-                        :label="$t('sk-datatable.bulk_clear_selection')"
-                        size="small"
-                        severity="secondary"
-                        variant="outlined"
-                        icon="pi pi-times"
-                        @click="selection.clearSelection()"
-                    />
-                </div>
+                <!-- Bulk delete -->
+                <Button
+                    v-if="can('users.delete')"
+                    :label="$t('sk-datatable.bulk_delete')"
+                    icon="pi pi-trash"
+                    size="small"
+                    severity="danger"
+                    variant="text"
+                    :loading="selection.submitting.value"
+                    @click="confirmBulkDelete(totalFiltered)"
+                />
             </template>
         </SkDatatable>
     </AdminLayout>
