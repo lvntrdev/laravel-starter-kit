@@ -2,6 +2,8 @@
 
 namespace Lvntr\StarterKit\Domain\FileManager\Concerns;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -27,6 +29,30 @@ trait ResolvesMediaModel
         $class = config('media-library.media_model', Media::class);
 
         return $class;
+    }
+
+    /**
+     * Start a media query that INCLUDES soft-deleted (trash) rows when the
+     * configured model supports SoftDeletes, falling back to a plain query
+     * otherwise.
+     *
+     * `withTrashed()` is a builder macro registered by the SoftDeletes trait —
+     * calling it on a bare install (base Media model without SoftDeletes)
+     * would throw a BadMethodCallException, so the capability is
+     * feature-detected. On bare installs there is no trash concept and the
+     * plain query already sees every row, so behaviour is identical.
+     *
+     * @return Builder<Media>
+     */
+    protected function mediaQueryWithTrashed(): Builder
+    {
+        $mediaModel = $this->mediaModel();
+
+        if (in_array(SoftDeletes::class, class_uses_recursive($mediaModel), true)) {
+            return $mediaModel::withTrashed();
+        }
+
+        return $mediaModel::query();
     }
 
     /**

@@ -395,6 +395,7 @@ class StarterKitServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->applyVendorConfigDefaults();
+        $this->registerRouteModelBindings();
         $this->configureModels();
         $this->configurePassport();
         $this->configureGates();
@@ -425,6 +426,46 @@ class StarterKitServiceProvider extends ServiceProvider
 
         $this->registerRoutes();
         $this->shareInertiaData();
+    }
+
+    /**
+     * Register cache-safe route-model binders for the FileManager `{media}`
+     * and `{folder}` route parameters.
+     *
+     * SECURITY — trashed media access guard: `{media}` is bound to the
+     * CONFIGURED media model (`media-library.media_model`) instead of relying
+     * on implicit binding against Spatie's base Media class. The consumer's
+     * Media model uses SoftDeletes, so its global scope drops trashed rows
+     * from every `{media}` binding site (share show, download, rename, copy,
+     * delete) with a 404 — trash means "not accessible" until restore, even
+     * for otherwise-valid signed share URLs. On bare installs where the
+     * config points at the base (non-SoftDeletes) model the binder is a
+     * behavioral no-op: same resolution as implicit binding today.
+     *
+     * Registered here in boot() — NOT in src/routes/file-manager.php —
+     * because `Route::model()` binders are not part of the route cache: under
+     * `route:cache` the route files are never loaded, so a binder registered
+     * only there silently disappears exactly where it matters most
+     * (production). Must run AFTER applyVendorConfigDefaults() so the
+     * vendor-supplied `media-library.media_model` default is visible.
+     *
+     * Note: binders are router-global — any consumer route using a `{media}`
+     * or `{folder}` parameter resolves through the same configured models
+     * (documented kit-wide semantics).
+     */
+    private function registerRouteModelBindings(): void
+    {
+        $mediaModel = config('media-library.media_model');
+
+        if (is_string($mediaModel) && $mediaModel !== '' && is_subclass_of($mediaModel, Model::class)) {
+            Route::model('media', $mediaModel);
+        }
+
+        $folderModel = config('file-manager.models.folder');
+
+        if (is_string($folderModel) && $folderModel !== '' && is_subclass_of($folderModel, Model::class)) {
+            Route::model('folder', $folderModel);
+        }
     }
 
     /**

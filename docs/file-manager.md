@@ -333,6 +333,18 @@ HMAC-SHA256 signed links that grant time-limited access to a file without requir
 
 Revoked tokens are recorded in the `file_manager_share_revocations` table with a `(media_id, signed_token_hash)` composite unique index. A token is validated against its originating `media_id` — cross-media token reuse is rejected.
 
+#### Trash and share link access
+
+Soft-deleting a file (moving it to Trash) makes it immediately inaccessible:
+
+- Any request that resolves `{media}` from a route — signed share show, authenticated download, rename, copy, delete — returns **404** for a trashed file. The response is identical to a non-existent file to avoid disclosing whether the file exists in Trash (no oracle).
+- Creating a new share link for a trashed file also returns **404**.
+- **Deleting does not automatically revoke existing share links.** If a signed link for the file is still valid (not expired, not revoked), it will return 404 while the file is trashed and resume working if the file is restored. To permanently block access regardless of restore, call `POST /file-manager/share/revoke` — revocation survives restore.
+- Restoring a file re-enables access via any share links that have not expired or been revoked.
+- `php artisan file-manager:purge-trash` permanently deletes the file from disk. After purge, even a non-revoked link returns 404 permanently.
+
+**Route binding note:** The `{media}` route parameter is resolved using `Route::model('media', config('media-library.media_model'))` registered in the service provider. This means every route in the consumer application that uses a `{media}` parameter — including your own custom routes — receives an instance of the configured model class (with its SoftDeletes global scope applied). Trashed records are excluded from the binding by default; use `withTrashed()` in your own controllers when you explicitly need access to trashed records.
+
 ### Trash behaviour (`enable_trash`)
 
 The `enable_trash` key in `config/file-manager.php` is the single source of truth for soft-vs-hard delete:

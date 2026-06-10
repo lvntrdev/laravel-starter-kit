@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Lvntr\StarterKit\Domain\FileManager\Actions\CreateShareLinkAction;
 use Lvntr\StarterKit\Domain\FileManager\Actions\RevokeShareLinkAction;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\CreateShareLinkDTO;
 use Lvntr\StarterKit\Domain\FileManager\Models\ShareRevocation;
 use Lvntr\StarterKit\Http\Requests\FileManager\CreateShareLinkRequest;
@@ -34,6 +35,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ShareController extends Controller
 {
+    use ResolvesMediaModel;
+
     /**
      * İmzalı share link'i serve eder.
      *
@@ -127,9 +130,13 @@ class ShareController extends Controller
         CreateShareLinkRequest $request,
         CreateShareLinkAction $action,
     ): ApiResponse|JsonResponse {
-        // Media kaydını yükle
+        // Media kaydını CONFIGURED model üzerinden yükle (trashed guard):
+        // consumer'ın SoftDeletes Media modeli trashed kayıtları global scope
+        // ile dışarıda bırakır — çöp kutusundaki dosyaya YENİ share link
+        // üretilemez (findOrFail → 404; trash durumu dışarı sızdırılmaz).
+        // Base Spatie Media üzerinden findOrFail trashed satırları da bulurdu.
         /** @var Media $media */
-        $media = Media::findOrFail($request->input('media_id'));
+        $media = $this->mediaModel()::findOrFail($request->input('media_id'));
 
         // K4: Gate::policy yerine flat gate kullanılıyor (share-media).
         // O3: Defense-in-depth — Request::authorize() zaten kontrol etti,
@@ -180,8 +187,12 @@ class ShareController extends Controller
         RevokeShareLinkRequest $request,
         RevokeShareLinkAction $action,
     ): ApiResponse|JsonResponse {
+        // Revoke bir güvenlik KILL-SWITCH'idir: çöp kutusundaki media'nın
+        // linki de revoke edilebilmeli (restore edilirse link ölü kalmalı).
+        // Bu yüzden store'un aksine withTrashed ile lookup yapılır — bare
+        // kurulumda (SoftDeletes'siz model) helper plain query'ye düşer.
         /** @var Media $media */
-        $media = Media::findOrFail($request->input('media_id'));
+        $media = $this->mediaQueryWithTrashed()->findOrFail($request->input('media_id'));
 
         // K4: Gate::policy yerine flat gate kullanılıyor (revoke-share-media).
         // K2 / O3: RevokeShareLinkRequest::authorize() ownership'i zaten doğruladı;

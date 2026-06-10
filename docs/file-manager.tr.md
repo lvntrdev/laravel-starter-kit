@@ -331,6 +331,18 @@ Kimlik doğrulaması gerektirmeksizin dosyaya süreli erişim sağlayan HMAC-SHA
 
 İptal edilen token'lar `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile saklanır. Token doğrulaması oluşturulduğu `media_id` ile karşılaştırılır — farklı bir media kaydına karşı aynı token geçerli sayılmaz.
 
+#### Çöp kutusu ve paylaşım bağlantısı erişimi
+
+Bir dosyayı soft-delete etmek (Çöp Kutusu'na taşımak) dosyayı anında erişilemez kılar:
+
+- `{media}` parametresini route üzerinden çözen tüm istekler — imzalı share show, kimlik doğrulamalı indirme, yeniden adlandırma, kopyalama, silme — çöpteki dosya için **404** döner. Yanıt, var olmayan bir dosyanın yanıtıyla aynıdır; böylece dosyanın Çöp Kutusu'nda bulunup bulunmadığı dışarıya sızmaz (oracle yok).
+- Çöpteki bir dosya için yeni paylaşım bağlantısı oluşturmak da **404** döner.
+- **Silme mevcut paylaşım bağlantılarını otomatik olarak iptal etmez.** Dosya için geçerli bir imzalı bağlantı varsa (süresi dolmamış, iptal edilmemiş), dosya çöpteyken 404 döner; dosya geri yüklenirse bağlantı yeniden çalışır. Geri yükleme sonrasında da erişimi kalıcı olarak engellemek için `POST /file-manager/share/revoke` çağrısı yapın — iptal işlemi geri yüklemeden sonra da geçerliliğini korur.
+- Bir dosyayı geri yüklemek, süresi dolmamış ve iptal edilmemiş paylaşım bağlantıları üzerinden erişimi yeniden etkinleştirir.
+- `php artisan file-manager:purge-trash` dosyayı diskten kalıcı olarak siler. Purge sonrasında iptal edilmemiş bağlantılar bile kalıcı olarak 404 döner.
+
+**Route binding notu:** `{media}` route parametresi, servis provider'da kayıt edilen `Route::model('media', config('media-library.media_model'))` üzerinden çözülür. Bu, uygulamadaki `{media}` parametresi kullanan tüm route'ların — kendi özel route'larınız dahil — yapılandırılmış model sınıfının bir instance'ını alacağı anlamına gelir (SoftDeletes global scope uygulanmış olarak). Çöpteki kayıtlar binding tarafından varsayılan olarak hariç tutulur; kendi controller'larınızda çöpteki kayıtlara açıkça ihtiyaç duyduğunuzda `withTrashed()` kullanın.
+
 ### Çöp kutusu davranışı (`enable_trash`)
 
 `config/file-manager.php` içindeki `enable_trash` anahtarı soft-delete vs hard-delete için tek yetkili kaynaktır:

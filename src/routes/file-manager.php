@@ -19,12 +19,18 @@ use Lvntr\StarterKit\Http\Controllers\FileManagerController;
 | Route names, URL prefix, HTTP methods and parameter names match v13.4.x
 | 1:1 — Wayfinder typed routes and existing axios calls keep working.
 |
-| Route model binding for {folder} is resolved from
-| config('file-manager.models.folder') so apps that swap the FileFolder
-| model (config-driven binding from Task 5) keep working with vendor
-| controller signatures that use the abstract Model type-hint.
+| Route model binding: BOTH {media} and {folder} binders are registered
+| cache-safe in StarterKitServiceProvider::boot() (registerRouteModelBindings)
+| — a Route::model() call living only in this file never runs under
+| `route:cache`, because cached apps skip route files entirely. {media}
+| resolves from config('media-library.media_model'): the consumer's
+| SoftDeletes Media model scopes trashed records out of every {media}
+| binding site (share show, download, rename, copy, delete) with a 404 —
+| trash is inaccessible until restore (security guard).
 |
-| Spatie Media uses implicit binding; nothing to wire up for {media}.
+| The {folder} registration below is kept as an idempotent fallback for
+| non-kit mounts that load this file without the package provider booting;
+| when both run, the values are identical and the last registration wins.
 |
 */
 

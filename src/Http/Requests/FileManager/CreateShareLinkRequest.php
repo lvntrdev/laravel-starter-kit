@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lvntr\StarterKit\Http\Requests\FileManager;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -15,6 +16,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class CreateShareLinkRequest extends FormRequest
 {
+    use ResolvesMediaModel;
+
     /**
      * O3 (security): Request katmanında erken yetki kontrolü.
      *
@@ -41,8 +44,13 @@ class CreateShareLinkRequest extends FormRequest
             return false;
         }
 
+        // Configured model + withTrashed: base Media lookup'ı scope'suz olduğu
+        // için trashed satırları da görüyordu — aynı görünürlük korunur, böylece
+        // yetki kararı (gate) değişmez. Trash ENFORCEMENT noktası controller'dır:
+        // ShareController::store scoped findOrFail ile trashed media'ya 404 döner
+        // (sahibine kendi çöp kutusundan öte hiçbir bilgi sızmaz).
         /** @var Media|null $media */
-        $media = Media::find((int) $mediaId);
+        $media = $this->mediaQueryWithTrashed()->find((int) $mediaId);
 
         if ($media === null) {
             return false;

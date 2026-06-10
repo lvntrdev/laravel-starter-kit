@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lvntr\StarterKit\Http\Requests\FileManager;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -16,6 +17,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class RevokeShareLinkRequest extends FormRequest
 {
+    use ResolvesMediaModel;
+
     /**
      * K2 / O3 (security): Request katmanında erken yetki kontrolü.
      *
@@ -43,8 +46,13 @@ class RevokeShareLinkRequest extends FormRequest
             return false;
         }
 
+        // Configured model + withTrashed: revoke bir güvenlik kill-switch'idir —
+        // çöp kutusundaki media'nın mevcut linkleri de revoke edilebilmeli
+        // (restore edilirse link ölü kalmalı). Scoped lookup trashed media'nın
+        // revoke'unu imkânsız kılardı; withTrashed base Media'nın scope'suz
+        // görünürlüğünü birebir korur.
         /** @var Media|null $media */
-        $media = Media::find((int) $mediaId);
+        $media = $this->mediaQueryWithTrashed()->find((int) $mediaId);
 
         if ($media === null) {
             return false;
