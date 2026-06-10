@@ -203,8 +203,14 @@
     const columnOrder = ref<string[]>([]);
     const hiddenColumns = ref<Set<string>>(new Set());
 
-    /** Keys whose default visibility was applied once — user toggles are never overridden. */
-    const knownColumnKeys = new Set<string>();
+    /** Keys whose default visibility was applied once. */
+    const defaultAppliedKeys = new Set<string>();
+
+    /** Keys the user explicitly toggled or restored from a saved state — never overridden. */
+    const userTouchedKeys = new Set<string>();
+
+    /** Server column meta gets one shot at (re)applying defaults over the local config. */
+    let serverDefaultsApplied = false;
 
     function reconcileColumns(): void {
         const defs = allColumns.value;
@@ -216,17 +222,32 @@
         }
         columnOrder.value = next;
 
+        const applyServerDefaults = serverColumns.value !== null && !serverDefaultsApplied;
+
         for (const def of defs) {
-            if (!knownColumnKeys.has(def.key)) {
-                knownColumnKeys.add(def.key);
-                if (def.visible === false && !def.locked) {
-                    hiddenColumns.value.add(def.key);
+            // The first server column meta may override a locally-applied default
+            // (the mount-time reconcile runs before the server's visible flag is
+            // known) — but never a column the user touched.
+            const serverOverride = applyServerDefaults && !userTouchedKeys.has(def.key);
+
+            if (!defaultAppliedKeys.has(def.key) || serverOverride) {
+                defaultAppliedKeys.add(def.key);
+                if (!def.locked) {
+                    if (def.visible === false) {
+                        hiddenColumns.value.add(def.key);
+                    } else if (serverOverride) {
+                        hiddenColumns.value.delete(def.key);
+                    }
                 }
             }
             // Locked columns can never stay hidden.
             if (def.locked) {
                 hiddenColumns.value.delete(def.key);
             }
+        }
+
+        if (serverColumns.value !== null) {
+            serverDefaultsApplied = true;
         }
     }
 
@@ -252,6 +273,7 @@
 
     function toggleColumn(def: ColumnConfig): void {
         if (def.locked) return;
+        userTouchedKeys.add(def.key);
         const set = new Set(hiddenColumns.value);
         if (set.has(def.key)) {
             set.delete(def.key);
@@ -264,6 +286,9 @@
 
     function showAllColumns(): void {
         if (!hiddenColumns.value.size) return;
+        for (const key of hiddenColumns.value) {
+            userTouchedKeys.add(key);
+        }
         hiddenColumns.value = new Set();
         onColumnSelectionChanged();
     }
@@ -370,8 +395,11 @@
                 if (savedColumns) {
                     columnOrder.value = savedColumns.order ?? [];
                     hiddenColumns.value = new Set(savedColumns.hidden ?? []);
+                    // Restored state is the user's chosen state — protect it
+                    // from both local and server defaults.
                     for (const key of columnOrder.value) {
-                        knownColumnKeys.add(key);
+                        defaultAppliedKeys.add(key);
+                        userTouchedKeys.add(key);
                     }
                     reconcileColumns();
                 }
