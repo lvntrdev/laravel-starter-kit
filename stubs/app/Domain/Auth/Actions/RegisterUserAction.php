@@ -3,6 +3,7 @@
 namespace App\Domain\Auth\Actions;
 
 use App\Domain\Auth\DTOs\RegisterDTO;
+use App\Enums\RoleEnum;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Laravel\Fortify\Features;
@@ -28,6 +29,8 @@ class RegisterUserAction extends BaseAction
             ...$dto->toArray(),
             'status' => 'active',
         ]);
+
+        $user->assignRole(RoleEnum::User->value);
 
         if (Features::enabled(Features::emailVerification())) {
             // Trigger Fortify's Registered listener so the verification

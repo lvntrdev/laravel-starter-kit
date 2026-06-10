@@ -1,0 +1,112 @@
+<?php
+
+namespace Lvntr\StarterKit\Domain\Role\Queries;
+
+use App\Models\Role;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+
+/**
+ * Query: Resolve the full set of roles matching a "select all filtered"
+ * (cross-page) bulk request.
+ *
+ * Security contract — read before touching:
+ *
+ *   1. NO VISIBILITY SCOPE BY DESIGN. Unlike users, the role datatable
+ *      (RoleDatatableQuery) lists ALL roles to any actor with roles.read; the
+ *      rank hierarchy is enforced PER ITEM at delete time
+ *      (BulkDeleteRoleAction::authorize() — system roles protected, and a
+ *      non-system_admin may only delete roles ranked below their own). So this
+ *      cross-page query intentionally has no base hierarchy filter: it returns
+ *      the filtered candidate set, and the dispatcher's per-item authorize is
+ *      the gate that drops protected/outranking roles. This matches exactly
+ *      what the ids-based path already does.
+ *
+ *   2. ALLOW-LISTED FILTERS. Only the search the datatable exposes is honoured
+ *      (RoleDatatableQuery declares searchable(['id', 'name']) and no
+ *      filterable()). Arbitrary snapshot keys are ignored.
+ *
+ *   3. PERFORMANCE BOUND. No ids.max:500 applies to cross-page; a hard cap
+ *      protects against unbounded batches (the role table is small in practice,
+ *      but the bound is kept for symmetry and safety).
+ */
+class RoleBulkSelectionQuery
+{
+    /** Hard upper bound on rows a single cross-page bulk operation may resolve. */
+    public const MAX_ITEMS = 5000;
+
+    /**
+     * Resolve the roles matching the snapshot.
+     *
+     * No actor argument by design — the role listing has no query-time hierarchy
+     * scope (every roles.read actor sees all roles); the rank hierarchy is
+     * enforced per item by BulkDeleteRoleAction::authorize(), so the actor is
+     * not needed here (see the class docblock).
+     *
+     * @param  array<string, mixed>  $filterSnapshot
+     * @return Collection<int, Role>
+     */
+    public function resolve(array $filterSnapshot): Collection
+    {
+        $query = Role::query();
+
+        $search = $this->extractSearch($filterSnapshot);
+        if ($search !== null) {
+            $this->applySearch($query, $search);
+        }
+
+        // Deterministic subset: order before capping so MAX_ITEMS always takes
+        // the SAME first N rows (an unordered limit could otherwise drop a
+        // different, arbitrary slice between identical requests).
+        return $query->orderBy('id')->limit(self::MAX_ITEMS)->get();
+    }
+
+    /**
+     * Pull the (allow-listed) search term out of the client snapshot, accepting
+     * both bracket-style ('filter[search]') and nested ['filter']['search']
+     * shapes. Everything else is ignored.
+     *
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function extractSearch(array $snapshot): ?string
+    {
+        $raw = null;
+
+        if (isset($snapshot['filter']) && is_array($snapshot['filter']) && isset($snapshot['filter']['search'])) {
+            $raw = $snapshot['filter']['search'];
+        } elseif (isset($snapshot['filter[search]'])) {
+            $raw = $snapshot['filter[search]'];
+        }
+
+        if (! is_scalar($raw)) {
+            return null;
+        }
+
+        $value = trim((string) $raw);
+
+        return $value === '' ? null : $value;
+    }
+
+    /**
+     * Apply the search filter using the same semantics as the datatable:
+     * each word must match id OR name; wildcards are escaped.
+     *
+     * @param  Builder<Role>  $query
+     */
+    private function applySearch(Builder $query, string $search): void
+    {
+        $words = array_filter(explode(' ', trim($search)));
+        $fields = ['id', 'name'];
+
+        $query->where(function (Builder $outer) use ($words, $fields) {
+            foreach ($words as $word) {
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $word);
+                $outer->where(function (Builder $inner) use ($escaped, $fields) {
+                    foreach ($fields as $field) {
+                        $inner->orWhere($field, 'like', '%'.$escaped.'%');
+                    }
+                });
+            }
+        });
+    }
+}

@@ -143,6 +143,42 @@ If the resolved permission does not exist in the database, the middleware behave
 - production: deny the request with `403` so unseeded permissions do not silently expose routes
 - non-production: allow the request and log a warning so developers can seed the missing permission
 
+### Octane / Long-Running Worker Deployments
+
+`CheckResourcePermission` caches the full permission name list in the service container via `app()->instance('check-permission.cache', ...)`. Under standard PHP-FPM this is a per-request cache — the container is fresh on every request and no stale state can accumulate.
+
+**Under Octane (Swoole / RoadRunner) or any other long-running worker, the container persists across requests.** If you run `sk:seed-permissions` or trigger a permission sync while the workers are running, the in-memory cache retains the old permission list until the process is recycled. This can cause:
+
+- newly added permissions to be treated as unmapped, triggering an unexpected `403` in production
+- removed permissions to remain in the cache and continue allowing access momentarily
+
+The kit does **not** assume Octane — FPM is fully correct with no extra configuration. Handling this under Octane is a **host-app deployment decision**. Two recommended approaches:
+
+**Option A — flush the cache on each request** (zero-downtime):
+
+Register an Octane listener in your `AppServiceProvider` (or a dedicated service provider) that removes the container instance before each request is handled:
+
+```php
+use Laravel\Octane\Facades\Octane;
+
+Octane::listen(
+    \Laravel\Octane\Events\RequestReceived::class,
+    function () {
+        app()->forgetInstance('check-permission.cache');
+    },
+);
+```
+
+**Option B — reload workers after every permission sync** (simpler, brief interruption):
+
+```bash
+php artisan sk:seed-permissions --fresh && php artisan octane:reload
+```
+
+Or, if you trigger a sync from the admin panel, follow it immediately with `octane:reload` (or a graceful restart via your process manager).
+
+Either option eliminates the stale-cache window. Option A is preferred for zero-downtime deployments; Option B is simpler for infrequent permission changes during a maintenance window.
+
 ## Login Status Check
 
 API login (`POST /api/v1/auth/login`) validates not only the credentials but also the user's `status`. `LoginUserAction`:

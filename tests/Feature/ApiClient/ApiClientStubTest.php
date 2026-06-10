@@ -20,6 +20,8 @@
 |
 */
 
+use App\Http\Requests\Admin\ApiToken\StoreApiTokenRequest;
+use Illuminate\Validation\Validator;
 use Lvntr\StarterKit\Tests\TestCase;
 
 uses(TestCase::class);
@@ -317,6 +319,88 @@ test('ApiTokenController store() sadece $request->user() kullanıyor (K1)', func
     expect($content)->not->toContain('User::findOrFail');
     // Store metodunda user_id kullanılmamalı; dtApi'de query scope için kullanılabilir
     expect($content)->not->toContain('validated(\'user_id\')');
+});
+
+// ── I2) Security: PAT scope allow-list (scope escalation koruması) ──────────
+
+test('StoreApiTokenRequest scopes.* Rule::in allow-list kullanıyor', function (): void {
+    $content = file_get_contents(
+        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php'
+    );
+
+    expect($content)->toContain('Rule::in')
+        ->and($content)->toContain("config('starter-kit.passport.scopes'")
+        // Passport'ta `*` hardcoded wildcard — allow-list'ten her zaman düşülmeli
+        ->and($content)->toContain('array_diff')
+        ->and($content)->toContain("['*']");
+});
+
+/**
+ * Stub FormRequest'i behavioral test eder: stub testbench app'e route'lanmadığı
+ * için rules() doğrudan Validator'a verilir. config('starter-kit.passport.scopes')
+ * ServiceProvider merge'i ile testbench'te mevcuttur.
+ */
+function makeApiTokenScopeValidator(array $data): Validator
+{
+    require_once dirname(__DIR__, 3)
+        .'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php';
+
+    $rules = (new StoreApiTokenRequest)->rules();
+
+    return Illuminate\Support\Facades\Validator::make($data, $rules);
+}
+
+test('tanımsız scope reddedilir (422)', function (): void {
+    $validator = makeApiTokenScopeValidator([
+        'name' => 'test-token',
+        'scopes' => ['nonexistent'],
+    ]);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('scopes.0'))->toBeTrue();
+});
+
+test('config kataloğundaki scope kabul edilir', function (): void {
+    $validator = makeApiTokenScopeValidator([
+        'name' => 'test-token',
+        'scopes' => ['files.read', 'users.read'],
+    ]);
+
+    expect($validator->passes())->toBeTrue();
+});
+
+test('* scope config kataloğuna eklenmiş olsa bile reddedilir', function (): void {
+    config()->set('starter-kit.passport.scopes', [
+        '*' => 'Wildcard — asla request üzerinden verilmemeli',
+        'files.read' => 'Read files',
+    ]);
+
+    $validator = makeApiTokenScopeValidator([
+        'name' => 'test-token',
+        'scopes' => ['*'],
+    ]);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('scopes.0'))->toBeTrue();
+});
+
+test('scope kataloğu boşken gönderilen her scope reddedilir', function (): void {
+    config()->set('starter-kit.passport.scopes', []);
+
+    $validator = makeApiTokenScopeValidator([
+        'name' => 'test-token',
+        'scopes' => ['files.read'],
+    ]);
+
+    expect($validator->fails())->toBeTrue();
+});
+
+test('scope kataloğu boşken scope gönderilmeyen istek geçer', function (): void {
+    config()->set('starter-kit.passport.scopes', []);
+
+    $validator = makeApiTokenScopeValidator(['name' => 'test-token']);
+
+    expect($validator->passes())->toBeTrue();
 });
 
 // ── J) Security: K2 — redirect_uris HTTPS zorunluluğu ───────────────────────

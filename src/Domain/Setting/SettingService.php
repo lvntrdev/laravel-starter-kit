@@ -36,9 +36,22 @@ class SettingService
 
     public function __construct()
     {
+        // Fallback for consumers that have not published (or run an outdated)
+        // config/settings.php — the file is app-owned and NOT merged by the
+        // service provider, so this list is the only safety net there.
+        //
+        // DIVERGENCE GUARD: this array MUST stay identical to the
+        // `sensitive_keys` list in stubs/config/settings.php. If a key is
+        // added there without being added here, consumers without the
+        // published config write that secret to the DB as PLAINTEXT.
+        // Parity is enforced by tests/Feature/Settings/SensitiveKeysFallbackTest.php.
         $this->sensitiveKeys = config('settings.sensitive_keys', [
             'mail.password',
             'storage.spaces_secret',
+            'storage.aws_secret',
+            'turnstile.secret_key',
+            'postman.api_key',
+            'apidog.access_token',
         ]);
     }
 

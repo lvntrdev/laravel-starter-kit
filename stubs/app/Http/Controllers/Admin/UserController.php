@@ -10,6 +10,7 @@ use App\Domain\User\Actions\DeleteUserAction;
 use App\Domain\User\Actions\UpdateUserAction;
 use App\Domain\User\BulkActions\BulkDeleteUserAction;
 use App\Domain\User\DTOs\UserDTO;
+use App\Domain\User\Queries\UserBulkSelectionQuery;
 use App\Domain\User\Queries\UserDatatableQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BulkActionRequest;
@@ -161,9 +162,21 @@ class UserController extends Controller
      *
      * POST /admin/users/bulk
      * Route name: users.bulk
+     *
+     * Two selection modes:
+     *   - page (default): operate on the explicit `ids` the client sent.
+     *   - select_all_filtered: re-resolve the FULL set matching the active
+     *     filter snapshot via UserBulkSelectionQuery, which re-applies the exact
+     *     same role-hierarchy visibility scope as the datatable listing — so
+     *     "select all filtered" can never reach users outside the actor's
+     *     hierarchy. Either way, the dispatcher still runs per-item authorize()
+     *     (permission + rank + self-delete) as a second, independent gate.
      */
-    public function bulk(BulkActionRequest $request, BulkDeleteUserAction $bulkDelete): RedirectResponse
-    {
+    public function bulk(
+        BulkActionRequest $request,
+        BulkDeleteUserAction $bulkDelete,
+        UserBulkSelectionQuery $selectionQuery,
+    ): RedirectResponse {
         $dispatcher = new BulkActionDispatcher;
         $dispatcher->register($bulkDelete);
 
@@ -173,16 +186,42 @@ class UserController extends Controller
             return back()->with('error', __('sk-bulk.unsupported_action', ['action' => $actionKey]));
         }
 
-        $ids = $request->validated('ids');
         $actor = $request->user();
+        $actor->loadMissing('roles');
 
-        $items = User::query()
-            ->whereIn('id', $ids)
-            ->with('roles')
-            ->get();
+        $capReached = false;
+
+        if ($request->boolean('select_all_filtered')) {
+            // Cross-page: re-query from the filter snapshot. The visibility
+            // scope is enforced inside the query — NOT here — so it stays in
+            // lockstep with the datatable (single source of truth).
+            $items = $selectionQuery->resolve(
+                $actor,
+                $request->validated('filter_snapshot') ?? [],
+            );
+
+            // The cross-page query caps at MAX_ITEMS (no silent caps): if the
+            // resolved set hit that bound, the filter matched more rows than a
+            // single bulk operation processes — warn the user so the untouched
+            // remainder is not mistaken for "done".
+            $capReached = $items->count() === UserBulkSelectionQuery::MAX_ITEMS;
+        } else {
+            $items = User::query()
+                ->whereIn('id', $request->validated('ids'))
+                ->with('roles')
+                ->get();
+        }
 
         $result = $dispatcher->dispatch($actor, $actionKey, $items);
 
-        return back()->with('success', $result['message']);
+        $response = back()->with('success', $result['message']);
+
+        if ($capReached) {
+            $response->with('warning', __('sk-bulk.cap_reached', [
+                'max' => UserBulkSelectionQuery::MAX_ITEMS,
+            ]));
+        }
+
+        return $response;
     }
 }

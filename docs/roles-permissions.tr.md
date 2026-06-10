@@ -143,6 +143,42 @@ Proje, route niyetini permission kontrolüne çevirir. `users.index` gibi bir ro
 - production: route'un sessizce açık kalmaması için isteği `403` ile reddeder
 - production dışı ortamlar: isteğe izin verir ve eksik permission seed edilmesi için warning log yazar
 
+### Octane / Long-Running Worker Ortamları
+
+`CheckResourcePermission`, tüm permission isim listesini `app()->instance('check-permission.cache', ...)` ile container'a kaydeder. Standart PHP-FPM'de bu per-request bir cache'tir — container her request'te tazedir, dolayısıyla stale state birikmez.
+
+**Octane (Swoole / RoadRunner) veya uzun ömürlü başka bir worker ortamında container request'ler arasında yaşar.** Worker'lar çalışırken `sk:seed-permissions` komutu çalıştırılır ya da admin panelden permission sync tetiklenirse in-memory cache, process yeniden başlatılana kadar eski listeyi korur. Bu şu sonuçlara yol açabilir:
+
+- yeni eklenen permission'lar unmapped sayılır ve production'da beklenmedik `403` fırlatır
+- silinen permission'lar cache'de kalmaya devam eder ve kısa süre erişime izin vermeyi sürdürür
+
+Kit Octane **varsaymaz** — FPM, ekstra yapılandırma olmaksızın tamamen doğru çalışır. Octane ortamında bu durumu yönetmek **host uygulama deployment kararıdır**. Önerilen iki yaklaşım:
+
+**Seçenek A — her request başında cache'i temizle** (sıfır kesinti):
+
+`AppServiceProvider` içinde (ya da ayrı bir service provider'da) her request öncesinde container instance'ını silen bir Octane listener kaydedin:
+
+```php
+use Laravel\Octane\Facades\Octane;
+
+Octane::listen(
+    \Laravel\Octane\Events\RequestReceived::class,
+    function () {
+        app()->forgetInstance('check-permission.cache');
+    },
+);
+```
+
+**Seçenek B — her permission sync sonrasında worker'ları yeniden başlat** (daha basit, kısa kesinti):
+
+```bash
+php artisan sk:seed-permissions --fresh && php artisan octane:reload
+```
+
+Veya admin panelden sync tetikleniyorsa hemen ardından `octane:reload` (ya da process manager üzerinden graceful restart) çalıştırın.
+
+Her iki seçenek de stale cache penceresini ortadan kaldırır. Sıfır kesinti gerekiyorsa Seçenek A önerilir; permission değişikliklerinin nadir ve bakım penceresi içinde yapıldığı durumlarda Seçenek B daha basittir.
+
 ## Login Sırasında Status Kontrolü
 
 API login (`POST /api/v1/auth/login`) sadece credential doğruluğunu değil, kullanıcının `status` alanını da doğrular. `LoginUserAction`:

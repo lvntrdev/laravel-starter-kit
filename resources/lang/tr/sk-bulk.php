@@ -13,4 +13,7 @@ return [
 
     // Sonuç mesajı
     'result' => ':processed kayıt işlendi, :skipped atlandı, :failed başarısız oldu.',
+
+    // Cross-page "tümünü seç" üst sınır uyarısı
+    'cap_reached' => 'Seçim üst sınıra ulaştı; yalnızca ilk :max kayıt işlendi.',
 ];

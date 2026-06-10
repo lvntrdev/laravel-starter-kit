@@ -54,6 +54,7 @@ use Lvntr\StarterKit\Domain\Role\Listeners\LogRoleDeleted;
 use Lvntr\StarterKit\Domain\Role\Listeners\LogRoleUpdated;
 use Lvntr\StarterKit\Domain\Role\Queries\CanManageRoleQuery;
 use Lvntr\StarterKit\Domain\Role\Queries\GroupedPermissionsQuery;
+use Lvntr\StarterKit\Domain\Role\Queries\RoleBulkSelectionQuery;
 use Lvntr\StarterKit\Domain\Role\Queries\RoleDatatableQuery;
 use Lvntr\StarterKit\Domain\Role\Queries\RoleSelectOptionsQuery;
 use Lvntr\StarterKit\Domain\Role\Queries\UserGrantablePermissionsQuery;
@@ -87,6 +88,7 @@ use Lvntr\StarterKit\Domain\User\Events\UserUpdated;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserCreated;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserDeleted;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserUpdated;
+use Lvntr\StarterKit\Domain\User\Queries\UserBulkSelectionQuery;
 use Lvntr\StarterKit\Domain\User\Queries\UserDatatableQuery;
 use Lvntr\StarterKit\Exceptions\ApiException;
 use Lvntr\StarterKit\Exceptions\ApiExceptionHandler;
@@ -304,6 +306,7 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\Role\Listeners\LogRoleDeleted' => LogRoleDeleted::class,
             'App\Domain\Role\Listeners\LogRoleUpdated' => LogRoleUpdated::class,
             'App\Domain\Role\Queries\CanManageRoleQuery' => CanManageRoleQuery::class,
+            'App\Domain\Role\Queries\RoleBulkSelectionQuery' => RoleBulkSelectionQuery::class,
             'App\Domain\Role\Queries\GroupedPermissionsQuery' => GroupedPermissionsQuery::class,
             'App\Domain\Role\Queries\RoleDatatableQuery' => RoleDatatableQuery::class,
             'App\Domain\Role\Queries\RoleSelectOptionsQuery' => RoleSelectOptionsQuery::class,
@@ -357,6 +360,7 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\User\Listeners\LogUserDeleted' => LogUserDeleted::class,
             'App\Domain\User\Listeners\LogUserUpdated' => LogUserUpdated::class,
             'App\Domain\User\Queries\UserDatatableQuery' => UserDatatableQuery::class,
+            'App\Domain\User\Queries\UserBulkSelectionQuery' => UserBulkSelectionQuery::class,
             'App\Exceptions\ApiException' => ApiException::class,
             'App\Exceptions\ApiExceptionHandler' => ApiExceptionHandler::class,
             'App\Http\Middleware\CheckResourcePermission' => CheckResourcePermission::class,

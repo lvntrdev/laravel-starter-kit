@@ -10,6 +10,7 @@ use App\Domain\Role\BulkActions\BulkDeleteRoleAction;
 use App\Domain\Role\DTOs\RoleDTO;
 use App\Domain\Role\Queries\CanManageRoleQuery;
 use App\Domain\Role\Queries\GroupedPermissionsQuery;
+use App\Domain\Role\Queries\RoleBulkSelectionQuery;
 use App\Domain\Role\Queries\RoleDatatableQuery;
 use App\Domain\Role\Queries\UserGrantablePermissionsQuery;
 use App\Enums\RoleEnum;
@@ -180,9 +181,22 @@ class RoleController extends Controller
      *
      * POST /admin/roles/bulk
      * Route name: roles.bulk
+     *
+     * Two selection modes:
+     *   - page (default): operate on the explicit `ids` the client sent.
+     *   - select_all_filtered: re-resolve the FULL set matching the active
+     *     filter snapshot via RoleBulkSelectionQuery. Roles are listed to every
+     *     roles.read actor (no datatable visibility scope by design), so the
+     *     hierarchy is NOT applied at query time here — it is enforced per item
+     *     by BulkDeleteRoleAction::authorize() (system roles protected, and a
+     *     non-system_admin may only delete roles ranked below their own),
+     *     exactly as the ids path already relies on.
      */
-    public function bulk(BulkActionRequest $request, BulkDeleteRoleAction $bulkDelete): RedirectResponse
-    {
+    public function bulk(
+        BulkActionRequest $request,
+        BulkDeleteRoleAction $bulkDelete,
+        RoleBulkSelectionQuery $selectionQuery,
+    ): RedirectResponse {
         $dispatcher = new BulkActionDispatcher;
         $dispatcher->register($bulkDelete);
 
@@ -192,17 +206,35 @@ class RoleController extends Controller
             return back()->with('error', __('sk-bulk.unsupported_action', ['action' => $actionKey]));
         }
 
-        $ids = $request->validated('ids');
         $actor = $request->user();
-
         $actor->loadMissing('roles');
 
-        $items = Role::query()
-            ->whereIn('id', $ids)
-            ->get();
+        $capReached = false;
+
+        if ($request->boolean('select_all_filtered')) {
+            $items = $selectionQuery->resolve($request->validated('filter_snapshot') ?? []);
+
+            // The cross-page query caps at MAX_ITEMS (no silent caps): if the
+            // resolved set hit that bound, the filter matched more rows than a
+            // single bulk operation processes — warn the user so the untouched
+            // remainder is not mistaken for "done".
+            $capReached = $items->count() === RoleBulkSelectionQuery::MAX_ITEMS;
+        } else {
+            $items = Role::query()
+                ->whereIn('id', $request->validated('ids'))
+                ->get();
+        }
 
         $result = $dispatcher->dispatch($actor, $actionKey, $items);
 
-        return back()->with('success', $result['message']);
+        $response = back()->with('success', $result['message']);
+
+        if ($capReached) {
+            $response->with('warning', __('sk-bulk.cap_reached', [
+                'max' => RoleBulkSelectionQuery::MAX_ITEMS,
+            ]));
+        }
+
+        return $response;
     }
 }

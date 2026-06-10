@@ -29,6 +29,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Lvntr\StarterKit\Domain\FileManager\Actions\CreateShareLinkAction;
@@ -48,14 +49,15 @@ use Lvntr\StarterKit\Tests\Stubs\TestOwner;
 /**
  * @param  string  $modelType  Sahip model morph alias/FQCN
  * @param  string  $modelId  Sahip model ID'si
+ * @param  string  $collection  Media collection adı (default: paylaşılabilir tek collection olan `files`)
  */
-function insertShareTestMedia(string $modelType = 'user', string $modelId = '1'): TestMedia
+function insertShareTestMedia(string $modelType = 'user', string $modelId = '1', string $collection = 'files'): TestMedia
 {
     $id = DB::table('media')->insertGetId([
         'model_type' => $modelType,
         'model_id' => $modelId,
         'uuid' => Str::uuid()->toString(),
-        'collection_name' => 'files',
+        'collection_name' => $collection,
         'name' => 'share-test-'.Str::random(6),
         'file_name' => 'document.pdf',
         'mime_type' => 'application/pdf',
@@ -763,4 +765,81 @@ it('MediaPolicy@share still denies a non-Eloquent stub actor even when the conte
     };
 
     expect((new MediaPolicy)->share($stub, $media))->toBeFalse();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// K) Collection guard — share mekanizması yalnız `files` collection'ı kapsar
+//
+// DownloadFileAction `files`-dışı medyayı zaten reddediyordu; aynı sınır
+// share create (CreateShareLinkAction) ve public serve (ShareController@show)
+// tarafına da uygulanır. Public endpoint'te `files`-dışı medya, var olmayan
+// medya ile birebir aynı görünür (404) — revocation durumu (410) bile
+// dışarı sızdırılmaz.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('CreateShareLinkAction rejects media outside the files collection', function (): void {
+    // Avatar collection'ındaki medya — owner doğru olsa bile paylaşılamaz.
+    $media = insertShareTestMedia('user', 'owner-avatar', 'avatar');
+
+    $dto = CreateShareLinkDTO::fromArray([
+        'media' => $media,
+        'owner_type' => 'user',
+        'owner_id' => 'owner-avatar',
+    ]);
+
+    expect(fn () => app(CreateShareLinkAction::class)->execute($dto))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('ShareController@show returns 404 for non-files media even with a valid signature', function (): void {
+    // Guard'ı bypass eden bir link simülasyonu: action artık `files`-dışı
+    // link üretmez, bu yüzden imzalı URL doğrudan üretiliyor (legacy link
+    // / route'u bilen saldırgan senaryosu).
+    $media = insertShareTestMedia('user', 'owner-show-avatar', 'avatar');
+
+    $url = URL::temporarySignedRoute(
+        'file-manager.share.show',
+        now()->addHour(),
+        ['media' => $media->getKey()],
+    );
+
+    $this->get($url)->assertNotFound();
+});
+
+it('ShareController@show returns 404 (not 410) for revoked non-files media — no revocation state leak', function (): void {
+    $media = insertShareTestMedia('user', 'owner-revoked-avatar', 'avatar');
+
+    $url = URL::temporarySignedRoute(
+        'file-manager.share.show',
+        now()->addHour(),
+        ['media' => $media->getKey()],
+    );
+
+    // Linkin token hash'ini revoke et — guard yine de 410'dan önce 404 dönmeli.
+    parse_str(parse_url($url)['query'] ?? '', $params);
+    app(RevokeShareLinkAction::class)->execute(
+        media: $media,
+        tokenHash: hash('sha256', (string) ($params['signature'] ?? '')),
+    );
+
+    $this->get($url)->assertNotFound();
+});
+
+it('ShareController@show still streams files-collection media with a valid signature', function (): void {
+    // Regression: sıkılaştırma meşru `files` linklerini kırmamalı.
+    Storage::fake('public');
+
+    $media = insertShareTestMedia('user', 'owner-show-files');
+    Storage::disk('public')->put($media->getPathRelativeToRoot(), 'share-guard-pdf-bytes');
+
+    $url = URL::temporarySignedRoute(
+        'file-manager.share.show',
+        now()->addHour(),
+        ['media' => $media->getKey()],
+    );
+
+    $response = $this->get($url);
+
+    $response->assertOk();
+    expect($response->streamedContent())->toBe('share-guard-pdf-bytes');
 });

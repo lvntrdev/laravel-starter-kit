@@ -13,4 +13,7 @@ return [
 
     // Result message
     'result' => ':processed item(s) processed, :skipped skipped, :failed failed.',
+
+    // Cross-page "select all filtered" cap warning
+    'cap_reached' => 'Selection reached the upper limit; only the first :max items were processed.',
 ];

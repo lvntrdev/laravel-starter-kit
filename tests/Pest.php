@@ -28,6 +28,10 @@ uses(DatabaseTestCase::class)->in('Feature/Logs');
 // Datatable query builder testleri: users tablosu üzerinden DB gerekli.
 uses(DatabaseTestCase::class)->in('Feature/Datatable');
 
+// Cross-page bulk selection scope/allow-list testleri: roles + pivot şeması
+// inline kurulur, users tablosu üzerinden DB gerekli.
+uses(DatabaseTestCase::class)->in('Feature/BulkSelection');
+
 // DB gerektirmeyen diğer Feature testleri
 uses(TestCase::class)->in('Feature/BackwardCompat');
 

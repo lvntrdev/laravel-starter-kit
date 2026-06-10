@@ -27,6 +27,12 @@ class CreateShareLinkAction extends FileManagerAction
 {
     public function execute(CreateShareLinkDTO $dto): ShareLinkResultDTO
     {
+        // Collection guard: yalnız FileManager'ın `files` collection'ı
+        // paylaşılabilir (DownloadFileAction'daki `files`-only sınırı ile
+        // tutarlı). Guard olmadan `files` dışı medya (örn. avatar) için
+        // public imzalı link üretilebilirdi.
+        $this->assertShareableCollection($dto->media);
+
         // Ownership kontrolü: medya bu context'in sahibine mi ait?
         $this->assertOwnership($dto->media, $dto->ownerType, $dto->ownerId);
 
@@ -48,6 +54,25 @@ class CreateShareLinkAction extends FileManagerAction
             expiresAt: $expiresAt,
             tokenHash: $tokenHash,
         );
+    }
+
+    /**
+     * Medyanın paylaşılabilir collection'da (`files`) olduğunu doğrular.
+     *
+     * FileManager yalnız `files` collection'ını yönetir ve paylaşır;
+     * diğer collection'lar (avatar vb.) share mekanizmasının dışındadır.
+     * ShareController@show aynı sınırı public endpoint tarafında 404 ile
+     * uygular — iki taraf birlikte değişmelidir.
+     *
+     * @throws AuthorizationException
+     */
+    private function assertShareableCollection(Media $media): void
+    {
+        if ($media->collection_name !== 'files') {
+            throw new AuthorizationException(
+                __('sk-file-manager.errors.file_out_of_context')
+            );
+        }
     }
 
     /**

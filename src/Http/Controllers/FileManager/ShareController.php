@@ -39,7 +39,7 @@ class ShareController extends Controller
      *
      * Middleware zaten `signed` doğrulamasını yaptı — bu noktada
      * URL geçerli ve süresi dolmamış demektir.
-     * Tek yapmamız gereken revocation lookup.
+     * Kalan kontroller: collection guard + revocation lookup.
      *
      * @OA\Get(
      *   path="/file-manager/share/{media}",
@@ -51,11 +51,23 @@ class ShareController extends Controller
      *
      *   @OA\Response(response=200, description="Dosya stream"),
      *   @OA\Response(response=403, description="Geçersiz veya süresi dolmuş imza"),
+     *   @OA\Response(response=404, description="Medya bulunamadı veya paylaşılabilir değil"),
      *   @OA\Response(response=410, description="Link revoke edilmiş")
      * )
      */
     public function show(Media $media): StreamedResponse
     {
+        // Collection guard: share mekanizması yalnız FileManager'ın `files`
+        // collection'ını kapsar (DownloadFileAction ve CreateShareLinkAction
+        // ile tutarlı). `files` dışı medya (örn. avatar) için imza geçerli
+        // olsa bile stream edilmez. Public endpoint'te bilgi sızdırmamak için
+        // var olmayan media ile aynı görünür: implicit binding'in 404'üyle
+        // birebir aynı yanıt (revocation lookup'tan ÖNCE — 410 sinyali bile
+        // paylaşılamaz medya için dışarı verilmez).
+        if ($media->collection_name !== 'files') {
+            abort(404);
+        }
+
         // Signature parametresini URL'den çıkar ve hash'le
         $signature = (string) request()->query('signature', '');
         $tokenHash = hash('sha256', $signature);
