@@ -16,6 +16,7 @@ return [
     'created_at' => 'Created At',
     'updated_at' => 'Last Updated',
     'search' => 'Search',
+    'all' => 'All',
     'select' => 'Select',
     'password' => 'Password',
     'generate_password' => 'Generate password',

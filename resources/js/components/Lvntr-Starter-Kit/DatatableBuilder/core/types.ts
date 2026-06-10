@@ -3,6 +3,10 @@
 export type FilterOption = {
     label: string;
     value: string | number | null;
+    /** Optional record count shown as a chip in inline filter pills/menus. */
+    count?: number;
+    /** Optional dot color (any CSS color) shown next to the option in pill menus. */
+    color?: string | null;
 };
 
 export type FilterType = 'select' | 'select-button' | 'date' | 'daterange';
@@ -56,9 +60,18 @@ export interface ColumnConfig {
     label?: string;
     key: string;
     sortable: boolean;
+    /** Initially hidden — the user can enable it from the column menu. Default: true (visible). */
+    visible?: boolean;
+    /** Locked columns are always visible and cannot be hidden from the column menu. */
+    locked?: boolean;
     render?: (row: unknown, escape: (str: string) => string) => string;
-    tag?: 'definition';
+    /** 'definition': label/severity resolved from DB definitions. 'value': raw cell value, optionally mapped via tagLabels. */
+    tag?: 'definition' | 'value';
     tagKey?: string;
+    /** Label map for value-mode tags – maps the raw cell value to a display label (e.g. role key → name). */
+    tagLabels?: Record<string, string>;
+    /** Row property holding the tag severity (e.g. a backend-seeded color column). Overridden by colors(). */
+    tagSeverityKey?: string;
     /** Tailwind color map for the tag – keys are matched against the tagKey value. */
     colors?: Record<string, TagColor>;
     /** Icon map – keys are matched against the tagKey value (e.g. { active: 'pi pi-check' }). */
@@ -126,6 +139,19 @@ export interface MenuButtonConfig extends ButtonStyleOptions {
     icon?: string;
 }
 
+/**
+ * Column descriptor sent by the backend (DatatableQueryBuilder::columns()).
+ * Lets the server expose columns that are initially hidden, and drives
+ * which columns' data is fetched (`columns=` request param).
+ */
+export interface ServerColumn {
+    key: string;
+    label?: string;
+    sortable?: boolean;
+    visible?: boolean;
+    locked?: boolean;
+}
+
 export interface DataTableConfig<T = unknown> {
     route: string;
     sortable: boolean;
@@ -134,6 +160,12 @@ export interface DataTableConfig<T = unknown> {
     isCard: boolean;
     cardTitle?: string;
     cardSubtitle?: string;
+    /** Toolbar heading shown to the left of the search input. */
+    title?: string;
+    /** Toolbar sub-heading shown under the title. */
+    subtitle?: string;
+    /** Show the column visibility/order menu button. Default: true. */
+    columnToggle: boolean;
     perPage: number;
     idColumn: IdColumnConfig;
     columns: ColumnConfig[];
@@ -152,4 +184,6 @@ export interface DataTableResponse<T> {
     last_page: number;
     from: number | null;
     to: number | null;
+    /** Optional server-driven column list (DatatableQueryBuilder::columns()). */
+    columns?: ServerColumn[];
 }

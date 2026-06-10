@@ -10,6 +10,7 @@
         DataTableResponse,
         FilterConfig,
         FilterOption,
+        ServerColumn,
     } from './core';
     import type { UseDatatableSelectionReturn } from './selection';
     import { trans } from 'laravel-vue-i18n';
@@ -166,6 +167,150 @@
         Object.fromEntries(props.config.filters.map((f) => [f.key, null])),
     );
 
+    // ── Column visibility & order ────────────────────────────────────────────────
+    // The server may publish its own column list (DatatableQueryBuilder::columns())
+    // so that initially-hidden columns are still offered in the column menu and the
+    // backend can shape its payload to the requested `columns=` selection.
+
+    const serverColumns = ref<ServerColumn[] | null>(null);
+
+    const configColumnsByKey = computed(() => new Map(props.config.columns.map((c) => [c.key, c])));
+
+    /** Master column list: server meta (order / labels / defaults) merged over local config. */
+    const allColumns = computed<ColumnConfig[]>(() => {
+        if (!serverColumns.value?.length) return props.config.columns;
+
+        const merged: ColumnConfig[] = serverColumns.value.map((sc) => {
+            const local = configColumnsByKey.value.get(sc.key);
+            return {
+                ...(local ?? { key: sc.key, sortable: sc.sortable ?? true }),
+                key: sc.key,
+                label: local?.label ?? sc.label,
+                sortable: sc.sortable ?? local?.sortable ?? true,
+                visible: sc.visible ?? local?.visible,
+                locked: sc.locked ?? local?.locked,
+            };
+        });
+
+        // Client-only columns (computed/render columns unknown to the server) keep rendering.
+        for (const c of props.config.columns) {
+            if (!merged.some((m) => m.key === c.key)) merged.push(c);
+        }
+
+        return merged;
+    });
+
+    const columnOrder = ref<string[]>([]);
+    const hiddenColumns = ref<Set<string>>(new Set());
+
+    /** Keys whose default visibility was applied once — user toggles are never overridden. */
+    const knownColumnKeys = new Set<string>();
+
+    function reconcileColumns(): void {
+        const defs = allColumns.value;
+        const available = defs.map((c) => c.key);
+
+        const next = columnOrder.value.filter((k) => available.includes(k));
+        for (const key of available) {
+            if (!next.includes(key)) next.push(key);
+        }
+        columnOrder.value = next;
+
+        for (const def of defs) {
+            if (!knownColumnKeys.has(def.key)) {
+                knownColumnKeys.add(def.key);
+                if (def.visible === false && !def.locked) {
+                    hiddenColumns.value.add(def.key);
+                }
+            }
+            // Locked columns can never stay hidden.
+            if (def.locked) {
+                hiddenColumns.value.delete(def.key);
+            }
+        }
+    }
+
+    reconcileColumns();
+
+    /** All columns in user-defined order (column menu list — includes hidden ones). */
+    const orderedColumns = computed<ColumnConfig[]>(() => {
+        const byKey = new Map(allColumns.value.map((c) => [c.key, c]));
+        return columnOrder.value.map((k) => byKey.get(k)).filter((c): c is ColumnConfig => !!c);
+    });
+
+    /** Columns actually rendered in the table. */
+    const displayColumns = computed<ColumnConfig[]>(() =>
+        orderedColumns.value.filter((c) => !hiddenColumns.value.has(c.key)),
+    );
+
+    const showColumnToggle = computed(() => props.config.columnToggle !== false && allColumns.value.length > 0);
+    const visibleColumnCount = computed(() => allColumns.value.length - hiddenColumns.value.size);
+
+    function isColumnVisible(key: string): boolean {
+        return !hiddenColumns.value.has(key);
+    }
+
+    function toggleColumn(def: ColumnConfig): void {
+        if (def.locked) return;
+        const set = new Set(hiddenColumns.value);
+        if (set.has(def.key)) {
+            set.delete(def.key);
+        } else {
+            set.add(def.key);
+        }
+        hiddenColumns.value = set;
+        onColumnSelectionChanged();
+    }
+
+    function showAllColumns(): void {
+        if (!hiddenColumns.value.size) return;
+        hiddenColumns.value = new Set();
+        onColumnSelectionChanged();
+    }
+
+    /** Visibility changes refetch when the server shapes its payload per column. */
+    function onColumnSelectionChanged(): void {
+        if (serverColumns.value !== null) {
+            fetchData();
+        } else {
+            syncState();
+        }
+    }
+
+    // ── Column drag & drop reorder (column menu) ────────────────────────────────
+
+    const columnsPopoverRef = ref();
+    const dragColumnKey = ref<string | null>(null);
+
+    function onColumnDragStart(key: string, event: DragEvent): void {
+        dragColumnKey.value = key;
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            // Firefox needs data for the drag to start.
+            event.dataTransfer.setData('text/plain', key);
+        }
+    }
+
+    function onColumnDragEnter(overKey: string): void {
+        const from = dragColumnKey.value;
+        if (!from || from === overKey) return;
+
+        const order = [...columnOrder.value];
+        const fromIndex = order.indexOf(from);
+        const toIndex = order.indexOf(overKey);
+        if (fromIndex === -1 || toIndex === -1) return;
+
+        order.splice(fromIndex, 1);
+        order.splice(toIndex, 0, from);
+        columnOrder.value = order;
+    }
+
+    function onColumnDragEnd(): void {
+        if (!dragColumnKey.value) return;
+        dragColumnKey.value = null;
+        syncState();
+    }
+
     // ── State Persistence ────────────────────────────────────────────────────────
 
     /** Guard flag — prevents watchers from resetting page during initial restore. */
@@ -220,6 +365,15 @@
                             }
                         }
                     }
+                }
+                const savedColumns = saved.columns as { order?: string[]; hidden?: string[] } | undefined;
+                if (savedColumns) {
+                    columnOrder.value = savedColumns.order ?? [];
+                    hiddenColumns.value = new Set(savedColumns.hidden ?? []);
+                    for (const key of columnOrder.value) {
+                        knownColumnKeys.add(key);
+                    }
+                    reconcileColumns();
                 }
             }
         } catch {
@@ -323,8 +477,10 @@
             }
         });
 
-        // Preserve non-datatable query params (e.g. ?type=systemManagers)
-        const managedKeys = new Set<string>();
+        // Preserve non-datatable query params (e.g. ?type=systemManagers).
+        // Datatable-owned keys count as managed even when unset (page=1, default
+        // per_page, cleared sort) — otherwise the stale URL value gets copied back.
+        const managedKeys = new Set<string>(['page', 'per_page', 'sort']);
         params.forEach((_value, key) => managedKeys.add(key));
 
         const currentParams = new URLSearchParams(window.location.search);
@@ -359,6 +515,10 @@
                     page: currentPage.value,
                     perPage: meta.value.per_page,
                     filters: serializableFilters,
+                    columns: {
+                        order: columnOrder.value,
+                        hidden: [...hiddenColumns.value],
+                    },
                 }),
             );
         } catch {
@@ -404,6 +564,14 @@
                 }
             });
 
+            // Ask only for the visible columns' data — the backend shapes its payload
+            // when DatatableQueryBuilder::columns() is configured, otherwise ignores it.
+            let requestedColumns: string[] | null = null;
+            if (showColumnToggle.value && displayColumns.value.length) {
+                requestedColumns = displayColumns.value.map((c) => c.key);
+                params.set('columns', requestedColumns.join(','));
+            }
+
             const separator = props.config.route.includes('?') ? '&' : '?';
             const url = `${props.config.route}${separator}${params.toString()}`;
 
@@ -419,8 +587,22 @@
                 to: response.to,
             };
 
+            if (response.columns?.length) {
+                serverColumns.value = response.columns;
+                reconcileColumns();
+            }
+
             syncState();
             emit('load', response.data, response.total);
+
+            // The server may have introduced a default-visible column we didn't know
+            // about (and therefore didn't request) — fetch once more including it.
+            if (requestedColumns && response.columns?.length) {
+                const requested = new Set(requestedColumns);
+                if (displayColumns.value.some((c) => !requested.has(c.key))) {
+                    await fetchData();
+                }
+            }
         } finally {
             loading.value = false;
         }
@@ -551,11 +733,30 @@
     ): { label?: string; severity?: string; icon?: string } {
         const defValue = getNestedValue(row, column.key) as string | number | boolean;
         const mapKey = getNestedValue(row, column.tagKey ?? column.key) as string;
+
+        // Row-level severity (e.g. a backend-seeded color column) — colors() map wins.
+        const rowSeverity = column.tagSeverityKey
+            ? (getNestedValue(row, column.tagSeverityKey) as string | undefined)
+            : undefined;
+
+        // Value-mode: the cell value itself is the label (optionally mapped) — no definition lookup.
+        // Empty cells return no label → the template falls back to plain '-' instead of an empty tag.
+        if (column.tag === 'value') {
+            if (defValue === null || defValue === undefined || defValue === '') {
+                return {};
+            }
+            return {
+                label: column.tagLabels?.[String(defValue)] ?? String(defValue),
+                severity: column.colors?.[mapKey] ?? rowSeverity,
+                icon: column.icons?.[mapKey],
+            };
+        }
+
         const def = definition.find(column.tagKey!, defValue);
 
         return {
             label: def?.label,
-            severity: column.colors?.[mapKey] ?? def?.severity ?? undefined,
+            severity: column.colors?.[mapKey] ?? rowSeverity ?? def?.severity ?? undefined,
             icon: column.icons?.[mapKey] ?? def?.icon ?? undefined,
         };
     }
@@ -567,7 +768,7 @@
     const hasSelection = computed(() => !!props.selection);
     const colspan = computed(
         () =>
-            props.config.columns.length +
+            displayColumns.value.length +
             (showIdColumn.value ? 1 : 0) +
             (hasActions.value ? 1 : 0) +
             (hasSelection.value ? 1 : 0),
@@ -605,9 +806,61 @@
     }
 
     const inlineFilters = computed(() => props.config.filters.filter((f) => f.placement === 'inline'));
-    const panelFilters = computed(() => props.config.filters.filter((f) => f.placement === 'panel'));
     const filterPopoverRef = ref();
     const searchPopoverRef = ref();
+
+    /** Popover open states — drive the primary highlight on their toggle buttons. */
+    const filterPopoverOpen = ref(false);
+    const columnsPopoverOpen = ref(false);
+
+    // ── Inline filter pills (design-language dropdowns for select filters) ──────
+
+    const openFilterKey = ref<string | null>(null);
+
+    function toggleFilterMenu(key: string): void {
+        openFilterKey.value = openFilterKey.value === key ? null : key;
+    }
+
+    useEventListener(document, 'click', () => {
+        openFilterKey.value = null;
+    });
+    useEventListener(document, 'keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') openFilterKey.value = null;
+    });
+
+    /** Pill menu options — an "All" (null) entry followed by the filter's own options. */
+    function pillOptions(filter: FilterConfig): FilterOption[] {
+        return [{ label: trans('sk-common.all'), value: null }, ...getFilterOptions(filter)];
+    }
+
+    function isPillOptionSelected(filter: FilterConfig, option: FilterOption): boolean {
+        const current = activeFilters.value[filter.key];
+        if (option.value === null) return current === null || current === undefined || current === '';
+        return current === option.value;
+    }
+
+    function selectPillOption(filter: FilterConfig, option: FilterOption): void {
+        activeFilters.value[filter.key] = option.value;
+        openFilterKey.value = null;
+    }
+
+    function isPillActive(filter: FilterConfig): boolean {
+        const current = activeFilters.value[filter.key];
+        return current !== null && current !== undefined && current !== '';
+    }
+
+    /** Label shown in the pill: the selected option's label, or "All". */
+    function pillValueLabel(filter: FilterConfig): string {
+        if (!isPillActive(filter)) return trans('sk-common.all');
+        return filterDisplayValue(filter) ?? trans('sk-common.all');
+    }
+
+    /** Count chip for the currently selected option — only when options carry counts. */
+    function pillCount(filter: FilterConfig): number | null {
+        const options = pillOptions(filter);
+        const selected = options.find((o) => isPillOptionSelected(filter, o));
+        return selected?.count ?? null;
+    }
 
     /** Badge count for filter button — all active filter tags count. */
     const panelFilterBadge = computed(() => {
@@ -705,10 +958,34 @@
         });
     }
 
+    // ── Floating bulk bar ─────────────────────────────────────────────────────────
+    // Shown when a selection exists AND the page provides a #bulk-actions slot.
+    // Pages still using the legacy #toolbar pattern keep their old inline bar.
+
+    const showBulkBar = computed(
+        () =>
+            !!props.selection &&
+            !!slots['bulk-actions'] &&
+            (props.selection.hasSelection.value || props.selection.isAllFilteredMode.value),
+    );
+
+    const bulkBarLabel = computed(() => {
+        if (!props.selection) return '';
+        // All-filtered mode spans every page — the real count is the filtered
+        // total from the server, not the page-local selectedIds size.
+        const allFiltered = props.selection.isAllFilteredMode.value;
+        const count = String(allFiltered ? meta.value.total : props.selection.selectedCount.value);
+        return allFiltered
+            ? trans('sk-datatable.bulk_selected_all_filtered', { count })
+            : trans('sk-datatable.bulk_selected', { count });
+    });
+
     // ── Public API ────────────────────────────────────────────────────────────────
 
     defineSlots<{
         toolbar?(): unknown;
+        'toolbar-start'?(): unknown;
+        'bulk-actions'?(): unknown;
         [key: `cell-${string}`]: (props: { row: unknown; value: unknown }) => unknown;
     }>();
 
@@ -732,55 +1009,108 @@
             {{ $t(config.cardSubtitle) }}
         </template>
         <template #content>
-            <!-- Toolbar: Search, Inline Filters, Filter Button, Create Button, Custom Slot -->
+            <!-- Toolbar: Title, Search, Inline Filters, Filter Button, Columns, Create Button, Custom Slots -->
             <div
-                v-if="config.searchable || config.filters.length > 0 || config.createButton || $slots.toolbar"
+                v-if="
+                    config.searchable ||
+                    config.filters.length > 0 ||
+                    config.createButton ||
+                    config.title ||
+                    config.subtitle ||
+                    showColumnToggle ||
+                    $slots.toolbar ||
+                    $slots['toolbar-start']
+                "
                 class="sk-dt-toolbar"
                 :class="{ 'no-padding': !config.isCard }"
             >
-                <!-- Left: Search (hidden on mobile, shown on sm+) -->
-                <div v-if="config.searchable" class="sk-dt-toolbar__search">
-                    <IconField>
-                        <InputIcon class="pi pi-search" />
-                        <InputText
-                            v-model="search"
-                            :placeholder="$t('sk-common.search')"
-                            class="w-full"
-                            autocomplete="one-time-code"
-                        />
-                        <InputIcon v-if="search" class="pi pi-times sk-dt-toolbar__search-clear" @click="search = ''" />
-                    </IconField>
+                <!-- Left: optional title / subtitle block (before the search input) -->
+                <div v-if="config.title || config.subtitle" class="sk-dt-toolbar__head">
+                    <div v-if="config.title" class="sk-dt-toolbar__title">{{ $t(config.title) }}</div>
+                    <div v-if="config.subtitle" class="sk-dt-toolbar__subtitle">{{ $t(config.subtitle) }}</div>
                 </div>
 
-                <!-- Right: Inline Filters, Filter Popover, Actions -->
-                <div class="sk-dt-toolbar__right">
-                    <!-- Search button (mobile only, hidden on sm+) -->
-                    <Button
-                        v-if="config.searchable"
-                        icon="pi pi-search"
-                        severity="secondary"
-                        variant="outlined"
-                        :badge="search ? '1' : ''"
-                        badge-severity="contrast"
-                        class="sk-dt-toolbar__search-toggle"
-                        @click="(e: Event) => searchPopoverRef?.toggle(e)"
+                <!-- Left: Search (hidden on mobile, shown on sm+) — gray compact box per design -->
+                <div v-if="config.searchable" class="sk-dt-search sk-dt-toolbar__search">
+                    <i class="pi pi-search" />
+                    <input
+                        v-model="search"
+                        type="text"
+                        :placeholder="$t('sk-common.search')"
+                        autocomplete="one-time-code"
                     />
+                    <i v-if="search" class="pi pi-times sk-dt-search__clear" @click="search = ''" />
+                </div>
 
-                    <!-- Inline Filters (hidden on mobile — shown in popover instead) -->
-                    <div v-for="filter in inlineFilters" :key="filter.key" class="sk-dt-toolbar__inline-filter">
+                <!-- Inline filter pills — directly after the search box, per design -->
+                <template v-for="filter in inlineFilters" :key="filter.key">
+                    <!-- Select filters render as design-language pills with a custom dropdown -->
+                    <div v-if="filter.type === 'select'" class="sk-dt-pillwrap" @click.stop>
+                        <button
+                            type="button"
+                            class="sk-dt-pill"
+                            :class="{
+                                'sk-dt-pill--open': openFilterKey === filter.key,
+                                'sk-dt-pill--active': isPillActive(filter),
+                            }"
+                            @click="toggleFilterMenu(filter.key)"
+                        >
+                            <span class="sk-dt-pill__key">{{ resolveFilterLabel(filter) }}:</span>
+                            <span class="sk-dt-pill__val">{{ pillValueLabel(filter) }}</span>
+                            <span v-if="pillCount(filter) !== null" class="sk-dt-pill__count">{{
+                                pillCount(filter)
+                            }}</span>
+                            <i
+                                v-if="isPillActive(filter)"
+                                class="pi pi-times sk-dt-pill__clear"
+                                :aria-label="$t('sk-button.clear_all')"
+                                @click.stop="clearFilter(filter.key)"
+                            />
+                            <i
+                                class="pi pi-chevron-down sk-dt-pill__caret"
+                                :class="{ 'rotate-180': openFilterKey === filter.key }"
+                            />
+                        </button>
+                        <Transition name="sk-dt-dd">
+                            <div v-if="openFilterKey === filter.key" class="sk-dt-pillmenu">
+                                <button
+                                    v-for="opt in pillOptions(filter)"
+                                    :key="String(opt.value)"
+                                    type="button"
+                                    class="sk-dt-pillmenu__item"
+                                    :class="{ 'sk-dt-pillmenu__item--active': isPillOptionSelected(filter, opt) }"
+                                    @click="selectPillOption(filter, opt)"
+                                >
+                                    <span class="sk-dt-pillmenu__lead">
+                                        <i
+                                            v-if="isPillOptionSelected(filter, opt)"
+                                            class="pi pi-check sk-dt-pillmenu__check"
+                                        />
+                                        <span
+                                            v-else-if="opt.color"
+                                            class="sk-dt-pillmenu__dot"
+                                            :style="{ background: opt.color }"
+                                        />
+                                    </span>
+                                    <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
+                                    <span
+                                        v-if="opt.count !== undefined"
+                                        class="sk-dt-pillmenu__count"
+                                        :class="{
+                                            'sk-dt-pillmenu__count--active': isPillOptionSelected(filter, opt),
+                                        }"
+                                        >{{ opt.count }}</span
+                                    >
+                                </button>
+                            </div>
+                        </Transition>
+                    </div>
+
+                    <!-- Other inline filter types keep their PrimeVue inputs -->
+                    <div v-else class="sk-dt-toolbar__inline-filter">
                         <span class="sk-dt-toolbar__inline-filter-label">{{ resolveFilterLabel(filter) }}</span>
-                        <Select
-                            v-if="filter.type === 'select'"
-                            v-model="activeFilters[filter.key]"
-                            :options="getFilterOptions(filter)"
-                            option-label="label"
-                            option-value="value"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            show-clear
-                            class="min-w-48"
-                        />
                         <SelectButton
-                            v-else-if="filter.type === 'select-button'"
+                            v-if="filter.type === 'select-button'"
                             v-model="activeFilters[filter.key]"
                             :options="getFilterOptions(filter)"
                             option-label="label"
@@ -807,21 +1137,76 @@
                             @update:model-value="(val) => (activeFilters[filter.key] = val as DaterangeFilterValue)"
                         />
                     </div>
-                    <!-- END FILTERS GROUP -->
+                </template>
 
-                    <!-- Filter Popover Toggle -->
+                <!-- Clear filters — appears while any filter or search is active -->
+                <Transition name="sk-dt-dd">
+                    <button
+                        v-if="activeTags.length > 0 || search"
+                        type="button"
+                        class="sk-dt-clearfilters"
+                        @click="clearAllFilters"
+                    >
+                        <i class="pi pi-filter-slash" />{{ $t('sk-datatable.clear_filters') }}
+                    </button>
+                </Transition>
+
+                <!-- Right: Filter Popover, Columns, Actions -->
+                <div class="sk-dt-toolbar__right">
+                    <!-- Search button (mobile only, hidden on sm+) -->
                     <Button
-                        v-if="panelFilters.length > 0"
-                        icon="pi pi-filter"
+                        v-if="config.searchable"
+                        icon="pi pi-search"
                         severity="secondary"
                         variant="outlined"
-                        :badge="panelFilterBadge"
+                        :badge="search ? '1' : ''"
                         badge-severity="contrast"
+                        class="sk-dt-toolbar__search-toggle"
+                        @click="(e: Event) => searchPopoverRef?.toggle(e)"
+                    />
+
+                    <!-- Filter Popover Toggle — quiet icon button per design -->
+                    <button
+                        v-if="config.filters.length > 0"
+                        type="button"
+                        class="sk-dt-filterbtn"
+                        :class="{
+                            'sk-dt-filterbtn--active': panelFilterBadge,
+                            'sk-dt-filterbtn--open': filterPopoverOpen,
+                        }"
+                        :aria-label="$t('sk-datatable.clear_filters')"
                         @click="(e: Event) => filterPopoverRef?.toggle(e)"
+                    >
+                        <i class="pi pi-filter" />
+                        <span v-if="panelFilterBadge" class="sk-dt-filterbtn__badge">{{ panelFilterBadge }}</span>
+                    </button>
+
+                    <!-- Column visibility / order menu -->
+                    <button
+                        v-if="showColumnToggle"
+                        type="button"
+                        class="sk-dt-colbtn"
+                        :class="{ 'sk-dt-colbtn--open': columnsPopoverOpen }"
+                        :aria-label="$t('sk-datatable.columns')"
+                        @click="(e: Event) => columnsPopoverRef?.toggle(e)"
+                    >
+                        <i class="pi pi-table" />
+                        <span class="sk-dt-colbtn__count">{{ visibleColumnCount }}/{{ allColumns.length }}</span>
+                    </button>
+
+                    <span
+                        v-if="showColumnToggle && (config.createButton || $slots.toolbar || $slots['toolbar-start'])"
+                        class="sk-dt-toolbar__divider"
                     />
 
                     <!-- Create / Custom actions -->
-                    <div v-if="config.createButton || $slots.toolbar" class="sk-dt-toolbar__actions">
+                    <div
+                        v-if="config.createButton || $slots.toolbar || $slots['toolbar-start']"
+                        class="sk-dt-toolbar__actions"
+                    >
+                        <!-- Custom slot — rendered before (to the left of) the create button -->
+                        <slot name="toolbar-start" />
+
                         <!-- Create: link button -->
                         <Link v-if="config.createButton?.url" :href="config.createButton.url">
                             <Button
@@ -859,55 +1244,157 @@
             </div>
             <!-- END :: TOOLBAR -->
 
-            <!-- Filter Popover — on mobile: all filters, on desktop: only panel filters -->
-            <Popover v-if="panelFilters.length > 0" ref="filterPopoverRef" class="sk-dt-filter-popover">
+            <!-- Filter Popover — lists every filter, including the inline ones -->
+            <Popover
+                v-if="config.filters.length > 0"
+                ref="filterPopoverRef"
+                class="sk-dt-filter-popover"
+                @show="filterPopoverOpen = true"
+                @hide="filterPopoverOpen = false"
+            >
                 <div class="sk-dt-filter-popover__content">
-                    <div
-                        v-for="filter in config.filters"
-                        :key="filter.key"
-                        class="sk-dt-filter-popover__item"
-                        :class="{ 'sk-dt-filter-popover__item--inline-only': filter.placement === 'inline' }"
-                    >
-                        <label class="sk-dt-filter-popover__label">{{ resolveFilterLabel(filter) }}</label>
-                        <Select
-                            v-if="filter.type === 'select'"
-                            v-model="activeFilters[filter.key]"
-                            :options="getFilterOptions(filter)"
-                            option-label="label"
-                            option-value="value"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            show-clear
-                            class="w-full"
-                        />
-                        <SelectButton
-                            v-else-if="filter.type === 'select-button'"
-                            v-model="activeFilters[filter.key]"
-                            :options="getFilterOptions(filter)"
-                            option-label="label"
-                            option-value="value"
-                            :allow-empty="true"
-                            class="w-full"
-                        />
-                        <DatePicker
-                            v-else-if="filter.type === 'date'"
-                            :model-value="activeFilters[filter.key] as DateFilterValue"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            date-format="dd.mm.yy"
-                            show-button-bar
-                            class="w-full"
-                            @update:model-value="(val) => (activeFilters[filter.key] = val as DateFilterValue)"
-                        />
-                        <DatePicker
-                            v-else-if="filter.type === 'daterange'"
-                            :model-value="activeFilters[filter.key] as DaterangeFilterValue"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            date-format="dd.mm.yy"
-                            selection-mode="range"
-                            show-button-bar
-                            class="w-full"
-                            @update:model-value="(val) => (activeFilters[filter.key] = val as DaterangeFilterValue)"
-                        />
+                    <div v-for="filter in config.filters" :key="filter.key" class="sk-dt-filter-popover__item">
+                        <!-- Select filters render as the same design pills used in the header -->
+                        <div v-if="filter.type === 'select'" class="sk-dt-pillwrap" @click.stop>
+                            <button
+                                type="button"
+                                class="sk-dt-pill"
+                                :class="{
+                                    'sk-dt-pill--open': openFilterKey === `pp:${filter.key}`,
+                                    'sk-dt-pill--active': isPillActive(filter),
+                                }"
+                                @click="toggleFilterMenu(`pp:${filter.key}`)"
+                            >
+                                <span class="sk-dt-pill__key">{{ resolveFilterLabel(filter) }}:</span>
+                                <span class="sk-dt-pill__val">{{ pillValueLabel(filter) }}</span>
+                                <span v-if="pillCount(filter) !== null" class="sk-dt-pill__count">{{
+                                    pillCount(filter)
+                                }}</span>
+                                <i
+                                    v-if="isPillActive(filter)"
+                                    class="pi pi-times sk-dt-pill__clear"
+                                    :aria-label="$t('sk-button.clear_all')"
+                                    @click.stop="clearFilter(filter.key)"
+                                />
+                                <i
+                                    class="pi pi-chevron-down sk-dt-pill__caret"
+                                    :class="{ 'rotate-180': openFilterKey === `pp:${filter.key}` }"
+                                />
+                            </button>
+                            <Transition name="sk-dt-dd">
+                                <div v-if="openFilterKey === `pp:${filter.key}`" class="sk-dt-pillmenu">
+                                    <button
+                                        v-for="opt in pillOptions(filter)"
+                                        :key="String(opt.value)"
+                                        type="button"
+                                        class="sk-dt-pillmenu__item"
+                                        :class="{
+                                            'sk-dt-pillmenu__item--active': isPillOptionSelected(filter, opt),
+                                        }"
+                                        @click="selectPillOption(filter, opt)"
+                                    >
+                                        <span class="sk-dt-pillmenu__lead">
+                                            <i
+                                                v-if="isPillOptionSelected(filter, opt)"
+                                                class="pi pi-check sk-dt-pillmenu__check"
+                                            />
+                                            <span
+                                                v-else-if="opt.color"
+                                                class="sk-dt-pillmenu__dot"
+                                                :style="{ background: opt.color }"
+                                            />
+                                        </span>
+                                        <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
+                                        <span
+                                            v-if="opt.count !== undefined"
+                                            class="sk-dt-pillmenu__count"
+                                            :class="{
+                                                'sk-dt-pillmenu__count--active': isPillOptionSelected(filter, opt),
+                                            }"
+                                            >{{ opt.count }}</span
+                                        >
+                                    </button>
+                                </div>
+                            </Transition>
+                        </div>
+                        <template v-else>
+                            <label class="sk-dt-filter-popover__label">{{ resolveFilterLabel(filter) }}</label>
+                            <SelectButton
+                                v-if="filter.type === 'select-button'"
+                                v-model="activeFilters[filter.key]"
+                                :options="getFilterOptions(filter)"
+                                option-label="label"
+                                option-value="value"
+                                :allow-empty="true"
+                                class="w-full"
+                            />
+                            <DatePicker
+                                v-else-if="filter.type === 'date'"
+                                :model-value="activeFilters[filter.key] as DateFilterValue"
+                                :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
+                                date-format="dd.mm.yy"
+                                show-button-bar
+                                class="w-full"
+                                @update:model-value="(val) => (activeFilters[filter.key] = val as DateFilterValue)"
+                            />
+                            <DatePicker
+                                v-else-if="filter.type === 'daterange'"
+                                :model-value="activeFilters[filter.key] as DaterangeFilterValue"
+                                :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
+                                date-format="dd.mm.yy"
+                                selection-mode="range"
+                                show-button-bar
+                                class="w-full"
+                                @update:model-value="(val) => (activeFilters[filter.key] = val as DaterangeFilterValue)"
+                            />
+                        </template>
                     </div>
+                </div>
+            </Popover>
+
+            <!-- Columns Popover — visibility toggles + drag & drop ordering -->
+            <Popover
+                v-if="showColumnToggle"
+                ref="columnsPopoverRef"
+                class="sk-dt-colmenu"
+                @show="columnsPopoverOpen = true"
+                @hide="columnsPopoverOpen = false"
+            >
+                <div class="sk-dt-colmenu__head">
+                    <span class="sk-dt-colmenu__title">{{ $t('sk-datatable.visible_columns') }}</span>
+                    <button type="button" class="sk-dt-colmenu__all" @click="showAllColumns">
+                        {{ $t('sk-datatable.show_all') }}
+                    </button>
+                </div>
+                <div
+                    v-for="def in orderedColumns"
+                    :key="def.key"
+                    class="sk-dt-colmenu__item"
+                    :class="{
+                        'sk-dt-colmenu__item--locked': def.locked,
+                        'sk-dt-colmenu__item--dragging': dragColumnKey === def.key,
+                    }"
+                    draggable="true"
+                    @dragstart="onColumnDragStart(def.key, $event)"
+                    @dragenter.prevent="onColumnDragEnter(def.key)"
+                    @dragover.prevent
+                    @dragend="onColumnDragEnd"
+                    @click="toggleColumn(def)"
+                >
+                    <i class="pi pi-bars sk-dt-colmenu__grip" @click.stop />
+                    <span
+                        class="sk-dt-colmenu__box"
+                        :class="{
+                            'sk-dt-colmenu__box--checked': isColumnVisible(def.key) && !def.locked,
+                            'sk-dt-colmenu__box--locked': def.locked,
+                        }"
+                    >
+                        <i class="pi pi-check" />
+                    </span>
+                    <span class="sk-dt-colmenu__label">
+                        {{ def.label ? $t(def.label) : $t('validation.attributes.' + def.key) }}
+                    </span>
+                    <i v-if="def.locked" class="pi pi-lock sk-dt-colmenu__lock" />
                 </div>
             </Popover>
 
@@ -970,11 +1457,12 @@
                                 </th>
 
                                 <th
-                                    v-for="column in config.columns"
+                                    v-for="column in displayColumns"
                                     :key="column.key"
                                     class="sk-dt__th"
                                     :class="{
                                         'sk-dt__th--sortable': config.sortable && column.sortable,
+                                        'sk-dt__th--sorted': config.sortable && sortKey === column.key,
                                         'sk-dt__th--sticky': column.sticky,
                                     }"
                                     @click="config.sortable && column.sortable ? handleSort(column.key) : undefined"
@@ -1029,12 +1517,12 @@
                                             class="sk-dt__id-trigger"
                                             @click="openIdPopover($event, getNestedValue(row, idKey))"
                                         >
-                                            <i class="pi pi-info" />
+                                            <i class="pi pi-info-circle" />
                                         </button>
                                     </td>
 
                                     <td
-                                        v-for="column in config.columns"
+                                        v-for="column in displayColumns"
                                         :key="column.key"
                                         class="sk-dt__td"
                                         :class="{ 'sk-dt__td--sticky': column.sticky }"
@@ -1046,19 +1534,20 @@
                                             :row="row"
                                             :value="getNestedValue(row, column.key)"
                                         />
-                                        <!-- Definition-driven tag rendered through PrimeVue <Tag>.
-                                             `v-for over [resolveTag(...)]` resolves the descriptor
-                                             once per cell. soft/outlined are opt-in CSS classes
+                                        <!-- Tag column (definition- or value-mode) rendered through
+                                             PrimeVue <Tag>. `v-for over [resolveTag(...)]` resolves the
+                                             descriptor once per cell. soft/outlined are opt-in CSS classes
                                              (PrimeVue Tag has no such props); icon-right uses the
                                              default slot, icon-left uses the native value/icon props
                                              so PrimeVue's own markup renders. -->
-                                        <template v-else-if="column.tag === 'definition'">
+                                        <template v-else-if="column.tag">
                                             <template
                                                 v-for="t in [resolveTag(row, column)]"
                                                 :key="column.key"
                                             >
+                                                <template v-if="t.label === undefined">-</template>
                                                 <Tag
-                                                    v-if="column.tagIconPos === 'right'"
+                                                    v-else-if="column.tagIconPos === 'right'"
                                                     :severity="(t.severity as any)"
                                                     :rounded="column.tagRounded"
                                                     :class="{
@@ -1156,6 +1645,7 @@
                                 total: String(meta.total),
                             })
                         }}</span>
+                        <span class="sk-dt-pagination__per-page-label">{{ $t('sk-datatable.per_page') }}</span>
                         <Select
                             :model-value="meta.per_page"
                             :options="perPageOptions"
@@ -1224,6 +1714,26 @@
                     </a>
                 </template>
             </Menu>
+
+            <!-- Floating bulk action bar — appears bottom-center while rows are selected -->
+            <Teleport to="body">
+                <Transition name="sk-dt-bulkbar">
+                    <div v-if="showBulkBar" class="sk-dt-bulkbar" role="toolbar">
+                        <span class="sk-dt-bulkbar__label">{{ bulkBarLabel }}</span>
+                        <button
+                            type="button"
+                            class="sk-dt-bulkbar__clear"
+                            :aria-label="$t('sk-datatable.bulk_clear_selection')"
+                            @click="selection!.clearSelection()"
+                        >
+                            <i class="pi pi-times" />
+                        </button>
+                        <div class="sk-dt-bulkbar__actions">
+                            <slot name="bulk-actions" />
+                        </div>
+                    </div>
+                </Transition>
+            </Teleport>
 
             <!-- ID Popover -->
             <Popover ref="idPopoverRef" class="sk-dt-id-popover">

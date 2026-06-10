@@ -1,12 +1,16 @@
 /**
- * SkDatatable — Modern Data Table Styles
+ * SkDatatable — Data Table Styles ("Lvntr" design language)
  *
- * Structural and cosmetic styles for the SkDatatable component:
- *   1. Toolbar (search, filters, actions)
- *   2. Table container & header
- *   3. Table body & rows
- *   4. Loading & empty states
- *   5. Pagination
+ * Surface-card data table: 6px radii, hairline borders, mono uppercase
+ * header, quiet hover states. Structure:
+ *   1. Toolbar (title, search, filters, columns button, actions)
+ *   2. Column menu (visibility toggles + drag ordering)
+ *   3. Active filter tags
+ *   4. Table container, header & rows
+ *   5. Loading & empty states
+ *   6. Pagination
+ *   7. Context menu & ID popover
+ *   8. Bulk selection
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -14,19 +18,223 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt-toolbar {
-    @apply p-5 flex flex-col gap-3 sm:flex-row sm:items-center;
+    @apply flex flex-col gap-3 px-4 py-3.5 border-b border-slate-200 dark:border-slate-700 sm:flex-row sm:flex-wrap sm:items-center;
 
     &.no-padding {
         @apply pt-0 px-0;
     }
 }
 
+/* Optional heading block — sits to the left of the search input. */
+.sk-dt-toolbar__head {
+    @apply flex flex-col justify-center shrink-0 sm:pr-4 sm:mr-1 sm:border-r sm:border-slate-200 sm:dark:border-slate-700;
+}
+
+.sk-dt-toolbar__title {
+    @apply text-[16px] font-semibold tracking-tight leading-tight whitespace-nowrap text-slate-900 dark:text-slate-100;
+}
+
+.sk-dt-toolbar__subtitle {
+    @apply mt-0.5 text-xs leading-snug whitespace-nowrap text-slate-500 dark:text-slate-400;
+}
+
+/* Compact gray search box — 38px, surface-2 background (design: .dt-search) */
+.sk-dt-search {
+    @apply items-center gap-2 h-[38px] w-[230px] max-w-[42vw] shrink-0 rounded-md px-3 transition-colors duration-150;
+    @apply bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700;
+
+    & > .pi-search {
+        @apply shrink-0 text-sm text-slate-400 dark:text-slate-500;
+    }
+
+    & input {
+        @apply min-w-0 flex-1 border-0 bg-transparent outline-none text-[13.5px] text-slate-900 dark:text-slate-100;
+
+        &::placeholder {
+            @apply text-slate-400 dark:text-slate-500;
+        }
+    }
+
+    &:focus-within {
+        border-color: color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+    }
+}
+
+.sk-dt-search__clear {
+    @apply shrink-0 cursor-pointer text-xs text-slate-400 transition-colors duration-150;
+
+    &:hover {
+        @apply text-slate-600 dark:text-slate-300;
+    }
+}
+
 .sk-dt-toolbar__search {
-    @apply hidden sm:block sm:w-64 lg:w-80 shrink-0;
+    @apply hidden sm:flex;
 }
 
 .sk-dt-toolbar__search-toggle {
     @apply sm:hidden;
+}
+
+/* ── Inline filter pills (design: .dt-filter) ── */
+
+.sk-dt-pillwrap {
+    @apply relative hidden sm:block shrink-0;
+}
+
+.sk-dt-pill {
+    @apply inline-flex items-center gap-[7px] h-[38px] rounded-md cursor-pointer whitespace-nowrap pl-3 pr-2 text-[12.75px];
+    @apply bg-white border border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s,
+        background 0.15s;
+
+    &:hover {
+        @apply border-slate-300 dark:border-slate-500;
+    }
+}
+
+.sk-dt-pill--active {
+    border-color: color-mix(in srgb, var(--p-primary-color) 40%, theme('colors.slate.200'));
+}
+
+.sk-dt-pill--open {
+    border-color: var(--p-primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-primary-color) 16%, transparent);
+}
+
+.sk-dt-pill__key {
+    @apply font-medium text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-pill__val {
+    @apply font-semibold;
+}
+
+.sk-dt-pill__count {
+    @apply inline-grid place-items-center min-w-6 h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums;
+    @apply bg-slate-100 border border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400;
+}
+
+.sk-dt-pill__clear {
+    @apply grid place-items-center size-[18px] shrink-0 self-center rounded-[5px] text-[11px] leading-none text-slate-400 transition-colors duration-150;
+
+    &::before {
+        @apply leading-none;
+    }
+
+    &:hover {
+        @apply bg-red-500/15 text-red-500;
+    }
+}
+
+.sk-dt-pill__caret {
+    @apply text-[11px] text-slate-400 dark:text-slate-500 transition-transform duration-200;
+}
+
+/* Pill dropdown menu (design: .dt-menu) */
+.sk-dt-pillmenu {
+    @apply absolute left-0 top-[calc(100%+6px)] z-40 min-w-[234px] select-none rounded-md p-1.5;
+    @apply bg-white border border-slate-200 shadow-lg dark:bg-slate-900 dark:border-slate-700;
+}
+
+.sk-dt-pillmenu__item {
+    @apply flex w-full items-center gap-2.5 h-[38px] rounded-md border-0 bg-transparent px-2.5 text-left text-[13px] cursor-pointer;
+    @apply text-slate-700 dark:text-slate-200 transition-colors duration-150;
+
+    &:hover {
+        @apply bg-slate-100 dark:bg-slate-800;
+    }
+}
+
+.sk-dt-pillmenu__item--active {
+    background: color-mix(in srgb, var(--p-primary-color) 9%, transparent);
+}
+
+.sk-dt-pillmenu__lead {
+    @apply grid w-4 shrink-0 place-items-center;
+}
+
+.sk-dt-pillmenu__check {
+    @apply text-xs font-bold;
+    color: var(--p-primary-color);
+}
+
+.sk-dt-pillmenu__dot {
+    @apply size-[9px] rounded-full;
+}
+
+.sk-dt-pillmenu__label {
+    @apply flex-1 whitespace-nowrap font-medium;
+}
+
+.sk-dt-pillmenu__item--active .sk-dt-pillmenu__label {
+    @apply font-semibold;
+}
+
+.sk-dt-pillmenu__count {
+    @apply inline-grid place-items-center min-w-[26px] h-[22px] px-[7px] rounded-full text-[11.5px] font-semibold tabular-nums;
+    @apply bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400;
+}
+
+.sk-dt-pillmenu__count--active {
+    background: var(--p-primary-color);
+    @apply text-white;
+}
+
+/* Clear-filters ghost button (design: .dt-clearfilters) */
+.sk-dt-clearfilters {
+    @apply hidden sm:inline-flex items-center gap-[7px] h-[38px] shrink-0 rounded-md border-0 bg-transparent px-3 cursor-pointer;
+    @apply text-[12.5px] font-medium whitespace-nowrap text-slate-500 dark:text-slate-400 transition-colors duration-150;
+
+    & .pi {
+        @apply text-[13px];
+    }
+
+    &:hover {
+        @apply bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100;
+    }
+}
+
+/* Filter-popover icon button — idle: neutral like the pills; open/active: primary */
+.sk-dt-filterbtn {
+    @apply relative grid size-[38px] shrink-0 cursor-pointer place-items-center rounded-md border text-sm transition-colors duration-150;
+    @apply bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300;
+
+    &:hover {
+        @apply border-slate-300 text-slate-900 dark:border-slate-500 dark:text-slate-100;
+    }
+}
+
+.sk-dt-filterbtn--open {
+    color: var(--p-primary-color) !important;
+    border-color: var(--p-primary-color) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-primary-color) 16%, transparent);
+}
+
+.sk-dt-filterbtn--active {
+    color: var(--p-primary-color);
+    border-color: color-mix(in srgb, var(--p-primary-color) 40%, theme('colors.slate.200'));
+}
+
+.sk-dt-filterbtn__badge {
+    @apply absolute -top-1.5 -right-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-bold text-white;
+    background: var(--p-primary-color);
+}
+
+/* dropdown enter/leave (pills + clear-filters) */
+.sk-dt-dd-enter-active,
+.sk-dt-dd-leave-active {
+    transition:
+        opacity 0.16s ease,
+        transform 0.16s ease;
+}
+
+.sk-dt-dd-enter-from,
+.sk-dt-dd-leave-to {
+    opacity: 0;
+    transform: translateY(4px);
 }
 
 .sk-dt-search-popover {
@@ -38,7 +246,7 @@
 }
 
 .sk-dt-toolbar__right {
-    @apply flex flex-wrap items-center gap-2 sm:ml-auto;
+    @apply flex flex-wrap items-center gap-2.5 sm:ml-auto;
 }
 
 .sk-dt-toolbar__inline-filter {
@@ -49,8 +257,17 @@
     @apply shrink-0 font-medium text-slate-500 dark:text-slate-400;
 }
 
+.sk-dt-toolbar__divider {
+    @apply hidden sm:block w-px h-7 mx-0.5 shrink-0 bg-slate-200 dark:bg-slate-700;
+}
+
 .sk-dt-toolbar__actions {
-    @apply flex gap-2;
+    @apply flex items-center gap-2;
+}
+
+/* Action buttons (export slot / create) — same 38px row as search/pills/filter/columns */
+.sk-dt-toolbar__actions .p-button {
+    @apply h-[38px] rounded-md px-3 py-0 text-[12.5px] font-semibold whitespace-nowrap;
 }
 
 .sk-dt-toolbar__search-clear {
@@ -62,11 +279,134 @@
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COLUMN MENU (visibility + ordering)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Column-menu button — same neutral-idle / primary-when-open scheme as the filter button. */
+.sk-dt-colbtn {
+    @apply inline-flex items-center gap-2 h-[38px] px-3 rounded-md border cursor-pointer text-xs font-medium transition-colors duration-150;
+    @apply bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300;
+
+    & .pi-table {
+        @apply text-sm;
+    }
+
+    &:hover {
+        @apply border-slate-300 text-slate-900 dark:border-slate-500 dark:text-slate-100;
+    }
+}
+
+.sk-dt-colbtn--open {
+    color: var(--p-primary-color) !important;
+    border-color: var(--p-primary-color) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-primary-color) 16%, transparent);
+
+    & .sk-dt-colbtn__count {
+        color: var(--p-primary-color);
+    }
+}
+
+.sk-dt-colbtn__count {
+    @apply text-[11px] tabular-nums text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-colmenu {
+    @apply w-80;
+
+    & .p-popover-content {
+        @apply p-2.5;
+    }
+}
+
+.sk-dt-colmenu__head {
+    @apply flex items-center justify-between gap-4 px-2.5 pt-2 pb-3 mb-2 border-b border-slate-200 dark:border-slate-700;
+}
+
+.sk-dt-colmenu__title {
+    @apply text-[10.5px] font-bold uppercase tracking-widest whitespace-nowrap text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-colmenu__all {
+    @apply p-0 border-0 bg-transparent cursor-pointer text-xs font-semibold whitespace-nowrap text-primary-600 dark:text-primary-400;
+
+    &:hover {
+        @apply underline;
+    }
+}
+
+.sk-dt-colmenu__item {
+    @apply flex items-center gap-3 w-full h-10 px-2.5 rounded-md cursor-pointer select-none transition-colors duration-150;
+
+    & + & {
+        @apply mt-0.5;
+    }
+
+    &:hover {
+        @apply bg-slate-100 dark:bg-slate-800;
+    }
+}
+
+.sk-dt-colmenu__item--locked {
+    @apply cursor-not-allowed;
+
+    & .sk-dt-colmenu__label {
+        @apply text-slate-400 dark:text-slate-500;
+    }
+}
+
+.sk-dt-colmenu__item--dragging {
+    @apply opacity-60 bg-slate-100 dark:bg-slate-800;
+}
+
+.sk-dt-colmenu__grip {
+    @apply shrink-0 cursor-grab text-[11px] text-slate-400 dark:text-slate-500;
+}
+
+/* Custom 18px checkbox in the design language. */
+.sk-dt-colmenu__box {
+    @apply grid place-items-center size-[18px] shrink-0 rounded-[5px] text-white transition-colors duration-150;
+    @apply border-[1.5px] border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900;
+
+    & .pi {
+        @apply text-[10px] opacity-0;
+    }
+}
+
+.sk-dt-colmenu__box--checked {
+    @apply bg-primary-500 border-primary-500;
+
+    & .pi {
+        @apply opacity-100;
+    }
+}
+
+.sk-dt-colmenu__box--locked {
+    @apply border-transparent bg-primary-300 dark:bg-primary-700;
+
+    & .pi {
+        @apply opacity-60;
+    }
+}
+
+.sk-dt-colmenu__label {
+    @apply flex-1 truncate text-[13px] font-medium text-slate-700 dark:text-slate-200;
+}
+
+.sk-dt-colmenu__lock {
+    @apply shrink-0 text-xs text-slate-400 dark:text-slate-500;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    FILTER POPOVER
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt-filter-popover {
-    @apply w-72;
+    @apply w-72 overflow-visible;
+
+    /* nested pill menus must escape the popover's rounded clipping */
+    & .p-popover-content {
+        @apply overflow-visible;
+    }
 }
 
 .sk-dt-filter-popover__content {
@@ -81,9 +421,24 @@
     @apply text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400;
 }
 
-/* Inline filters: visible in popover only on mobile, hidden on desktop (already shown in toolbar). */
-.sk-dt-filter-popover__item--inline-only {
-    @apply sm:hidden;
+/* The popover lists every filter — inline pills included — so the same
+   filter can be driven from the header or from this panel. */
+
+/* Select filters render as full-width pills inside the popover. */
+.sk-dt-filter-popover .sk-dt-pillwrap {
+    @apply block w-full;
+}
+
+.sk-dt-filter-popover .sk-dt-pill {
+    @apply flex w-full;
+
+    & .sk-dt-pill__val {
+        @apply flex-1 text-left;
+    }
+}
+
+.sk-dt-filter-popover .sk-dt-pillmenu {
+    @apply right-0 min-w-0;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,34 +446,36 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt-tags {
-    @apply mb-2 mx-5 flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded p-2;
+    @apply mb-2 mx-4 flex flex-wrap items-center gap-2 rounded-md p-2;
+    @apply border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60;
 }
 
 .sk-dt-tags__tag {
-    @apply inline-flex items-center gap-1.5 rounded p-2 bg-slate-500 text-white;
-}
-
-:root.dark .sk-dt-tags__tag {
-    @apply bg-slate-500 text-white;
+    @apply inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs;
+    @apply border border-slate-200 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200;
 }
 
 .sk-dt-tags__tag-label {
-    @apply font-semibold;
+    @apply font-semibold text-slate-500 dark:text-slate-400;
 }
 
 .sk-dt-tags__tag-value {
-    @apply max-w-40 truncate;
+    @apply max-w-40 truncate font-medium;
 }
 
 .sk-dt-tags__tag-remove {
-    @apply cursor-pointer text-[0.6rem] ml-2 flex items-center justify-center rounded-full p-2 transition-colors duration-150 bg-red-500 hover:bg-red-700;
+    @apply ml-1 grid size-4 cursor-pointer place-items-center rounded text-[10px] text-slate-400 transition-colors duration-150;
+
+    &:hover {
+        @apply bg-red-500/10 text-red-500;
+    }
 }
 
 .sk-dt-tags__clear-all {
-    @apply cursor-pointer rounded border-none bg-transparent px-2 py-1 font-medium transition-colors duration-150 text-slate-500;
+    @apply cursor-pointer rounded-md border-none bg-transparent px-2 py-1 text-xs font-medium transition-colors duration-150 text-slate-500;
 
     &:hover {
-        @apply text-slate-700 bg-slate-100;
+        @apply text-slate-700 bg-slate-200/60;
     }
 }
 
@@ -143,26 +500,38 @@
 }
 
 .sk-dt__table {
-    @apply w-full border-collapse;
+    @apply w-full border-collapse text-[13.5px];
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TABLE HEADER
+   TABLE HEADER — mono, uppercase, tracked-out
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt__thead {
-    @apply bg-slate-100 dark:bg-slate-800 sticky top-0 z-10;
+    @apply bg-slate-50 dark:bg-slate-800 sticky top-0 z-10;
 }
 
 .sk-dt__th {
-    @apply py-6 px-6 text-left font-semibold uppercase tracking-wider select-none bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400;
+    @apply py-3 px-4 text-left font-semibold uppercase select-none whitespace-nowrap;
+    @apply bg-slate-50 text-slate-500 border-b border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
 }
 
 .sk-dt__th--sortable {
     @apply cursor-pointer transition-colors duration-150;
 
     &:hover {
-        @apply text-slate-900 dark:text-slate-100;
+        @apply text-slate-700 dark:text-slate-200;
+    }
+}
+
+.sk-dt__th--sorted {
+    @apply text-primary-600 dark:text-primary-400;
+
+    & .sk-dt__sort-icon {
+        @apply opacity-100;
     }
 }
 
@@ -185,7 +554,7 @@
 }
 
 .sk-dt__th--sticky {
-    @apply bg-slate-100 dark:bg-slate-800 z-[2];
+    @apply bg-slate-50 dark:bg-slate-800 z-[2];
 }
 
 .sk-dt__row:hover .sk-dt__td--sticky {
@@ -200,7 +569,7 @@
 }
 
 .sk-dt__th--sticky-right {
-    @apply bg-slate-100 dark:bg-slate-800 z-[2];
+    @apply bg-slate-50 dark:bg-slate-800 z-[2];
 }
 
 :root.dark .sk-dt__td--sticky-right {
@@ -216,7 +585,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt__row {
-    @apply transition-colors duration-150 border-b border-slate-100 dark:border-slate-800;
+    @apply transition-colors duration-150 border-b border-slate-200/70 dark:border-slate-700/60;
 
     &:last-child {
         @apply border-b-0;
@@ -228,15 +597,15 @@
 }
 
 .sk-dt__td {
-    @apply py-4 px-6 text-slate-700 dark:text-slate-300;
+    @apply py-3 px-4 align-middle text-slate-600 dark:text-slate-300;
 }
 
 .sk-dt__td--actions {
-    @apply text-right;
+    @apply text-right whitespace-nowrap;
 }
 
 .sk-dt__actions-group {
-    @apply inline-flex items-center gap-1;
+    @apply inline-flex items-center gap-1.5;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -271,19 +640,19 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt__empty {
-    @apply py-16 text-center;
+    @apply py-14 text-center;
 }
 
 .sk-dt__empty-inner {
-    @apply inline-flex flex-col items-center gap-3;
+    @apply inline-flex flex-col items-center gap-2;
 }
 
 .sk-dt__empty-icon {
-    @apply flex size-16 items-center justify-center rounded-2xl text-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500;
+    @apply flex size-12 items-center justify-center rounded-md text-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500;
 }
 
 .sk-dt__empty-text {
-    @apply font-medium text-slate-400 dark:text-slate-500;
+    @apply text-sm font-semibold text-slate-500 dark:text-slate-400;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -295,7 +664,11 @@
 }
 
 .sk-dt-pagination__info {
-    @apply flex items-center gap-3 text-slate-500 dark:text-slate-400;
+    @apply flex flex-wrap items-center gap-3 text-[12.75px] text-slate-500 dark:text-slate-400;
+}
+
+.sk-dt-pagination__per-page-label {
+    @apply hidden sm:inline text-xs text-slate-500 dark:text-slate-400;
 }
 
 .sk-dt-pagination__pages {
@@ -339,11 +712,16 @@
    ID POPOVER
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+/* Quiet info trigger — fills with the accent color on hover. */
 .sk-dt__id-trigger {
-    @apply inline-flex items-center justify-center size-8 rounded bg-slate-100 dark:bg-slate-700 cursor-pointer border-none text-slate-700 dark:text-slate-200 transition-colors duration-150;
+    @apply grid size-7 cursor-pointer place-items-center rounded-md border-none bg-transparent text-slate-400 dark:text-slate-500 transition-colors duration-150;
+
+    & .pi {
+        @apply text-[15px];
+    }
 
     &:hover {
-        @apply bg-slate-200;
+        @apply bg-primary-500/10 text-primary-600 dark:text-primary-400;
     }
 }
 
@@ -352,11 +730,12 @@
 }
 
 .sk-dt-id-popover__label {
-    @apply font-bold text-slate-700 dark:text-slate-400;
+    @apply text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400;
 }
 
 .sk-dt-id-popover__value {
-    @apply font-mono text-slate-700 dark:text-slate-200;
+    @apply inline-flex h-8 items-center rounded-md px-2.5 font-mono text-xs;
+    @apply border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -378,11 +757,70 @@
     }
 }
 
-/* Bulk action toolbar — rendered inside the #toolbar slot */
+/* Legacy bulk action toolbar — rendered inside the #toolbar slot */
 .sk-dt-bulk-toolbar {
     @apply flex flex-wrap items-center gap-2;
 }
 
 .sk-dt-bulk-toolbar__count {
     @apply font-semibold text-base text-slate-700 dark:text-slate-300 mr-1;
+}
+
+/* Floating bulk bar — dark pill pinned bottom-center while rows are selected.
+   Page actions come from the #bulk-actions slot; the clear (×) button is built in. */
+.sk-dt-bulkbar {
+    @apply fixed bottom-7 left-1/2 z-50 flex items-center gap-4 rounded-md py-2.5 pl-5 pr-3;
+    /* center via transform (not the Tailwind translate utility) so the
+       enter/leave transition below can animate the same property */
+    transform: translateX(-50%);
+    background: #15171f;
+    border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.sk-dt-bulkbar__label {
+    @apply text-[13px] font-semibold text-white whitespace-nowrap;
+}
+
+.sk-dt-bulkbar__actions {
+    @apply flex items-center gap-1.5 ml-auto pl-4 border-l border-white/10;
+}
+
+.sk-dt-bulkbar__clear {
+    @apply -ml-2 grid size-7 cursor-pointer place-items-center rounded-md border-none bg-transparent text-[11px] text-white/60 transition-colors duration-150;
+
+    &:hover {
+        @apply bg-white/10 text-white;
+    }
+}
+
+/* Slotted PrimeVue buttons → quiet ghost buttons on the dark surface. */
+.sk-dt-bulkbar .p-button {
+    @apply h-[34px] rounded-md border-transparent bg-transparent px-3 text-xs font-semibold text-white/80 shadow-none;
+
+    &:not(:disabled):hover {
+        @apply border-transparent bg-white/10 text-white;
+    }
+}
+
+.sk-dt-bulkbar .p-button[data-p-severity='danger'] {
+    color: #fb7185;
+
+    &:not(:disabled):hover {
+        background: color-mix(in srgb, #fb7185 16%, transparent);
+        color: #fda4af;
+    }
+}
+
+/* enter/leave: slide up + fade (Vue <Transition name="sk-dt-bulkbar">) */
+.sk-dt-bulkbar-enter-active,
+.sk-dt-bulkbar-leave-active {
+    transition:
+        opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sk-dt-bulkbar-enter-from,
+.sk-dt-bulkbar-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 12px);
 }

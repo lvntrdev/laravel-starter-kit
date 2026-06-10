@@ -2,6 +2,7 @@
 
 namespace Lvntr\StarterKit\Http\Responses;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -20,6 +21,11 @@ use Spatie\QueryBuilder\QueryBuilder;
  *       ->searchable(['name', 'email'])
  *       ->sortable(['id', 'name', 'email', 'status', 'created_at'])
  *       ->filterable(['status'])
+ *       ->columns([
+ *           ['key' => 'name', 'locked' => true],
+ *           'email',
+ *           ['key' => 'created_at', 'visible' => false],
+ *       ])
  *       ->defaultSort('-created_at')
  *       ->response();
  */
@@ -38,6 +44,12 @@ class DatatableQueryBuilder
     private array $filterFields = [];
 
     private string $defaultSortField = '-created_at';
+
+    /** @var array<int, array{key: string, label?: string, sortable?: bool, visible?: bool, locked?: bool}> */
+    private array $columns = [];
+
+    /** @var string[] Row keys always kept when the payload is shaped per column. */
+    private array $alwaysInclude = ['id'];
 
     /** @var string[] */
     private array $withRelations = [];
@@ -105,6 +117,40 @@ class DatatableQueryBuilder
     }
 
     /**
+     * Declare the column list the table offers (column visibility menu).
+     *
+     * Each entry is a key string or an array: ['key' => 'email', 'label' => 'sk-common.email',
+     * 'sortable' => true, 'visible' => false, 'locked' => true]. The list is sent to the
+     * frontend as `columns` meta — including columns hidden by default — and enables payload
+     * shaping: when the request carries ?columns=key1,key2 only those columns' data (plus
+     * alwaysInclude() keys) is returned per row.
+     *
+     * @param  array<int, string|array{key: string, label?: string, sortable?: bool, visible?: bool, locked?: bool}>  $columns
+     */
+    public function columns(array $columns): static
+    {
+        $this->columns = array_map(
+            fn (string|array $column) => is_string($column) ? ['key' => $column] : $column,
+            array_values($columns),
+        );
+
+        return $this;
+    }
+
+    /**
+     * Row keys always kept when shaping the payload to the requested columns —
+     * fields that row actions/handlers need regardless of visibility. Default: ['id'].
+     *
+     * @param  string[]  $keys
+     */
+    public function alwaysInclude(array $keys): static
+    {
+        $this->alwaysInclude = array_values(array_unique(['id', ...$keys]));
+
+        return $this;
+    }
+
+    /**
      * Default sort when no ?sort param is present. Prefix with - for desc.
      */
     public function defaultSort(string $field): static
@@ -164,15 +210,75 @@ class DatatableQueryBuilder
             ? $this->resourceClass::collection($paginator->getCollection())->resolve()
             : $paginator->items();
 
-        return ApiResponse::success([
-            'data' => $items,
+        $payload = [
+            'data' => $this->columns !== [] ? $this->shapeItems($items) : $items,
             'total' => $paginator->total(),
             'per_page' => $paginator->perPage(),
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
             'from' => $paginator->firstItem(),
             'to' => $paginator->lastItem(),
-        ]);
+        ];
+
+        if ($this->columns !== []) {
+            $payload['columns'] = $this->columnsMeta();
+        }
+
+        return ApiResponse::success($payload);
+    }
+
+    /**
+     * Column meta sent to the frontend column menu (null entries dropped per column).
+     *
+     * @return array<int, array<string, string|bool>>
+     */
+    private function columnsMeta(): array
+    {
+        return array_map(
+            fn (array $column) => array_filter([
+                'key' => $column['key'],
+                'label' => $column['label'] ?? null,
+                'sortable' => $column['sortable'] ?? null,
+                'visible' => $column['visible'] ?? null,
+                'locked' => $column['locked'] ?? null,
+            ], fn ($value) => $value !== null),
+            $this->columns,
+        );
+    }
+
+    /**
+     * Shape each row down to the requested ?columns selection (+ alwaysInclude keys).
+     * Unknown keys are ignored; without a ?columns param the payload stays complete.
+     * Dot keys (e.g. role.name) keep their top-level segment.
+     *
+     * @param  array<int, mixed>  $items
+     * @return array<int, mixed>
+     */
+    private function shapeItems(array $items): array
+    {
+        $requested = array_filter(explode(',', (string) request()->input('columns', '')));
+
+        if ($requested === []) {
+            return $items;
+        }
+
+        $allowed = array_column($this->columns, 'key');
+        $selected = array_values(array_intersect($requested, $allowed));
+
+        if ($selected === []) {
+            return $items;
+        }
+
+        $keep = array_flip(array_unique([
+            ...$this->alwaysInclude,
+            ...array_map(fn (string $key) => explode('.', $key)[0], $selected),
+        ]));
+
+        return array_map(function ($item) use ($keep) {
+            $row = $item instanceof Arrayable ? $item->toArray() : (array) $item;
+
+            return array_intersect_key($row, $keep);
+        }, $items);
     }
 
     /**

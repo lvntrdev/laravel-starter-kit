@@ -72,6 +72,9 @@ Main capabilities:
 - `isCard(enabled)`
 - `cardTitle(title)`
 - `cardSubtitle(subtitle)`
+- `title(title)` — toolbar heading rendered to the left of the search input
+- `subtitle(subtitle)` — sub-heading shown under the toolbar title
+- `columnToggle(enabled)` — show/hide the column visibility & order menu button (default: `true`)
 - `perPage(count)`
 - `idColumn(config | false)`
 - `addColumns(...columns)`
@@ -87,8 +90,10 @@ Main capabilities:
 - `label(string)`
 - `sortable(boolean)`
 - `render((row, escape) => string)`
-- `tag('definition', tagKey?)`
+- `tag('definition' | 'value', tagKey?)`
 - `tagKey(key)`
+- `tagLabels(map)` — value-mode label map (raw cell value → display label)
+- `tagSeverityKey(key)` — row property holding the tag severity (e.g. a backend-seeded color column); `colors()` wins when both match
 - `colors(map)`
 - `icons(map)`
 - `tagIconPos('left' | 'right')`
@@ -96,6 +101,9 @@ Main capabilities:
 - `tagRounded(enabled = true)`
 - `tagOutlined(enabled = true)`
 - `sticky()`
+- `hidden()` — start hidden; the user can enable the column from the column menu
+- `visible(boolean)` — initial column-menu visibility (default: `true`)
+- `locked(enabled = true)` — always visible, cannot be hidden from the column menu
 
 Tag rendering is definition-driven. Use `tag('definition')` when the column value maps to a definition key such as `userStatus`. `SkDatatable` resolves the label, severity, and icon from the definitions payload, and you can still override the visual layer with `colors({...})`, `icons({...})`, `tagSoft()`, `tagRounded()`, `tagOutlined()`, and `tagIconPos()`.
 
@@ -116,11 +124,23 @@ DB.column<UserRow>()
     .tagRounded();
 ```
 
+For values that are not definitions (dynamic data such as role keys), use value mode: the raw cell value becomes the tag label, optionally mapped through `tagLabels()` and coloured through `colors()`.
+
+```ts
+DB.column<UserRow>()
+    .key('role')
+    .tag('value')
+    .tagLabels(Object.fromEntries(roleOptions.map((o) => [o.value, o.label])))
+    .tagSeverityKey('role_color') // color seeded via config/permission-resources.php → role_colors
+    .tagSoft();
+```
+
 Notes:
 
 - `tagKey()` points to the definition group key, for example `userStatus`
 - `colors()` and `icons()` are matched against the current row value
 - when you do not override them, `SkDatatable` uses the severity and icon returned by `useDefinition()`
+- in value mode no definition lookup happens — label comes from `tagLabels()` (falling back to the raw value), severity only from `colors()`
 
 ## Filter Builder
 
@@ -171,22 +191,36 @@ Bulk actions let the user select multiple rows — across pages — and run a si
 
 ### Frontend
 
-Pass a `bulk-actions` prop to `SkDatatable` with an array of action descriptors. Each descriptor needs at minimum a `label`, an `action` key, and an `icon`:
+Create a selection with the `useDatatableSelection()` composable and pass it to `SkDatatable` through the `selection` prop — this renders the checkbox column. Provide the bulk buttons through the `#bulk-actions` slot: while rows are selected, `SkDatatable` shows a **floating dark action bar** pinned bottom-center, with a built-in selected-count label and a clear (×) button; the slot content renders between them. Slotted PrimeVue buttons are restyled as ghost buttons on the dark surface automatically (use `variant="text"`; `severity="danger"` turns rose).
 
 ```vue
+<script setup lang="ts">
+    const selection = useDatatableSelection({
+        bulkUrl: users.bulk.url(),
+        idKey: 'id',
+        onSuccess: () => bus.refresh('users-table'),
+    });
+</script>
+
 <template>
-    <SkDatatable
-        :config="tableConfig"
-        :bulk-actions="[
-            { label: 'sk-button.delete', action: 'delete', icon: 'pi pi-trash', severity: 'danger' },
-        ]"
-        bulk-action-url="/admin/users/bulk"
-        refresh-key="users-table"
-    />
+    <SkDatatable :config="tableConfig" :selection="selection" refresh-key="users-table">
+        <template #bulk-actions>
+            <Button
+                :label="$t('sk-datatable.bulk_delete')"
+                icon="pi pi-trash"
+                size="small"
+                severity="danger"
+                variant="text"
+                @click="confirmBulkDelete(totalFiltered)"
+            />
+        </template>
+    </SkDatatable>
 </template>
 ```
 
-When the user triggers an action, `SkDatatable` posts the following payload:
+The legacy pattern — rendering a `.sk-dt-bulk-toolbar` block inside the `#toolbar` slot — keeps working; the floating bar only appears when a `#bulk-actions` slot is provided.
+
+When an action calls `executeBulkAction()`, the composable posts the following payload:
 
 ```json
 {
@@ -311,6 +345,35 @@ Use PrimeVue's `<Tag>` (auto-imported, no import needed) when you want slot cont
 
 When a matching `cell-*` slot exists, it overrides the built-in rendering for that column, including definition tags.
 
+## Column Visibility & Ordering
+
+The toolbar shows a column menu button with a live `visible/total` counter. From the menu the user can:
+
+- toggle columns on/off — `locked()` columns stay visible and cannot be unchecked
+- reorder columns by dragging the grip handle — the built-in ID and selection checkbox columns are fixed and never move
+- restore everything with "Show all"
+
+Column state (order + hidden set) persists in `sessionStorage` together with the rest of the table state. Disable the whole feature with `columnToggle(false)`.
+
+On every fetch, `SkDatatable` sends the visible column keys as a `columns=key1,key2` query param. Backends that don't opt in simply ignore it; backends that declare `DatatableQueryBuilder::columns()` shape their payload to the selection (see below).
+
+### Server-driven column list
+
+When the backend declares its column list, the response carries a `columns` meta array. `SkDatatable` merges it over the local config by key: the server list controls availability, order, labels and default visibility — including columns that are **not** in the frontend config at all (e.g. initially hidden extras) — while the local `DB.column()` config keeps supplying the render layer (tags, custom render, sticky). Client-only columns missing from the server list keep rendering after it.
+
+## Toolbar Slots
+
+- `#toolbar-start` — rendered inside the actions group, **to the left of the create button** (e.g. an Export button)
+- `#toolbar` — rendered after the create button (used by the bulk-action toolbar)
+
+```vue
+<SkDatatable :config="tableConfig">
+    <template #toolbar-start>
+        <Button label="Export" icon="pi pi-download" severity="secondary" outlined />
+    </template>
+</SkDatatable>
+```
+
 ## Backend Builder
 
 Use `DatatableQueryBuilder` inside controllers or dedicated query classes:
@@ -320,9 +383,19 @@ return DatatableQueryBuilder::for(User::query())
     ->searchable(['name', 'email'])
     ->sortable(['id', 'name', 'email', 'created_at'])
     ->filterable(['status'])
+    ->columns([
+        ['key' => 'name', 'locked' => true],
+        'email',
+        ['key' => 'created_at', 'visible' => false],
+    ])
+    ->alwaysInclude(['name'])
     ->defaultSort('-created_at')
     ->response();
 ```
+
+### Column declaration & payload shaping
+
+`columns()` declares the column list the table offers. Each entry is a key string or an array with optional `label`, `sortable`, `visible`, and `locked` flags. The list is returned as `columns` meta — so the frontend menu can offer initially-hidden columns — and enables payload shaping: when the request carries `?columns=key1,key2`, each row is reduced to the selected columns' keys plus the `alwaysInclude()` keys (default `['id']`). Use `alwaysInclude()` for fields row actions need regardless of visibility (names for confirm dialogs, URLs, etc.). Dot keys such as `role.name` keep their top-level `role` segment. Unknown requested keys are ignored; without the param the payload stays complete.
 
 ### Search semantics
 
@@ -363,6 +436,8 @@ For larger modules, keep datatable logic in `app/Domain/*/Queries/*DatatableQuer
 }
 ```
 
+When the backend declares `columns()`, the payload additionally carries a `columns` array (`[{ "key": "email", "visible": false, ... }]`).
+
 ## Built-in Behavior
 
 `SkDatatable` already includes:
@@ -374,6 +449,8 @@ For larger modules, keep datatable logic in `app/Domain/*/Queries/*DatatableQuer
 - `sessionStorage` persistence between reloads
 - optional refresh bus integration through `refresh-key`
 - automatic per-page controls
+- a column menu with visibility toggles and drag & drop ordering (ID/checkbox columns stay fixed)
+- per-column data fetching: visible columns are sent as `columns=` and shaped server-side when enabled
 - per-column custom render overrides through `cell-{column.key}` slots
 - a `load` event that emits fetched rows
 

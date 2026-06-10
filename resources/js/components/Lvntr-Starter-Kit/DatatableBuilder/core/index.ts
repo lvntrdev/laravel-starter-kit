@@ -12,6 +12,7 @@ export type {
     ActionSeverity,
     TagColor,
     DataTableResponse,
+    ServerColumn,
 } from './types';
 export { TableBuilder, ColumnBuilder, FilterBuilder, ActionBuilder, MenuActionBuilder } from './builder';
 

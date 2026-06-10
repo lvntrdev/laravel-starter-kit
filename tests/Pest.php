@@ -25,6 +25,9 @@ uses(DatabaseTestCase::class)->in('Feature/Settings');
 // Logs audit listener regresyonu: activity('system') yazımı için DB gerekli.
 uses(DatabaseTestCase::class)->in('Feature/Logs');
 
+// Datatable query builder testleri: users tablosu üzerinden DB gerekli.
+uses(DatabaseTestCase::class)->in('Feature/Datatable');
+
 // DB gerektirmeyen diğer Feature testleri
 uses(TestCase::class)->in('Feature/BackwardCompat');
 

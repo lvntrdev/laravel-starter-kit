@@ -15,6 +15,18 @@ return [
     'last_page' => 'Last page',
     'loading' => 'Loading...',
     'no_records' => 'No records found.',
+    'per_page' => 'Per page',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Column Menu
+    |--------------------------------------------------------------------------
+    */
+
+    'columns' => 'Columns',
+    'visible_columns' => 'Visible Columns',
+    'show_all' => 'Show all',
+    'clear_filters' => 'Clear Filters',
 
     /*
     |--------------------------------------------------------------------------

@@ -72,6 +72,9 @@ Temel yetenekler:
 - `isCard(enabled)`
 - `cardTitle(title)`
 - `cardSubtitle(subtitle)`
+- `title(title)` — arama kutusunun solunda gösterilen toolbar başlığı
+- `subtitle(subtitle)` — toolbar başlığının altındaki alt başlık
+- `columnToggle(enabled)` — sütun görünürlük/sıralama menü butonunu aç/kapat (varsayılan: `true`)
 - `perPage(count)`
 - `idColumn(config | false)`
 - `addColumns(...columns)`
@@ -87,8 +90,10 @@ Temel yetenekler:
 - `label(string)`
 - `sortable(boolean)`
 - `render((row, escape) => string)`
-- `tag('definition', tagKey?)`
+- `tag('definition' | 'value', tagKey?)`
 - `tagKey(key)`
+- `tagLabels(map)` — value modunda label haritası (ham hücre değeri → görünen etiket)
+- `tagSeverityKey(key)` — tag severity'sini taşıyan satır alanı (örn. backend'de seed edilen color kolonu); ikisi de eşleşirse `colors()` kazanır
 - `colors(map)`
 - `icons(map)`
 - `tagIconPos('left' | 'right')`
@@ -96,6 +101,9 @@ Temel yetenekler:
 - `tagRounded(enabled = true)`
 - `tagOutlined(enabled = true)`
 - `sticky()`
+- `hidden()` — başlangıçta gizli; kullanıcı sütun menüsünden açabilir
+- `visible(boolean)` — sütun menüsündeki başlangıç görünürlüğü (varsayılan: `true`)
+- `locked(enabled = true)` — her zaman görünür, sütun menüsünden gizlenemez
 
 Tag gösterimi artık definition tabanlıdır. `tag('definition')`, `userStatus` gibi bir definition key'i ile eşleşen kolonlarda kullanılır. `SkDatatable`, label, severity ve icon bilgisini definitions payload'undan çözer; istersen `colors({...})`, `icons({...})`, `tagSoft()`, `tagRounded()`, `tagOutlined()` ve `tagIconPos()` ile görünümü override edebilirsin.
 
@@ -116,11 +124,23 @@ DB.column<UserRow>()
     .tagRounded();
 ```
 
+Definition olmayan değerler için (rol anahtarı gibi dinamik veriler) value modunu kullan: ham hücre değeri tag etiketi olur; istersen `tagLabels()` ile etikete, `colors()` ile renge map'lenir.
+
+```ts
+DB.column<UserRow>()
+    .key('role')
+    .tag('value')
+    .tagLabels(Object.fromEntries(roleOptions.map((o) => [o.value, o.label])))
+    .tagSeverityKey('role_color') // renk config/permission-resources.php → role_colors üzerinden seed edilir
+    .tagSoft();
+```
+
 Notlar:
 
 - `tagKey()`, `userStatus` gibi definition grup anahtarını belirtir
 - `colors()` ve `icons()` mevcut satır değeri ile eşleşir
 - override verilmezse `SkDatatable`, `useDefinition()` üzerinden gelen severity ve icon bilgisini kullanır
+- value modunda definition lookup yapılmaz — etiket `tagLabels()`'tan gelir (yoksa ham değer), severity yalnızca `colors()` ile verilir
 
 ## Filter Builder
 
@@ -171,22 +191,36 @@ Toplu aksiyonlar, kullanıcının birden fazla satırı — sayfa değişse de �
 
 ### Frontend
 
-`SkDatatable`'a `bulk-actions` prop'u ile aksiyon tanımları dizisi verilir. Her tanımda en az `label`, `action` anahtarı ve `icon` bulunmalıdır:
+`useDatatableSelection()` composable'ı ile bir seçim oluşturup `SkDatatable`'a `selection` prop'u ile verin — checkbox kolonu bununla render edilir. Toplu işlem butonlarını `#bulk-actions` slot'u ile sağlayın: satırlar seçiliyken `SkDatatable` ekranın alt-ortasına sabitlenmiş **yüzen koyu aksiyon barını** gösterir; seçim sayacı etiketi ve temizle (×) butonu bara gömülüdür, slot içeriği ikisinin arasında render edilir. Slot'a konan PrimeVue butonları koyu yüzeyde otomatik olarak ghost stile çevrilir (`variant="text"` kullanın; `severity="danger"` gül rengine döner).
 
 ```vue
+<script setup lang="ts">
+    const selection = useDatatableSelection({
+        bulkUrl: users.bulk.url(),
+        idKey: 'id',
+        onSuccess: () => bus.refresh('users-table'),
+    });
+</script>
+
 <template>
-    <SkDatatable
-        :config="tableConfig"
-        :bulk-actions="[
-            { label: 'sk-button.delete', action: 'delete', icon: 'pi pi-trash', severity: 'danger' },
-        ]"
-        bulk-action-url="/admin/users/bulk"
-        refresh-key="users-table"
-    />
+    <SkDatatable :config="tableConfig" :selection="selection" refresh-key="users-table">
+        <template #bulk-actions>
+            <Button
+                :label="$t('sk-datatable.bulk_delete')"
+                icon="pi pi-trash"
+                size="small"
+                severity="danger"
+                variant="text"
+                @click="confirmBulkDelete(totalFiltered)"
+            />
+        </template>
+    </SkDatatable>
 </template>
 ```
 
-Kullanıcı bir aksiyon tetiklediğinde `SkDatatable` şu payload'u gönderir:
+Eski desen — `#toolbar` slot'u içinde `.sk-dt-bulk-toolbar` bloğu render etmek — çalışmaya devam eder; yüzen bar yalnızca `#bulk-actions` slot'u verildiğinde görünür.
+
+Bir aksiyon `executeBulkAction()` çağırdığında composable şu payload'u gönderir:
 
 ```json
 {
@@ -311,6 +345,35 @@ Slot içeriğinin dahili badge görünümü ile aynı olmasını istiyorsan Prim
 
 Eşleşen bir `cell-*` slot'u varsa o kolonun dahili görünümü, definition tag'leri dahil olmak üzere, bununla override edilir.
 
+## Sütun Görünürlüğü ve Sıralama
+
+Toolbar'da canlı `görünür/toplam` sayaçlı bir sütun menüsü butonu bulunur. Menüden kullanıcı:
+
+- sütunları açıp kapatabilir — `locked()` sütunlar her zaman görünür kalır, işareti kaldırılamaz
+- tutamaçtan sürükleyerek sütunları yeniden sıralayabilir — dahili ID ve seçim checkbox sütunları sabittir, yerinden oynamaz
+- "Tümünü göster" ile her şeyi geri getirebilir
+
+Sütun durumu (sıra + gizli küme) tablonun diğer durumuyla birlikte `sessionStorage` içinde kalıcıdır. Özelliğin tamamı `columnToggle(false)` ile kapatılır.
+
+`SkDatatable` her veri çekişinde görünür sütun anahtarlarını `columns=key1,key2` query parametresiyle gönderir. Opt-in yapmayan backend'ler bunu yok sayar; `DatatableQueryBuilder::columns()` tanımlayan backend'ler payload'ı seçime göre şekillendirir (aşağıya bakın).
+
+### Sunucu kaynaklı sütun listesi
+
+Backend sütun listesini tanımladığında response `columns` meta dizisi taşır. `SkDatatable` bu listeyi key bazında lokal config'in üzerine merge eder: mevcut sütunları, sırayı, label'ları ve varsayılan görünürlüğü sunucu listesi belirler — frontend config'inde hiç olmayan (ör. başlangıçta gizli ekstra) sütunlar dahil — render katmanını (tag, custom render, sticky) ise lokal `DB.column()` config'i sağlamaya devam eder. Sunucu listesinde olmayan client-only sütunlar listenin ardından render edilmeye devam eder.
+
+## Toolbar Slot'ları
+
+- `#toolbar-start` — aksiyon grubunun içinde, **create butonunun solunda** render edilir (ör. bir Dışa Aktar butonu)
+- `#toolbar` — create butonundan sonra render edilir (bulk-action toolbar'ı burayı kullanır)
+
+```vue
+<SkDatatable :config="tableConfig">
+    <template #toolbar-start>
+        <Button label="Dışa aktar" icon="pi pi-download" severity="secondary" outlined />
+    </template>
+</SkDatatable>
+```
+
 ## Backend Builder
 
 Controller içinde ya da özel query sınıflarında `DatatableQueryBuilder` kullanın:
@@ -320,9 +383,19 @@ return DatatableQueryBuilder::for(User::query())
     ->searchable(['name', 'email'])
     ->sortable(['id', 'name', 'email', 'created_at'])
     ->filterable(['status'])
+    ->columns([
+        ['key' => 'name', 'locked' => true],
+        'email',
+        ['key' => 'created_at', 'visible' => false],
+    ])
+    ->alwaysInclude(['name'])
     ->defaultSort('-created_at')
     ->response();
 ```
+
+### Sütun tanımı ve payload şekillendirme
+
+`columns()` tablonun sunduğu sütun listesini tanımlar. Her giriş bir key string'i ya da opsiyonel `label`, `sortable`, `visible`, `locked` bayraklı bir dizidir. Liste `columns` meta'sı olarak döner — böylece frontend menüsü başlangıçta gizli sütunları da sunabilir — ve payload şekillendirmeyi açar: istek `?columns=key1,key2` taşıdığında her satır seçili sütun anahtarlarına ve `alwaysInclude()` anahtarlarına (varsayılan `['id']`) indirgenir. Satır aksiyonlarının görünürlükten bağımsız ihtiyaç duyduğu alanlar (confirm diyaloğu için isim, URL'ler vb.) için `alwaysInclude()` kullanın. `role.name` gibi dot anahtarlarda üst seviye `role` segmenti korunur. Bilinmeyen istek anahtarları yok sayılır; parametre yoksa payload eksiksiz kalır.
 
 ### Arama semantiği
 
@@ -365,6 +438,8 @@ Büyük modüllerde datatable mantığını `app/Domain/*/Queries/*DatatableQuer
 }
 ```
 
+Backend `columns()` tanımladığında payload ek olarak bir `columns` dizisi taşır (`[{ "key": "email", "visible": false, ... }]`).
+
 ## Dahili Davranışlar
 
 `SkDatatable` şunları hazır olarak getirir:
@@ -376,6 +451,8 @@ Büyük modüllerde datatable mantığını `app/Domain/*/Queries/*DatatableQuer
 - sayfa yenilemelerinde `sessionStorage` kalıcılığı
 - `refresh-key` ile opsiyonel refresh bus entegrasyonu
 - dahili per-page kontrolleri
+- görünürlük anahtarları ve sürükle-bırak sıralamalı sütun menüsü (ID/checkbox sütunları sabit)
+- sütun bazlı veri çekme: görünür sütunlar `columns=` ile gönderilir, açıksa sunucu tarafında şekillendirilir
 - `cell-{column.key}` slot'ları ile kolon bazlı özel render override'ı
 - çekilen satırları dışarı veren `load` eventi
 

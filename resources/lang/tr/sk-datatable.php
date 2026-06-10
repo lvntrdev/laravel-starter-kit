@@ -15,6 +15,18 @@ return [
     'last_page' => 'Son sayfa',
     'loading' => 'Yükleniyor...',
     'no_records' => 'Kayıt bulunamadı.',
+    'per_page' => 'Sayfa başına',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sütun Menüsü
+    |--------------------------------------------------------------------------
+    */
+
+    'columns' => 'Sütunlar',
+    'visible_columns' => 'Görünür Sütunlar',
+    'show_all' => 'Tümünü göster',
+    'clear_filters' => 'Filtreleri Temizle',
 
     /*
     |--------------------------------------------------------------------------

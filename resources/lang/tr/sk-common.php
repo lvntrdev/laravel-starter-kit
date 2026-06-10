@@ -16,6 +16,7 @@ return [
     'created_at' => 'Oluşturulma Tarihi',
     'updated_at' => 'Son Güncelleme',
     'search' => 'Ara',
+    'all' => 'Tümü',
     'select' => 'Seçin',
     'password' => 'Şifre',
     'generate_password' => 'Şifre oluştur',

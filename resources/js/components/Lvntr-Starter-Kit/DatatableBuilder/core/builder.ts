@@ -42,8 +42,12 @@ export class ColumnBuilder<_T = unknown> {
         return this;
     }
 
-    /** Render cell as a PrimeVue Tag with severity/label from DB definitions. */
-    tag(type: 'definition', tagKey?: string): this {
+    /**
+     * Render cell as a PrimeVue Tag.
+     * 'definition': label/severity resolved from DB definitions (set the definition key via tagKey).
+     * 'value': the raw cell value is the label — optionally mapped via tagLabels(), coloured via colors().
+     */
+    tag(type: 'definition' | 'value' = 'definition', tagKey?: string): this {
         this.config.tag = type;
         if (tagKey) {
             this.config.tagKey = tagKey;
@@ -54,6 +58,18 @@ export class ColumnBuilder<_T = unknown> {
     /** Definition key or row property key used to resolve the tag severity. */
     tagKey(key: string): this {
         this.config.tagKey = key;
+        return this;
+    }
+
+    /** Label map for value-mode tags – maps the raw cell value to a display label (e.g. role key → name). */
+    tagLabels(map: Record<string, string>): this {
+        this.config.tagLabels = map;
+        return this;
+    }
+
+    /** Row property holding the tag severity (e.g. a backend-seeded color column). Overridden by colors(). */
+    tagSeverityKey(key: string): this {
+        this.config.tagSeverityKey = key;
         return this;
     }
 
@@ -96,6 +112,24 @@ export class ColumnBuilder<_T = unknown> {
     /** Pin this column so it stays visible while scrolling horizontally. */
     sticky(): this {
         this.config.sticky = true;
+        return this;
+    }
+
+    /** Start hidden — the user can enable the column from the column menu. */
+    hidden(): this {
+        this.config.visible = false;
+        return this;
+    }
+
+    /** Set initial visibility (column menu state). Default: true. */
+    visible(visible: boolean): this {
+        this.config.visible = visible;
+        return this;
+    }
+
+    /** Lock the column: always visible, cannot be hidden from the column menu. */
+    locked(enabled = true): this {
+        this.config.locked = enabled;
         return this;
     }
 
@@ -295,6 +329,7 @@ export class TableBuilder<T = unknown> {
         pagination: true,
         searchable: true,
         isCard: true,
+        columnToggle: true,
         perPage: 10,
         idColumn: { visible: true, key: 'id' },
         columns: [],
@@ -342,6 +377,24 @@ export class TableBuilder<T = unknown> {
 
     cardSubtitle(subtitle: string): this {
         this.config.cardSubtitle = subtitle;
+        return this;
+    }
+
+    /** Toolbar heading shown to the left of the search input. */
+    title(title: string): this {
+        this.config.title = title;
+        return this;
+    }
+
+    /** Toolbar sub-heading shown under the title. */
+    subtitle(subtitle: string): this {
+        this.config.subtitle = subtitle;
+        return this;
+    }
+
+    /** Show/hide the column visibility & order menu button. Default: true. */
+    columnToggle(enabled: boolean): this {
+        this.config.columnToggle = enabled;
         return this;
     }
 
