@@ -24,6 +24,21 @@ import Material from '@primevue/themes/material';
  * @see https://primevue.org/theming/styled/#tokens
  */
 const AppPreset = definePreset(Material, {
+    primitive: {
+        // ── Border radius / Köşe yarıçapı (kit design language = 6px) ──
+        // Material's stock UI radius is `sm: 4px`, which most non-form components
+        // (Button, ToggleButton, Chip, Message, Menu, Tag, …) reference via
+        // `{border.radius.sm}`. Bump it to 6px so they match the 6px form controls
+        // (formField below), SkCard and sidebar nav (`--radius` in app.css). Other
+        // steps (xs/md/lg/xl) keep Material's values.
+        // Material'in stok UI radius'u `sm: 4px`; çoğu form-dışı bileşen (Button,
+        // ToggleButton, Chip, Message, Menu, Tag, …) bunu `{border.radius.sm}` ile
+        // kullanır. 6px'e çıkarıp 6px form alanları, SkCard ve sidebar nav ile
+        // hizalarız. Diğer adımlar (xs/md/lg/xl) Material değerinde kalır.
+        borderRadius: {
+            sm: '6px',
+        },
+    },
     semantic: {
         // ── Primary / Birincil renk (kit default) ──
         // Override Material's stock emerald primary with blue. Drives buttons, links,
@@ -43,13 +58,68 @@ const AppPreset = definePreset(Material, {
             900: '{blue.900}',
             950: '{blue.950}',
         },
+
+        // ── Form field / Form alanı (kit override) ──
+        // "Outline ferah + soft" giriş stili: 6px köşe, ferah dikey padding (≈46px
+        // yükseklik) ve yumuşak (saydam) 3px focus halkası. TÜM form alanlarına
+        // (InputText, Select, Textarea, DatePicker, Password vb.) küresel olarak
+        // uygulanır. Material'in stok radius/focus değerlerini değiştirir.
+        // (Material formField yalnızca şu token'ları tanır: paddingX/Y, borderRadius,
+        // focusRing, transitionDuration — borderWidth tokenize değildir.)
+        // "Outline ferah + soft" input style: 6px radius, generous vertical padding
+        // (≈46px height) and a soft (translucent) 3px focus ring. Applied globally to
+        // every form field. Overrides Material's stock radius/focus.
+        formField: {
+            paddingX: '0.875rem',
+            paddingY: '0.6875rem',
+            borderRadius: '6px',
+            focusRing: {
+                width: '3px',
+                style: 'solid',
+                color: 'color-mix(in srgb, {primary.color} 15%, transparent)',
+                offset: '0',
+                shadow: 'none',
+            },
+        },
+
+        // ── Form field idle/hover border (kit override) ──
+        // Softer, lighter idle outline than Material's stock (slate.400) so fields
+        // don't read heavy; hover darkens one clear step. Lives on the formField TOKEN
+        // (not unlayered CSS) so focus (primary) and invalid (red) borders still
+        // cascade correctly. Light: idle slate.300, hover slate.400. Dark keeps
+        // Material's balanced idle slate.600, hover slate.400.
+        // Idle/hover kenar — Material stoktan (slate.400) daha açık/yumuşak idle, hover
+        // bir adım koyu. CSS değil token üzerinden (focus/invalid cascade bozulmasın).
+        // Light: idle slate.300, hover slate.400. Dark: idle slate.600, hover slate.400.
+        // NOT: Preset renkleri app init'te uygulanır — değişiklik için TAM SAYFA YENİLE.
+        colorScheme: {
+            light: {
+                formField: {
+                    borderColor: '{surface.300}',
+                    hoverBorderColor: '{surface.400}',
+                },
+            },
+            dark: {
+                formField: {
+                    borderColor: '{surface.600}',
+                    hoverBorderColor: '{surface.400}',
+                },
+            },
+        },
     },
     components: {
         // ── Button / Buton (kit override) ──
-        // Kit-specific horizontal padding. All other button spacing/sizing follows Material.
-        // Kit'e özel yatay padding. Diğer tüm buton boşluk/boyutları Material'i izler.
+        // Kit-specific horizontal padding + 6px radius (kit design language). All other
+        // button spacing/sizing follows Material. `border.radius.sm` already lands buttons
+        // on 6px via the primitive above; this pins it explicitly on the button token so
+        // it is guaranteed regardless of which scale step the style references.
+        // Kit'e özel yatay padding + 6px köşe (kit tasarım dili). Diğer tüm buton
+        // boşluk/boyutları Material'i izler. Üstteki primitive `border.radius.sm` zaten
+        // butonu 6px'e taşır; bu, style hangi adımı kullanırsa kullansın garanti olsun
+        // diye buton token'ında açıkça sabitlenmiştir.
         button: {
             paddingX: '1rem',
+            borderRadius: '6px',
         },
 
         // ── Tag / Etiket (kit override) ──

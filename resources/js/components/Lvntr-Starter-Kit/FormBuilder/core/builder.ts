@@ -819,6 +819,21 @@ export class SectionBuilder extends BaseFieldBuilder<SectionFieldConfig> {
         return this;
     }
 
+    /**
+     * Two-column "aside" layout: header (title + subtitle) in a fixed left column,
+     * fields grid on the right. Renders without a Card wrapper. Settings-page style.
+     */
+    aside(enabled = true): this {
+        (this.config as SectionFieldConfig).aside = enabled;
+        return this;
+    }
+
+    /** Width of the aside header column (any CSS length). Default: '14rem'. */
+    asideWidth(width: string): this {
+        (this.config as SectionFieldConfig).asideWidth = width;
+        return this;
+    }
+
     addFields(...fields: BaseFieldBuilder<FieldConfig>[]): this {
         (this.config as SectionFieldConfig).fields.push(...fields.map((f) => f.build()));
         return this;
@@ -857,6 +872,15 @@ export class FormBuilder {
 
     cols(cols: number): this {
         this.config.cols = cols;
+        return this;
+    }
+
+    /**
+     * In horizontal layout, draw hairline dividers between field rows and
+     * left-align labels (settings-style stacked rows). No effect in vertical layout.
+     */
+    dividers(enabled = true): this {
+        this.config.dividers = enabled;
         return this;
     }
 

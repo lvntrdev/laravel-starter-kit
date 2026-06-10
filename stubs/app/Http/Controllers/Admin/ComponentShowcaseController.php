@@ -44,4 +44,13 @@ class ComponentShowcaseController extends Controller
         // "Toast.vue", so it does not self-reference the <Toast> it renders.
         return Inertia::render('Admin/Components/ToastShowcase');
     }
+
+    public function forms(): Response
+    {
+        // FormBuilder (FB / SkForm) live showcase — every field type plus the
+        // card / aside / divided-horizontal / filter-bar layout compositions.
+        // Page is "FormShowcase", never "Form.vue", so it does not collide with
+        // any auto-imported component name.
+        return Inertia::render('Admin/Components/FormShowcase');
+    }
 }

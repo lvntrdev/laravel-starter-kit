@@ -90,6 +90,12 @@ export function useAdminMenu() {
             role: 'system_admin',
         },
         {
+            title: 'sk-menu.forms',
+            icon: 'pi pi-pencil',
+            href: '/components/forms',
+            role: 'system_admin',
+        },
+        {
             title: 'sk-menu.developer',
             section: true,
         },

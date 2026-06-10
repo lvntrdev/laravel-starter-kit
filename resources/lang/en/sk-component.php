@@ -200,4 +200,55 @@ return [
         ],
     ],
 
+    'form' => [
+        'title' => 'FormBuilder',
+        'subtitle' => 'Declarative forms — every FB.* field type plus the card, aside and divided layout compositions.',
+        'intro' => 'Forms are configured declaratively with the FB builder and rendered by <SkForm>. Each example below is a live <SkForm> in v-model mode (no submit) — read the heading for the FB.* factory or layout method it demonstrates.',
+        'docs' => 'FormBuilder Docs',
+        'sections' => [
+            'text' => [
+                'title' => 'Text / number inputs',
+                'desc' => 'inputText, inputMask, inputNumber, password, inputOtp, datePicker, textarea and editor.',
+            ],
+            'choice' => [
+                'title' => 'Choice fields',
+                'desc' => 'select, multiselect, radio, checkboxGroup and selectButton — each carries options or a definition key.',
+            ],
+            'boolean' => [
+                'title' => 'Boolean / toggle',
+                'desc' => 'checkbox, toggleSwitch and toggleButton — inline-label controls.',
+            ],
+            'special' => [
+                'title' => 'Special fields',
+                'desc' => 'fileUpload (dropzone) and colorSelector (family + tone).',
+            ],
+            'i18n' => [
+                'title' => 'Translatable',
+                'desc' => 'translatableText and translatableTextarea — one value per active locale.',
+            ],
+            'layouts' => [
+                'title' => 'Layout compositions',
+                'desc' => 'The same fields assembled into real layouts — card with action bar, aside section, divided horizontal rows and an inline filter bar.',
+            ],
+        ],
+        'layouts' => [
+            'card' => [
+                'title' => 'Form card + action bar',
+                'desc' => 'cardTitle / cardSubtitle with a bottom action bar (submit mode).',
+            ],
+            'aside' => [
+                'title' => 'Aside section',
+                'desc' => 'FB.section().aside() — header on the left, fields grid on the right. Settings-page style.',
+            ],
+            'divided' => [
+                'title' => 'Divided horizontal rows',
+                'desc' => "FB.form().layout('horizontal').dividers() — labels left, hairline dividers between rows.",
+            ],
+            'filter' => [
+                'title' => 'Inline filter bar',
+                'desc' => 'A compact single-row form for list filtering.',
+            ],
+        ],
+    ],
+
 ];

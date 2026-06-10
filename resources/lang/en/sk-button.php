@@ -20,4 +20,6 @@ return [
     'view' => 'View',
     'show' => 'Show',
     'confirm' => 'Confirm',
+    'filter' => 'Filter',
+    'reset' => 'Reset',
 ];

@@ -27,4 +27,5 @@ return [
     'buttons' => 'Buttons',
     'message' => 'Messages',
     'toast' => 'Toast',
+    'forms' => 'Forms',
 ];

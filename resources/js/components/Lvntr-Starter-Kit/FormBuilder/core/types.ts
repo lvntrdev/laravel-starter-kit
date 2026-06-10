@@ -31,6 +31,11 @@ export type FieldType =
 export interface SelectOption {
     label: string;
     value: string | number | boolean | null;
+    /**
+     * Optional secondary line shown under the label in radio / checkbox groups
+     * (e.g. the card-style FB.radio() options). May be a translation key.
+     */
+    description?: string;
 }
 
 export interface BaseFieldConfig {
@@ -395,6 +400,15 @@ export interface SectionFieldConfig extends BaseFieldConfig {
     fields: FieldConfig[];
     /** Strip Card bg/shadow/border (transparent mode). Default: false. */
     isCard?: boolean;
+    /**
+     * Two-column "aside" layout: the section header (title + subtitle) sits in a
+     * fixed-width left column and the fields grid fills the right column. Renders
+     * without a Card wrapper; consecutive aside sections are separated by a hairline
+     * rule. Ideal for settings-style pages. Default: false.
+     */
+    aside?: boolean;
+    /** Width of the aside header column (any CSS length). Default: '14rem'. */
+    asideWidth?: string;
 }
 
 export type FieldConfig =
@@ -455,6 +469,12 @@ export interface FormBuilderConfig {
     layout: FormLayout;
     /** Number of grid columns (default: 2). */
     cols: number;
+    /**
+     * In horizontal layout, draw hairline dividers between field rows and
+     * left-align the labels (settings-style stacked rows). No effect in vertical
+     * layout. Default: false.
+     */
+    dividers?: boolean;
     fields: FieldConfig[];
     /** Extra CSS class(es) applied to the form root element. */
     cssClass?: string;

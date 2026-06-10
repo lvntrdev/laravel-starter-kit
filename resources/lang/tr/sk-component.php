@@ -200,4 +200,55 @@ return [
         ],
     ],
 
+    'form' => [
+        'title' => 'FormBuilder',
+        'subtitle' => 'Bildirimsel formlar — tüm FB.* alan tipleri ve kart, aside, ayraçlı layout düzenleri.',
+        'intro' => 'Formlar FB builder ile bildirimsel olarak yapılandırılır ve <SkForm> ile render edilir. Aşağıdaki her örnek v-model modunda canlı bir <SkForm>\'dur (submit yok) — başlık, gösterilen FB.* factory\'sini veya layout metodunu belirtir.',
+        'docs' => 'FormBuilder Dokümanı',
+        'sections' => [
+            'text' => [
+                'title' => 'Metin / sayı girişleri',
+                'desc' => 'inputText, inputMask, inputNumber, password, inputOtp, datePicker, textarea ve editor.',
+            ],
+            'choice' => [
+                'title' => 'Seçim alanları',
+                'desc' => 'select, multiselect, radio, checkboxGroup ve selectButton — her biri options ya da definition key taşır.',
+            ],
+            'boolean' => [
+                'title' => 'Boolean / toggle',
+                'desc' => 'checkbox, toggleSwitch ve toggleButton — satır içi etiketli kontroller.',
+            ],
+            'special' => [
+                'title' => 'Özel alanlar',
+                'desc' => 'fileUpload (sürükle-bırak) ve colorSelector (renk ailesi + ton).',
+            ],
+            'i18n' => [
+                'title' => 'Çok dilli',
+                'desc' => 'translatableText ve translatableTextarea — aktif dil başına bir değer.',
+            ],
+            'layouts' => [
+                'title' => 'Layout düzenleri',
+                'desc' => 'Aynı alanlar gerçek düzenlerde — aksiyon çubuklu kart, aside bölüm, ayraçlı yatay satırlar ve satır içi filtre çubuğu.',
+            ],
+        ],
+        'layouts' => [
+            'card' => [
+                'title' => 'Form kartı + aksiyon çubuğu',
+                'desc' => 'cardTitle / cardSubtitle ile alt aksiyon çubuğu (submit modu).',
+            ],
+            'aside' => [
+                'title' => 'Aside bölüm',
+                'desc' => 'FB.section().aside() — başlık solda, alanlar sağda. Ayarlar sayfası deseni.',
+            ],
+            'divided' => [
+                'title' => 'Ayraçlı yatay satırlar',
+                'desc' => "FB.form().layout('horizontal').dividers() — etiketler solda, satır arası ince ayraç.",
+            ],
+            'filter' => [
+                'title' => 'Satır içi filtre çubuğu',
+                'desc' => 'Liste filtreleme için kompakt tek satır form.',
+            ],
+        ],
+    ],
+
 ];

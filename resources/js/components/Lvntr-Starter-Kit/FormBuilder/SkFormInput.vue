@@ -85,8 +85,14 @@
     /** Extra props passed to the underlying PrimeVue component via .props({...}). */
     const extraProps = computed(() => props.field.componentProps ?? {});
 
-    /** Translate option labels via trans() so consumers can pass translation keys. */
-    const translatedOptions = computed(() => props.options.map((opt) => ({ ...opt, label: trans(opt.label) })));
+    /** Translate option labels (and optional descriptions) via trans() so consumers can pass translation keys. */
+    const translatedOptions = computed(() =>
+        props.options.map((opt) => ({
+            ...opt,
+            label: trans(opt.label),
+            description: opt.description ? trans(opt.description) : undefined,
+        })),
+    );
     const controlPosition = computed(() => props.field.controlPosition ?? 'left');
 
     /**
@@ -538,6 +544,7 @@
             v-else-if="field.type === 'multiselect'"
             :id="field.key"
             v-model="anyVal"
+            display="chip"
             :options="translatedOptions"
             :option-label="asSelect.optionLabel ?? 'label'"
             :option-value="asSelect.optionValue ?? 'value'"
@@ -569,7 +576,8 @@
             <div v-for="option in translatedOptions" v-else :key="String(option.value)" class="sk-fb__group-item">
                 <template v-if="controlPosition === 'right'">
                     <label :for="`${field.key}_${option.value}`" class="sk-fb__group-label">
-                        {{ option.label }}
+                        <span class="sk-fb__group-label-text">{{ option.label }}</span>
+                        <span v-if="option.description" class="sk-fb__group-label-desc">{{ option.description }}</span>
                     </label>
                 </template>
                 <RadioButton
@@ -583,7 +591,8 @@
                 />
                 <template v-if="controlPosition !== 'right'">
                     <label :for="`${field.key}_${option.value}`" class="sk-fb__group-label">
-                        {{ option.label }}
+                        <span class="sk-fb__group-label-text">{{ option.label }}</span>
+                        <span v-if="option.description" class="sk-fb__group-label-desc">{{ option.description }}</span>
                     </label>
                 </template>
             </div>
@@ -613,7 +622,8 @@
             <div v-for="option in translatedOptions" v-else :key="String(option.value)" class="sk-fb__group-item">
                 <template v-if="controlPosition === 'right'">
                     <label :for="`${field.key}_${option.value}`" class="sk-fb__group-label">
-                        {{ option.label }}
+                        <span class="sk-fb__group-label-text">{{ option.label }}</span>
+                        <span v-if="option.description" class="sk-fb__group-label-desc">{{ option.description }}</span>
                     </label>
                 </template>
                 <Checkbox
@@ -626,7 +636,8 @@
                 />
                 <template v-if="controlPosition !== 'right'">
                     <label :for="`${field.key}_${option.value}`" class="sk-fb__group-label">
-                        {{ option.label }}
+                        <span class="sk-fb__group-label-text">{{ option.label }}</span>
+                        <span v-if="option.description" class="sk-fb__group-label-desc">{{ option.description }}</span>
                     </label>
                 </template>
             </div>
@@ -762,7 +773,9 @@
                 :class="[invalid ? 'sk-fb__upload-zone--invalid' : '', disabled ? 'sk-fb__upload-zone--disabled' : '']"
             >
                 <div class="sk-fb__upload-inner">
-                    <i class="pi pi-cloud-upload sk-fb__upload-icon" />
+                    <span class="sk-fb__upload-icon">
+                        <i class="pi pi-cloud-upload" />
+                    </span>
                     <span class="sk-fb__upload-text">
                         {{ asFileUpload.multiple ? 'Drop files here or click to upload' : 'Click to select a file' }}
                     </span>

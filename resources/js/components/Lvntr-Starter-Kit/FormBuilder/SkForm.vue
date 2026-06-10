@@ -540,6 +540,11 @@
         return field.controlPosition === 'right';
     }
 
+    /** True for section fields rendered in the two-column "aside" layout. */
+    function isAsideSection(field: FieldConfig): boolean {
+        return field.type === 'section' && (field as SectionFieldConfig).aside === true;
+    }
+
     // ── Actions ───────────────────────────────────────────────────────────────────
 
     const showTopActions = computed(() => {
@@ -646,7 +651,10 @@
                 :is="isInternalMode ? 'form' : 'div'"
                 v-else
                 class="sk-fb"
-                :class="[{ 'sk-fb--dialog': isDialogMode }, config.cssClass]"
+                :class="[
+                    { 'sk-fb--dialog': isDialogMode, 'sk-fb--divided': config.dividers && config.layout === 'horizontal' },
+                    config.cssClass,
+                ]"
                 @submit.prevent="handleSubmit"
             >
                 <!-- ── Top actions ─────────────────────────────────────────────────────── -->
@@ -705,6 +713,7 @@
                                 field.type !== 'section' && field.colSpan
                                     ? colSpanClassMap[Math.min(Math.max(field.colSpan, 1), config.cols)]
                                     : undefined,
+                                isAsideSection(field) ? 'sk-fb__aside-wrap' : undefined,
                             ]"
                             :style="field.type === 'section' ? 'grid-column: 1 / -1' : undefined"
                         >

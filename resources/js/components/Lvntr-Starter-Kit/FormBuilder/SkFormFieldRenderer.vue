@@ -95,6 +95,19 @@
         return section.isCard === false;
     }
 
+    function sectionIsAside(section: SectionFieldConfig): boolean {
+        return section.aside === true;
+    }
+
+    /** CSS var driving the aside header column width (read by .sk-fb__aside). */
+    function asideStyle(section: SectionFieldConfig): Record<string, string> {
+        return { '--sk-fb-aside-w': section.asideWidth ?? '14rem' };
+    }
+
+    function sectionSubtitle(section: SectionFieldConfig): string {
+        return section.subtitle ? trans(section.subtitle) : '';
+    }
+
     // ── Icon yardımcıları ─────────────────────────────────────────────────────
 
     function titleIcon(field: FieldConfig): string | undefined {
@@ -139,6 +152,81 @@
         :name="field.key"
         :value="String(ctx.getValue(field.key) ?? '')"
     >
+
+    <!-- ── Section (aside) — two-column: header left / fields right ───────── -->
+    <div
+        v-else-if="field.type === 'section' && sectionIsAside(field as SectionFieldConfig)"
+        class="sk-fb__aside"
+        :class="field.cssClass"
+        :style="asideStyle(field as SectionFieldConfig)"
+    >
+        <div class="sk-fb__aside-header">
+            <div v-if="sectionTitle(field as SectionFieldConfig)" class="sk-fb__aside-title">
+                <SkIcon
+                    v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'left'"
+                    :icon="(field as SectionFieldConfig).icon!"
+                    class="sk-fb__section-icon sk-fb__section-icon--left"
+                />
+                {{ sectionTitle(field as SectionFieldConfig) }}
+                <SkIcon
+                    v-if="(field as SectionFieldConfig).icon && sectionIconPosition(field as SectionFieldConfig) === 'right'"
+                    :icon="(field as SectionFieldConfig).icon!"
+                    class="sk-fb__section-icon sk-fb__section-icon--right"
+                />
+            </div>
+            <p v-if="sectionSubtitle(field as SectionFieldConfig)" class="sk-fb__aside-desc">
+                {{ sectionSubtitle(field as SectionFieldConfig) }}
+            </p>
+            <div v-if="parentSlots[sectionTitleEndKey(field.key)]" class="sk-fb__aside-extra">
+                <slot :name="sectionTitleEndKey(field.key)" :values="ctx.currentValues" />
+            </div>
+        </div>
+        <div class="sk-fb__aside-fields">
+            <div class="sk-fb__grid" :class="sectionGridClass(field as SectionFieldConfig)">
+                <template v-for="child in (field as SectionFieldConfig).fields" :key="child.key">
+                    <input
+                        v-if="child.hidden"
+                        type="hidden"
+                        :name="child.key"
+                        :value="String(ctx.getValue(child.key) ?? '')"
+                    >
+                    <div
+                        v-else-if="ctx.isVisible(child)"
+                        class="sk-fb__section-field"
+                        :class="[
+                            child.cssClass,
+                            child.colSpan
+                                ? ctx.colSpanClassMap[clampColSpan(child.colSpan, (field as SectionFieldConfig).cols ?? ctx.config.cols)]
+                                : undefined,
+                        ]"
+                    >
+                        <SkFormFieldRenderer :field="child" :ctx="ctx">
+                            <template
+                                v-if="parentSlots[slotNameFor(child)]"
+                                #[slotNameFor(child)]
+                            >
+                                <slot
+                                    :name="slotNameFor(child)"
+                                    :values="ctx.currentValues"
+                                />
+                            </template>
+                            <template
+                                v-if="parentSlots[fieldSlotKey(child.key)]"
+                                #[fieldSlotKey(child.key)]
+                            >
+                                <slot
+                                    :name="fieldSlotKey(child.key)"
+                                    :field="child"
+                                    :value="ctx.getValue(child.key)"
+                                    :on-update="(v: unknown) => ctx.setValue(child.key, v)"
+                                />
+                            </template>
+                        </SkFormFieldRenderer>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
 
     <!-- ── Section — SkCard wrapper + recursive render ───────────────────── -->
     <SkCard

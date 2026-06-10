@@ -20,4 +20,6 @@ return [
     'view' => 'Görüntüle',
     'show' => 'Göster',
     'confirm' => 'Onayla',
+    'filter' => 'Filtrele',
+    'reset' => 'Sıfırla',
 ];

@@ -244,6 +244,20 @@
     color: var(--p-surface-200);
 }
 
+/* Optional secondary line under a radio/checkbox option label (SelectOption.description). */
+.sk-fb__group-label-text {
+    display: block;
+}
+
+.sk-fb__group-label-desc {
+    @apply mt-0.5 block text-xs font-normal leading-snug;
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-fb__group-label-desc {
+    color: var(--p-surface-400);
+}
+
 .sk-fb__group-loading {
     @apply flex items-center gap-2 text-base;
     color: var(--p-surface-400);
@@ -270,6 +284,85 @@
 
 .sk-fb__section-field {
     /* Section içinde grid item — varsayılan kolon span (renderer ayarlar) */
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ASIDE SECTION — header solda / alanlar sağda (settings deseni)
+   ─────────────────────────────────────────────────────────────────
+   Section header (title + subtitle) sabit genişlikte sol kolonda;
+   alanlar sağda kendi grid'inde. Kart sarmalaması yok. Ardışık aside
+   bölümleri ince bir üst-ayraçla ayrılır. Kolon genişliği renderer'ın
+   verdiği --sk-fb-aside-w değişkeninden okunur (default 14rem).
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb__aside {
+    @apply grid gap-x-10 gap-y-5;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .sk-fb__aside {
+        grid-template-columns: var(--sk-fb-aside-w, 14rem) 1fr;
+    }
+}
+
+/* Ardışık aside bölümleri arasında ayraç (ilk bölümde yok). Wrapper
+   marker'ları SkForm grid'inin doğrudan kardeş div'leridir. */
+.sk-fb__aside-wrap + .sk-fb__aside-wrap {
+    @apply mt-6 border-t pt-6;
+    border-color: var(--p-surface-200);
+}
+
+:root.dark .sk-fb__aside-wrap + .sk-fb__aside-wrap {
+    border-color: var(--p-surface-700);
+}
+
+.sk-fb__aside-header {
+    @apply flex flex-col gap-2;
+}
+
+.sk-fb__aside-title {
+    @apply inline-flex items-center gap-2 text-base font-bold leading-tight;
+    color: var(--p-surface-800);
+}
+
+:root.dark .sk-fb__aside-title {
+    color: var(--p-surface-100);
+}
+
+.sk-fb__aside-desc {
+    @apply text-base leading-relaxed;
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-fb__aside-desc {
+    color: var(--p-surface-400);
+}
+
+.sk-fb__aside-extra {
+    @apply mt-1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DIVIDED HORIZONTAL — satır arası ayraç + sol-hizalı label
+   ─────────────────────────────────────────────────────────────────
+   layout('horizontal') + .dividers() ile etkin. Root'a sk-fb--divided
+   gelir. Form grid'inin doğrudan kardeş hücreleri (yatay satırlar) ince
+   üst-ayraçla ayrılır; ilk satırda ayraç yoktur. Label'lar sol-hizalanır
+   (yatay layout'un varsayılan sağ-hizasını override eder).
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-fb--divided .sk-fb__grid > * + * {
+    @apply border-t pt-5;
+    border-color: var(--p-surface-200);
+}
+
+:root.dark .sk-fb--divided .sk-fb__grid > * + * {
+    border-color: var(--p-surface-700);
+}
+
+.sk-fb--divided .sk-fb__label--horizontal {
+    @apply text-left;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -421,4 +514,323 @@
 
 :root.dark .sk-fb__file-remove:hover {
     background: color-mix(in srgb, var(--p-red-900) 30%, transparent);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   "OUTLINE FERAH + SOFT" — form-control skin (Form Bileşenleri.html)
+   ─────────────────────────────────────────────────────────────────
+   The kit's form design language. Distinctive traits: a 1.5px OUTLINE
+   border (Material ships 1px), 6px radius (preset), a roomy ~46px control
+   height inside forms, a soft hover (border darkens a step) and a soft
+   translucent focus ring (preset focusRing @15%). All colors read PrimeVue
+   `--p-*` tokens so dark mode AND the runtime accent carry through. These
+   rules are UNLAYERED, so they win over Material's `@layer` defaults with no
+   `!important`. `borderWidth` is not a formField token, so the 1.5px outline
+   has to live here rather than in preset.ts.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Outline + radius — GLOBAL (every input, everywhere, stays consistent).
+   Text-like inputs share `.p-inputtext` (InputText, InputMask, Password,
+   DatePicker & InputNumber inner inputs); Select / MultiSelect / Textarea /
+   OTP cells carry the border on their own root. */
+.p-inputtext,
+.p-textarea,
+.p-select,
+.p-multiselect,
+.p-inputotp-input {
+    border-width: 1.5px;
+    border-radius: 6px;
+}
+
+/* Idle / hover / focus / invalid border COLORS are token-driven (preset
+   formField.borderColor + hoverBorderColor, per colorScheme) — NOT set here.
+   Unlayered CSS would beat the layered focus/invalid rules and break the
+   primary focus + red invalid borders, so border color stays on the token. */
+
+/* ── InputGroup — keep the group seam clean under the global outline skin ──
+   The global `.p-inputtext{border-radius:6px;border-width:1.5px}` re-rounds an
+   input's INNER corners inside a group (password show/generate buttons,
+   prefix/suffix addons, translatable inline locale addon), leaving a rounded
+   notch against the square addon plus a 1.5px↔1px thickness mismatch. PrimeVue
+   already flattens those corners in `@layer primevue`, but the unlayered skin
+   wins — so re-flatten inner corners here, round only the group's outer edge to
+   6px, and lift addon borders to 1.5px so input + addons read as one control. */
+.p-inputgroup > .p-inputtext,
+.p-inputgroup > .p-component,
+.p-inputgroup > .p-inputwrapper > .p-component {
+    border-radius: 0;
+}
+
+.p-inputgroup > .p-inputtext:first-child,
+.p-inputgroup > .p-component:first-child,
+.p-inputgroup > .p-inputwrapper:first-child > .p-component {
+    border-start-start-radius: 6px;
+    border-end-start-radius: 6px;
+}
+
+.p-inputgroup > .p-inputtext:last-child,
+.p-inputgroup > .p-component:last-child,
+.p-inputgroup > .p-inputwrapper:last-child > .p-component {
+    border-start-end-radius: 6px;
+    border-end-end-radius: 6px;
+}
+
+/* Addons match the 1.5px outline and share the group's outer 6px radius. */
+.p-inputgroupaddon {
+    border-block-width: 1.5px;
+}
+
+.p-inputgroupaddon:first-child,
+.p-inputgroupaddon + .p-inputgroupaddon {
+    border-inline-start-width: 1.5px;
+}
+
+.p-inputgroupaddon:last-child {
+    border-inline-end-width: 1.5px;
+}
+
+.p-inputgroupaddon:first-child {
+    border-start-start-radius: 6px;
+    border-end-start-radius: 6px;
+}
+
+.p-inputgroupaddon:last-child {
+    border-start-end-radius: 6px;
+    border-end-end-radius: 6px;
+}
+
+/* Roomy "ferah" height — scoped to forms so dense non-form inputs
+   (datatable toolbar filters, search bars) keep their compact size. */
+.sk-fb .p-inputtext,
+.sk-fb .p-select,
+.sk-fb .p-multiselect,
+.sk-translatable-field .p-inputtext {
+    min-height: 2.875rem; /* 46px */
+}
+
+.sk-fb .p-textarea,
+.sk-translatable-field .p-textarea {
+    min-height: 6.5rem;
+    line-height: 1.6;
+}
+
+/* OTP cells stay compact squares, not full-width inputs. */
+.sk-fb .p-inputotp-input {
+    width: 3rem;
+    min-height: 3rem;
+}
+
+/* ── Checkbox & Radio controls — 1.5px outline, 6px checkbox box ── */
+.p-checkbox-box {
+    border-width: 1.5px;
+    border-radius: 6px;
+}
+
+.p-radiobutton-box {
+    border-width: 1.5px;
+}
+
+/* ── Radio CARDS — vertical radio groups read as selectable cards ──
+   Mirrors the design's FB.radio() card. Scoped to VERTICAL radio groups;
+   `:has(.p-radiobutton)` excludes vertical checkbox groups (which stay plain
+   rows), and horizontal radios stay inline/compact. */
+.sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton) {
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.8rem 0.9rem;
+    border: 1.5px solid var(--p-surface-200);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton):hover {
+    border-color: var(--p-surface-400);
+}
+
+.sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton-checked) {
+    border-color: var(--p-primary-color);
+    background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+}
+
+.sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton) .sk-fb__group-label {
+    flex: 1;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+:root.dark .sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton) {
+    border-color: var(--p-surface-700);
+}
+
+:root.dark .sk-fb__group--vertical .sk-fb__group-item:has(.p-radiobutton):hover {
+    border-color: var(--p-surface-500);
+}
+
+/* ── SelectButton → segmented control ──
+   A tinted trough holding a raised active chip — design's FB.selectButton(). */
+.p-selectbutton {
+    display: inline-flex;
+    gap: 3px;
+    padding: 4px;
+    background: var(--p-surface-100);
+    border: 1.5px solid var(--p-surface-200);
+    border-radius: 6px;
+}
+
+.p-selectbutton .p-togglebutton {
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--p-surface-600);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.p-selectbutton .p-togglebutton .p-togglebutton-content {
+    background: transparent;
+}
+
+.p-selectbutton .p-togglebutton:hover {
+    background: transparent;
+    color: var(--p-surface-900);
+}
+
+.p-selectbutton .p-togglebutton.p-togglebutton-checked {
+    background: var(--p-surface-0);
+    color: var(--p-primary-color);
+    box-shadow: none;
+}
+
+:root.dark .p-selectbutton {
+    background: var(--p-surface-800);
+    border-color: var(--p-surface-700);
+}
+
+:root.dark .p-selectbutton .p-togglebutton {
+    color: var(--p-surface-300);
+}
+
+:root.dark .p-selectbutton .p-togglebutton:hover {
+    color: var(--p-surface-0);
+}
+
+:root.dark .p-selectbutton .p-togglebutton.p-togglebutton-checked {
+    background: var(--p-surface-950);
+    color: var(--p-primary-color);
+}
+
+/* ── Standalone ToggleButton — 1.5px outline; brand fill when on ── */
+.p-togglebutton {
+    border-width: 1.5px;
+    border-radius: 6px;
+}
+
+.p-togglebutton.p-togglebutton-checked {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-color);
+    color: var(--p-primary-contrast-color, #fff);
+}
+
+/* ── MultiSelect chips — brand-tinted pills (display="chip") ── */
+.p-multiselect .p-multiselect-chip,
+.p-multiselect .p-chip {
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+    color: var(--p-primary-color);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TRANSLATABLE — segmented locale tabs (FB.translatableText, tabs layout)
+   ─────────────────────────────────────────────────────────────────
+   PrimeVue <Tabs> defaults to an underline tablist; inside a translatable
+   field we restyle it into the design's segmented pill bar, each tab a small
+   mono flag-code + the language name ("TR Türkçe"). Scoped to
+   `.sk-translatable-field`, so the kit's own SkTabs and any other Tabs are
+   untouched.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-translatable-field .p-tablist {
+    border: none;
+    background: transparent;
+}
+
+.sk-translatable-field .p-tablist-tab-list {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--p-surface-100);
+    border: 1px solid var(--p-surface-200);
+    border-radius: 6px;
+}
+
+.sk-translatable-field .p-tablist-active-bar {
+    display: none;
+}
+
+.sk-translatable-field .p-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.4rem 0.75rem;
+    border: none;
+    border-radius: 6px;
+    color: var(--p-surface-600);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.sk-translatable-field .p-tab:hover {
+    background: transparent;
+    color: var(--p-surface-900);
+}
+
+.sk-translatable-field .p-tab-active {
+    background: var(--p-surface-0);
+    color: var(--p-primary-color);
+}
+
+.sk-translatable-field .p-tabpanels {
+    padding: 0.75rem 0 0;
+    background: transparent;
+}
+
+.sk-translatable-field .p-tabpanel {
+    padding: 0;
+}
+
+:root.dark .sk-translatable-field .p-tablist-tab-list {
+    background: var(--p-surface-800);
+    border-color: var(--p-surface-700);
+}
+
+:root.dark .sk-translatable-field .p-tab {
+    color: var(--p-surface-300);
+}
+
+:root.dark .sk-translatable-field .p-tab:hover {
+    color: var(--p-surface-0);
+}
+
+:root.dark .sk-translatable-field .p-tab-active {
+    background: var(--p-surface-950);
+    color: var(--p-primary-color);
+}
+
+/* ── File dropzone — 6px radius + circular brand icon (design .drop) ── */
+.sk-fb__upload-zone {
+    border-radius: 6px;
+    border-width: 1.5px;
+}
+
+.sk-fb__upload-icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+    color: var(--p-primary-color);
+    font-size: 1.1rem;
 }

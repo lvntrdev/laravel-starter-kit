@@ -18,4 +18,5 @@ Route::middleware('role:system_admin')
         Route::get('buttons', 'buttons')->name('buttons');
         Route::get('messages', 'messages')->name('messages');
         Route::get('toast', 'toast')->name('toast');
+        Route::get('forms', 'forms')->name('forms');
     });
