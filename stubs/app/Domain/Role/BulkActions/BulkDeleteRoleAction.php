@@ -50,7 +50,7 @@ class BulkDeleteRoleAction extends BulkDeleteAction
         }
 
         $isSystemAdmin = $user->hasRole(RoleEnum::SystemAdmin);
-        $actorMinSortOrder = $isSystemAdmin ? null : (int) $user->roles->min('sort_order');
+        $actorMinSortOrder = $isSystemAdmin ? null : $user->roles->min('sort_order');
 
         return $items->filter(function (Role $role) use ($isSystemAdmin, $actorMinSortOrder): bool {
             // System roles are always protected
@@ -62,8 +62,14 @@ class BulkDeleteRoleAction extends BulkDeleteAction
                 return true;
             }
 
+            // Role-less actor — lowest possible rank, may not delete any role
+            // (casting null → 0 would let them delete every non-system role).
+            if ($actorMinSortOrder === null) {
+                return false;
+            }
+
             // Non-system_admin cannot delete roles that outrank them
-            return (int) $role->sort_order >= $actorMinSortOrder;
+            return (int) $role->sort_order >= (int) $actorMinSortOrder;
         })->values();
     }
 }

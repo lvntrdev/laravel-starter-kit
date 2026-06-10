@@ -44,10 +44,15 @@ class RoleController extends Controller
     {
         $user = Auth::user();
 
+        // null = actor has no role at all (e.g. direct-permission user); the
+        // frontend treats it as the lowest possible rank. Casting null → 0
+        // would mark every role as manageable in the UI.
+        $userMinSortOrder = $user->roles->min('sort_order');
+
         return Inertia::render('Admin/Roles/Index', [
             'protectedRoles' => array_map(fn (RoleEnum $r) => $r->value, RoleEnum::cases()),
             'isSystemAdmin' => $user->hasRole(RoleEnum::SystemAdmin),
-            'userMinSortOrder' => (int) $user->roles->min('sort_order'),
+            'userMinSortOrder' => $userMinSortOrder === null ? null : (int) $userMinSortOrder,
         ]);
     }
 

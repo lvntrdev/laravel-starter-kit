@@ -13,7 +13,8 @@
     interface Props {
         protectedRoles: string[];
         isSystemAdmin: boolean;
-        userMinSortOrder: number;
+        /** null = role-less actor (direct-permission user) — lowest possible rank. */
+        userMinSortOrder: number | null;
     }
 
     interface Role {
@@ -40,6 +41,7 @@
      */
     function canManageRole(role: Role): boolean {
         if (props.isSystemAdmin) return true;
+        if (props.userMinSortOrder === null) return false;
         return role.sort_order > props.userMinSortOrder;
     }
 

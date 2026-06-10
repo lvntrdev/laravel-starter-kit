@@ -43,7 +43,7 @@ class BulkDeleteUserAction extends BulkDeleteAction
         }
 
         $isSystemAdmin = $user->hasRole(RoleEnum::SystemAdmin);
-        $actorMinSortOrder = $isSystemAdmin ? null : (int) $user->roles->min('sort_order');
+        $actorMinSortOrder = $isSystemAdmin ? null : $user->roles->min('sort_order');
 
         return $items->filter(function (User $target) use ($user, $isSystemAdmin, $actorMinSortOrder): bool {
             // Self-deletion guard — mirrors UserPolicy@delete
@@ -55,6 +55,13 @@ class BulkDeleteUserAction extends BulkDeleteAction
                 return true;
             }
 
+            // Role-less actor — lowest possible rank, outranks no one
+            // (mirrors UserPolicy@canManage; casting null → 0 would let
+            // them outrank everyone instead).
+            if ($actorMinSortOrder === null) {
+                return false;
+            }
+
             // Rank hierarchy: actor must outrank or equal target
             $targetMinSortOrder = $target->roles->min('sort_order');
 
@@ -63,7 +70,7 @@ class BulkDeleteUserAction extends BulkDeleteAction
                 return true;
             }
 
-            return $actorMinSortOrder <= (int) $targetMinSortOrder;
+            return (int) $actorMinSortOrder <= (int) $targetMinSortOrder;
         })->values();
     }
 }

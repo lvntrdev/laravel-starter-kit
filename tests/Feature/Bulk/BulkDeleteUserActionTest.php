@@ -88,7 +88,7 @@ function makeUserBulkDeleteAction(): BulkDeleteAction
             }
 
             $isSystemAdmin = $user->hasRole('system_admin');
-            $actorMinSortOrder = $isSystemAdmin ? null : (int) $user->roles->min('sort_order');
+            $actorMinSortOrder = $isSystemAdmin ? null : $user->roles->min('sort_order');
             $actorId = $user->getAuthIdentifier();
 
             return $items->filter(function ($target) use ($actorId, $isSystemAdmin, $actorMinSortOrder): bool {
@@ -101,6 +101,11 @@ function makeUserBulkDeleteAction(): BulkDeleteAction
                     return true;
                 }
 
+                // Rolsüz actor — en düşük rütbe, kimseyi outrank edemez
+                if ($actorMinSortOrder === null) {
+                    return false;
+                }
+
                 // Rank hiyerarşisi
                 $targetMinSortOrder = $target->roles->min('sort_order');
 
@@ -108,7 +113,7 @@ function makeUserBulkDeleteAction(): BulkDeleteAction
                     return true;
                 }
 
-                return $actorMinSortOrder <= (int) $targetMinSortOrder;
+                return (int) $actorMinSortOrder <= (int) $targetMinSortOrder;
             })->values();
         }
     };
@@ -174,6 +179,18 @@ it('rolsüz target → actor silebilir (sort_order null = en düşük rütbe)', 
     $result = $action->authorize($actor, new Collection([$roleless]));
 
     expect($result->count())->toBe(1);
+});
+
+it('rolsüz actor (direct-permission) → hiçbir hedefi silemez', function (): void {
+    $action = makeUserBulkDeleteAction();
+    $actor = makeUserActor(id: 1, canDelete: true, isSystemAdmin: false, sortOrder: null);
+
+    $ranked = makeUserTarget(id: 2, sortOrder: 5);
+    $roleless = makeUserTarget(id: 3, sortOrder: null);
+
+    $result = $action->authorize($actor, new Collection([$ranked, $roleless]));
+
+    expect($result)->toBeEmpty();
 });
 
 it('100 item\'lık listede actor kendi id\'si atlanır', function (): void {

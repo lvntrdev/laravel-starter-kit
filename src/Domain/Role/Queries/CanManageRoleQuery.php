@@ -20,8 +20,15 @@ class CanManageRoleQuery
             return true;
         }
 
-        $userMinSortOrder = (int) $user->roles->min('sort_order');
+        $userMinSortOrder = $user->roles->min('sort_order');
 
-        return $role->sort_order > $userMinSortOrder;
+        // Actor has no role at all (e.g. direct-permission user) — they must
+        // not be able to manage any role. Casting null → 0 would let them
+        // manage every role including system_admin.
+        if ($userMinSortOrder === null) {
+            return false;
+        }
+
+        return $role->sort_order > (int) $userMinSortOrder;
     }
 }

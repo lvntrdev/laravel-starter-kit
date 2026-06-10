@@ -31,7 +31,7 @@ function makeRoleActor(
     int $id,
     bool $canDelete = true,
     bool $isSystemAdmin = false,
-    int $sortOrder = 10,
+    ?int $sortOrder = 10,
 ): Authenticatable {
     $user = Mockery::mock(Authenticatable::class);
     $user->id = $id;
@@ -82,7 +82,7 @@ function makeRoleBulkDeleteAction(): BulkDeleteAction
             }
 
             $isSystemAdmin = $user->hasRole('system_admin');
-            $actorMinSortOrder = $isSystemAdmin ? null : (int) $user->roles->min('sort_order');
+            $actorMinSortOrder = $isSystemAdmin ? null : $user->roles->min('sort_order');
 
             return $items->filter(function ($role) use ($isSystemAdmin, $actorMinSortOrder): bool {
                 // Sistem rolleri her zaman korunur
@@ -94,7 +94,12 @@ function makeRoleBulkDeleteAction(): BulkDeleteAction
                     return true;
                 }
 
-                return (int) $role->sort_order >= $actorMinSortOrder;
+                // Rolsüz actor — en düşük rütbe, hiçbir rolü silemez
+                if ($actorMinSortOrder === null) {
+                    return false;
+                }
+
+                return (int) $role->sort_order >= (int) $actorMinSortOrder;
             })->values();
         }
     };
@@ -155,6 +160,17 @@ it('non-system_admin kendi rütbesinden yüksek rolleri silemez', function (): v
         ->and($result->pluck('name')->all())->toContain('editor')
         ->and($result->pluck('name')->all())->toContain('viewer')
         ->and($result->pluck('name')->all())->not->toContain('senior-editor');
+});
+
+it('rolsüz actor (direct-permission) → hiçbir rolü silemez', function (): void {
+    $action = makeRoleBulkDeleteAction();
+    $actor = makeRoleActor(id: 1, isSystemAdmin: false, sortOrder: null);
+
+    $customRole = makeRoleModel(id: 3, name: 'editor', sortOrder: 20);
+
+    $result = $action->authorize($actor, new Collection([$customRole]));
+
+    expect($result)->toBeEmpty();
 });
 
 it('dispatcher: handle exception → exception yayılır (transaction rollback simülasyonu)', function (): void {

@@ -24,11 +24,19 @@ class UserDatatableQuery
         $query = User::query();
 
         if (! $currentUser->hasRole(RoleEnum::SystemAdmin)) {
-            $userMinSortOrder = (int) $currentUser->roles->min('sort_order');
+            $userMinSortOrder = $currentUser->roles->min('sort_order');
 
-            $query->whereDoesntHave('roles', function (Builder $q) use ($userMinSortOrder) {
-                $q->where('sort_order', '<', $userMinSortOrder);
-            });
+            if ($userMinSortOrder === null) {
+                // Actor has no role at all (e.g. direct-permission user) — the
+                // lowest possible rank, so they may only see other role-less
+                // users. Casting null → 0 would disable the hierarchy filter
+                // entirely (no role has sort_order < 0).
+                $query->whereDoesntHave('roles');
+            } else {
+                $query->whereDoesntHave('roles', function (Builder $q) use ($userMinSortOrder) {
+                    $q->where('sort_order', '<', (int) $userMinSortOrder);
+                });
+            }
         }
 
         return DatatableQueryBuilder::for($query)
