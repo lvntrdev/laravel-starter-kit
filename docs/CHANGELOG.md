@@ -2,6 +2,40 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-11 — v13.6.0 (continued)
+
+### Install-time domain eject for User + Role
+
+Fresh installs now automatically eject the `User` and `Role` domain runtime into `app/Domain/`. These are the two domains most often customised, so they arrive as project-owned files without any extra step.
+
+#### What changes on a fresh install
+
+- `app/Domain/User/` and `app/Domain/Role/` are created with backend classes (Actions, DTOs, Queries, Events, Listeners) rewritten to the `App\Domain\` namespace.
+- `DomainServiceProvider` receives the `Event::listen` bindings for the six audit events so activity logging continues without interruption.
+- Future `composer update` runs do not touch these directories — you own them.
+
+#### Opting out
+
+```bash
+php artisan sk:install --without-eject
+```
+
+Both domains remain vendor-resident and resolve via `class_alias`. You can run `sk:eject User` / `sk:eject Role` manually at any time.
+
+#### Reverting after install
+
+Delete `app/Domain/User/` and `app/Domain/Role/`, remove the injected `Event::listen` lines from `app/Providers/DomainServiceProvider.php`, and run `composer dump-autoload`.
+
+#### Existing installs
+
+No change. The eject step runs only when `storage/starter-kit/hashes.json` does not yet exist (first install). On existing installs the registry is already present so the step is skipped. Existing projects are unaffected.
+
+#### New flag on `sk:eject`
+
+`sk:eject` gains a `--skip-autoload` flag used internally by the installer so it does not run `composer dump-autoload` per-domain (the installer runs one consolidated dump after all ejects complete). This flag is not needed for normal manual `sk:eject` use.
+
+---
+
 ## 2026-06-06 — v13.6.0
 
 ### Minor release — Vendor-runtime migration completed + structured theme/layout/CSS system

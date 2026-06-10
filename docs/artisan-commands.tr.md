@@ -54,11 +54,13 @@ php artisan sk:install
 php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
+php artisan sk:install --without-eject
 ```
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` tüm varsayılanları otomatik kabul eder; CI veya script tabanlı kurulumlar için uygundur
 - `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
+- `--without-eject` ilk kurulumda varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür. Bu flag'i atlarsanız `app/Domain/User/` ve `app/Domain/Role/` otomatik oluşturulur. Sahiplik takası için [install.tr.md](./install.tr.md) belgesine bakın.
 
 ## `sk:update`
 
@@ -116,6 +118,7 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 - `--force` zaten var olan dosyaların üzerine yazar — hem backend `app/Domain/{Name}/` ağacı hem de domain'in Vue sayfaları. **`--force` olmadan eject hiçbir mevcut dosyayı ezmez:** zaten var olan bir `app/Domain/{Name}/` komutu erken sonlandırır ve zaten var olan her Vue sayfası olduğu gibi bırakılıp korunan olarak raporlanır — yalnızca eksik sayfalar yazılır. Bu, `sk:install` ile gelen sayfalarda yaptığınız düzenlemeleri korur.
 - `--no-vue` domain'e ait Vue sayfalarını tazelemez; yalnızca backend sınıfları eject edilir.
 - `--destination=<yol>` çıktıyı uygulama köküne yazmak yerine belirtilen dizine yönlendirir. İzole test amacıyla kullanılır.
+- `--skip-autoload` eject sonundaki `composer dump-autoload` çağrısını atlar. Yalnızca çağıran süreç (örneğin `sk:install`) dump'ı kendisi yapacaksa kullanın. Bu flag olmadan eject her zaman autoload'u yeniler; yenileme başarısız olursa sıfırdan farklı kod döner.
 
 > **Çıkış kodu:** Composer'ın autoload yenilemesi başarısız olursa (örn. `composer` yok ya da hata verir), komut hatayı yazar ve dosyalar kopyalanmış olsa bile **sıfırdan farklı kod ile çıkar** — böylece CI ve scriptler bozuk autoload'ı başarılı eject sanmaz. Elle `composer dump-autoload` çalıştırıp tekrar doğrulayın.
 

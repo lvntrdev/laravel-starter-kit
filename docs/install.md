@@ -90,17 +90,40 @@ The installer walks through each step interactively:
 | ---- | ------------------------------------------------------------------------------------------------ |
 | 1    | Configure database connection (driver, host, port, database, credentials)                        |
 | 2    | Publish application scaffolding (Controllers, Models, Routes, Vue pages, Enums, Providers, etc.) |
-| 3    | Merge `package.json` dependencies                                                                |
-| 4    | Remove conflicting default Laravel files (`vite.config.js`, `welcome.blade.php`, etc.)           |
-| 5    | Publish and inject config files (`app.php`, `filesystems.php`, `media-library.php`)              |
-| 6    | Configure application settings, filesystem disks, media library, and `bootstrap/app.php`         |
-| 7    | Register service providers                                                                       |
-| 8    | Regenerate Composer autoload                                                                     |
-| 9    | Run database migrations                                                                          |
-| 10   | Run seeders (Roles, Permissions, Definitions, Settings)                                          |
-| 11   | Generate Passport encryption keys                                                                |
-| 12   | Create default admin user (`admin@lvntr.dev` / `password`)                                        |
-| 13   | Install npm dependencies and build frontend assets                                               |
+| 3    | Eject `User` + `Role` domain runtime into `app/Domain/` (skipped when `--without-eject` is passed or when `storage/starter-kit/hashes.json` already exists) |
+| 4    | Merge `package.json` dependencies                                                                |
+| 5    | Remove conflicting default Laravel files (`vite.config.js`, `welcome.blade.php`, etc.)           |
+| 6    | Publish and inject config files (`app.php`, `filesystems.php`, `media-library.php`)              |
+| 7    | Configure application settings, filesystem disks, media library, and `bootstrap/app.php`         |
+| 8    | Register service providers                                                                       |
+| 9    | Regenerate Composer autoload                                                                     |
+| 10   | Run database migrations                                                                          |
+| 11   | Run seeders (Roles, Permissions, Definitions, Settings)                                          |
+| 12   | Generate Passport encryption keys                                                                |
+| 13   | Create default admin user (`admin@lvntr.dev` / `password`)                                        |
+| 14   | Install npm dependencies and build frontend assets                                               |
+
+### Default domain eject (User + Role)
+
+On a fresh install the installer automatically ejects the `User` and `Role` domain runtime classes into `app/Domain/User/` and `app/Domain/Role/`. These are the two domains most often customised in real projects, so they land in your app from day one.
+
+**What this means:**
+
+- The backend classes (Actions, DTOs, Queries, Events, Listeners) are copied into your `app/Domain/{User,Role}/` with the `App\Domain\` namespace.
+- `DomainServiceProvider` receives the corresponding `Event::listen` bindings so the audit log keeps firing.
+- From that point on, **the kit no longer ships runtime updates to those domains via `composer update`** — the files are yours to maintain. This is the same trade-off as a manual `sk:eject` call.
+
+**Reverting or opting out:**
+
+To undo the eject after installation, delete `app/Domain/User/` and `app/Domain/Role/`, remove the injected `Event::listen` lines from `app/Providers/DomainServiceProvider.php`, and run `composer dump-autoload`. The vendor runtime and alias resolution resume automatically.
+
+To skip the eject step entirely during a fresh install, pass `--without-eject`:
+
+```bash
+php artisan sk:install --without-eject
+```
+
+The domains remain vendor-resident and resolve via `class_alias`, identical to the pre-eject behaviour. You can run `sk:eject User` / `sk:eject Role` manually at any time later.
 
 ### Useful Flags
 
@@ -108,11 +131,13 @@ The installer walks through each step interactively:
 php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
+php artisan sk:install --without-eject
 ```
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` is useful for CI or scripted installs; accepts all defaults automatically
 - `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
+- `--without-eject` skips the default `User` and `Role` domain eject; runtime stays in vendor and resolves via `class_alias`
 
 ## 4. Build Frontend Assets
 

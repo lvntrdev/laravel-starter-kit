@@ -20,6 +20,37 @@ npm run build                  # panel should look identical
 
 ---
 
+### Install-time domain eject (User + Role)
+
+Starting from this release, `sk:install` automatically ejects the `User` and `Role` domain runtime into `app/Domain/User/` and `app/Domain/Role/` on the first run. This is a new-install-only change — **existing installs are not affected**.
+
+#### Existing installs — no action required
+
+The eject step is guarded by the hash registry: it runs only when `storage/starter-kit/hashes.json` does not yet exist (i.e. first install). On existing installs the registry is already present so the step is skipped entirely. If `app/Domain/{User,Role}/Actions` already exists from a prior manual eject, that domain's eject is skipped with a warning and the rest of the install continues normally.
+
+#### New installs from this release
+
+`app/Domain/User/` and `app/Domain/Role/` are created with backend classes rewritten to the `App\Domain\` namespace, and `DomainServiceProvider` receives the six audit-event `Event::listen` bindings. The trade-off: these files are now yours — `composer update` will not deliver upstream changes to them. See the `sk:eject` update-loss note in [artisan-commands.md](./artisan-commands.md) for details.
+
+To opt out during install:
+
+```bash
+php artisan sk:install --without-eject
+```
+
+#### Reverting an automatic eject
+
+```bash
+rm -rf app/Domain/User/ app/Domain/Role/
+# Remove the injected Event::listen lines for User and Role from:
+# app/Providers/DomainServiceProvider.php
+composer dump-autoload
+```
+
+The `class_alias` entries in `StarterKitServiceProvider` resume resolving `App\Domain\User\*` and `App\Domain\Role\*` imports back to the vendor copies automatically.
+
+---
+
 ### Domain runtime layers moved to vendor (Phase 6)
 
 Five domain modules have had their **runtime layer** (Actions, DTOs, Queries, Events, Listeners, and the Setting service) moved from `stubs/app/Domain/` into the package (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`). The consumer-facing surface — Controllers, FormRequests, Models, Vue pages, route files, Policies, and `config/settings.php` — stays in your app and is **not affected**.

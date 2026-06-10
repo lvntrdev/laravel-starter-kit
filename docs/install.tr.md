@@ -90,17 +90,40 @@ Sihirbaz her adımda sizinle interaktif olarak ilerler:
 | ---- | ---------------------------------------------------------------------------------------------------- |
 | 1    | Veritabanı bağlantısını yapılandırır (sürücü, host, port, veritabanı, kimlik bilgileri)              |
 | 2    | Uygulama iskeletini yayınlar (Controller, Model, Route, Vue sayfaları, Enum, Provider, vb.)          |
-| 3    | `package.json` bağımlılıklarını birleştirir                                                          |
-| 4    | Çakışan varsayılan Laravel dosyalarını siler (`vite.config.js`, `welcome.blade.php`, vb.)            |
-| 5    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, `media-library.php`)      |
-| 6    | Uygulama ayarlarını, filesystem disk'lerini, media library'yi ve `bootstrap/app.php`'yi yapılandırır |
-| 7    | Service provider'ları kaydeder                                                                       |
-| 8    | Composer autoload'u yeniden oluşturur                                                                |
-| 9    | Veritabanı migration'larını çalıştırır                                                               |
-| 10   | Seeder'ları çalıştırır (Roller, Yetkiler, Tanımlar, Ayarlar)                                         |
-| 11   | Passport şifreleme anahtarlarını oluşturur                                                           |
-| 12   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / `password`)                               |
-| 13   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
+| 3    | `User` + `Role` domain runtime'ını `app/Domain/` altına eject eder (`--without-eject` verildiğinde ya da `storage/starter-kit/hashes.json` zaten mevcutsa atlanır) |
+| 4    | `package.json` bağımlılıklarını birleştirir                                                          |
+| 5    | Çakışan varsayılan Laravel dosyalarını siler (`vite.config.js`, `welcome.blade.php`, vb.)            |
+| 6    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, `media-library.php`)      |
+| 7    | Uygulama ayarlarını, filesystem disk'lerini, media library'yi ve `bootstrap/app.php`'yi yapılandırır |
+| 8    | Service provider'ları kaydeder                                                                       |
+| 9    | Composer autoload'u yeniden oluşturur                                                                |
+| 10   | Veritabanı migration'larını çalıştırır                                                               |
+| 11   | Seeder'ları çalıştırır (Roller, Yetkiler, Tanımlar, Ayarlar)                                         |
+| 12   | Passport şifreleme anahtarlarını oluşturur                                                           |
+| 13   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / `password`)                               |
+| 14   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
+
+### Varsayılan domain eject'i (User + Role)
+
+Sıfır bir kurulumda installer, `User` ve `Role` domain runtime sınıflarını otomatik olarak `app/Domain/User/` ve `app/Domain/Role/` altına eject eder. Bu iki domain gerçek projelerde en çok özelleştirilen alanlardır; bu nedenle kurulumdan itibaren doğrudan uygulamanıza aittir.
+
+**Bu ne anlama gelir:**
+
+- Backend sınıfları (Actions, DTOs, Queries, Events, Listeners) `App\Domain\` namespace'iyle `app/Domain/{User,Role}/` altına kopyalanır.
+- `DomainServiceProvider`, audit log kesintisiz çalışsın diye ilgili `Event::listen` binding'lerini alır.
+- Bu noktadan itibaren **kit bu domain'lere `composer update` aracılığıyla runtime güncellemesi göndermez** — dosyalar sizin sorumluluğunuza geçer. Bu, manuel `sk:eject` çağrısıyla birebir aynı takastır.
+
+**Geri alma veya devre dışı bırakma:**
+
+Kurulum sonrası eject'i geri almak için `app/Domain/User/` ve `app/Domain/Role/` dizinlerini silin, `app/Providers/DomainServiceProvider.php` içindeki enjekte edilen `Event::listen` satırlarını kaldırın ve `composer dump-autoload` çalıştırın. Vendor runtime ve alias çözümü otomatik devreye girer.
+
+Sıfır bir kurulumda eject adımını tamamen atlamak için `--without-eject` kullanın:
+
+```bash
+php artisan sk:install --without-eject
+```
+
+Domain'ler vendor'da kalır ve `class_alias` aracılığıyla çözülür; eject öncesi davranışla birebir aynıdır. İstediğiniz zaman `sk:eject User` / `sk:eject Role` komutlarını manuel olarak çalıştırabilirsiniz.
 
 ### Yararlı Flag'ler
 
@@ -108,11 +131,13 @@ Sihirbaz her adımda sizinle interaktif olarak ilerler:
 php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
+php artisan sk:install --without-eject
 ```
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder
 - `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
+- `--without-eject` varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür
 
 ## 4. Frontend Asset'lerini Derleyin
 

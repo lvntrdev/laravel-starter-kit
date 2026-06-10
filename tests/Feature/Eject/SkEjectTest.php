@@ -24,6 +24,9 @@
 | 11. Vue guard: existing customized page preserved without --force (no data loss)
 | 12. Vue guard: existing page overwritten when --force is passed
 | 13. Autoload failure → non-zero exit code (CI-safe); files still ejected
+| 14. --skip-autoload skips the dump and still returns SUCCESS (even broken phar)
+| 15. --force over a stub-published BulkActions-only dir: runtime copied,
+|     pre-existing BulkActions file left byte-for-byte intact (install path)
 |
 */
 
@@ -361,4 +364,84 @@ it('returns a non-zero exit code when composer dump-autoload fails', function ()
     // The backend files were still copied — the failure is the autoload step,
     // not the eject itself — but the command signals failure so automation halts.
     expect(file_exists($dest.'/app/Domain/User/Actions/CreateUserAction.php'))->toBeTrue();
+});
+
+// ── Test 14: --skip-autoload skips the dump and still returns SUCCESS ─────────
+
+it('--skip-autoload copies files and returns SUCCESS without running dump-autoload', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    // No composer.json at destination — refreshAutoload() would short-circuit anyway,
+    // but the test confirms --skip-autoload path is followed (no dump attempted).
+    $this->artisan('sk:eject', [
+        'domain' => 'User',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    // Backend files must be present.
+    expect(file_exists($dest.'/app/Domain/User/Actions/CreateUserAction.php'))->toBeTrue();
+});
+
+it('--skip-autoload does not fail even when composer.phar is broken', function () use (&$tempDest): void {
+    $dest = $tempDest;
+    $fs = new Filesystem;
+
+    // A real composer.json triggers refreshAutoload() when --skip-autoload is NOT set.
+    // With --skip-autoload the dump is bypassed so the broken phar must not cause FAILURE.
+    $fs->put($dest.'/composer.json', '{}');
+    $fs->put($dest.'/composer.phar', '<?php exit(23);');
+
+    $this->artisan('sk:eject', [
+        'domain' => 'User',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful(); // SUCCESS — the broken phar is never invoked
+
+    // Files were still ejected.
+    expect(file_exists($dest.'/app/Domain/User/Actions/CreateUserAction.php'))->toBeTrue();
+});
+
+// ── Test 15: --force eject over a stub-published BulkActions-only dir ──────────
+// Mirrors the install path: stub publish ships app/Domain/User/BulkActions/* and
+// creates the domain dir BEFORE eject runs, which (without --force) would trip the
+// directory-level idempotency guard and silently no-op. InstallCommand therefore
+// passes --force; this is safe because vendor src/Domain/User ships no BulkActions,
+// so the forced eject relocates the runtime WITHOUT touching the consumer's
+// BulkActions file.
+
+it('--force ejects runtime over a pre-existing BulkActions dir without clobbering it', function () use (&$tempDest): void {
+    $dest = $tempDest;
+    $fs = new Filesystem;
+
+    // Simulate the stub publish: a BulkActions-only app/Domain/User from stubs/.
+    // Its presence makes app/Domain/User exist, so an un-forced eject would warn
+    // + exit early (Test 9). The sentinel content lets us prove it is untouched.
+    $bulkDir = $dest.'/app/Domain/User/BulkActions';
+    $fs->makeDirectory($bulkDir, 0755, true);
+    $bulkFile = $bulkDir.'/BulkDeleteUserAction.php';
+    $fs->put($bulkFile, '<?php // CONSUMER BULK DELETE — must survive eject');
+
+    // Install-path invocation: --force --no-vue --skip-autoload --destination.
+    $this->artisan('sk:eject', [
+        'domain' => 'User',
+        '--force' => true,
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    // 1. The vendor runtime (every src/Domain/User subdir) is now copied in.
+    expect(is_dir($dest.'/app/Domain/User/Actions'))->toBeTrue();
+    expect(file_exists($dest.'/app/Domain/User/Actions/CreateUserAction.php'))->toBeTrue();
+    expect(is_dir($dest.'/app/Domain/User/DTOs'))->toBeTrue();
+    expect(is_dir($dest.'/app/Domain/User/Events'))->toBeTrue();
+    expect(is_dir($dest.'/app/Domain/User/Listeners'))->toBeTrue();
+    expect(is_dir($dest.'/app/Domain/User/Queries'))->toBeTrue();
+
+    // 2. The pre-existing BulkActions file is byte-for-byte unchanged — vendor
+    //    ships no BulkActions, so there is nothing to overwrite it with.
+    expect(file_get_contents($bulkFile))->toBe('<?php // CONSUMER BULK DELETE — must survive eject');
 });

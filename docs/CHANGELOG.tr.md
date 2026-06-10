@@ -2,6 +2,40 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-11 — v13.6.0 (devam)
+
+### Kurulum anında User + Role domain eject'i
+
+Sıfır kurulumlar artık `User` ve `Role` domain runtime'ını otomatik olarak `app/Domain/` altına eject eder. Bu iki domain gerçek projelerde en çok özelleştirilen alanlardır; dolayısıyla ek bir adım gerekmeksizin proje sahipli dosyalar olarak gelirler.
+
+#### Sıfır kurulumda ne değişir
+
+- `app/Domain/User/` ve `app/Domain/Role/`, backend sınıfları (`App\Domain\` namespace'iyle yeniden yazılmış Actions, DTOs, Queries, Events, Listeners) ile oluşturulur.
+- `DomainServiceProvider`, altı audit event için `Event::listen` binding'lerini alır; aktivite kaydı kesintisiz devam eder.
+- Sonraki `composer update` çalıştırmalarında bu dizinlere dokunulmaz — dosyalar size aittir.
+
+#### Devre dışı bırakma
+
+```bash
+php artisan sk:install --without-eject
+```
+
+Her iki domain vendor'da kalır ve `class_alias` ile çözülür. `sk:eject User` / `sk:eject Role` komutlarını istediğiniz zaman manuel olarak çalıştırabilirsiniz.
+
+#### Kurulumdan sonra geri alma
+
+`app/Domain/User/` ve `app/Domain/Role/` dizinlerini silin, `app/Providers/DomainServiceProvider.php` içinden enjekte edilen `Event::listen` satırlarını kaldırın ve `composer dump-autoload` çalıştırın.
+
+#### Mevcut kurulumlar
+
+Değişiklik yok. Eject adımı yalnızca `storage/starter-kit/hashes.json` henüz yoksa (ilk kurulumda) çalışır. Mevcut kurulumda registry zaten mevcut olduğundan adım atlanır. Mevcut projeler etkilenmez.
+
+#### `sk:eject`'e yeni flag
+
+`sk:eject`, installer tarafından dahili olarak kullanılan `--skip-autoload` flag'ini kazandı; bu sayede installer her domain başına `composer dump-autoload` koşturmaz (tüm eject'ler tamamlandıktan sonra tek bir toplu dump gerçekleştirir). Bu flag normal manuel `sk:eject` kullanımında gerekmez.
+
+---
+
 ## 2026-06-06 — v13.6.0
 
 ### Minor sürüm — Vendor-runtime migrasyonu tamamlandı + yapılandırılmış tema/layout/CSS sistemi

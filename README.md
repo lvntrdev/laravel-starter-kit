@@ -78,7 +78,7 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-That's it. The installer sets up migrations, seeders, Passport keys, a default admin user, and builds the frontend.
+That's it. The installer sets up migrations, seeders, Passport keys, a default admin user, and builds the frontend. It also ejects the `User` and `Role` domain runtime classes into `app/Domain/` so they are immediately project-owned and ready to customise. Pass `--without-eject` to keep them vendor-resident instead.
 
 Full step-by-step guide: [starter-kit.lvntr.dev/docs/install](https://starter-kit.lvntr.dev/docs/install)
 
@@ -118,7 +118,7 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 | Command | Description |
 |---|---|
-| `php artisan sk:install` | Full installation: migrations, seeders, Passport keys, admin user, frontend build |
+| `php artisan sk:install` | Full installation: migrations, seeders, Passport keys, admin user, frontend build. Ejects `User` + `Role` by default (`--without-eject` to skip) |
 | `php artisan sk:update` | Pull updated stubs (hash-tracked, preserves your edits) |
 | `php artisan sk:publish [--tag=...]` | Publish specific asset groups (components, composables, plugins, lang, config, helpers) |
 | `php artisan make:sk-domain Foo` | Scaffold a new DDD domain |

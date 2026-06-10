@@ -29,9 +29,21 @@ class InstallCommand extends Command
 {
     protected $signature = 'sk:install
         {--force : Overwrite existing files}
-        {--without-ai-skill : Skip stubs/.claude/skills/ AI skill files}';
+        {--without-ai-skill : Skip stubs/.claude/skills/ AI skill files}
+        {--without-eject : Keep User/Role runtime in vendor (skip default domain eject)}';
 
-    protected $description = 'Install the Lvntr Starter Kit application skeleton (v13.5.0+: package runtime runs from vendor, not copied to app)';
+    protected $description = 'Install the Lvntr Starter Kit application skeleton (v13.5.0+: package runtime runs from vendor; User + Role are ejected into app/Domain on first install)';
+
+    /**
+     * Domains ejected into app/Domain automatically on the FIRST install so the
+     * consumer owns the code they edit most. Each name MUST match a key of
+     * EjectCommand::DOMAIN_MANIFEST verbatim. User↔Role have no cross-domain
+     * references (only their own namespace + the never-ejected Domain\Shared and
+     * app-owned classes), so ejecting both leaves no stale vendor link behind.
+     *
+     * @var list<string>
+     */
+    private const DEFAULT_EJECT_DOMAINS = ['User', 'Role'];
 
     private Filesystem $files;
 
@@ -40,6 +52,15 @@ class InstallCommand extends Command
 
     /** @var list<string> */
     private array $skipped = [];
+
+    /**
+     * Default domains successfully ejected during this install run. Drives the
+     * end-of-install ownership summary; empty when the eject step was skipped
+     * (--without-eject or re-install) or every eject failed.
+     *
+     * @var list<string>
+     */
+    private array $ejectedDomains = [];
 
     /**
      * Default Laravel files that conflict with Starter Kit stubs.
@@ -153,8 +174,9 @@ class InstallCommand extends Command
         $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer (v13.5.x)</>');
         $this->newLine();
         $this->line('  <fg=gray>Package runtime runs from vendor/lvntr/laravel-starter-kit.</>');
-        $this->line('  <fg=gray>This command copies only the application skeleton (auth, layout,</>');
-        $this->line('  <fg=gray>user/role/setting domains, config) to your app directory.</>');
+        $this->line('  <fg=gray>This command copies the application skeleton (auth, layout,</>');
+        $this->line('  <fg=gray>user/role/setting domains, config) to your app directory, and on the</>');
+        $this->line('  <fg=gray>first install ejects the User + Role runtime into app/Domain so you own it.</>');
         $this->newLine();
         $this->components->info('Installing Lvntr Starter Kit...');
         $this->newLine();
@@ -255,6 +277,24 @@ class InstallCommand extends Command
             $this->injectHelpersAutoload();
         });
 
+        // 4h. Default domain eject (User + Role) on first install only.
+        //
+        // Ordering rationale:
+        //  - AFTER stub publish + provider injection (4f) so DomainServiceProvider
+        //    already exists on disk — it is the target the eject injects App-FQCN
+        //    Event::listen bindings into.
+        //  - BEFORE the autoload regeneration (step 6) so the install's own single
+        //    `composer dump-autoload` also picks up the freshly ejected
+        //    app/Domain/{User,Role} classes — that is why each eject is invoked with
+        //    --skip-autoload (the per-domain dump would be redundant work).
+        //  - --no-vue because the Users/Roles Vue pages were already copied by the
+        //    stub publish step; eject only needs to relocate the vendor runtime.
+        if ($this->shouldEjectDefaultDomains($isFirstInstall)) {
+            $this->step('Ejecting default domains (User, Role) to app/Domain', function () {
+                $this->ejectDefaultDomains();
+            });
+        }
+
         // 5. Create hash registry directory
         $dir = storage_path('starter-kit');
         if (! $this->files->isDirectory($dir)) {
@@ -341,6 +381,18 @@ class InstallCommand extends Command
         }
         if (! empty($this->skipped)) {
             $this->components->twoColumnDetail('<fg=yellow>Skipped</>', count($this->skipped).' files (already exist, use --force to overwrite)');
+        }
+
+        if ($this->ejectedDomains !== []) {
+            $this->newLine();
+            $this->components->twoColumnDetail(
+                '<fg=green>Ejected domains</>',
+                implode(', ', $this->ejectedDomains).' → app/Domain/ (consumer-owned)',
+            );
+            $this->line('  <fg=gray>The kit no longer ships runtime updates for these domains to you.</>');
+            $this->line('  <fg=gray>To revert: delete the directories, remove the injected Event::listen lines</>');
+            $this->line('  <fg=gray>from app/Providers/DomainServiceProvider.php, then run `composer dump-autoload`.</>');
+            $this->line('  <fg=gray>To keep them in vendor next time: `php artisan sk:install --without-eject`.</>');
         }
 
         $this->newLine();
@@ -688,6 +740,184 @@ class InstallCommand extends Command
         $hashFile = config('starter-kit.published_hashes', storage_path('starter-kit/hashes.json'));
 
         return ! $this->files->exists($hashFile);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // DEFAULT DOMAIN EJECT (User + Role on first install)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Whether the default domains (User + Role) should be ejected into
+     * app/Domain on this run. True only on the first install when the opt-out
+     * --without-eject flag is absent. Re-installs ($isFirstInstall === false)
+     * and explicit opt-out both return false so the consumer's already-owned
+     * app/Domain is never touched.
+     *
+     * Pure decision logic — no filesystem or eject side effects — so it is unit
+     * testable in isolation (mirrors the env/gitignore merge helpers).
+     */
+    private function shouldEjectDefaultDomains(bool $isFirstInstall): bool
+    {
+        return $isFirstInstall && ! $this->option('without-eject');
+    }
+
+    /**
+     * Eject each default domain into app/Domain by delegating to sk:eject.
+     *
+     * Each call passes:
+     *   - --no-vue: the domain's Vue pages were already copied by the stub
+     *     publish step, so eject only relocates the vendor backend runtime.
+     *   - --skip-autoload: the installer runs ONE composer dump-autoload (step 6)
+     *     after this, covering all ejected copies — a per-domain dump would be
+     *     wasted work.
+     *   - --force: REQUIRED here, and NOT a clobber risk. The stub publish step
+     *     (step 1) runs BEFORE this one and ships
+     *     stubs/app/Domain/{User,Role}/BulkActions/*, so by the time eject runs
+     *     the app/Domain/{Name} directory already exists. sk:eject's
+     *     directory-level idempotency guard (EjectCommand::handle():
+     *     `! $force && isDirectory(app/Domain/{Name})`) would otherwise fire and
+     *     make the eject a SILENT no-op — it warns, but callSilently swallows the
+     *     warning, so nothing is copied yet the install would still report the
+     *     domain as consumer-owned. --force tells eject to proceed. This is safe
+     *     because the vendor source (src/Domain/{Name}) ships only
+     *     Actions/DTOs/Events/Listeners/Queries and NO BulkActions: a forced eject
+     *     can never overwrite the stub-published BulkActions files — the two file
+     *     sets do not overlap.
+     *
+     * Why the old "never forward --force" assumption was wrong: it treated
+     * app/Domain as purely the consumer's own code, but missed that the stub
+     * publish step itself creates app/Domain/{Name} (BulkActions only) on a fresh
+     * install — so the un-forced eject always no-op'd. The new contract is:
+     * pre-existing-runtime gate + --force + post-eject evidence check (below).
+     *
+     * Pre-existing-runtime gate (the genuine consumer-code protection): BEFORE
+     * ejecting, if app/Domain/{Name}/Actions already exists, real runtime — a
+     * prior eject or hand-authored code — is present, so the domain is skipped
+     * entirely (no --force over it, not added to the owned list). The
+     * stub-published BulkActions-only directory has no Actions/ subdir, so a
+     * genuinely fresh install passes the gate; real runtime does not.
+     *
+     * A non-SUCCESS eject only warns (does not abort the install). Because the
+     * guard can no longer no-op the eject, SUCCESS is ALSO re-checked against the
+     * filesystem: the domain is recorded as ejected only when its runtime
+     * (app/Domain/{Name}/Actions) actually materialized — a skipped/no-op eject
+     * must never be reported as "ejected". After a verified eject the App-FQCN
+     * Event::listen injection is checked against DomainServiceProvider; a silent
+     * injection failure (callSilently swallows the eject's own warning) would
+     * break the audit log, so it is surfaced here.
+     */
+    private function ejectDefaultDomains(): void
+    {
+        foreach (self::DEFAULT_EJECT_DOMAINS as $domain) {
+            // Pre-existing-runtime gate: a populated app/Domain/{Name}/Actions
+            // means real runtime (a prior eject or hand-written code) is already
+            // there — never --force over it; treat the domain as already owned and
+            // move on. The stub-published BulkActions-only directory has no
+            // Actions/ subdir, so a genuinely fresh install passes this gate.
+            if ($this->domainHasRuntime($domain)) {
+                $this->components->warn(
+                    "app/Domain/{$domain} already contains runtime code — eject skipped to avoid overwriting it. "
+                    .'On a fresh install this is unexpected; otherwise the domain is already owned by your app.'
+                );
+
+                continue;
+            }
+
+            $exitCode = $this->callSilently('sk:eject', [
+                'domain' => $domain,
+                '--no-vue' => true,
+                '--skip-autoload' => true,
+                // See the --force rationale in the method docblock: required so the
+                // stub-published BulkActions-only directory does not trip eject's
+                // idempotency guard; cannot clobber (vendor ships no BulkActions).
+                '--force' => true,
+            ]);
+
+            if ($exitCode !== self::SUCCESS) {
+                $this->components->warn(
+                    "Eject for {$domain} returned a non-success status — it may not be fully owned by app/Domain. "
+                    ."Re-run `php artisan sk:eject {$domain} --no-vue --force` after install to retry."
+                );
+
+                continue;
+            }
+
+            // Runtime-evidence check: SUCCESS alone is not proof the runtime was
+            // copied. Record ownership only when app/Domain/{Name}/Actions truly
+            // exists now — never let a no-op masquerade as a completed eject.
+            if (! $this->domainHasRuntime($domain)) {
+                $this->components->warn(
+                    "Eject for {$domain} reported success but app/Domain/{$domain}/Actions was not created — "
+                    ."the domain still runs from vendor. Re-run `php artisan sk:eject {$domain} --no-vue --force` to retry."
+                );
+
+                continue;
+            }
+
+            $this->ejectedDomains[] = $domain;
+
+            $this->verifyEventBindingsInjected($domain);
+        }
+    }
+
+    /**
+     * Whether app/Domain/{Name} already holds real ejected/hand-authored runtime,
+     * detected by the presence of its Actions/ subdirectory.
+     *
+     * Actions/ is the discriminator on purpose: every ejectable domain's vendor
+     * source ships an Actions/ folder, whereas the stub publish step seeds only
+     * app/Domain/{Name}/BulkActions/* (no Actions/). So this returns false for a
+     * freshly stub-published BulkActions-only directory (the eject should proceed)
+     * and true once genuine runtime has landed — which is exactly what both the
+     * pre-eject gate and the post-eject evidence check need.
+     *
+     * Pure filesystem probe (no eject side effects) so it is unit testable in
+     * isolation, mirroring shouldEjectDefaultDomains().
+     */
+    private function domainHasRuntime(string $domain): bool
+    {
+        return $this->files->isDirectory(base_path("app/Domain/{$domain}/Actions"));
+    }
+
+    /**
+     * Lightweight audit-chain check: confirm the App-FQCN Event::listen bindings
+     * the eject was supposed to inject are actually present in
+     * app/Providers/DomainServiceProvider.php. callSilently() swallows sk:eject's
+     * own warning if injection failed, so without this check a broken audit log
+     * would pass install silently. A missing binding only warns (does not abort).
+     */
+    private function verifyEventBindingsInjected(string $domain): void
+    {
+        $providerPath = base_path('app/Providers/DomainServiceProvider.php');
+
+        if (! $this->files->exists($providerPath)) {
+            $this->components->warn(
+                "DomainServiceProvider not found after ejecting {$domain} — audit-log event bindings could not be verified."
+            );
+
+            return;
+        }
+
+        $code = $this->files->get($providerPath);
+
+        // Marker FQCN per domain; presence implies the eject's boot()-injection ran.
+        $marker = match ($domain) {
+            'User' => 'App\\Domain\\User\\Events\\UserCreated',
+            'Role' => 'App\\Domain\\Role\\Events\\RoleCreated',
+            default => null,
+        };
+
+        if ($marker === null) {
+            return;
+        }
+
+        if (! str_contains($code, $marker)) {
+            $this->components->warn(
+                "Event bindings for {$domain} were not found in DomainServiceProvider — the audit log may not fire for "
+                ."{$domain} actions. Add the App\\Domain\\{$domain} Event::listen lines manually, or re-run "
+                ."`php artisan sk:eject {$domain} --no-vue --force`."
+            );
+        }
     }
 
     /**

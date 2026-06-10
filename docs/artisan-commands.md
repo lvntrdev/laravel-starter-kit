@@ -54,11 +54,13 @@ php artisan sk:install
 php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
+php artisan sk:install --without-eject
 ```
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` accepts all defaults automatically; useful for CI or scripted installs
 - `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
+- `--without-eject` skips the default `User` and `Role` domain eject on a first install; the runtime stays in vendor and resolves via `class_alias`. Omit this flag to have `app/Domain/User/` and `app/Domain/Role/` created automatically. See [install.md](./install.md) for the ownership trade-off.
 
 ## `sk:update`
 
@@ -116,6 +118,7 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 - `--force` overwrites files that already exist — both the backend `app/Domain/{Name}/` tree and the domain's Vue pages. **Without `--force`, eject never overwrites an existing file:** an already-present `app/Domain/{Name}/` makes the command exit early, and any Vue page that already exists is left untouched and reported as preserved — only missing pages are written. This protects edits you made to pages shipped by `sk:install`.
 - `--no-vue` skips refreshing the domain's Vue pages; only the backend classes are ejected.
 - `--destination=<path>` redirects output to an arbitrary directory instead of the app root. Intended for isolated testing.
+- `--skip-autoload` skips the `composer dump-autoload` call at the end of eject. Use this only when the calling process (such as `sk:install`) will run `composer dump-autoload` itself afterwards. Without this flag, eject always regenerates autoload and exits non-zero if regeneration fails.
 
 > **Exit code:** if Composer's autoload regeneration fails (e.g. `composer` is missing or errors out), the command prints the error and **exits non-zero** even though the files were copied — so CI and scripts do not mistake a broken autoload for a successful eject. Run `composer dump-autoload` manually, then re-verify.
 

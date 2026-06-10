@@ -20,6 +20,37 @@ npm run build                  # panel birebir aynı görünmeli
 
 ---
 
+### Kurulum anında domain eject'i (User + Role)
+
+Bu sürümden itibaren `sk:install`, ilk çalıştırmada `User` ve `Role` domain runtime'ını otomatik olarak `app/Domain/User/` ve `app/Domain/Role/` altına eject eder. Bu değişiklik yalnızca yeni kurulumları etkiler — **mevcut kurulumlar etkilenmez**.
+
+#### Mevcut kurulumlar — işlem gerekmez
+
+Eject adımı hash registry ile korunmaktadır: yalnızca `storage/starter-kit/hashes.json` henüz yoksa (yani ilk kurulumda) çalışır. Mevcut kurulumda registry zaten mevcut olduğundan adım tamamen atlanır. `app/Domain/{User,Role}/Actions` daha önce yapılan manuel bir eject nedeniyle zaten mevcutsa, o domain'in eject'i uyarıyla atlanır ve kurulumun geri kalanı normal şekilde devam eder.
+
+#### Bu sürümdeki yeni kurulumlar
+
+`app/Domain/User/` ve `app/Domain/Role/`, backend sınıfları `App\Domain\` namespace'iyle yeniden yazılmış olarak oluşturulur; `DomainServiceProvider` altı audit-event `Event::listen` binding'ini alır. Takas: bu dosyalar artık size ait — `composer update` bu dosyalara upstream değişiklik göndermez. Ayrıntılar için [artisan-commands.tr.md](./artisan-commands.tr.md) içindeki `sk:eject` güncelleme-kaybı notuna bakın.
+
+Kurulum sırasında devre dışı bırakmak için:
+
+```bash
+php artisan sk:install --without-eject
+```
+
+#### Otomatik eject'i geri alma
+
+```bash
+rm -rf app/Domain/User/ app/Domain/Role/
+# User ve Role için enjekte edilen Event::listen satırlarını kaldırın:
+# app/Providers/DomainServiceProvider.php
+composer dump-autoload
+```
+
+`StarterKitServiceProvider` içindeki `class_alias` tanımları, `App\Domain\User\*` ve `App\Domain\Role\*` import'larını otomatik olarak tekrar vendor kopyalarına yönlendirir.
+
+---
+
 ### Domain runtime katmanları vendor'a taşındı (Faz 6)
 
 Beş domain modülünün **runtime katmanı** (Actions, DTOs, Queries, Events, Listeners ve Setting servisi), `stubs/app/Domain/` yerine pakete (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`) taşındı. Tüketici yüzeyi — Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route dosyaları, Policy'ler ve `config/settings.php` — uygulamanızda kalmaya devam eder ve **etkilenmez**.

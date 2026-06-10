@@ -28,6 +28,7 @@ class EjectCommand extends Command
         {--force : Overwrite existing app/Domain files}
         {--dry-run : Show what would happen without writing anything}
         {--no-vue : Eject only the backend; leave Vue pages untouched}
+        {--skip-autoload : Do not run composer dump-autoload (the CALLER must run it). Installer-internal use — sk:install batches its own single dump after ejecting User+Role.}
         {--destination= : Override destination base path (for testing or custom layouts)}';
 
     protected $description = 'Eject a kit domain into your app (own it: backend + Vue, alias disabled, no more kit updates for it)';
@@ -145,6 +146,7 @@ class EjectCommand extends Command
         $dryRun = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
         $noVue = (bool) $this->option('no-vue');
+        $skipAutoload = (bool) $this->option('skip-autoload');
 
         $appDomainDir = $this->resolveDestination('app/Domain/'.$domain);
 
@@ -172,17 +174,23 @@ class EjectCommand extends Command
 
         $bindings = $this->injectEventBindings($domain, $descriptor['events'], $dryRun);
 
+        // With --skip-autoload the caller (e.g. sk:install) owns the dump: it
+        // ejects several domains in one pass and runs a single composer
+        // dump-autoload afterwards instead of one per domain. We treat autoload
+        // as OK so the FAILURE path stays reserved for a REAL dump failure of an
+        // actual run — a skipped dump is not a failure.
         $autoloadOk = true;
-        if (! $dryRun) {
+        if (! $dryRun && ! $skipAutoload) {
             $autoloadOk = $this->refreshAutoload();
         }
 
-        $this->printSummary($domain, $backendCount, $vueResult, $bindings, $noVue, $dryRun, $autoloadOk);
+        $this->printSummary($domain, $backendCount, $vueResult, $bindings, $noVue, $dryRun, $autoloadOk, $skipAutoload);
 
         // A failed autoload regeneration means the ejected classes may not resolve
         // under optimized / classmap-authoritative autoloaders — the eject is not
         // functionally complete, so signal non-zero for CI/scripts even though the
-        // files were already copied.
+        // files were already copied. (Never reached when --skip-autoload is set:
+        // $autoloadOk stays true and the caller is responsible for the dump.)
         return $autoloadOk ? self::SUCCESS : self::FAILURE;
     }
 
@@ -590,7 +598,7 @@ class EjectCommand extends Command
      * @param  array{copied: int, skipped: list<string>}  $vueResult
      * @param  list<string>  $bindings
      */
-    private function printSummary(string $domain, int $backendCount, array $vueResult, array $bindings, bool $noVue, bool $dryRun, bool $autoloadOk = true): void
+    private function printSummary(string $domain, int $backendCount, array $vueResult, array $bindings, bool $noVue, bool $dryRun, bool $autoloadOk = true, bool $skipAutoload = false): void
     {
         $this->newLine();
 
@@ -634,7 +642,19 @@ class EjectCommand extends Command
             $this->line('  <fg=gray>app/Providers/DomainServiceProvider.php, then run `composer dump-autoload`.</>');
         }
 
-        if (! $dryRun && ! $autoloadOk) {
+        // --skip-autoload: the eject ran no dump on purpose; tell the reader the
+        // caller is responsible so the missing dump is not mistaken for the
+        // (suppressed) "classes may not load" error below.
+        if (! $dryRun && $skipAutoload) {
+            $this->components->twoColumnDetail(
+                '<fg=gray>Autoload</>',
+                'dump skipped (caller will run composer dump-autoload)'
+            );
+        }
+
+        // Only a REAL failed dump prints this error. It can never fire under
+        // --skip-autoload because $autoloadOk stays true when the dump is skipped.
+        if (! $dryRun && ! $skipAutoload && ! $autoloadOk) {
             $this->components->error(
                 'Autoload regeneration FAILED — files are ejected but the new classes may not load until you run '
                 .'`composer dump-autoload`. The command exits non-zero so CI/scripts halt.'

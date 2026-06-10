@@ -46,3 +46,6 @@ uses(TestCase::class)->in('Feature/Generator');
 
 // Eject testleri: --destination ile temp dizine yazar, DB gerektirmiyor
 uses(TestCase::class)->in('Feature/Eject');
+
+// Install testleri: pure unit (isolated string/reflection), DB gerektirmiyor
+uses(TestCase::class)->in('Feature/Install');
