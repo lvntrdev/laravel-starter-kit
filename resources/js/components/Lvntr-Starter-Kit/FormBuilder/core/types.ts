@@ -351,15 +351,11 @@ export interface SlotFieldConfig extends BaseFieldConfig {
     slotName?: string;
 }
 
-export type TranslatableLayout = 'inline' | 'tabs';
-
 interface TranslatableBaseConfig extends BaseFieldConfig {
     /** Field bazında dil filtresi: bu liste dışındaki diller render edilmez. */
     onlyLocales?: string[];
     /** Field bazında dil filtresi: bu listedeki diller render edilmez. */
     exceptLocales?: string[];
-    /** Çok dilli render layout'u. Default: 'inline' (her dil için ayrı InputGroup). */
-    translatableLayout?: TranslatableLayout;
     /** Dil etiketinin görünüş şekli. Default: 'badge' (uppercase iki harf). */
     localeLabelStyle?: 'badge' | 'name' | 'flag';
 }

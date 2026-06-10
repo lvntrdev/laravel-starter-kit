@@ -104,7 +104,6 @@ Her locale için PrimeVue `InputText` render eder.
 | `.maxLength(value)` | `number` | Her input için `maxlength` attribute'u. |
 | `.onlyLocales(locales)` | `string[]` | Yalnız listelenen locale kodlarını render eder. |
 | `.exceptLocales(locales)` | `string[]` | Listelenen locale kodlarını gizler. |
-| `.translatableLayout(layout)` | `'inline' \| 'tabs'` | Alt alta alanlar veya tab'lı locale panelleri. |
 | `.localeLabelStyle(style)` | `'badge' \| 'name' \| 'flag'` | Locale label görünümü. |
 
 ### `FB.translatableTextarea()`
@@ -117,7 +116,7 @@ Her locale için PrimeVue `Textarea` render eder.
 | `.rows(value)` | `number` | Görünür satır sayısı. |
 | `.autoResize(enabled = true)` | `boolean` | PrimeVue auto-resize davranışını açar. |
 
-Ayrıca `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` ve `.localeLabelStyle()` destekler.
+Ayrıca `.onlyLocales()`, `.exceptLocales()` ve `.localeLabelStyle()` destekler.
 
 ### `FB.translatableEditor()`
 
@@ -128,7 +127,7 @@ Her locale için kit editörünü render eder.
 | `.minHeight(value)` | `string` | Editör minimum yüksekliği, örn. `'220px'`. |
 | `.toolbar(value)` | `'minimal' \| 'full'` | Toolbar preset'i. |
 
-Ayrıca `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` ve `.localeLabelStyle()` destekler.
+Ayrıca `.onlyLocales()`, `.exceptLocales()` ve `.localeLabelStyle()` destekler.
 
 ## Validation Yardımcıları
 

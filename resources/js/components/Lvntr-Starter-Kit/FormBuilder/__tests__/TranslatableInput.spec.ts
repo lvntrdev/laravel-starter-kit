@@ -1,10 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import PrimeVue from 'primevue/config';
 import InputText from 'primevue/inputtext';
-import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
 import Textarea from 'primevue/textarea';
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';
@@ -16,6 +14,15 @@ import TranslatableInput from '../inputs/TranslatableInput.vue';
 import type { TranslatableTextFieldConfig } from '../core/types';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
+
+// jsdom has no ResizeObserver; PrimeVue TabList binds one for the ink bar.
+class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+globalThis.ResizeObserver = ResizeObserverStub as any;
 
 vi.mock('@inertiajs/vue3', () => ({
     usePage: () => ({
@@ -50,8 +57,6 @@ const globalConfig = {
     plugins: [PrimeVue],
     components: {
         InputText,
-        InputGroup,
-        InputGroupAddon,
         Textarea,
         Tabs,
         TabList,
@@ -72,30 +77,22 @@ function makeTextField(overrides: Partial<TranslatableTextFieldConfig> = {}): Tr
     };
 }
 
+/** Inputs that are actually visible (active tab panel only). */
+function visibleInputs(wrapper: ReturnType<typeof mount>) {
+    return wrapper.findAll('input').filter((i) => (i.element as HTMLElement).offsetParent !== undefined);
+}
+
 // ── Tests: single locale ─────────────────────────────────────────────────────
 
 describe('TranslatableInput — single locale', () => {
-    it('renders without row wrappers in single-locale mode', () => {
+    it('renders a plain input without tabs in single-locale mode', () => {
         const field = makeTextField({ onlyLocales: ['tr'] });
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: 'Test' } },
             global: globalConfig,
         });
 
-        const rows = wrapper.findAll('.sk-translatable-field__row');
-        expect(rows).toHaveLength(0);
-    });
-
-    it('renders without InputGroupAddon locale badge in single-locale mode', () => {
-        const field = makeTextField({ onlyLocales: ['tr'] });
-        const wrapper = mount(TranslatableInput, {
-            props: { field, modelValue: { tr: 'Hello' } },
-            global: globalConfig,
-        });
-
-        // In single mode, no InputGroupAddon; check no locale badge div wrapping
-        const rows = wrapper.findAll('.sk-translatable-field__row');
-        expect(rows).toHaveLength(0);
+        expect(wrapper.find('[role="tablist"]').exists()).toBe(false);
         expect(wrapper.find('.sk-translatable-field--single').exists()).toBe(true);
     });
 
@@ -111,59 +108,57 @@ describe('TranslatableInput — single locale', () => {
     });
 });
 
-// ── Tests: multiple locales ───────────────────────────────────────────────────
+// ── Tests: multiple locales (tabs design) ─────────────────────────────────────
 
-describe('TranslatableInput — multiple locales (inline)', () => {
-    it('renders two rows for two locales in default inline layout', () => {
+describe('TranslatableInput — multiple locales (tabs)', () => {
+    it('renders the tabs design for two locales', () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: '', en: '' } },
             global: globalConfig,
         });
 
-        const rows = wrapper.findAll('.sk-translatable-field__row');
-        expect(rows).toHaveLength(2);
+        expect(wrapper.find('[role="tablist"]').exists()).toBe(true);
+        expect(wrapper.findAll('button[role="tab"]')).toHaveLength(2);
     });
 
-    it('renders locale badge text TR and EN in InputGroupAddon', () => {
+    it('renders locale badge text TR and EN as tab headers', () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: '', en: '' } },
             global: globalConfig,
         });
 
-        const html = wrapper.html();
-        expect(html).toContain('TR');
-        expect(html).toContain('EN');
+        const tabTexts = wrapper.findAll('button[role="tab"]').map((t) => t.text());
+        expect(tabTexts.some((t) => t.includes('TR'))).toBe(true);
+        expect(tabTexts.some((t) => t.includes('EN'))).toBe(true);
     });
 
-    it('renders two input elements for two locales', () => {
+    it('shows the first locale panel as active initially', () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: 'Elma', en: 'Apple' } },
             global: globalConfig,
         });
 
-        const inputs = wrapper.findAll('input');
-        expect(inputs).toHaveLength(2);
+        const inputs = visibleInputs(wrapper);
+        expect(inputs.length).toBeGreaterThanOrEqual(1);
+        expect((inputs[0].element as HTMLInputElement).value).toBe('Elma');
     });
 });
 
 // ── Tests: locale filters ─────────────────────────────────────────────────────
 
 describe('TranslatableInput — locale filter options', () => {
-    it('onlyLocales with one locale → single mode (no rows)', () => {
+    it('onlyLocales with one locale → single mode (no tabs)', () => {
         const field = makeTextField({ onlyLocales: ['tr'] });
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: '', en: '' } },
             global: globalConfig,
         });
 
-        const rows = wrapper.findAll('.sk-translatable-field__row');
-        expect(rows).toHaveLength(0);
-
-        const inputs = wrapper.findAll('input');
-        expect(inputs).toHaveLength(1);
+        expect(wrapper.find('[role="tablist"]').exists()).toBe(false);
+        expect(wrapper.findAll('input')).toHaveLength(1);
     });
 
     it('exceptLocales removes locale leaving one → single mode', () => {
@@ -173,18 +168,15 @@ describe('TranslatableInput — locale filter options', () => {
             global: globalConfig,
         });
 
-        const rows = wrapper.findAll('.sk-translatable-field__row');
-        expect(rows).toHaveLength(0);
-
-        const inputs = wrapper.findAll('input');
-        expect(inputs).toHaveLength(1);
+        expect(wrapper.find('[role="tablist"]').exists()).toBe(false);
+        expect(wrapper.findAll('input')).toHaveLength(1);
     });
 });
 
 // ── Tests: per-locale errors ──────────────────────────────────────────────────
 
 describe('TranslatableInput — per-locale error display', () => {
-    it('shows error message for tr locale', () => {
+    it('shows error message for the active tr locale', () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: {
@@ -195,14 +187,14 @@ describe('TranslatableInput — per-locale error display', () => {
             global: globalConfig,
         });
 
-        const errors = wrapper.findAll('small.p-error');
+        const errors = wrapper.findAll('small.text-red-500');
         expect(errors.length).toBeGreaterThanOrEqual(1);
 
         const texts = errors.map((e) => e.text());
         expect(texts.some((t) => t.includes('Bu alan zorunludur.'))).toBe(true);
     });
 
-    it('shows only one error when only one locale has an error', () => {
+    it('marks the erroring locale tab with a warning icon', () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: {
@@ -213,9 +205,7 @@ describe('TranslatableInput — per-locale error display', () => {
             global: globalConfig,
         });
 
-        const errors = wrapper.findAll('small.p-error');
-        expect(errors).toHaveLength(1);
-        expect(errors[0].text()).toContain('Hata!');
+        expect(wrapper.find('button[role="tab"] .pi-exclamation-circle').exists()).toBe(true);
     });
 
     it('shows no errors when errors object is empty', () => {
@@ -229,7 +219,7 @@ describe('TranslatableInput — per-locale error display', () => {
             global: globalConfig,
         });
 
-        const errors = wrapper.findAll('small.p-error');
+        const errors = wrapper.findAll('small.text-red-500');
         expect(errors).toHaveLength(0);
     });
 });
@@ -244,7 +234,7 @@ describe('TranslatableInput — emit on user input', () => {
             global: globalConfig,
         });
 
-        const inputs = wrapper.findAll('input');
+        const inputs = visibleInputs(wrapper);
         expect(inputs.length).toBeGreaterThanOrEqual(1);
 
         await inputs[0].setValue('Elma');
@@ -282,17 +272,20 @@ describe('TranslatableInput — initial value normalization', () => {
         expect(wrapper.exists()).toBe(true);
     });
 
-    it('initializes missing locale keys to empty string', () => {
+    it('initializes missing locale keys to empty string', async () => {
         const field = makeTextField();
         const wrapper = mount(TranslatableInput, {
             props: { field, modelValue: { tr: 'Elma' } }, // en missing
             global: globalConfig,
         });
 
-        const inputs = wrapper.findAll('input');
-        expect(inputs).toHaveLength(2);
+        // Switch to the EN tab — its input must exist and be empty
+        const tabs = wrapper.findAll('button[role="tab"]');
+        await tabs[1].trigger('click');
+        await nextTick();
 
-        // Second input (en locale) should be empty
-        expect(inputs[1].element.value).toBe('');
+        const inputs = wrapper.findAll('input');
+        const enInput = inputs[inputs.length - 1];
+        expect((enInput.element as HTMLInputElement).value).toBe('');
     });
 });

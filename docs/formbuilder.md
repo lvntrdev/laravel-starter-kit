@@ -305,7 +305,7 @@ Common methods:
 
 - `onlyLocales(['tr', 'en'])` — render only these locale codes.
 - `exceptLocales(['en'])` — hide these locale codes.
-- `translatableLayout('inline' | 'tabs')` — inline stacked fields or tabbed locale panels.
+- Multi-locale fields always render as tabbed locale panels (the kit's single multilingual input design).
 - `localeLabelStyle('badge' | 'name' | 'flag')` — locale label rendering.
 
 ```ts

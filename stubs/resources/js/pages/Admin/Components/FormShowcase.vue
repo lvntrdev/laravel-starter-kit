@@ -169,8 +169,8 @@
             .cols(2)
             .isCard(false)
             .addFields(
-                FB.translatableText().key('i18n_title').label('Başlık').trans(false).required().translatableLayout('tabs'),
-                FB.translatableTextarea().key('i18n_summary').label('Özet').trans(false).optional().rows(3).translatableLayout('tabs'),
+                FB.translatableText().key('i18n_title').label('Başlık').trans(false).required(),
+                FB.translatableTextarea().key('i18n_summary').label('Özet').trans(false).optional().rows(3),
             )
             .build(),
     );

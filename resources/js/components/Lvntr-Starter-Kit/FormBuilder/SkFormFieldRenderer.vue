@@ -422,7 +422,7 @@
             >
                 <div v-if="ctx.hasInlineFieldLabel(field)" class="sk-fb__field-row">
                     <label
-                        v-if="!field.hideLabel"
+                        v-if="!field.hideLabel && !ctx.isTranslatableField(field)"
                         :for="field.key"
                         class="sk-fb__label sk-fb__label--field-inline"
                     >
@@ -455,6 +455,7 @@
                                 :options="ctx.getOptions(field)"
                                 :loading="ctx.isLoading(field)"
                                 :translatable-errors="ctx.translatableErrorsFor(field)"
+                                :translatable-label="!field.hideLabel"
                                 @update="(v) => ctx.setValue(field.key, v)"
                             />
                         </slot>
@@ -462,7 +463,11 @@
                 </div>
 
                 <template v-else>
-                    <label v-if="!field.hideLabel" :for="field.key" class="sk-fb__label">
+                    <label
+                        v-if="!field.hideLabel && !ctx.isTranslatableField(field)"
+                        :for="field.key"
+                        class="sk-fb__label"
+                    >
                         <SkIcon
                             v-if="field.labelIcon && labelIconPosition(field) === 'left'"
                             :icon="field.labelIcon"
@@ -491,6 +496,7 @@
                             :options="ctx.getOptions(field)"
                             :loading="ctx.isLoading(field)"
                             :translatable-errors="ctx.translatableErrorsFor(field)"
+                            :translatable-label="!field.hideLabel"
                             @update="(v) => ctx.setValue(field.key, v)"
                         />
                     </slot>

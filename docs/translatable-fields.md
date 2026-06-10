@@ -104,7 +104,6 @@ Renders a PrimeVue `InputText` per locale.
 | `.maxLength(value)` | `number` | `maxlength` attribute on each input. |
 | `.onlyLocales(locales)` | `string[]` | Render only the listed locale codes. |
 | `.exceptLocales(locales)` | `string[]` | Hide the listed locale codes. |
-| `.translatableLayout(layout)` | `'inline' \| 'tabs'` | Inline stacked fields or tabbed locale panels. |
 | `.localeLabelStyle(style)` | `'badge' \| 'name' \| 'flag'` | Locale label style. |
 
 ### `FB.translatableTextarea()`
@@ -117,7 +116,7 @@ Renders a PrimeVue `Textarea` per locale.
 | `.rows(value)` | `number` | Visible row count. |
 | `.autoResize(enabled = true)` | `boolean` | Enables PrimeVue auto-resize. |
 
-It also supports `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` and `.localeLabelStyle()`.
+It also supports `.onlyLocales()`, `.exceptLocales()` and `.localeLabelStyle()`.
 
 ### `FB.translatableEditor()`
 
@@ -128,7 +127,7 @@ Renders the kit editor per locale.
 | `.minHeight(value)` | `string` | Editor minimum height, for example `'220px'`. |
 | `.toolbar(value)` | `'minimal' \| 'full'` | Toolbar preset. |
 
-It also supports `.onlyLocales()`, `.exceptLocales()`, `.translatableLayout()` and `.localeLabelStyle()`.
+It also supports `.onlyLocales()`, `.exceptLocales()` and `.localeLabelStyle()`.
 
 ## Validation Helpers
 

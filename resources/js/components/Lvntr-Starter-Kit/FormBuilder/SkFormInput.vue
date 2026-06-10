@@ -45,6 +45,8 @@
         options?: SelectOption[];
         loading?: boolean;
         translatableErrors?: Record<string, string>;
+        /** Translatable alanlarda label'ı TranslatableInput bassın (dil seçici label yanında). */
+        translatableLabel?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -53,6 +55,7 @@
         options: () => [],
         loading: false,
         translatableErrors: undefined,
+        translatableLabel: false,
     });
 
     const emit = defineEmits<{
@@ -919,6 +922,7 @@
             :model-value="translatableValue"
             :errors="translatableErrors"
             :disabled="disabled"
+            :show-label="translatableLabel"
             @update="handleTranslatableUpdate"
         />
 

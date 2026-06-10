@@ -28,7 +28,6 @@ export type {
     ExistingMedia,
     OptionFilter,
     FormResourceConfig,
-    TranslatableLayout,
     TranslatableTextFieldConfig,
     TranslatableTextareaFieldConfig,
     TranslatableEditorFieldConfig,

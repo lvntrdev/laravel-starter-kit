@@ -30,7 +30,6 @@ import type {
     TitleFieldConfig,
     ToggleButtonFieldConfig,
     ToggleSwitchFieldConfig,
-    TranslatableLayout,
     TranslatableTextFieldConfig,
     TranslatableTextareaFieldConfig,
     TranslatableEditorFieldConfig,
@@ -711,11 +710,6 @@ abstract class TranslatableBaseBuilder<
 
     exceptLocales(locales: string[]): this {
         this.config.exceptLocales = locales;
-        return this;
-    }
-
-    translatableLayout(layout: TranslatableLayout): this {
-        this.config.translatableLayout = layout;
         return this;
     }
 

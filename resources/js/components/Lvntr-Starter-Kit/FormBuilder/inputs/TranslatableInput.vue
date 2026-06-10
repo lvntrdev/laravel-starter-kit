@@ -6,6 +6,7 @@
     } from '../core';
     import EditorInput from './EditorInput.vue';
     import { usePage } from '@inertiajs/vue3';
+    import { trans } from 'laravel-vue-i18n';
     import type { SharedPageProps } from '@/types';
 
     interface Props {
@@ -14,6 +15,11 @@
         errors?: Record<string, string>;
         disabled?: boolean;
         autocomplete?: string;
+        /**
+         * Render the field label inside this component (next to the locale switcher).
+         * SkForm enables this in vertical layout and skips its own label.
+         */
+        showLabel?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -21,6 +27,7 @@
         errors: undefined,
         disabled: false,
         autocomplete: undefined,
+        showLabel: false,
     });
 
     const emit = defineEmits<{
@@ -47,7 +54,6 @@
     });
 
     const isSingle = computed(() => resolvedLocales.value.length <= 1);
-    const layout = computed(() => props.field.translatableLayout ?? 'inline');
     const fieldType = computed(() => props.field.type);
 
     // ── Internal reactive value ──────────────────────────────────────────────────
@@ -142,6 +148,16 @@
     const asTranslatableEditor = computed(() => props.field as TranslatableEditorFieldConfig);
     const asTranslatableTextarea = computed(() => props.field as TranslatableTextareaFieldConfig);
     const asTranslatableText = computed(() => props.field as TranslatableTextFieldConfig);
+
+    // ── Label / active locale ─────────────────────────────────────────────────────
+
+    const displayFieldLabel = computed(() =>
+        props.field.translateLabel === false ? props.field.label : trans(props.field.label),
+    );
+
+    const activeLocale = computed(
+        () => resolvedLocales.value.find((l) => l.code === activeTab.value) ?? resolvedLocales.value[0],
+    );
 </script>
 
 <template>
@@ -149,6 +165,10 @@
         <!-- Tek dil -->
         <template v-if="isSingle">
             <template v-if="resolvedLocales.length === 1">
+                <label v-if="showLabel" class="sk-fb__label">
+                    {{ displayFieldLabel }}
+                    <span v-if="field.required" class="sk-fb__required">*</span>
+                </label>
                 <InputText
                     v-if="fieldType === 'translatable-text'"
                     :model-value="value[resolvedLocales[0].code] ?? ''"
@@ -184,126 +204,88 @@
                     class="w-full"
                     @update:model-value="(v) => handleUpdate(resolvedLocales[0].code, v)"
                 />
-                <small v-if="errorFor(resolvedLocales[0].code)" class="p-error block mt-1">
+                <small v-if="errorFor(resolvedLocales[0].code)" class="text-red-500 block mt-1">
                     {{ errorFor(resolvedLocales[0].code) }}
                 </small>
             </template>
             <!-- resolvedLocales boşsa hiçbir şey render etme -->
         </template>
 
-        <!-- Çok dil, inline -->
-        <template v-else-if="layout === 'inline'">
-            <div v-for="loc in resolvedLocales" :key="loc.code" class="sk-translatable-field__row">
-                <InputGroup>
-                    <InputGroupAddon class="sk-translatable-field__locale">
-                        {{ formatLocaleLabel(loc) }}
-                    </InputGroupAddon>
-                    <InputText
-                        v-if="fieldType === 'translatable-text'"
-                        :model-value="value[loc.code] ?? ''"
-                        :type="asTranslatableText.inputType ?? 'text'"
-                        :placeholder="asTranslatableText.placeholder"
-                        :maxlength="asTranslatableText.maxLength"
-                        :disabled="disabled"
-                        :invalid="hasErrorInLocale(loc.code)"
-                        :autocomplete="autocomplete"
-                        class="w-full"
-                        v-bind="field.componentProps"
-                        @update:model-value="(v) => handleUpdate(loc.code, String(v ?? ''))"
-                    />
-                    <Textarea
-                        v-else-if="fieldType === 'translatable-textarea'"
-                        :model-value="value[loc.code] ?? ''"
-                        :placeholder="asTranslatableTextarea.placeholder"
-                        :rows="asTranslatableTextarea.rows ?? 4"
-                        :auto-resize="asTranslatableTextarea.autoResize ?? false"
-                        :disabled="disabled"
-                        :invalid="hasErrorInLocale(loc.code)"
-                        class="w-full"
-                        v-bind="field.componentProps"
-                        @update:model-value="(v) => handleUpdate(loc.code, String(v ?? ''))"
-                    />
-                    <EditorInput
-                        v-else-if="fieldType === 'translatable-editor'"
-                        :model-value="value[loc.code] ?? ''"
-                        :min-height="asTranslatableEditor.minHeight ?? '10rem'"
-                        :toolbar="asTranslatableEditor.toolbar ?? 'standard'"
-                        :disabled="disabled"
-                        :invalid="hasErrorInLocale(loc.code)"
-                        class="w-full"
-                        @update:model-value="(v) => handleUpdate(loc.code, v)"
-                    />
-                </InputGroup>
-                <small v-if="errorFor(loc.code)" class="p-error block mt-1">{{ errorFor(loc.code) }}</small>
-            </div>
-        </template>
-
-        <!-- Çok dil, tabs -->
+        <!-- Çok dil: label satırında dil seçici, altında yalnız aktif dilin girişi -->
         <template v-else>
-            <Tabs :value="activeTab" @update:value="(v) => (activeTab = String(v))">
-                <TabList>
-                    <Tab v-for="loc in resolvedLocales" :key="loc.code" :value="loc.code">
+            <div class="mb-2 flex items-center gap-3">
+                <label v-if="showLabel" class="sk-fb__label mb-0!">
+                    {{ displayFieldLabel }}
+                    <span v-if="field.required" class="sk-fb__required">*</span>
+                </label>
+                <div
+                    class="inline-flex items-center gap-0.5 rounded-lg bg-surface-100 p-0.5 dark:bg-surface-800"
+                    role="tablist"
+                >
+                    <button
+                        v-for="loc in resolvedLocales"
+                        :key="loc.code"
+                        type="button"
+                        role="tab"
+                        :aria-selected="activeTab === loc.code"
+                        class="inline-flex cursor-pointer items-center gap-1 rounded-md border-none px-2.5 py-1 text-xs font-semibold transition-colors"
+                        :class="
+                            activeTab === loc.code
+                                ? 'bg-white text-primary shadow-sm dark:bg-surface-700'
+                                : 'bg-transparent text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200'
+                        "
+                        @click="activeTab = loc.code"
+                    >
                         {{ formatLocaleLabel(loc) }}
                         <i
                             v-if="hasErrorInLocale(loc.code)"
-                            class="pi pi-exclamation-circle text-red-500 ml-1"
+                            class="pi pi-exclamation-circle text-red-500"
                             aria-hidden="true"
                         />
-                    </Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel v-for="loc in resolvedLocales" :key="loc.code" :value="loc.code">
-                        <InputText
-                            v-if="fieldType === 'translatable-text'"
-                            :model-value="value[loc.code] ?? ''"
-                            :type="asTranslatableText.inputType ?? 'text'"
-                            :placeholder="asTranslatableText.placeholder"
-                            :maxlength="asTranslatableText.maxLength"
-                            :disabled="disabled"
-                            :invalid="hasErrorInLocale(loc.code)"
-                            :autocomplete="autocomplete"
-                            class="w-full"
-                            v-bind="field.componentProps"
-                            @update:model-value="(v) => handleUpdate(loc.code, String(v ?? ''))"
-                        />
-                        <Textarea
-                            v-else-if="fieldType === 'translatable-textarea'"
-                            :model-value="value[loc.code] ?? ''"
-                            :placeholder="asTranslatableTextarea.placeholder"
-                            :rows="asTranslatableTextarea.rows ?? 4"
-                            :auto-resize="asTranslatableTextarea.autoResize ?? false"
-                            :disabled="disabled"
-                            :invalid="hasErrorInLocale(loc.code)"
-                            class="w-full"
-                            v-bind="field.componentProps"
-                            @update:model-value="(v) => handleUpdate(loc.code, String(v ?? ''))"
-                        />
-                        <EditorInput
-                            v-else-if="fieldType === 'translatable-editor'"
-                            :model-value="value[loc.code] ?? ''"
-                            :min-height="asTranslatableEditor.minHeight ?? '10rem'"
-                            :toolbar="asTranslatableEditor.toolbar ?? 'standard'"
-                            :disabled="disabled"
-                            :invalid="hasErrorInLocale(loc.code)"
-                            class="w-full"
-                            @update:model-value="(v) => handleUpdate(loc.code, v)"
-                        />
-                        <small v-if="errorFor(loc.code)" class="p-error block mt-1">{{ errorFor(loc.code) }}</small>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+                    </button>
+                </div>
+            </div>
+
+            <template v-if="activeLocale">
+                <InputText
+                    v-if="fieldType === 'translatable-text'"
+                    :model-value="value[activeLocale.code] ?? ''"
+                    :type="asTranslatableText.inputType ?? 'text'"
+                    :placeholder="asTranslatableText.placeholder"
+                    :maxlength="asTranslatableText.maxLength"
+                    :disabled="disabled"
+                    :invalid="hasErrorInLocale(activeLocale.code)"
+                    :autocomplete="autocomplete"
+                    class="w-full"
+                    v-bind="field.componentProps"
+                    @update:model-value="(v) => handleUpdate(activeLocale!.code, String(v ?? ''))"
+                />
+                <Textarea
+                    v-else-if="fieldType === 'translatable-textarea'"
+                    :model-value="value[activeLocale.code] ?? ''"
+                    :placeholder="asTranslatableTextarea.placeholder"
+                    :rows="asTranslatableTextarea.rows ?? 4"
+                    :auto-resize="asTranslatableTextarea.autoResize ?? false"
+                    :disabled="disabled"
+                    :invalid="hasErrorInLocale(activeLocale.code)"
+                    class="w-full"
+                    v-bind="field.componentProps"
+                    @update:model-value="(v) => handleUpdate(activeLocale!.code, String(v ?? ''))"
+                />
+                <EditorInput
+                    v-else-if="fieldType === 'translatable-editor'"
+                    :model-value="value[activeLocale.code] ?? ''"
+                    :min-height="asTranslatableEditor.minHeight ?? '10rem'"
+                    :toolbar="asTranslatableEditor.toolbar ?? 'standard'"
+                    :disabled="disabled"
+                    :invalid="hasErrorInLocale(activeLocale.code)"
+                    class="w-full"
+                    @update:model-value="(v) => handleUpdate(activeLocale!.code, v)"
+                />
+                <small v-if="errorFor(activeLocale.code)" class="text-red-500 block mt-1">
+                    {{ errorFor(activeLocale.code) }}
+                </small>
+            </template>
         </template>
     </div>
 </template>
-
-<style scoped>
-    .sk-translatable-field__row + .sk-translatable-field__row {
-        margin-top: 0.5rem;
-    }
-
-    .sk-translatable-field__locale {
-        min-width: 3rem;
-        justify-content: center;
-        font-weight: 600;
-    }
-</style>

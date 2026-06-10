@@ -305,7 +305,7 @@ Ortak metotlar:
 
 - `onlyLocales(['tr', 'en'])` — yalnız bu locale kodlarını render eder.
 - `exceptLocales(['en'])` — bu locale kodlarını gizler.
-- `translatableLayout('inline' | 'tabs')` — alt alta alanlar veya tab'lı locale panelleri.
+- Çok dilli alanlar her zaman tab'lı locale panelleri olarak render edilir (kit'in tek çok dilli giriş tasarımı).
 - `localeLabelStyle('badge' | 'name' | 'flag')` — locale label görünümü.
 
 ```ts
