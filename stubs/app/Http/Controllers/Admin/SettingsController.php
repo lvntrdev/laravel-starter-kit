@@ -71,7 +71,7 @@ class SettingsController extends Controller
     {
         $action->execute('general', GeneralSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'General settings updated.');
+        return back()->with('success', __('sk-setting.flash.general'));
     }
 
     /**
@@ -81,7 +81,7 @@ class SettingsController extends Controller
     {
         $action->execute(AuthSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Authentication settings updated.');
+        return back()->with('success', __('sk-setting.flash.auth'));
     }
 
     /**
@@ -91,7 +91,7 @@ class SettingsController extends Controller
     {
         $action->execute('mail', MailSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Mail settings updated.');
+        return back()->with('success', __('sk-setting.flash.mail'));
     }
 
     /**
@@ -101,7 +101,7 @@ class SettingsController extends Controller
     {
         $action->execute('storage', StorageSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Storage settings updated.');
+        return back()->with('success', __('sk-setting.flash.storage'));
     }
 
     /**
@@ -111,7 +111,7 @@ class SettingsController extends Controller
     {
         $action->execute('file_manager', FileManagerSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'File manager settings updated.');
+        return back()->with('success', __('sk-setting.flash.file_manager'));
     }
 
     /**
@@ -121,7 +121,7 @@ class SettingsController extends Controller
     {
         $action->execute('turnstile', TurnstileSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Turnstile settings updated.');
+        return back()->with('success', __('sk-setting.flash.turnstile'));
     }
 
     /**
@@ -131,7 +131,7 @@ class SettingsController extends Controller
     {
         $action->execute('postman', PostmanSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Postman settings updated.');
+        return back()->with('success', __('sk-setting.flash.postman'));
     }
 
     /**
@@ -141,7 +141,7 @@ class SettingsController extends Controller
     {
         $action->execute('apidog', ApidogSettingsDTO::fromArray($request->validated()));
 
-        return back()->with('success', 'Apidog settings updated.');
+        return back()->with('success', __('sk-setting.flash.apidog'));
     }
 
     /**
@@ -170,7 +170,7 @@ class SettingsController extends Controller
         $path = $request->file('logo')->store('logo', 'public');
         Setting::setValue('general.logo', $path);
 
-        return to_api(['logo_url' => Storage::disk('public')->url($path)], 'Logo uploaded.');
+        return to_api(['logo_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.logo_uploaded'));
     }
 
     /**
@@ -196,7 +196,7 @@ class SettingsController extends Controller
         try {
             $action->execute($request->input('test_email'));
 
-            return back()->with('success', 'Test email sent successfully.');
+            return back()->with('success', __('sk-setting.flash.test_mail_sent'));
         } catch (\Throwable $e) {
             // SMTP exceptions often include host/username/TLS details. Keep
             // that context in the server log but do not flash it back to
@@ -206,7 +206,7 @@ class SettingsController extends Controller
                 'message' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Failed to send test email. Check the server logs for details.');
+            return back()->with('error', __('sk-setting.flash.test_mail_failed'));
         }
     }
 }

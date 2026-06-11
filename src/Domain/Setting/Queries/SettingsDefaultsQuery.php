@@ -122,14 +122,26 @@ class SettingsDefaultsQuery
         $stored = Setting::getGroup('general');
         $defaultLanguages = implode(',', array_keys(config('app.languages', ['en' => 'English'])));
 
+        $languages = explode(',', $stored['languages'] ?? $defaultLanguages);
+
         $logoPath = $stored['logo'] ?? null;
 
         return [
             'app_name' => $stored['app_name'] ?? config('app.name'),
             'timezone' => $stored['timezone'] ?? config('app.display_timezone'),
-            'languages' => explode(',', $stored['languages'] ?? $defaultLanguages),
+            'languages' => $languages,
             'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
             'welcome_message' => $stored['welcome_message'] ?? null,
+            'tagline' => $stored['tagline'] ?? null,
+            'admin_email' => $stored['admin_email'] ?? config('mail.from.address'),
+            'support_email' => $stored['support_email'] ?? null,
+            // The configured default must remain a member of the active set;
+            // fall back to the first active language otherwise.
+            'default_language' => in_array($stored['default_language'] ?? null, $languages, true)
+                ? $stored['default_language']
+                : ($languages[0] ?? config('app.fallback_locale', 'en')),
+            'currency' => $stored['currency'] ?? 'TRY',
+            'date_format' => $stored['date_format'] ?? 'd.m.Y',
         ];
     }
 

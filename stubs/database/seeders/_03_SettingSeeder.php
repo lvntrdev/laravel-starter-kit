@@ -21,6 +21,12 @@ class _03_SettingSeeder extends Seeder
                 'app_name' => 'LVNTR Laravel Starter Kit',
                 'timezone' => config('app.display_timezone', 'UTC'),
                 'languages' => implode(',', array_keys(config('app.languages', ['en' => 'English']))),
+                'tagline' => null,
+                'admin_email' => config('mail.from.address', 'admin@example.com'),
+                'support_email' => null,
+                'default_language' => (string) array_key_first(config('app.languages', ['en' => 'English'])),
+                'currency' => 'TRY',
+                'date_format' => 'd.m.Y',
             ],
             'auth' => [
                 'registration' => '1',

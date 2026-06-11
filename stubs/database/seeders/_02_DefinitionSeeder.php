@@ -133,6 +133,32 @@ class _02_DefinitionSeeder extends Seeder
                 ['male', 'Erkek', 1, 'tr'],
             ],
 
+            // ── Currency (General settings) ──────────────────────────────
+            'currency' => [
+                ['TRY', '₺ Turkish Lira (TRY)', 0, 'en'],
+                ['TRY', '₺ Türk Lirası (TRY)', 0, 'tr'],
+                ['USD', '$ US Dollar (USD)', 1, 'en'],
+                ['USD', '$ ABD Doları (USD)', 1, 'tr'],
+                ['EUR', '€ Euro (EUR)', 2, 'en'],
+                ['EUR', '€ Euro (EUR)', 2, 'tr'],
+                ['GBP', '£ British Pound (GBP)', 3, 'en'],
+                ['GBP', '£ İngiliz Sterlini (GBP)', 3, 'tr'],
+            ],
+
+            // ── Date Format (General settings) — PHP date() tokens ───────
+            'dateFormat' => [
+                ['d.m.Y', '31.12.2026 (d.m.Y)', 0, 'en'],
+                ['d.m.Y', '31.12.2026 (d.m.Y)', 0, 'tr'],
+                ['d-m-Y', '31-12-2026 (d-m-Y)', 1, 'en'],
+                ['d-m-Y', '31-12-2026 (d-m-Y)', 1, 'tr'],
+                ['d/m/Y', '31/12/2026 (d/m/Y)', 2, 'en'],
+                ['d/m/Y', '31/12/2026 (d/m/Y)', 2, 'tr'],
+                ['Y-m-d', '2026-12-31 (Y-m-d)', 3, 'en'],
+                ['Y-m-d', '2026-12-31 (Y-m-d)', 3, 'tr'],
+                ['m/d/Y', '12/31/2026 (m/d/Y)', 4, 'en'],
+                ['m/d/Y', '12/31/2026 (m/d/Y)', 4, 'tr'],
+            ],
+
         ];
     }
 }

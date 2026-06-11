@@ -4,6 +4,20 @@ return [
     'title' => 'Settings',
     'subtitle' => 'Manage application configuration.',
 
+    'flash' => [
+        'general' => 'General settings updated.',
+        'auth' => 'Authentication settings updated.',
+        'mail' => 'Mail settings updated.',
+        'storage' => 'Storage settings updated.',
+        'file_manager' => 'File manager settings updated.',
+        'turnstile' => 'Turnstile settings updated.',
+        'postman' => 'Postman settings updated.',
+        'apidog' => 'Apidog settings updated.',
+        'logo_uploaded' => 'Logo uploaded.',
+        'test_mail_sent' => 'Test email sent successfully.',
+        'test_mail_failed' => 'Failed to send test email. Check the server logs for details.',
+    ],
+
     'tabs' => [
         'general' => 'General',
         'auth' => 'Security',
@@ -30,7 +44,14 @@ return [
 
     'general' => [
         'title' => 'General Settings',
-        'subtitle' => 'Configure basic application settings.',
+        'subtitle' => 'Application name, regional preferences and core identity.',
+        'identity_title' => 'Site Identity',
+        'identity_subtitle' => 'Your site\'s basic identity appears in browser tabs and search results.',
+        'regional_title' => 'Regional Settings',
+        'regional_subtitle' => 'Timezone, language and currency format the data shown to users.',
+        'welcome_title' => 'Welcome Message',
+        'welcome_subtitle' => 'Shown on the admin dashboard. Supports basic formatting and images.',
+        'default_language_hint' => 'Used as the default locale; must be one of the active languages.',
         'languages_hint' => 'Select the languages your application supports.',
         'logo' => 'Application Logo',
         'logo_hint' => 'Upload a logo to display in the sidebar and login page.',

@@ -39,9 +39,24 @@ class SettingsServiceProvider extends ServiceProvider
 
                 if ($activeLanguages) {
                     config(['app.languages' => $activeLanguages]);
-                    config(['app.locale' => array_key_first($activeLanguages)]);
-                    app()->setLocale(array_key_first($activeLanguages));
+
+                    // Prefer the admin-chosen default language; fall back to the
+                    // first active language when it is unset or no longer active.
+                    $default = $general['default_language'] ?? null;
+                    if (! $default || ! array_key_exists($default, $activeLanguages)) {
+                        $default = array_key_first($activeLanguages);
+                    }
+
+                    config(['app.locale' => $default]);
+                    config(['app.default_locale' => $default]);
+                    app()->setLocale($default);
                 }
+            }
+            if ($general['currency'] ?? null) {
+                config(['app.currency' => $general['currency']]);
+            }
+            if ($general['date_format'] ?? null) {
+                config(['app.date_format' => $general['date_format']]);
             }
         }
 

@@ -1,18 +1,21 @@
 <script setup lang="ts">
-    import { ref, computed, watch } from 'vue';
-    import { router } from '@inertiajs/vue3';
+    import { computed } from 'vue';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
-    import SkCard from '@lvntr/components/ui/SkCard.vue';
     import adminSettings from '@/routes/settings';
     import { trans } from 'laravel-vue-i18n';
-    import { useConfirm } from '@/composables/useConfirm';
 
     interface Props {
         settings: {
             app_name: string;
+            tagline: string | null;
+            admin_email: string;
+            support_email: string | null;
             timezone: string;
             languages: string[];
+            default_language: string;
+            currency: string;
+            date_format: string;
             logo_url: string | null;
             welcome_message: string | null;
         };
@@ -22,102 +25,6 @@
 
     const props = defineProps<Props>();
 
-    const { confirmDelete } = useConfirm();
-    const logoUrl = ref<string | null>(props.settings.logo_url);
-    const uploading = ref(false);
-    const fileInput = ref<HTMLInputElement | null>(null);
-
-    watch(
-        () => props.settings.logo_url,
-        (val) => {
-            logoUrl.value = val ?? null;
-        },
-    );
-
-    function getCsrfToken(): string | undefined {
-        const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-        return match ? decodeURIComponent(match[2]) : undefined;
-    }
-
-    function selectFile() {
-        fileInput.value?.click();
-    }
-
-    async function onFileSelected(event: Event) {
-        const input = event.target as HTMLInputElement;
-        if (!input.files?.length) return;
-
-        const file = input.files[0];
-        input.value = '';
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            logoUrl.value = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-
-        uploading.value = true;
-        try {
-            const formData = new FormData();
-            formData.append('logo', file);
-
-            const headers: Record<string, string> = {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            };
-            const xsrf = getCsrfToken();
-            if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
-
-            const response = await fetch(adminSettings.upload.logo.url(), {
-                method: 'POST',
-                headers,
-                credentials: 'same-origin',
-                body: formData,
-            });
-
-            if (response.ok) {
-                const json = await response.json();
-                logoUrl.value = json.data?.logo_url ?? logoUrl.value;
-                router.reload();
-            } else {
-                logoUrl.value = props.settings.logo_url;
-            }
-        } catch {
-            logoUrl.value = props.settings.logo_url;
-        } finally {
-            uploading.value = false;
-        }
-    }
-
-    function removeLogo() {
-        confirmDelete(async () => {
-            uploading.value = true;
-            try {
-                const headers: Record<string, string> = {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                };
-                const xsrf = getCsrfToken();
-                if (xsrf) headers['X-XSRF-TOKEN'] = xsrf;
-
-                const response = await fetch(adminSettings.delete.logo.url(), {
-                    method: 'DELETE',
-                    headers,
-                    credentials: 'same-origin',
-                });
-
-                if (response.ok || response.status === 204) {
-                    logoUrl.value = null;
-                    router.reload();
-                }
-            } catch {
-                // silently fail
-            } finally {
-                uploading.value = false;
-            }
-        }, trans('sk-setting.general.logo_remove_confirm'));
-    }
-
     const timezoneOptions = computed(() => props.timezones.map((tz) => ({ label: tz, value: tz })));
 
     const languageOptions = computed(() =>
@@ -126,6 +33,19 @@
             value: locale,
         })),
     );
+
+    // Default language must stay within the currently active languages.
+    const activeLanguageOptions = computed(() =>
+        languageOptions.value.filter((opt) => props.settings.languages.includes(opt.value)),
+    );
+
+    function toggleLanguage(current: string[] | undefined, locale: string, onUpdate?: (value: unknown) => void) {
+        const next = new Set(current ?? []);
+        next.has(locale) ? next.delete(locale) : next.add(locale);
+        onUpdate?.(Array.from(next));
+    }
+
+    const isLanguageOn = (current: string[] | undefined, locale: string) => (current ?? []).includes(locale);
 
     const formConfig = computed(() =>
         FB.form()
@@ -140,93 +60,97 @@
                 preserveScroll: true,
             })
             .addFields(
-                FB.inputText().key('app_name'),
-                FB.select().key('timezone').options(timezoneOptions.value).filter(true).class('col-span-full'),
-                FB.checkboxGroup()
-                    .key('languages')
-                    .hint(trans('sk-setting.general.languages_hint'))
-                    .labelPlacement('inline')
-                    .controlPosition('left')
-                    .options(languageOptions.value)
-                    .class('col-span-full'),
-                FB.editor()
-                    .key('welcome_message')
-                    .optional()
-                    .class('col-span-full')
-                    .minHeight('14rem')
-                    .toolbar('standard')
-                    .links(true)
-                    .placeholder('sk-setting.general.welcome_message_placeholder')
-                    .hint(trans('sk-setting.general.welcome_message_hint'))
-                    .imageUpload({
-                        context: 'global',
-                        folderName: 'Welcome Message',
-                    }),
+                FB.section(trans('sk-setting.general.identity_title'))
+                    .trans(false)
+                    .subtitle(trans('sk-setting.general.identity_subtitle'))
+                    .aside()
+                    .cols(2)
+                    .addFields(
+                        FB.inputText().key('app_name').required().icon('pi pi-building').colSpan(2),
+                        FB.inputText().key('tagline').optional().icon('pi pi-align-left').colSpan(2),
+                        FB.inputText().key('admin_email').required().inputType('email').icon('pi pi-envelope'),
+                        FB.inputText().key('support_email').optional().inputType('email').icon('pi pi-inbox'),
+                    ),
+                FB.section(trans('sk-setting.general.regional_title'))
+                    .trans(false)
+                    .subtitle(trans('sk-setting.general.regional_subtitle'))
+                    .aside()
+                    .cols(2)
+                    .addFields(
+                        FB.select()
+                            .key('default_language')
+                            .options(activeLanguageOptions.value)
+                            .icon('pi pi-language')
+                            .hint(trans('sk-setting.general.default_language_hint')),
+                        FB.select().key('timezone').options(timezoneOptions.value).filter(true).icon('pi pi-clock'),
+                        FB.select().key('currency').definitionOptions('currency').icon('pi pi-wallet'),
+                        FB.select().key('date_format').definitionOptions('dateFormat').icon('pi pi-calendar'),
+                        // Rendered by the #field-languages slot as design pill toggles.
+                        FB.selectButton()
+                            .key('languages')
+                            .options(languageOptions.value)
+                            .required()
+                            .hint(trans('sk-setting.general.languages_hint'))
+                            .colSpan(2),
+                    ),
+                FB.section(trans('sk-setting.general.welcome_title'))
+                    .trans(false)
+                    .subtitle(trans('sk-setting.general.welcome_subtitle'))
+                    .aside()
+                    .cols(1)
+                    .addFields(
+                        FB.editor()
+                            .key('welcome_message')
+                            .optional()
+                            .label(false)
+                            .minHeight('14rem')
+                            .toolbar('standard')
+                            .links(true)
+                            .placeholder('sk-setting.general.welcome_message_placeholder')
+                            .imageUpload({
+                                context: 'global',
+                                folderName: 'Welcome Message',
+                            }),
+                    ),
             )
             .build(),
     );
 </script>
 
 <template>
-    <!-- Logo Upload -->
-    <SkCard class="mb-6">
-        <template #title>
-            {{ $t('sk-setting.general.logo') }}
-        </template>
-        <template #subtitle>
-            {{ $t('sk-setting.general.logo_hint') }}
-        </template>
-        <template #content>
-            <div class="flex items-center gap-4">
-                <div
-                    class="relative flex h-16 w-40 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800"
-                    @click="selectFile"
-                >
-                    <img v-if="logoUrl" :src="logoUrl" alt="Logo" class="h-full w-full object-contain p-2">
-                    <i v-else class="pi pi-image text-2xl text-surface-400" />
-                    <div
-                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100"
-                    >
-                        <i v-if="uploading" class="pi pi-spin pi-spinner text-lg text-white" />
-                        <i v-else class="pi pi-upload text-lg text-white" />
-                    </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <div class="flex gap-2">
-                        <Button
-                            type="button"
-                            :label="$t('sk-setting.general.logo_upload')"
-                            icon="pi pi-upload"
-                            size="small"
-                            outlined
-                            :loading="uploading"
-                            @click="selectFile"
-                        />
-                        <Button
-                            v-if="logoUrl"
-                            type="button"
-                            :label="$t('sk-setting.general.logo_remove')"
-                            icon="pi pi-trash"
-                            size="small"
-                            severity="danger"
-                            outlined
-                            :disabled="uploading"
-                            @click="removeLogo"
-                        />
-                    </div>
-                    <small class="text-surface-400">PNG, JPG, SVG, WebP - max 2MB</small>
-                </div>
-            </div>
-            <input
-                ref="fileInput"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                class="hidden"
-                @change="onFileSelected"
-            >
-        </template>
-    </SkCard>
-
     <!-- General Settings Form -->
-    <SkForm :config="formConfig" />
+    <SkForm :config="formConfig">
+        <!-- Active languages — design pill toggles (ring + check) -->
+        <template #field-languages="{ value, onUpdate }">
+            <div class="flex flex-wrap gap-2.5">
+                <button
+                    v-for="opt in languageOptions"
+                    :key="opt.value"
+                    type="button"
+                    class="inline-flex h-10 items-center gap-2 rounded border px-4 text-sm font-semibold transition-colors"
+                    :class="
+                        isLanguageOn(value as string[], opt.value)
+                            ? 'border-primary-500 bg-primary-500/8 text-primary-500 dark:bg-primary-500/15'
+                            : 'border-surface-200 text-surface-600 hover:border-surface-300 dark:border-surface-700 dark:text-surface-300 dark:hover:border-surface-600'
+                    "
+                    @click="toggleLanguage(value as string[], opt.value, onUpdate)"
+                >
+                    <span
+                        class="grid h-[18px] w-[18px] place-items-center rounded-full border transition-colors"
+                        :class="
+                            isLanguageOn(value as string[], opt.value)
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-surface-300 dark:border-surface-600'
+                        "
+                    >
+                        <i
+                            v-show="isLanguageOn(value as string[], opt.value)"
+                            class="pi pi-check text-[9px] text-white"
+                        />
+                    </span>
+                    {{ opt.label }}
+                </button>
+            </div>
+        </template>
+    </SkForm>
 </template>

@@ -4,6 +4,20 @@ return [
     'title' => 'Ayarlar',
     'subtitle' => 'Uygulama yapılandırmasını yönetin.',
 
+    'flash' => [
+        'general' => 'Genel ayarlar güncellendi.',
+        'auth' => 'Güvenlik ayarları güncellendi.',
+        'mail' => 'E-posta ayarları güncellendi.',
+        'storage' => 'Depolama ayarları güncellendi.',
+        'file_manager' => 'Dosya yöneticisi ayarları güncellendi.',
+        'turnstile' => 'Turnstile ayarları güncellendi.',
+        'postman' => 'Postman ayarları güncellendi.',
+        'apidog' => 'Apidog ayarları güncellendi.',
+        'logo_uploaded' => 'Logo yüklendi.',
+        'test_mail_sent' => 'Test e-postası başarıyla gönderildi.',
+        'test_mail_failed' => 'Test e-postası gönderilemedi. Ayrıntılar için sunucu günlüklerini kontrol edin.',
+    ],
+
     'tabs' => [
         'general' => 'Genel',
         'auth' => 'Güvenlik Ayarları',
@@ -30,7 +44,14 @@ return [
 
     'general' => [
         'title' => 'Genel Ayarlar',
-        'subtitle' => 'Temel uygulama ayarlarını yapılandırın.',
+        'subtitle' => 'Uygulama adı, bölgesel tercihler ve temel kimlik bilgileri.',
+        'identity_title' => 'Site Kimliği',
+        'identity_subtitle' => 'Sitenizin temel kimlik bilgileri arama motorlarında ve sekmelerde gözükür.',
+        'regional_title' => 'Bölgesel Ayarlar',
+        'regional_subtitle' => 'Saat dilimi, dil ve para birimi kullanıcılara gösterilen verileri biçimlendirir.',
+        'welcome_title' => 'Karşılama Mesajı',
+        'welcome_subtitle' => 'Yönetim panosunda gösterilir. Temel biçimlendirme ve görselleri destekler.',
+        'default_language_hint' => 'Varsayılan locale olarak kullanılır; aktif dillerden biri olmalıdır.',
         'languages_hint' => 'Uygulamanızın desteklediği dilleri seçin.',
         'logo' => 'Uygulama Logosu',
         'logo_hint' => 'Yan menüde ve giriş sayfasında gösterilecek bir logo yükleyin.',

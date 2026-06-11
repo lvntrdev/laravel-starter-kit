@@ -131,7 +131,40 @@ if (! function_exists('sk_default_locale')) {
     {
         $locales = sk_locale_keys();
 
+        // Honour the admin-chosen default language when it is still active;
+        // SettingsServiceProvider pushes it into `app.default_locale` at boot.
+        $configured = config('app.default_locale');
+        if ($configured && in_array($configured, $locales, true)) {
+            return $configured;
+        }
+
         return $locales[0] ?? config('app.fallback_locale', 'en');
+    }
+}
+
+if (! function_exists('format_money')) {
+    /**
+     * Format a numeric amount with the application's configured currency.
+     *
+     * The active currency is pushed into `app.currency` by
+     * SettingsServiceProvider from the General settings.
+     *
+     * Usage:
+     *   format_money(1234.5)          → '₺1.234,50'  (when currency = TRY)
+     *   format_money(99, 'USD')       → '$99,00'
+     */
+    function format_money(int|float|string|null $amount, ?string $currency = null): ?string
+    {
+        if ($amount === null || $amount === '') {
+            return null;
+        }
+
+        $currency ??= config('app.currency', 'TRY');
+
+        $symbols = ['TRY' => '₺', 'USD' => '$', 'EUR' => '€', 'GBP' => '£'];
+        $symbol = $symbols[$currency] ?? ($currency.' ');
+
+        return $symbol.number_format((float) $amount, 2, ',', '.');
     }
 }
 
@@ -153,10 +186,14 @@ if (! function_exists('format_date')) {
         $carbon = $value instanceof Carbon ? $value : Carbon::parse($value);
         $carbon = $carbon->setTimezone(config('app.display_timezone'));
 
+        // Admin-configured date format (General settings) drives the date part;
+        // defaults preserve the kit's historical 'd-m-Y' output.
+        $dateFormat = config('app.date_format', 'd-m-Y');
+
         return match ($type) {
-            'date' => $carbon->format('d-m-Y'),
+            'date' => $carbon->format($dateFormat),
             'time' => $carbon->format('H:i'),
-            default => $carbon->format('d-m-Y H:i'),
+            default => $carbon->format($dateFormat.' H:i'),
         };
     }
 }

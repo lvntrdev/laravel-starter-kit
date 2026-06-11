@@ -27,8 +27,14 @@
         settings: {
             general: {
                 app_name: string;
+                tagline: string | null;
+                admin_email: string;
+                support_email: string | null;
                 timezone: string;
                 languages: string[];
+                default_language: string;
+                currency: string;
+                date_format: string;
                 logo_url: string | null;
                 welcome_message: string | null;
             };
