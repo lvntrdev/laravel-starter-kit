@@ -33,6 +33,13 @@ export interface SharedPageProps {
     enums: Record<string, Array<{ value: string | number; label: string; severity: string }>>;
     locale: string;
     availableLocales: Record<string, string>;
+    /**
+     * Active content languages ({ code: name }) that drive translatable content
+     * fields — distinct from `availableLocales` (admin UI translation). Optional:
+     * absent on installer pages and on consumers without the content-languages
+     * table, where translatable inputs fall back to `availableLocales`.
+     */
+    availableContentLocales?: Record<string, string>;
     [key: string]: unknown;
 }
 

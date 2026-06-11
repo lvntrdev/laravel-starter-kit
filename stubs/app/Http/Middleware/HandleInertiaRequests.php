@@ -2,9 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ContentLanguage;
 use App\Models\Setting;
 use Composer\InstalledVersions;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Middleware;
@@ -66,6 +69,15 @@ class HandleInertiaRequests extends Middleware
             'appDebug' => fn () => app()->environment('production') ? false : (bool) config('app.debug'),
             'locale' => app()->getLocale(),
             'availableLocales' => config('app.languages', []),
+            // Content languages are a separate concept from the admin UI locale:
+            // they drive multilingual *content* fields (TranslatableInput), not the
+            // interface translation. Shared lazily so it's only resolved on demand.
+            //
+            // Falls back to the configured UI languages on a fresh install /
+            // pre-migrate request (the table may not exist yet) instead of
+            // throwing. Cached ~1h; the ContentLanguage model flushes the cache
+            // on every save/delete, so CRUD reflects immediately.
+            'availableContentLocales' => fn () => $this->availableContentLocales(),
             'auth' => [
                 'user' => $request->user()?->loadMissing('media'),
                 'role' => (function () use ($request) {
@@ -111,5 +123,36 @@ class HandleInertiaRequests extends Middleware
                 'site_key' => config('services.turnstile.enabled') ? config('services.turnstile.site_key') : null,
             ],
         ];
+    }
+
+    /**
+     * Active content languages as a { code: name } map for translatable fields.
+     *
+     * Falls back to the configured admin UI languages when the table is absent
+     * (fresh install / pre-migrate) or empty, so multilingual forms never break.
+     *
+     * @return array<string, string>
+     */
+    protected function availableContentLocales(): array
+    {
+        $fallback = config('app.languages', []);
+
+        // On a cache hit the closure never runs — no per-request schema probe
+        // and no DB round-trip. The QueryException catch covers the pre-migrate
+        // case (table absent) without the cost of Schema::hasTable every request.
+        try {
+            $locales = Cache::remember(ContentLanguage::AVAILABLE_CACHE_KEY, 3600, function () {
+                return ContentLanguage::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('code')
+                    ->pluck('name', 'code')
+                    ->all();
+            });
+        } catch (QueryException) {
+            return $fallback;
+        }
+
+        return empty($locales) ? $fallback : $locales;
     }
 }

@@ -40,7 +40,15 @@
     const page = usePage<SharedPageProps>();
 
     const resolvedLocales = computed<Array<{ code: string; name: string }>>(() => {
-        const available = page.props.availableLocales ?? {};
+        // Content fields walk the *content* languages (DB-backed) — distinct from
+        // the admin UI translation locales. Fall back to `availableLocales` when the
+        // content-languages prop is absent or empty (old consumers / empty table /
+        // installer pages), so multilingual forms never render an empty locale list.
+        const contentLocales = page.props.availableContentLocales;
+        const available =
+            contentLocales && Object.keys(contentLocales).length > 0
+                ? contentLocales
+                : (page.props.availableLocales ?? {});
         let locales = Object.entries(available).map(([code, name]) => ({ code, name }));
 
         if (props.field.onlyLocales?.length) {

@@ -4,6 +4,7 @@
     import ApiClientsManageTab from './components/ApiClientsManageTab.vue';
     import ApiClientsTab from './components/ApiClientsTab.vue';
     import ApiTokensManageTab from './components/ApiTokensManageTab.vue';
+    import ContentLanguagesTab from './components/ContentLanguagesTab.vue';
     import FileManagerTab from './components/FileManagerTab.vue';
     import GeneralTab from './components/GeneralTab.vue';
     import MailTab from './components/MailTab.vue';
@@ -145,6 +146,12 @@
                 .icon('pi pi-folder')
                 .iconColor('teal'),
             TB.item()
+                .key('content_languages')
+                .label('sk-setting.tabs.content_languages')
+                .description('sk-setting.tab_descriptions.content_languages')
+                .icon('pi pi-language')
+                .iconColor('green'),
+            TB.item()
                 .key('api_integrations')
                 .label('sk-setting.tabs.api_integrations')
                 .description('sk-setting.tab_descriptions.api_integrations')
@@ -200,6 +207,10 @@
 
             <template #file_manager>
                 <FileManagerTab :settings="props.settings.file_manager" />
+            </template>
+
+            <template #content_languages>
+                <ContentLanguagesTab />
             </template>
 
             <template #api_integrations>

@@ -87,6 +87,10 @@ it('does not contain unexpected migration files in the vendor directory', functi
         // v13.6.0: role tag colors — nullable `color` column on the roles table,
         // seeded from config/permission-resources.php → role_colors.
         '2026_06_10_000001_add_color_to_roles_table.php',
+        // v13.6.0: content languages — DB-backed source for translatable content
+        // field locale tabs (distinct from the admin UI locale). Additive create
+        // only; no edit of a committed migration.
+        '2026_06_11_100000_create_content_languages_table.php',
     ];
 
     $actual = collect(scandir($migrationDir))

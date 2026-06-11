@@ -32,6 +32,10 @@ uses(DatabaseTestCase::class)->in('Feature/Datatable');
 // inline kurulur, users tablosu üzerinden DB gerekli.
 uses(DatabaseTestCase::class)->in('Feature/BulkSelection');
 
+// İçerik dilleri (content languages) testleri: content_languages tablosu
+// beforeEach'te inline kurulur, Action invariant + validation + gating DB gerekli.
+uses(DatabaseTestCase::class)->in('Feature/ContentLanguage');
+
 // DB gerektirmeyen diğer Feature testleri
 uses(TestCase::class)->in('Feature/BackwardCompat');
 
