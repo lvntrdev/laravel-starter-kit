@@ -128,25 +128,45 @@
 
     const SUPPORTS_INPUT_ICON = new Set(['input-text', 'input-number', 'input-mask', 'password']);
 
-    /**
-     * True when the field should render inside an IconField wrapper.
-     * Exclusions:
-     * - groupPrefix/groupSuffix present → InputGroup wins, IconField deactivated.
-     * - password with PrimeVue feedback path → component owns its own icons.
-     */
-    const usesIconField = computed(() => {
-        if (!SUPPORTS_INPUT_ICON.has(props.field.type)) return false;
-        if (!inputIcon.value) return false;
-        if (props.field.groupPrefix || props.field.groupSuffix) return false;
-        if (props.field.type === 'password' && !useCustomPasswordInput.value) return false;
-        return true;
-    });
-
     /** True when the password field should render our custom eye toggle. */
     const showPasswordToggle = computed(() => useCustomPasswordInput.value && (asPassword.value.toggleMask ?? true));
 
     /** True when the password field should render the generate button. */
     const showPasswordGenerator = computed(() => useCustomPasswordInput.value && !!asPassword.value.generator);
+
+    /**
+     * True when the field should render inside an IconField wrapper.
+     * Exclusions:
+     * - groupPrefix/groupSuffix present → InputGroup wins, IconField deactivated.
+     * - password with PrimeVue feedback path → component owns its own icons.
+     * - password with eye-toggle/generator addons → those force an InputGroup
+     *   wrapper, and PrimeVue's InputGroup expects its input as a direct child;
+     *   nesting IconField inside it breaks the border/radius grouping. The icon
+     *   falls back to a leading InputGroupAddon instead (see template).
+     */
+    const usesIconField = computed(() => {
+        if (!SUPPORTS_INPUT_ICON.has(props.field.type)) return false;
+        if (!inputIcon.value) return false;
+        if (props.field.groupPrefix || props.field.groupSuffix) return false;
+        if (props.field.type === 'password') {
+            if (!useCustomPasswordInput.value) return false;
+            if (showPasswordToggle.value || showPasswordGenerator.value) return false;
+        }
+        return true;
+    });
+
+    /**
+     * Leading icon for a grouped custom-password field, rendered as an
+     * InputGroupAddon because IconField cannot live inside InputGroup.
+     */
+    const showPasswordIconAddon = computed(
+        () =>
+            props.field.type === 'password' &&
+            useCustomPasswordInput.value &&
+            !usesIconField.value &&
+            !!inputIcon.value &&
+            !props.field.groupPrefix,
+    );
 
     /** Local visibility state — only used when we render the custom eye toggle. */
     const passwordVisible = ref(false);
@@ -361,6 +381,11 @@
             <template v-else>
                 {{ field.groupPrefix }}
             </template>
+        </InputGroupAddon>
+
+        <!-- Leading icon for grouped password fields (IconField can't nest in InputGroup) -->
+        <InputGroupAddon v-if="showPasswordIconAddon">
+            <SkIcon :icon="inputIcon!" />
         </InputGroupAddon>
 
         <!-- InputText -->
