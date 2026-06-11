@@ -297,6 +297,23 @@ export interface ToggleButtonFieldConfig extends BaseFieldConfig {
 
 export interface ToggleSwitchFieldConfig extends BaseFieldConfig {
     type: 'toggle-switch';
+    /**
+     * Opt-in "rich row" leading icon. When set (together with or without
+     * `description`), the toggle renders as a settings-style row: a rounded
+     * icon box on the left, label + description in the middle, switch on the
+     * right. Omit for the default inline render (backwards-compatible).
+     *
+     * Accepts an icon class (e.g. 'pi pi-key') rendered via SkIcon, OR a short
+     * text glyph (e.g. 'Aa', '123', '!@#') rendered as plain text inside the box.
+     * A value is treated as a glyph unless it looks like an icon class (contains
+     * a space and starts with a known icon-library prefix, e.g. 'pi ').
+     */
+    rowIcon?: string;
+    /**
+     * Opt-in "rich row" description shown under the label (translation key by
+     * default). Enables the rich row layout even without `rowIcon`.
+     */
+    description?: string;
 }
 
 export interface TitleFieldConfig extends BaseFieldConfig {
@@ -459,6 +476,12 @@ export interface FormActionLabels {
     hideCancel?: boolean;
     /** Hide the submit button entirely. */
     hideSubmit?: boolean;
+    /**
+     * Suppress the entire action bar (top + bottom). Use when the host renders
+     * its own footer/actions and drives submit via the exposed `submit()` method
+     * (e.g. a card-integrated footer). Default: false.
+     */
+    hideActions?: boolean;
 }
 
 export interface FormBuilderConfig {

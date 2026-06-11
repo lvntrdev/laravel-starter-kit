@@ -43,6 +43,12 @@
                 email_verification: boolean;
                 two_factor: boolean;
                 password_reset: boolean;
+                login_throttle: boolean;
+                password_min_length: number;
+                password_expiry_days: number;
+                password_require_mixed_case: boolean;
+                password_require_numbers: boolean;
+                password_require_symbols: boolean;
             };
             mail: {
                 mailer: string;

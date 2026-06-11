@@ -146,7 +146,14 @@ class SettingsDefaultsQuery
     }
 
     /**
-     * @return array<string, bool>
+     * Fallbacks for the newer keys deliberately mirror the pre-feature
+     * behavior: throttle already active, no expiry, and the kit's
+     * hardened password baseline — the old stub AppServiceProvider raised
+     * Password::defaults() to min 10 + mixed case + numbers + symbols, so
+     * existing installs that never saved the new fields keep that exact
+     * policy after sk:update (no silent weakening).
+     *
+     * @return array<string, bool|int>
      */
     public function auth(): array
     {
@@ -157,6 +164,12 @@ class SettingsDefaultsQuery
             'email_verification' => ($stored['email_verification'] ?? '1') === '1',
             'two_factor' => ($stored['two_factor'] ?? '1') === '1',
             'password_reset' => ($stored['password_reset'] ?? '1') === '1',
+            'login_throttle' => ($stored['login_throttle'] ?? '1') === '1',
+            'password_min_length' => (int) ($stored['password_min_length'] ?? 10),
+            'password_expiry_days' => (int) ($stored['password_expiry_days'] ?? 0),
+            'password_require_mixed_case' => ($stored['password_require_mixed_case'] ?? '1') === '1',
+            'password_require_numbers' => ($stored['password_require_numbers'] ?? '1') === '1',
+            'password_require_symbols' => ($stored['password_require_symbols'] ?? '1') === '1',
         ];
     }
 

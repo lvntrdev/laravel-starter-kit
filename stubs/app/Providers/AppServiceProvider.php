@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Listeners\UpdateLastLogin;
 use App\Policies\ApiClientPolicy;
 use App\Policies\ApiTokenPolicy;
+use App\Support\PasswordPolicy;
 use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -45,14 +46,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Token::class, ApiTokenPolicy::class);
 
         // Every FormRequest that relies on Password::defaults() picks this
-        // policy up automatically. Raises the bar from Laravel's 8-char
-        // default to 10+ chars with mixed case, digits and symbols.
-        Password::defaults(function () {
-            return Password::min(10)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols();
-        });
+        // policy up automatically. The rule is resolved lazily at validation
+        // time from the admin-configured password policy (Settings →
+        // Security), bridged into runtime config by SettingsServiceProvider.
+        // When the bridge has not run, PasswordPolicy falls back to the
+        // kit's hardened baseline (min 10 + mixed case + numbers + symbols).
+        Password::defaults(fn (): Password => PasswordPolicy::rule());
     }
 }

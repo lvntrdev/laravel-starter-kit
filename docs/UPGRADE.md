@@ -8,12 +8,12 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ### Summary
 
-13.6.0 bundles every published-file change since v13.5.11 (the last released version) into one upgrade. It completes the vendor-runtime migration — backend helper classes, middleware, three third-party configs, 15 composables, `TurnstileWidget.vue`, and the `v-can` / `v-role` permission directive plugin all run from the vendor package — and introduces the structured theme/layout/CSS system: an `AppShell.vue` composition, the `themes/main/` slot tree (every CSS cascade layer is an overridable slot), and the opt-in `themes/custom/` override theme. **No visual change** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. Run the upgrade once with the steps below; the per-area sections that follow are reference detail (apply only the "if you customised…" notes that match your project).
+13.6.0 bundles every published-file change since v13.5.11 (the last released version) into one upgrade. It completes the vendor-runtime migration — backend helper classes, middleware, three third-party configs, 15 composables, `TurnstileWidget.vue`, and the `v-can` / `v-role` permission directive plugin all run from the vendor package — and introduces the structured theme/layout/CSS system: an `AppShell.vue` composition, the `themes/main/` slot tree (every CSS cascade layer is an overridable slot), and the opt-in `themes/custom/` override theme. It also introduces the Security Settings redesign: the Security tab gains three sub-tabs (Authentication / Password Policy / Cloudflare Turnstile), six new `auth.*` setting keys, and full enforcement of password rules and password expiry via `EnsurePasswordNotExpired` middleware. **No visual change to the default build** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11 for projects that do not touch the security settings. Run the upgrade once with the steps below; the per-area sections that follow are reference detail (apply only the "if you customised…" notes that match your project).
 
 ```bash
 composer update lvntr/laravel-starter-kit
 php artisan sk:update          # delivers the new stubs: layout, CSS theme tree, resolver, .env.example + package.json updates
-php artisan migrate            # "Nothing to migrate" — no schema changes
+php artisan migrate            # adds password_changed_at column to users
 npm install
 npm run build                  # panel should look identical
 ```
@@ -791,6 +791,95 @@ No migration is required. Existing projects keep their local `resources/js/plugi
 - **Keep it** to stay pinned to your copy, or to customise the directives.
 
 To recreate an editable copy later, run `php artisan sk:publish --tag=plugins` — it shadows the vendor version again.
+
+---
+
+### Security Settings redesign — password policy enforcement
+
+This release redesigns **Settings → Security** and adds full server-side enforcement of password rules and password expiry.
+
+#### New migration — `users.password_changed_at`
+
+A nullable `timestamp` column is added to the `users` table. Existing rows are back-filled with `now()` at migration time so no user is immediately treated as expired on deployment.
+
+```bash
+php artisan migrate
+```
+
+#### New `auth.*` setting keys
+
+Six keys are added to the `auth` group. All have backward-compatible fallbacks so existing installations are not affected when they upgrade without seeding.
+
+| Key | Runtime fallback (key absent from DB) | Seeder (fresh install) |
+|---|---|---|
+| `auth.login_throttle` | `'1'` (throttle already active) | `'1'` |
+| `auth.password_min_length` | `10` | `'10'` |
+| `auth.password_expiry_days` | `0` (no expiry) | `'0'` |
+| `auth.password_require_mixed_case` | `'1'` | `'1'` |
+| `auth.password_require_numbers` | `'1'` | `'1'` |
+| `auth.password_require_symbols` | `'1'` | `'1'` |
+
+**Existing installs:** `sk:update` delivers the updated `_03_SettingSeeder.php`. Seeding is optional; without seeding the runtime fallbacks above apply — behaviour does not change (the fallbacks match the pre-feature hardened baseline).
+
+**New installs:** run the seeder as part of `sk:install` to apply the recommended defaults:
+
+```bash
+php artisan db:seed --class=_03_SettingSeeder
+```
+
+#### Login throttle toggle
+
+`auth.login_throttle = '0'` disables the Fortify login rate limiter at runtime. The default is `'1'` (throttle active). Disabling throttle is a deliberate security downgrade; the setting is exposed only to administrators.
+
+#### Password policy enforcement
+
+When the password policy settings are configured, the `PasswordValidationRules` trait applies them to every new password — registration, password reset, password confirmation, and profile update. Rules apply only to newly submitted passwords; existing stored passwords are not invalidated.
+
+| Setting | Effect when enabled |
+|---|---|
+| `password_min_length` | Enforces `Password::min(n)` |
+| `password_require_mixed_case` | Enforces `->mixedCase()` |
+| `password_require_numbers` | Enforces `->numbers()` |
+| `password_require_symbols` | Enforces `->symbols()` |
+
+When no policy is configured (all fallbacks), the behaviour is equivalent to the previous `Password::default()` setup.
+
+#### Password expiry middleware (`EnsurePasswordNotExpired`)
+
+When `auth.password_expiry_days > 0`, authenticated users whose `password_changed_at` is older than the configured number of days are redirected to a dedicated, guest-style password-expired screen (`Auth/PasswordExpired.vue`, route `password.expired`) until they update their password. The screen mirrors the login / reset-password layout — no sidebar or panel chrome — and bounces the user to the dashboard once the password is current again.
+
+Exempt routes (redirect loop cannot occur):
+
+- the password-expired page (`password.expired`, the redirect target)
+- logout
+- two-factor challenge
+- Fortify password endpoints
+
+`password_changed_at = null` is treated as exempt (in practice it does not occur after migration back-fill).
+
+The middleware is registered in the `web + auth` middleware group via the stub's `routes/web.php` — it wraps the authenticated panel route group defined there. If you have customised `routes/web.php` (i.e. `sk:update` does not touch it), add `EnsurePasswordNotExpired` to the auth group manually:
+
+```php
+use App\Http\Middleware\EnsurePasswordNotExpired;
+
+Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])->group(function () {
+    // your authenticated routes
+});
+```
+
+#### SecurityTab customisation
+
+If you have customised `resources/js/pages/Admin/Settings/components/SecurityTab.vue`, run `sk:update --dry-run` to see the diff and merge your changes into the new three-sub-tab structure. The update will be flagged as a hash mismatch — apply it manually.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| Existing `auth.*` setting keys (`registration`, `email_verification`, `password_reset`, `two_factor`) | Unchanged |
+| `UpdateAuthSettingsRequest` — old four-field POST | Still accepted; new fields are all `sometimes` |
+| Login throttle default | Still active (`'1'`) — no behaviour change on upgrade |
+| Existing users' passwords | Never invalidated by a policy change |
+| API response envelope | Unchanged |
 
 ---
 

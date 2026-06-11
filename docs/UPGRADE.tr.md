@@ -8,12 +8,12 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ### Özet
 
-13.6.0, v13.5.11'den (son yayınlanan sürüm) bu yana publish edilmiş dosyalara dokunan tüm değişiklikleri tek bir geçişte toplar. Vendor-runtime migrasyonunu tamamlar — backend yardımcı sınıfları, middleware, üç üçüncü-parti config, 15 composable, `TurnstileWidget.vue` ve `v-can` / `v-role` izin direktif plugin'i artık vendor paketinden çalışır — ve yapılandırılmış tema/layout/CSS sistemini getirir: bir `AppShell.vue` kompozisyonu, `themes/main/` slot ağacı (her CSS cascade katmanı override edilebilir bir slot) ve opt-in `themes/custom/` override teması. **Görsel değişiklik yok** — varsayılan build (`VITE_SK_THEME=main`) v13.5.11 ile byte-identical'dır. Aşağıdaki adımlarla geçişi tek seferde yapın; ardından gelen alan-bazlı bölümler referans detaydır (yalnızca projenize uyan "özelleştirdiyseniz…" notlarını uygulayın).
+13.6.0, v13.5.11'den (son yayınlanan sürüm) bu yana publish edilmiş dosyalara dokunan tüm değişiklikleri tek bir geçişte toplar. Vendor-runtime migrasyonunu tamamlar — backend yardımcı sınıfları, middleware, üç üçüncü-parti config, 15 composable, `TurnstileWidget.vue` ve `v-can` / `v-role` izin direktif plugin'i artık vendor paketinden çalışır — ve yapılandırılmış tema/layout/CSS sistemini getirir: bir `AppShell.vue` kompozisyonu, `themes/main/` slot ağacı (her CSS cascade katmanı override edilebilir bir slot) ve opt-in `themes/custom/` override teması. Ayrıca Güvenlik Ayarları yeniden tasarımını getirir: Güvenlik sekmesi üç alt sekmeye ayrılır (Kimlik Doğrulama / Parola Politikası / Cloudflare Turnstile), altı yeni `auth.*` ayar anahtarı eklenir ve parola kuralları ile parola geçerlilik süresi `EnsurePasswordNotExpired` middleware'i aracılığıyla tam olarak uygulamaya alınır. **Varsayılan build'de görsel değişiklik yoktur** — varsayılan build (`VITE_SK_THEME=main`) güvenlik ayarlarına dokunmayan projeler için v13.5.11 ile byte-identical'dır. Aşağıdaki adımlarla geçişi tek seferde yapın; ardından gelen alan-bazlı bölümler referans detaydır (yalnızca projenize uyan "özelleştirdiyseniz…" notlarını uygulayın).
 
 ```bash
 composer update lvntr/laravel-starter-kit
 php artisan sk:update          # yeni stub'ları getirir: layout, CSS tema ağacı, resolver, .env.example + package.json güncellemeleri
-php artisan migrate            # "Nothing to migrate" — şema değişikliği yok
+php artisan migrate            # users tablosuna password_changed_at kolonu ekler
 npm install
 npm run build                  # panel birebir aynı görünmeli
 ```
@@ -800,6 +800,95 @@ Sonradan düzenlenebilir bir kopya oluşturmak için `php artisan sk:publish --t
 #### Davranış değişikliği yok
 
 Direktifler aynı; yalnızca çözümleri taşındı. `v-can` / `v-role` tıpkı önceki gibi davranır ve `app.ts`'in düzenlenmesi gerekmez.
+
+---
+
+### Güvenlik Ayarları yeniden tasarımı — parola politikası uygulaması
+
+Bu sürüm **Ayarlar → Güvenlik** sekmesini yeniden tasarlar ve parola kuralları ile parola geçerlilik süresinin sunucu tarafında tam olarak uygulanmasını sağlar.
+
+#### Yeni migration — `users.password_changed_at`
+
+`users` tablosuna nullable bir `timestamp` kolonu eklenir. Migration sırasında mevcut satırlar `now()` ile geri dolduğundan, deploy sonrasında hiçbir kullanıcı aniden süresi dolmuş kabul edilmez.
+
+```bash
+php artisan migrate
+```
+
+#### Yeni `auth.*` ayar anahtarları
+
+`auth` grubuna altı yeni anahtar eklenir. Tümünün geri uyumlu fallback'leri vardır; dolayısıyla mevcut kurulumlar seeder çalıştırmadan yükseltme yaptığında etkilenmez.
+
+| Anahtar | Runtime fallback (anahtar DB'de yokken) | Seeder (yeni kurulum) |
+|---|---|---|
+| `auth.login_throttle` | `'1'` (throttle zaten aktif) | `'1'` |
+| `auth.password_min_length` | `10` | `'10'` |
+| `auth.password_expiry_days` | `0` (sınırsız) | `'0'` |
+| `auth.password_require_mixed_case` | `'1'` | `'1'` |
+| `auth.password_require_numbers` | `'1'` | `'1'` |
+| `auth.password_require_symbols` | `'1'` | `'1'` |
+
+**Mevcut kurulumlar:** `sk:update`, güncellenmiş `_03_SettingSeeder.php` dosyasını teslim eder. Seeding isteğe bağlıdır; seeding çalıştırılmadan yukarıdaki runtime fallback'ler kullanılır — davranış değişmez (fallback'ler özellik öncesi sertleştirilmiş baseline'a eşittir).
+
+**Yeni kurulumlar:** önerilen default'ları uygulamak için seeder'ı `sk:install` kapsamında çalıştırın:
+
+```bash
+php artisan db:seed --class=_03_SettingSeeder
+```
+
+#### Giriş denemesi limiti toggle'ı
+
+`auth.login_throttle = '0'` runtime'da Fortify giriş rate limiter'ını devre dışı bırakır. Default değer `'1'`'dir (throttle aktif). Throttle'ı kapatmak bilinçli bir güvenlik düşürümüdür; bu ayar yalnızca yöneticilere açıktır.
+
+#### Parola politikası uygulaması
+
+Parola politikası ayarları yapılandırıldığında `PasswordValidationRules` trait, bunları her yeni parolaya uygular — kayıt, parola sıfırlama, parola onayı ve profil güncellemesi. Kurallar yalnızca yeni gönderilen parolalara uygulanır; mevcut saklı parolalar geçersiz olmaz.
+
+| Ayar | Aktifken etkisi |
+|---|---|
+| `password_min_length` | `Password::min(n)` uygular |
+| `password_require_mixed_case` | `->mixedCase()` uygular |
+| `password_require_numbers` | `->numbers()` uygular |
+| `password_require_symbols` | `->symbols()` uygular |
+
+Politika yapılandırılmadığında (tüm fallback'ler) davranış, önceki `Password::default()` kurulumuna eşdeğerdir.
+
+#### Parola geçerlilik süresi middleware'i (`EnsurePasswordNotExpired`)
+
+`auth.password_expiry_days > 0` olduğunda, `password_changed_at` değeri yapılandırılan gün sayısından daha eski olan kimlik doğrulanmış kullanıcılar, parolalarını güncelleyene kadar adanmış, guest tarzı bir parola-süresi-doldu ekranına (`Auth/PasswordExpired.vue`, `password.expired` rotası) yönlendirilir. Ekran giriş / parola sıfırlama layout'unu yansıtır — sidebar veya panel çerçevesi yoktur — ve parola tekrar güncel olduğunda kullanıcıyı dashboard'a geri gönderir.
+
+Muaf rotalar (redirect döngüsü oluşamaz):
+
+- parola-süresi-doldu sayfası (`password.expired`, redirect hedefi)
+- çıkış
+- iki faktör challenge
+- Fortify parola uç noktaları
+
+`password_changed_at = null` muaf tutulur (migration geri doldurmadan sonra pratikte oluşmaz).
+
+Middleware, stub'ın `routes/web.php` dosyasındaki kimlik doğrulamalı panel route grubu aracılığıyla `web + auth` middleware grubuna kaydedilir. `routes/web.php` dosyasını özelleştirdiyseniz (yani `sk:update` bu dosyaya dokunmuyorsa), `EnsurePasswordNotExpired` middleware'ini auth grubuna manuel olarak eklemeniz gerekir:
+
+```php
+use App\Http\Middleware\EnsurePasswordNotExpired;
+
+Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])->group(function () {
+    // kimlik doğrulamalı rotalarınız
+});
+```
+
+#### SecurityTab özelleştirmesi
+
+`resources/js/pages/Admin/Settings/components/SecurityTab.vue` dosyasını özelleştirdiyseniz, `sk:update --dry-run` çalıştırarak diff'i görün ve değişikliklerinizi yeni üç alt sekme yapısıyla birleştirin. Güncelleme hash uyuşmazlığı olarak işaretlenecektir — manuel olarak uygulayın.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Mevcut `auth.*` ayar anahtarları (`registration`, `email_verification`, `password_reset`, `two_factor`) | Değişmez |
+| `UpdateAuthSettingsRequest` — eski dört alanlı POST | Kabul edilmeye devam eder; yeni alanlar `sometimes` |
+| Giriş throttle default'u | Aktif kalmaya devam eder (`'1'`) — yükseltme sonrası davranış değişmez |
+| Mevcut kullanıcıların parolaları | Politika değişikliğiyle geçersiz olmaz |
+| API yanıt zarfı | Değişmez |
 
 ---
 

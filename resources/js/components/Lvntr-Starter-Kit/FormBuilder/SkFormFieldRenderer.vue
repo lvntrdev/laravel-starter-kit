@@ -7,6 +7,7 @@
         SelectOption,
         SlotFieldConfig,
         TitleFieldConfig,
+        ToggleSwitchFieldConfig,
     } from './core';
     import SkFormInput from './SkFormInput.vue';
     import SkIcon from '../ui/SkIcon.vue';
@@ -141,6 +142,36 @@
 
     function sectionTitleEndKey(key: string): string {
         return `section-${key}-title-end`;
+    }
+
+    // ── ToggleSwitch "rich row" (icon box + label + description + switch) ────────
+    // Known icon-library class prefixes. A rowIcon descriptor is treated as a CSS
+    // icon class (rendered via SkIcon) when it matches one of these; otherwise it
+    // is treated as a short text glyph (e.g. 'Aa', '123', '!@#') and rendered as
+    // plain text inside the icon box.
+    const ICON_CLASS_PREFIXES = ['pi ', 'fa ', 'fa-', 'mdi ', 'mdi-', 'bi ', 'bi-', 'lucide'];
+
+    function asToggleRow(field: FieldConfig): ToggleSwitchFieldConfig {
+        return field as ToggleSwitchFieldConfig;
+    }
+
+    /** True when a toggle-switch opted into the rich row layout (icon and/or description set). */
+    function isRichToggle(field: FieldConfig): boolean {
+        if (field.type !== 'toggle-switch') return false;
+        const t = field as ToggleSwitchFieldConfig;
+        return !!(t.rowIcon || t.description);
+    }
+
+    /** True when the rowIcon descriptor is a CSS icon class (→ SkIcon), false → text glyph. */
+    function rowIconIsClass(icon: string | undefined): boolean {
+        if (!icon) return false;
+        return ICON_CLASS_PREFIXES.some((p) => icon.startsWith(p));
+    }
+
+    function toggleDescription(field: FieldConfig): string {
+        const desc = (field as ToggleSwitchFieldConfig).description;
+        if (!desc) return '';
+        return field.translateLabel === false ? desc : trans(desc);
     }
 </script>
 
@@ -351,8 +382,60 @@
 
         <!-- ── Vertical layout ───────────────────────────────────────── -->
         <template v-else-if="ctx.config.layout === 'vertical'">
+            <!-- ToggleSwitch "rich row": icon box + label + description + switch -->
+            <div v-if="isRichToggle(field)" class="sk-fb__field-vertical">
+                <div class="sk-fb__secrow">
+                    <span
+                        v-if="asToggleRow(field).rowIcon"
+                        class="sk-fb__secrow-icon"
+                        :class="{ 'sk-fb__secrow-icon--glyph': !rowIconIsClass(asToggleRow(field).rowIcon) }"
+                    >
+                        <SkIcon
+                            v-if="rowIconIsClass(asToggleRow(field).rowIcon)"
+                            :icon="asToggleRow(field).rowIcon!"
+                        />
+                        <template v-else>{{ asToggleRow(field).rowIcon }}</template>
+                    </span>
+
+                    <label :for="field.key" class="sk-fb__secrow-body">
+                        <span v-if="!field.hideLabel" class="sk-fb__secrow-title">
+                            {{ ctx.displayLabel(field) }}
+                        </span>
+                        <span v-if="toggleDescription(field)" class="sk-fb__secrow-desc">
+                            {{ toggleDescription(field) }}
+                        </span>
+                    </label>
+
+                    <div class="sk-fb__secrow-control">
+                        <slot
+                            :name="`field-${field.key}`"
+                            :field="field"
+                            :value="ctx.getValue(field.key)"
+                            :on-update="(v: unknown) => ctx.setValue(field.key, v)"
+                        >
+                            <SkFormInput
+                                :field="field"
+                                :value="ctx.getValue(field.key)"
+                                :disabled="ctx.isDisabled(field)"
+                                :invalid="!!ctx.activeErrors[field.key]"
+                                :options="ctx.getOptions(field)"
+                                :loading="ctx.isLoading(field)"
+                                :translatable-errors="ctx.translatableErrorsFor(field)"
+                                @update="(v) => ctx.setValue(field.key, v)"
+                            />
+                        </slot>
+                    </div>
+                </div>
+
+                <small
+                    v-if="ctx.activeErrors[field.key] && !ctx.isTranslatableField(field)"
+                    class="sk-fb__error"
+                >{{ ctx.activeErrors[field.key] }}</small>
+                <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
+            </div>
+
             <!-- Checkbox / Toggle: inline-label row -->
-            <div v-if="ctx.hasInlineLabel(field)" class="sk-fb__field-vertical">
+            <div v-else-if="ctx.hasInlineLabel(field)" class="sk-fb__field-vertical">
                 <div class="sk-fb__inline-row">
                     <template v-if="ctx.isControlRight(field) && !field.hideLabel">
                         <label :for="field.key" class="sk-fb__label sk-fb__label--inline">

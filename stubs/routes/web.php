@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\MediaUploadController;
+use App\Http\Middleware\EnsurePasswordNotExpired;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
@@ -23,7 +24,12 @@ foreach (File::files(__DIR__.'/web') as $file) {
     }
 }
 
-Route::middleware(['auth', 'verified'])->group(function () use ($excludedFiles, $publicRouteFiles) {
+// EnsurePasswordNotExpired guards only this authenticated panel group —
+// Fortify's endpoints (login, 2FA challenge, PUT /user/password, password
+// confirm/reset) register outside it, and the middleware additionally
+// exempts the profile + logout routes by name, so an expired user can
+// always reach the password form (no redirect loop).
+Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])->group(function () use ($excludedFiles, $publicRouteFiles) {
     Route::delete('/media/{media}', [MediaUploadController::class, 'destroy'])->name('media.destroy');
 
     // Web route files inside this group are authenticated.

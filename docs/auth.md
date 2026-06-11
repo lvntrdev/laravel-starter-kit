@@ -33,20 +33,29 @@ These flows are mounted from the profile screen and related routes in `routes/we
 
 ## Password Policy
 
-A project-wide `Password::defaults(...)` policy is installed in `App\Providers\AppServiceProvider::boot`. Every Fortify flow that relies on the default picks it up automatically — registration, password reset, password confirmation, and profile password update.
+The password policy is driven by the **Settings → Security → Password Policy** admin tab. Rules are stored as `auth.*` setting keys and applied at runtime by `PasswordValidationRules`.
 
-Current policy:
+| Setting key | What it enforces |
+|---|---|
+| `auth.password_min_length` | Minimum character count (default: `8`) |
+| `auth.password_require_mixed_case` | Upper and lower case required |
+| `auth.password_require_numbers` | At least one digit required |
+| `auth.password_require_symbols` | At least one symbol required |
 
-- at least 10 characters
-- mixed case (upper + lower)
-- at least one letter, digit, and symbol
+Every Fortify flow picks up the active rules automatically — registration, password reset, password confirmation, and profile password update. Admin user create/update flows also apply the same rules.
 
-Existing users' passwords are not invalidated when the policy changes — only new passwords are measured against the current rule. Loosen or tighten the rule by editing the `Password::defaults(...)` closure.
+Existing users' passwords are not invalidated when the policy changes — only newly submitted passwords are measured against the current rules.
+
+### Password expiry
+
+Setting `auth.password_expiry_days` to a value greater than `0` enables the `EnsurePasswordNotExpired` middleware. Authenticated users whose `password_changed_at` timestamp is older than the configured number of days are redirected to a dedicated, guest-style password-expired screen (route `password.expired`) until they set a new password. Setting `0` (the default) disables expiry entirely.
+
+`password_changed_at` is stamped automatically on every password write: registration, password reset, profile update, and admin user create/update. Existing users received a `now()` back-fill when the migration ran, so they start the expiry clock from the deployment date rather than being immediately expired.
 
 ## Runtime Rules
 
 - inactive users cannot start a web session; the Fortify login pipeline blocks accounts whose status is not `active`
-- login is rate-limited by IP and by email/IP combinations
+- login is rate-limited by IP and by email/IP combinations when `auth.login_throttle = '1'` (the default); setting it to `'0'` in Settings → Security disables the Fortify rate limiter
 - the two-factor challenge flow has its own limiter
 - the two-factor challenge is **single-use** — any wrong code, empty submit, or invalid recovery code immediately invalidates the challenge id; the client must re-login to obtain a fresh one
 - the forgot-password POST route receives Turnstile middleware dynamically when the route is matched

@@ -33,6 +33,17 @@ class _03_SettingSeeder extends Seeder
                 'email_verification' => '0',
                 'two_factor' => '0',
                 'password_reset' => '1',
+                // Pre-feature hardened baseline: the old stub
+                // AppServiceProvider raised Password::defaults() to min 10 +
+                // mixed case + numbers + symbols. Fresh installs seed these
+                // same values; existing installs get them as read-time
+                // fallbacks (seedDefault never overwrites an existing row).
+                'login_throttle' => '1',
+                'password_min_length' => '10',
+                'password_expiry_days' => '0',
+                'password_require_mixed_case' => '1',
+                'password_require_numbers' => '1',
+                'password_require_symbols' => '1',
             ],
             'mail' => [
                 'mailer' => 'smtp',

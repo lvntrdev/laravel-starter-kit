@@ -3,6 +3,7 @@
 return [
 
     'inactive' => 'Your account is inactive. Please contact an administrator.',
+    'password_expired' => 'Your password has expired. Please set a new password to continue.',
     'turnstile' => [
         'required' => 'Please complete the security verification.',
         'failed' => 'Security verification failed. Please try again.',
@@ -58,6 +59,17 @@ return [
         'password_label' => 'New Password',
         'password_confirmation_label' => 'Confirm New Password',
         'submit' => 'Reset Password',
+    ],
+
+    'password_expired_page' => [
+        'title' => 'Password Expired',
+        'heading' => 'Password Expired',
+        'subtitle' => 'Your password has expired. Set a new password to continue.',
+        'current_password_label' => 'Current Password',
+        'password_label' => 'New Password',
+        'password_confirmation_label' => 'Confirm New Password',
+        'submit' => 'Update Password',
+        'logout' => 'Sign out instead',
     ],
 
 ];

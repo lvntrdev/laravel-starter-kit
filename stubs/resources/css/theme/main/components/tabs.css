@@ -17,8 +17,11 @@
     @apply flex flex-col gap-4 md:flex-row md:gap-6;
 }
 
+/* md+: sol nav, sağ içerik kayarken sabit kalır (sticky).
+   self-start: flex stretch'i kır — yoksa sidebar satır boyunca uzar, pinlenecek
+   boşluk kalmaz. top: .admin-content scrollport'una göre (header dışarıda). */
 .sk-tabs-vertical__sidebar {
-    @apply w-full shrink-0 md:w-80;
+    @apply w-full shrink-0 md:sticky md:top-6 md:w-80 md:self-start;
 }
 
 .sk-tabs-vertical__content {
@@ -42,7 +45,7 @@
 }
 
 .sk-vtab {
-    @apply relative flex min-h-[3.25rem] w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-surface-700 transition-colors duration-150 dark:text-surface-200;
+    @apply relative flex min-h-[3.25rem] w-full cursor-pointer items-center gap-3 rounded-lg border border-transparent bg-transparent px-2.5 py-2 text-left text-surface-700 transition-colors duration-150 dark:text-surface-200;
 
     &:hover {
         background: color-mix(in srgb, var(--p-surface-500) 8%, transparent);
@@ -57,20 +60,38 @@
     background: color-mix(in srgb, var(--p-surface-400) 12%, transparent);
 }
 
+/* Aktif sekme: marka/accent renkle tint + ince accent kenarlık (tasarım: brand %6 + kenar). */
 .sk-vtab--active {
-    background: color-mix(in srgb, var(--p-surface-500) 14%, transparent);
+    background: color-mix(in srgb, var(--p-primary-500) 8%, transparent);
+    border-color: color-mix(in srgb, var(--p-primary-500) 22%, transparent);
 
     &:hover {
-        background: color-mix(in srgb, var(--p-surface-500) 18%, transparent);
+        background: color-mix(in srgb, var(--p-primary-500) 12%, transparent);
     }
 }
 
 :root.dark .sk-vtab--active {
-    background: color-mix(in srgb, var(--p-surface-400) 18%, transparent);
+    background: color-mix(in srgb, var(--p-primary-400) 14%, transparent);
+    border-color: color-mix(in srgb, var(--p-primary-400) 30%, transparent);
 
     &:hover {
-        background: color-mix(in srgb, var(--p-surface-400) 22%, transparent);
+        background: color-mix(in srgb, var(--p-primary-400) 18%, transparent);
     }
+}
+
+/* Aktif sekmenin etiketi ve açıklaması accent renge döner. */
+.sk-vtab--active .sk-vtab__label {
+    color: var(--p-primary-600);
+}
+:root.dark .sk-vtab--active .sk-vtab__label {
+    color: var(--p-primary-300);
+}
+
+.sk-vtab--active .sk-vtab__description {
+    color: color-mix(in srgb, var(--p-primary-500) 60%, var(--p-surface-500));
+}
+:root.dark .sk-vtab--active .sk-vtab__description {
+    color: color-mix(in srgb, var(--p-primary-300) 60%, var(--p-surface-400));
 }
 
 .sk-vtab--disabled {

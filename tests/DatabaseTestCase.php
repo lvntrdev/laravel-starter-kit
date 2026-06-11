@@ -141,6 +141,7 @@ abstract class DatabaseTestCase extends Orchestra
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
+            $table->timestamp('password_changed_at')->nullable();
             $table->timestamps();
         });
 

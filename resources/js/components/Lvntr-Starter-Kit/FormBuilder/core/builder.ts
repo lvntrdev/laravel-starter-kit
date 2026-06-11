@@ -580,6 +580,35 @@ export class ToggleSwitchBuilder extends BaseFieldBuilder<ToggleSwitchFieldConfi
     constructor() {
         super('toggle-switch');
     }
+
+    /**
+     * Leading icon for the "rich row" layout (settings-style row with an icon
+     * box on the left). Accepts an icon class (e.g. 'pi pi-key') or a short text
+     * glyph (e.g. 'Aa', '123', '!@#'). Setting this opts the toggle into the
+     * rich row render; omit it for the default inline render.
+     *
+     * Overrides BaseFieldBuilder.icon() — a toggle-switch has no "inside input"
+     * icon, so the icon descriptor drives the row layout instead.
+     */
+    icon(icon: string): this {
+        this.config.rowIcon = icon;
+        return this;
+    }
+
+    /**
+     * Description shown under the label in the "rich row" layout (translation
+     * key by default, like `label`/`hint`). Enables the rich row even without
+     * an icon.
+     *
+     * @example
+     *   FB.toggleSwitch().key('login_throttle')
+     *     .icon('pi pi-shield')
+     *     .description('sk-setting.login_throttle_desc')
+     */
+    description(description: string): this {
+        this.config.description = description;
+        return this;
+    }
 }
 
 export class TitleBuilder extends BaseFieldBuilder<TitleFieldConfig> {
@@ -836,8 +865,11 @@ export class SectionBuilder extends BaseFieldBuilder<SectionFieldConfig> {
     build(): SectionFieldConfig {
         const cfg = this.config as SectionFieldConfig;
         // Label görsel olarak title gibi davranır — base build() zorunluluğu için fallback.
+        // Başlıksız section'larda auto-generated `__section_N` key'ine düşmeyiz:
+        // gerçek bir title yoksa label boş kalır, böylece SkForm başlık node'unu
+        // hiç render etmez (renderer sectionTitle() boş string'i atlar).
         if (!cfg.label) {
-            cfg.label = cfg.title ?? cfg.key!;
+            cfg.label = cfg.title ?? '';
         }
         if (cfg.translateLabel === undefined) {
             cfg.translateLabel = true;
@@ -962,6 +994,12 @@ export class FormBuilder {
     /** Hide the submit button in the actions area. */
     hideSubmit(hide = true): this {
         this.config.actionLabels = { ...(this.config.actionLabels ?? {}), hideSubmit: hide };
+        return this;
+    }
+
+    /** Suppress the whole action bar; host drives submit via the exposed `submit()`. */
+    hideActions(hide = true): this {
+        this.config.actionLabels = { ...(this.config.actionLabels ?? {}), hideActions: hide };
         return this;
     }
 

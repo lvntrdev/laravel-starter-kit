@@ -33,20 +33,29 @@ Bu akışlar profil ekranı ve `routes/web/profile-route.php` içindeki ilişkil
 
 ## Parola Politikası
 
-`App\Providers\AppServiceProvider::boot` içinde proje geneli bir `Password::defaults(...)` politikası kurulur. Default'a güvenen her Fortify akışı bunu otomatik devralır — register, password reset, password confirmation ve profil şifre güncelleme.
+Parola politikası, **Ayarlar → Güvenlik → Parola Politikası** yönetici sekmesi tarafından yönetilir. Kurallar `auth.*` ayar anahtarları olarak saklanır ve `PasswordValidationRules` tarafından runtime'da uygulanır.
 
-Mevcut politika:
+| Ayar anahtarı | Uyguladığı kural |
+|---|---|
+| `auth.password_min_length` | Minimum karakter sayısı (varsayılan: `8`) |
+| `auth.password_require_mixed_case` | Büyük ve küçük harf zorunlu |
+| `auth.password_require_numbers` | En az bir rakam zorunlu |
+| `auth.password_require_symbols` | En az bir sembol zorunlu |
 
-- en az 10 karakter
-- mixed case (büyük + küçük harf birlikte)
-- en az bir harf, bir rakam ve bir sembol
+Her Fortify akışı aktif kuralları otomatik devralır — kayıt, şifre sıfırlama, şifre onayı ve profil şifre güncelleme. Yönetici kullanıcı oluşturma/güncelleme akışları da aynı kuralları uygular.
 
-Politika değiştiğinde mevcut kullanıcıların parolaları invalidate olmaz — yalnızca yeni parolalar güncel kurala karşı ölçülür. Kuralı gevşetmek/sıkılaştırmak için `Password::defaults(...)` closure'ını düzenleyin.
+Politika değiştiğinde mevcut kullanıcıların parolaları geçersiz olmaz — yalnızca yeni gönderilen parolalar güncel kurala karşı ölçülür.
+
+### Parola geçerlilik süresi
+
+`auth.password_expiry_days` değerini `0`'dan büyük bir değere ayarlamak `EnsurePasswordNotExpired` middleware'ini etkinleştirir. `password_changed_at` zaman damgası yapılandırılan gün sayısından daha eski olan kimlik doğrulanmış kullanıcılar, parolalarını güncelleyene kadar adanmış, guest tarzı bir parola-süresi-doldu ekranına (`password.expired` rotası) yönlendirilir. `0` değeri (varsayılan) geçerlilik süresini tamamen devre dışı bırakır.
+
+`password_changed_at`, her parola yazımında otomatik olarak güncellenir: kayıt, şifre sıfırlama, profil güncelleme ve yönetici kullanıcı oluşturma/güncelleme. Mevcut kullanıcılar, migration çalıştığında `now()` değeriyle geri doldurulduğundan, deploy tarihinden itibaren geçerlilik sürecini başlatırlar; anında süresi dolmuş duruma düşmezler.
 
 ## Çalışma Zamanı Kuralları
 
 - pasif kullanıcılar web oturumu başlatamaz; Fortify login pipeline'ı status değeri `active` olmayan hesapları engeller
-- login denemeleri IP ve email/IP kombinasyonlarına göre rate-limit edilir
+- login denemeleri IP ve email/IP kombinasyonlarına göre rate-limit edilir; `auth.login_throttle = '1'` (varsayılan) olduğunda Fortify rate limiter aktiftir, Ayarlar → Güvenlik'ten `'0'` yapıldığında devre dışı bırakılır
 - iki faktör challenge akışının ayrı bir limiter'ı vardır
 - iki faktör challenge'ı **tek kullanımlık** — yanlış kod, boş submit veya geçersiz recovery code challenge id'sini anında iptal eder; client yeni bir id almak için tekrar login olmak zorundadır
 - forgot-password POST route'u, eşleşme anında dinamik olarak Turnstile middleware'i alır

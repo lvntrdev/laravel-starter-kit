@@ -3,6 +3,7 @@
 return [
 
     'inactive' => 'Hesabınız aktif değil. Lütfen yönetici ile iletişime geçin.',
+    'password_expired' => 'Parolanızın süresi doldu. Devam etmek için yeni bir parola belirleyin.',
     'turnstile' => [
         'required' => 'Lütfen güvenlik doğrulamasını tamamlayın.',
         'failed' => 'Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.',
@@ -58,6 +59,17 @@ return [
         'password_label' => 'Yeni Parola',
         'password_confirmation_label' => 'Yeni Parolayı Onayla',
         'submit' => 'Parolayı Sıfırla',
+    ],
+
+    'password_expired_page' => [
+        'title' => 'Parola Süresi Doldu',
+        'heading' => 'Parola Süresi Doldu',
+        'subtitle' => 'Parolanızın süresi doldu. Devam etmek için yeni bir parola belirleyin.',
+        'current_password_label' => 'Mevcut Parola',
+        'password_label' => 'Yeni Parola',
+        'password_confirmation_label' => 'Yeni Parolayı Onayla',
+        'submit' => 'Parolayı Güncelle',
+        'logout' => 'Bunun yerine çıkış yap',
     ],
 
 ];

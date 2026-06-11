@@ -3,12 +3,90 @@
 namespace App\Providers;
 
 use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Features;
 
 class SettingsServiceProvider extends ServiceProvider
 {
+    /**
+     * Register services — schedule the early auth/security config bridge.
+     *
+     * Laravel Fortify's package provider registers its routes during ITS
+     * boot(), which runs BEFORE any app provider's boot() (discovered
+     * package providers boot first). The login route's `throttle:login`
+     * middleware is attached at that moment based on
+     * config('fortify.limiters.login') — so the login-throttle gate must
+     * be applied in a booting callback: Laravel fires those after ALL
+     * register() calls but before ANY provider boot(), i.e. early enough
+     * for Fortify's route registration to observe the gated value.
+     */
+    public function register(): void
+    {
+        $this->app->booting(function (): void {
+            $this->bridgeAuthSecurityConfig();
+        });
+    }
+
+    /**
+     * Push DB-stored auth security settings into runtime config.
+     *
+     * Fallbacks preserve pre-feature behavior for installs whose DB does
+     * not contain the new keys yet: throttle stays ON, no password expiry,
+     * and the password policy equals the kit's hardened baseline — the old
+     * stub AppServiceProvider raised Password::defaults() to min 10 +
+     * mixed case + numbers + symbols, so these fallbacks must match it
+     * exactly (anything weaker would silently downgrade existing installs
+     * after sk:update). Keep in lockstep with SettingsDefaultsQuery::auth().
+     */
+    private function bridgeAuthSecurityConfig(): void
+    {
+        // This runs in a booting() callback — BEFORE any provider boot(), so
+        // Eloquent's static connection resolver (set in DatabaseServiceProvider::
+        // boot()) is still null. Reading through the Setting model here would
+        // fatal with "Call to a member function connection() on null". Use the
+        // query builder instead: it resolves the connection from the container's
+        // `db` binding, which is already available this early. The whole probe is
+        // wrapped so a missing/unconfigured DB (fresh install, pre-migration,
+        // sk:update on an unprepared app) degrades to the safe fallbacks below.
+        try {
+            if (! Schema::hasTable('settings')) {
+                return;
+            }
+
+            // Auth-policy keys are never stored encrypted, so the raw `value`
+            // column equals what the Setting model would decrypt to.
+            $auth = DB::table('settings')
+                ->where('group', 'auth')
+                ->pluck('value', 'key')
+                ->all();
+        } catch (\Throwable) {
+            return;
+        }
+
+        // Login-throttle gate — default ON ('1'). Disabling is a conscious,
+        // explicit admin action (security downgrade). Both throttle layers
+        // read this key: the route-level `throttle:login` middleware (bound
+        // at Fortify route registration) and the EnsureLoginIsNotThrottled
+        // step in FortifyServiceProvider's authenticateThrough pipeline.
+        if (($auth['login_throttle'] ?? '1') === '0') {
+            config(['fortify.limiters.login' => null]);
+        }
+
+        // Password policy bridge — read by the PasswordValidationRules
+        // trait at request time. min_length is clamped to >= 1 as a safety
+        // floor against hand-edited DB rows (the FormRequest enforces 6-128
+        // on the normal write path); Password::min(0) must never happen.
+        config([
+            'starter-kit.password_policy.min_length' => max(1, (int) ($auth['password_min_length'] ?? 10)),
+            'starter-kit.password_policy.expiry_days' => max(0, (int) ($auth['password_expiry_days'] ?? 0)),
+            'starter-kit.password_policy.require_mixed_case' => ($auth['password_require_mixed_case'] ?? '1') === '1',
+            'starter-kit.password_policy.require_numbers' => ($auth['password_require_numbers'] ?? '1') === '1',
+            'starter-kit.password_policy.require_symbols' => ($auth['password_require_symbols'] ?? '1') === '1',
+        ]);
+    }
+
     /**
      * Bootstrap services — override config values from database settings.
      */

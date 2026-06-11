@@ -413,7 +413,16 @@
         internalForm.clearErrors();
     }
 
-    defineExpose({ reset, dataLoading, remoteData, currentValues, setValue });
+    /** Programmatic submit — lets a host (e.g. a card-integrated footer) drive the form. */
+    function submit(): void {
+        handleSubmit();
+    }
+
+    /** Reactive form-state mirrors for host-rendered action bars. */
+    const processing = computed(() => internalForm.processing);
+    const isDirty = computed(() => internalForm.isDirty);
+
+    defineExpose({ reset, submit, processing, isDirty, dataLoading, remoteData, currentValues, setValue });
 
     // ── Dynamic Options ───────────────────────────────────────────────────────────
 
@@ -547,6 +556,9 @@
 
     // ── Actions ───────────────────────────────────────────────────────────────────
 
+    /** Host suppresses the whole bar and drives submit via the exposed `submit()`. */
+    const actionsHidden = computed(() => props.config.actionLabels?.hideActions === true);
+
     const showTopActions = computed(() => {
         if (isDialogMode.value) return false;
         const pos = props.config.actionsPosition;
@@ -561,7 +573,9 @@
 
     const slots = useSlots();
     const hasActionArea = computed(
-        () => isInternalMode.value || !!slots.actions || !!slots['actions-start'] || !!slots['actions-end'],
+        () =>
+            !actionsHidden.value &&
+            (isInternalMode.value || !!slots.actions || !!slots['actions-start'] || !!slots['actions-end']),
     );
 
     // ── Grid helpers ──────────────────────────────────────────────────────────────

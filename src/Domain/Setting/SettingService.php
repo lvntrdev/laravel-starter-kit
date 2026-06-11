@@ -170,11 +170,19 @@ class SettingService
     public function allGrouped(): array
     {
         return Cache::remember('settings', 3600, function () {
-            $all = Setting::all();
+            // Read via the query builder, NOT Eloquent. allGrouped() can run from
+            // a service-provider booting() callback (the auth-security config
+            // bridge), which fires BEFORE any provider boot() — and Eloquent's
+            // static connection resolver is only set in DatabaseServiceProvider::
+            // boot(). A Setting::all() there fatals with "Call to a member
+            // function connection() on null". The query builder resolves the
+            // connection from the container's `db` binding, available that early.
+            // The `encrypted` flag arrives as a raw int (no model cast), so the
+            // truthiness check below is equivalent to the boolean-cast model.
             $grouped = [];
 
-            foreach ($all as $setting) {
-                $grouped[$setting->group][$setting->key] = $this->decryptIfNeeded($setting);
+            foreach (DB::table('settings')->get() as $row) {
+                $grouped[$row->group][$row->key] = $this->decryptIfNeeded($row->value, (bool) $row->encrypted);
             }
 
             return $grouped;
@@ -184,15 +192,13 @@ class SettingService
     /**
      * Decrypt a setting value if it is marked as encrypted.
      */
-    private function decryptIfNeeded(Setting $setting): mixed
+    private function decryptIfNeeded(mixed $value, bool $encrypted): mixed
     {
-        $value = $setting->value;
-
-        if ($setting->encrypted && $value !== null) {
+        if ($encrypted && $value !== null) {
             try {
-                $value = Crypt::decryptString($value);
+                return Crypt::decryptString((string) $value);
             } catch (\Exception) {
-                $value = null;
+                return null;
             }
         }
 
