@@ -90,3 +90,41 @@ it('runtime config exposes storage_quota_gb', function (): void {
     // ServiceProvider mergeConfigFrom sonrası container'da erişilebilir olmalı
     expect(config('file-manager.settings.storage_quota_gb'))->toBe(10);
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 5. Çöp Kutusu (trash) ayarları — enable_trash + trash_retention_days
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('stub UpdateFileManagerSettingsRequest includes trash validation rules', function (): void {
+    $contents = file_get_contents(dirname(__DIR__, 3)
+        .'/stubs/app/Http/Requests/Admin/Settings/UpdateFileManagerSettingsRequest.php');
+
+    expect($contents)->toContain("'enable_trash'");
+    expect($contents)->toContain("'trash_retention_days'");
+    expect($contents)->toContain("'max:365'");
+});
+
+it('FileManagerSettingsDTO stub contains trash properties', function (): void {
+    $contents = file_get_contents(dirname(__DIR__, 3)
+        .'/src/Domain/Setting/DTOs/FileManagerSettingsDTO.php');
+
+    expect($contents)->toContain('enableTrash');
+    expect($contents)->toContain('trashRetentionDays');
+    expect($contents)->toContain('enable_trash');
+    expect($contents)->toContain('trash_retention_days');
+});
+
+it('file-manager.php config ships trash_retention_days key with default 7', function (): void {
+    $config = require dirname(__DIR__, 3).'/config/file-manager.php';
+
+    expect($config['settings'])->toHaveKey('trash_retention_days');
+    expect($config['settings']['trash_retention_days'])->toBe(7);
+});
+
+it('_03_SettingSeeder stub seeds trash defaults', function (): void {
+    $contents = file_get_contents(dirname(__DIR__, 3)
+        .'/stubs/database/seeders/_03_SettingSeeder.php');
+
+    expect($contents)->toContain("'enable_trash'");
+    expect($contents)->toContain("'trash_retention_days'");
+});

@@ -361,6 +361,8 @@ The `enable_trash` key in `config/file-manager.php` is the single source of trut
 
 Both the backend actions (`DeleteFileAction`, `DeleteFolderAction`) and the Vue component read this value. The config is shared automatically via Inertia shared props (`fileManagerSettings.enable_trash`) so the component does not need the `:enable-trash` prop unless you want to override the config value per-instance.
 
+> **Trash is scoped to the FileManager `files` collection only.** Media in any other collection — avatars, logos, FormBuilder file-upload attachments, editor images — is always permanently deleted, regardless of `enable_trash`. The published `App\Models\Media` stub overrides `delete()` to convert those deletes into `forceDelete()`, which also covers deletes issued internally by Spatie (e.g. replacing a single-file collection via `clearMediaCollection()`). Without this, such records would pile up as invisible soft-deleted rows: they never appear in the Trash UI, the purge command skips them, they keep counting toward the storage quota, and their files linger on disk. `file-manager:purge-trash` additionally sweeps any legacy non-`files` trashed rows left over from older installs (no age limit).
+
 ## Permissions
 
 The component itself does not check permissions — `FileManagerAuthorizer` on the backend does, per request. It calls the `authorize` closure on the resolved context definition with one of two abilities:

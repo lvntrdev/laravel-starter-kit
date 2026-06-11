@@ -359,6 +359,8 @@ Bir dosyayı soft-delete etmek (Çöp Kutusu'na taşımak) dosyayı anında eri�
 
 Hem backend action'ları (`DeleteFileAction`, `DeleteFolderAction`) hem de Vue bileşeni bu değeri okur. Config, Inertia shared props (`fileManagerSettings.enable_trash`) aracılığıyla otomatik paylaşılır; component'in `:enable-trash` prop'una ihtiyacı yoktur — yalnızca config değerini instance bazında ezmek istediğinizde geçin.
 
+> **Çöp kutusu yalnızca FileManager `files` koleksiyonunu kapsar.** Diğer tüm koleksiyonlardaki medya — avatar, logo, FormBuilder dosya ekleri, editör görselleri — `enable_trash` değerinden bağımsız olarak her zaman kalıcı silinir. Yayınlanan `App\Models\Media` stub'ı `delete()`'i override ederek bu silmeleri `forceDelete()`'e çevirir; bu, Spatie'nin kendi içinden yaptığı silmeleri de kapsar (örn. `clearMediaCollection()` ile single-file koleksiyon değişimi). Aksi hâlde bu kayıtlar görünmez soft-delete satırları olarak birikir: Çöp Kutusu UI'ında listelenmez, purge komutu onları atlar, depolama kotasını şişirmeye devam eder ve dosyaları diskte kalır. `file-manager:purge-trash` ayrıca eski kurulumlardan kalan `files` dışı trashed satırları yaş şartı olmadan süpürür.
+
 ## İzinler
 
 Component izin kontrolü yapmaz — backend'deki `FileManagerAuthorizer` çözümlenen context definition'ının `authorize` closure'una delegate eder. İki ability kullanılır:

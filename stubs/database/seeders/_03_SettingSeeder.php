@@ -88,6 +88,8 @@ class _03_SettingSeeder extends Seeder
                 ]),
                 'allow_video' => '0',
                 'allow_audio' => '0',
+                'enable_trash' => '1',
+                'trash_retention_days' => '7',
             ],
         ];
 

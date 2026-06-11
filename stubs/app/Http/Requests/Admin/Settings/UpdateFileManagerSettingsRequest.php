@@ -44,6 +44,8 @@ class UpdateFileManagerSettingsRequest extends FormRequest
             ],
             'allow_video' => ['required', 'boolean'],
             'allow_audio' => ['required', 'boolean'],
+            'enable_trash' => ['required', 'boolean'],
+            'trash_retention_days' => ['required', 'integer', 'min:1', 'max:365'],
         ];
     }
 }

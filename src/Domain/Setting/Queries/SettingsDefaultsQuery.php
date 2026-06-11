@@ -111,6 +111,8 @@ class SettingsDefaultsQuery
             'accepted_mimes' => $mimes,
             'allow_video' => ($stored['allow_video'] ?? '0') === '1',
             'allow_audio' => ($stored['allow_audio'] ?? '0') === '1',
+            'enable_trash' => ($stored['enable_trash'] ?? '1') === '1',
+            'trash_retention_days' => (int) ($stored['trash_retention_days'] ?? 7),
         ];
     }
 

@@ -281,6 +281,12 @@ class SettingsServiceProvider extends ServiceProvider
             if (isset($fileManager['allow_audio'])) {
                 config(['file-manager.settings.allow_audio' => $fileManager['allow_audio'] === '1']);
             }
+            if (isset($fileManager['enable_trash'])) {
+                config(['file-manager.settings.enable_trash' => $fileManager['enable_trash'] === '1']);
+            }
+            if (isset($fileManager['trash_retention_days'])) {
+                config(['file-manager.settings.trash_retention_days' => (int) $fileManager['trash_retention_days']]);
+            }
         }
 
         // Turnstile

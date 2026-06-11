@@ -139,6 +139,15 @@ return [
     'file_manager' => [
         'title' => 'Dosya Yöneticisi Ayarları',
         'subtitle' => 'Yüklenebilir dosya boyutunu ve türlerini yapılandırın.',
+        'trash' => [
+            'title' => 'Çöp Kutusu',
+            'desc' => 'Silinen dosyalar kalıcı olarak kaldırılmadan önce çöp kutusunda saklanır.',
+            'active' => 'Aktif',
+            'inactive' => 'Pasif',
+            'retention_label' => 'Dosya Saklama Süresi (gün)',
+            'retention_hint' => 'Bu sürenin sonunda dosyalar çöp kutusundan kalıcı olarak silinir.',
+            'retention_suffix' => 'gün',
+        ],
         'media_section_title' => 'Medya',
         'archive_section_title' => 'Arşiv',
         'video_label' => 'Video Yüklemeleri',

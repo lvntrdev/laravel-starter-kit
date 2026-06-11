@@ -15,6 +15,8 @@ readonly class FileManagerSettingsDTO extends BaseDTO
         public array $acceptedMimes,
         public bool $allowVideo,
         public bool $allowAudio,
+        public bool $enableTrash,
+        public int $trashRetentionDays,
     ) {}
 
     /**
@@ -34,6 +36,8 @@ readonly class FileManagerSettingsDTO extends BaseDTO
             acceptedMimes: array_values(array_filter(array_map('strval', (array) $mimes))),
             allowVideo: (bool) ($data['allow_video'] ?? false),
             allowAudio: (bool) ($data['allow_audio'] ?? false),
+            enableTrash: (bool) ($data['enable_trash'] ?? true),
+            trashRetentionDays: max(1, (int) ($data['trash_retention_days'] ?? 7)),
         );
     }
 
@@ -48,6 +52,8 @@ readonly class FileManagerSettingsDTO extends BaseDTO
             'accepted_mimes' => json_encode($this->acceptedMimes),
             'allow_video' => $this->allowVideo ? '1' : '0',
             'allow_audio' => $this->allowAudio ? '1' : '0',
+            'enable_trash' => $this->enableTrash ? '1' : '0',
+            'trash_retention_days' => (string) $this->trashRetentionDays,
         ];
     }
 }

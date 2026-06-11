@@ -51,7 +51,13 @@ return [
     |                      disk-genel kota (default 10 GB).
     | enable_trash       — true: silme işlemi soft-delete (çöp kutusu); false:
     |                      kalıcı silme (hard delete). Frontend ve backend
-    |                      her ikisi de bu değere uyar.
+    |                      her ikisi de bu değere uyar. YALNIZCA FileManager
+    |                      'files' koleksiyonunu etkiler — avatar, logo ve
+    |                      form eki gibi diğer koleksiyonlar her durumda
+    |                      doğrudan kalıcı silinir (Media::delete override'ı).
+    | trash_retention_days — Çöp kutusundaki dosyalar bu kadar günden eski
+    |                      olduğunda file-manager:purge-trash tarafından kalıcı
+    |                      silinir (default 7 gün).
     |
     */
 
@@ -62,6 +68,7 @@ return [
         'allow_audio' => false,
         'storage_quota_gb' => 10,
         'enable_trash' => true,
+        'trash_retention_days' => 7,
     ],
 
     /*

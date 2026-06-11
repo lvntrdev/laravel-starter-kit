@@ -39,6 +39,10 @@
         contextId: null,
         readonly: false,
         height: 'auto',
+        // Boolean prop absent kaldığında Vue false'a cast eder; default'u
+        // undefined sabitlemezsek ?? zinciri fileManagerSettings share'ine
+        // hiç düşmez ve ayarlardaki Çöp Kutusu toggle'ı etkisiz kalır.
+        enableTrash: undefined,
     });
 
     const emit = defineEmits<{

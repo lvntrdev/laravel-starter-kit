@@ -87,6 +87,8 @@
                 accepted_mimes: string[];
                 allow_video: boolean;
                 allow_audio: boolean;
+                enable_trash: boolean;
+                trash_retention_days: number;
             };
             turnstile: {
                 enabled: boolean;

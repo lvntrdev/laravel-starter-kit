@@ -139,6 +139,15 @@ return [
     'file_manager' => [
         'title' => 'File Manager Settings',
         'subtitle' => 'Configure upload size and accepted file types.',
+        'trash' => [
+            'title' => 'Trash',
+            'desc' => 'Deleted files are kept in the trash before being permanently removed.',
+            'active' => 'Active',
+            'inactive' => 'Inactive',
+            'retention_label' => 'File Retention Period (days)',
+            'retention_hint' => 'Files are permanently removed from the trash once this period ends.',
+            'retention_suffix' => 'days',
+        ],
         'media_section_title' => 'Media',
         'archive_section_title' => 'Archive',
         'video_label' => 'Video Uploads',
