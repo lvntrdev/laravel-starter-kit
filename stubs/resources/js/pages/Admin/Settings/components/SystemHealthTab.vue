@@ -48,32 +48,24 @@
         },
     );
 
-    function formatGeneratedAt(iso: string): string {
-        try {
-            return new Date(iso).toLocaleString(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-            });
-        } catch {
-            return iso;
-        }
-    }
-
     const statusConfig = {
         ok: {
-            badge: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30',
+            badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
             icon: 'pi pi-check-circle text-emerald-500',
             row: '',
+            banner: 'bg-red-600',
         },
         warn: {
-            badge: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30',
+            badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
             icon: 'pi pi-exclamation-triangle text-amber-500',
-            row: 'bg-amber-50/40 dark:bg-amber-500/5',
+            row: 'bg-amber-50/50 dark:bg-amber-500/5',
+            banner: 'bg-amber-500',
         },
         fail: {
-            badge: 'bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/30',
+            badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
             icon: 'pi pi-times-circle text-red-500',
-            row: 'bg-red-50/40 dark:bg-red-500/5',
+            row: 'bg-red-50/50 dark:bg-red-500/5',
+            banner: 'bg-red-600',
         },
     } as const;
 
@@ -93,35 +85,23 @@
         return trans(`sk-system-health.status_${status}`);
     }
 
-    const summaryCards = computed(() => [
-        {
-            key: 'ok',
-            label: trans('sk-system-health.status_ok'),
-            value: localReport.value?.summary.ok ?? 0,
-            bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-            text: 'text-emerald-700 dark:text-emerald-400',
-            icon: 'pi pi-check-circle',
-            iconColor: 'text-emerald-500',
-        },
-        {
-            key: 'warn',
-            label: trans('sk-system-health.status_warn'),
-            value: localReport.value?.summary.warn ?? 0,
-            bg: 'bg-amber-50 dark:bg-amber-500/10',
-            text: 'text-amber-700 dark:text-amber-400',
-            icon: 'pi pi-exclamation-triangle',
-            iconColor: 'text-amber-500',
-        },
-        {
-            key: 'fail',
-            label: trans('sk-system-health.status_fail'),
-            value: localReport.value?.summary.fail ?? 0,
-            bg: 'bg-red-50 dark:bg-red-500/10',
-            text: 'text-red-700 dark:text-red-400',
-            icon: 'pi pi-times-circle',
-            iconColor: 'text-red-500',
-        },
-    ]);
+    const problemChecks = computed<DoctorCheck[]>(() =>
+        (localReport.value?.checks ?? []).filter((c) => c.status !== 'ok'),
+    );
+
+    function bannerClass(status: DoctorCheck['status']): string {
+        return statusConfig[status].banner;
+    }
+
+    function bannerIcon(status: DoctorCheck['status']): string {
+        return status === 'warn' ? 'pi pi-exclamation-triangle' : 'pi pi-times-circle';
+    }
+
+    function bannerTitle(check: DoctorCheck): string {
+        return trans(`sk-system-health.banner_${check.status === 'warn' ? 'warn' : 'fail'}_title`, {
+            name: check.name,
+        });
+    }
 
     onMounted(() => {
         if (!localReport.value) {
@@ -161,7 +141,7 @@
 </script>
 
 <template>
-    <SkCard>
+    <SkCard flush>
         <template #title>{{ $t('sk-system-health.title') }}</template>
         <template #subtitle>
             {{ $t('sk-system-health.subtitle') }}
@@ -173,13 +153,14 @@
                 :loading="running"
                 :disabled="running"
                 size="small"
+                outlined
                 @click="runChecks"
             />
         </template>
         <template #content>
             <div
                 v-if="running && !localReport"
-                class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
+                class="flex flex-col items-center gap-3 px-6 py-16 text-surface-400 dark:text-surface-500"
             >
                 <i class="pi pi-spin pi-spinner text-4xl" />
                 <p class="text-base">
@@ -187,48 +168,38 @@
                 </p>
             </div>
 
-            <template v-else>
-                <p
-                    v-if="localReport"
-                    class="mb-4 text-base text-surface-500 dark:text-surface-400"
-                >
-                    <i class="pi pi-clock mr-1" />
-                    {{
-                        $t('sk-system-health.generated_at', {
-                            time: formatGeneratedAt(localReport.generated_at),
-                        })
-                    }}
-                </p>
-
-                <section class="mb-4 grid grid-cols-3 gap-4">
+            <div v-else class="flex flex-col">
+                <section v-if="problemChecks.length" class="flex flex-col gap-2.5 px-6 pt-5 pb-4">
                     <div
-                        v-for="card in summaryCards"
-                        :key="card.key"
-                        class="flex items-center gap-4 rounded-xl border border-surface-200 p-4 dark:border-surface-700"
-                        :class="card.bg"
+                        v-for="check in problemChecks"
+                        :key="'banner-' + check.name"
+                        class="flex items-center gap-3 rounded-md px-4 py-3 text-white"
+                        :class="bannerClass(check.status)"
                     >
-                        <div
-                            class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-surface-0/60 dark:bg-surface-900/40"
-                        >
-                            <i :class="[card.icon, card.iconColor]" class="text-xl" />
-                        </div>
-                        <div>
-                            <p class="text-base font-medium" :class="card.text">
-                                {{ card.label }}
+                        <span class="grid h-9 w-9 flex-none place-items-center rounded-full bg-white/20 text-[15px]">
+                            <i :class="bannerIcon(check.status)" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold leading-tight">
+                                {{ bannerTitle(check) }}
                             </p>
-                            <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">
-                                {{ card.value }}
+                            <p class="mt-0.5 text-[13px] leading-relaxed text-white/90">
+                                {{ check.message }}
+                                <template v-if="check.hint">
+                                    &nbsp;{{ $t('sk-system-health.banner_hint_prefix') }}:
+                                    <code class="rounded bg-white/20 px-1.5 py-px font-mono text-xs">{{ check.hint }}</code>
+                                </template>
                             </p>
                         </div>
                     </div>
                 </section>
 
                 <section
-                    class="overflow-hidden rounded-xl border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
+                    :class="problemChecks.length ? 'border-t border-surface-200 dark:border-surface-700' : ''"
                 >
                     <div
                         v-if="!localReport?.checks || localReport.checks.length === 0"
-                        class="flex flex-col items-center gap-3 py-16 text-surface-400 dark:text-surface-500"
+                        class="flex flex-col items-center gap-3 px-6 py-16 text-surface-400 dark:text-surface-500"
                     >
                         <i class="pi pi-info-circle text-4xl" />
                         <p class="text-base">
@@ -239,18 +210,17 @@
                     <div v-else class="overflow-x-auto">
                         <table class="w-full">
                             <thead class="border-b border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50">
-                                <tr class="text-left text-base font-medium uppercase tracking-wider text-surface-500 dark:text-surface-400">
-                                    <th class="w-10 px-4 py-3" />
-                                    <th class="px-4 py-3">
+                                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-surface-500 dark:text-surface-400">
+                                    <th class="px-6 py-3">
                                         {{ $t('sk-system-health.col_check') }}
                                     </th>
-                                    <th class="w-28 px-4 py-3">
+                                    <th class="w-32 px-6 py-3">
                                         {{ $t('sk-system-health.col_status') }}
                                     </th>
-                                    <th class="px-4 py-3">
+                                    <th class="px-6 py-3">
                                         {{ $t('sk-system-health.col_message') }}
                                     </th>
-                                    <th class="px-4 py-3">
+                                    <th class="px-6 py-3">
                                         {{ $t('sk-system-health.col_hint') }}
                                     </th>
                                 </tr>
@@ -260,29 +230,31 @@
                                 <tr
                                     v-for="check in localReport.checks"
                                     :key="check.name"
+                                    class="transition-colors hover:bg-surface-50 dark:hover:bg-surface-800/50"
                                     :class="rowClass(check.status)"
                                 >
-                                    <td class="px-4 py-3">
-                                        <i :class="iconClass(check.status)" class="text-base" />
+                                    <td class="px-6 py-3.5 whitespace-nowrap">
+                                        <div class="flex items-center gap-2.5">
+                                            <i :class="iconClass(check.status)" class="text-[15px]" />
+                                            <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+                                                {{ check.name }}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-base font-medium text-surface-900 dark:text-surface-0">
-                                            {{ check.name }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-6 py-3.5">
                                         <span
-                                            class="inline-flex items-center rounded-full px-2.5 py-0.5 text-base font-medium"
+                                            class="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold"
                                             :class="badgeClass(check.status)"
                                         >
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current" />
                                             {{ statusLabel(check.status) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-base text-surface-700 dark:text-surface-300">
+                                    <td class="px-6 py-3.5 text-[13px] leading-relaxed text-surface-600 dark:text-surface-300">
                                         {{ check.message }}
                                     </td>
-                                    <td class="px-4 py-3 text-base text-surface-500 dark:text-surface-400">
-                                        <span v-if="check.hint">{{ check.hint }}</span>
+                                    <td class="px-6 py-3.5 text-[13px] text-surface-500 dark:text-surface-400">
+                                        <code v-if="check.hint" class="font-mono text-xs">{{ check.hint }}</code>
                                         <span v-else class="text-surface-300 dark:text-surface-600">&mdash;</span>
                                     </td>
                                 </tr>
@@ -290,7 +262,7 @@
                         </table>
                     </div>
                 </section>
-            </template>
+            </div>
         </template>
     </SkCard>
 </template>

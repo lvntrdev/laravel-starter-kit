@@ -15,6 +15,11 @@ return [
     'status_warn' => 'Uyarı',
     'status_fail' => 'Başarısız',
 
+    // Hata / uyarı bannerları
+    'banner_fail_title' => ':name başarısız',
+    'banner_warn_title' => ':name uyarı',
+    'banner_hint_prefix' => 'Öneri',
+
     // Butonlar
     'run_button' => 'Kontrolleri yeniden çalıştır',
     'running' => 'Çalışıyor…',

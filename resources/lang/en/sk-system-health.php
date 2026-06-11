@@ -15,6 +15,11 @@ return [
     'status_warn' => 'Warning',
     'status_fail' => 'Failed',
 
+    // Error / warning banners
+    'banner_fail_title' => ':name failed',
+    'banner_warn_title' => ':name warning',
+    'banner_hint_prefix' => 'Hint',
+
     // Buttons
     'run_button' => 'Re-run checks',
     'running' => 'Running…',
