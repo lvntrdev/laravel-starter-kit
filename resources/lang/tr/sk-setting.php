@@ -119,10 +119,13 @@ return [
     ],
 
     'storage' => [
-        'title' => 'Medya Depolama',
-        'subtitle' => 'Yüklenen medya dosyalarının nerede saklanacağını seçin.',
-        'local' => 'Yerel',
-        'spaces' => 'DigitalOcean Spaces',
+        'title' => 'Depolama Sürücüsü',
+        'subtitle' => 'Yüklenen dosyaların nerede saklanacağını seçin.',
+        'local' => 'Yerel Disk',
+        'local_desc' => 'Sunucu dosya sistemi',
+        'local_hint' => 'Dosyalar sunucudaki <code>storage/app/public</code> dizininde saklanır.',
+        'spaces' => 'DO Spaces',
+        'spaces_desc' => 'S3 uyumlu nesne deposu',
         's3' => 'Amazon S3',
         'spaces_title' => 'DigitalOcean Spaces',
         'spaces_subtitle' => 'DigitalOcean Spaces kimlik bilgilerini ve ayarlarını yapılandırın.',

@@ -119,10 +119,13 @@ return [
     ],
 
     'storage' => [
-        'title' => 'Media Storage',
-        'subtitle' => 'Select where uploaded media files should be stored.',
-        'local' => 'Local',
-        'spaces' => 'DigitalOcean Spaces',
+        'title' => 'Storage Driver',
+        'subtitle' => 'Choose where uploaded files are stored.',
+        'local' => 'Local Disk',
+        'local_desc' => 'Server file system',
+        'local_hint' => 'Files are stored in the <code>storage/app/public</code> directory on the server.',
+        'spaces' => 'DO Spaces',
+        'spaces_desc' => 'S3-compatible object storage',
         's3' => 'Amazon S3',
         'spaces_title' => 'DigitalOcean Spaces',
         'spaces_subtitle' => 'Configure DigitalOcean Spaces credentials and settings.',

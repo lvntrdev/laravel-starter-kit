@@ -753,6 +753,33 @@
     border-color: var(--p-surface-500);
 }
 
+/* Side-by-side radio cards — opt-in via FB.radio().class('sk-fb__cards-row').
+   Keeps the vertical card styling above but lays the cards out in a responsive
+   2-column grid instead of stacking. Each card stretches to fill its column. */
+.sk-fb__cards-row .sk-fb__group--vertical {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .sk-fb__cards-row .sk-fb__group--vertical {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Section header with a card-title style bottom divider — opt-in on a custom
+   slot wrapper. Mirrors .sk-card__head--divider so in-form section headers read
+   like a card head. */
+.sk-fb__section-head {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--p-surface-200);
+}
+
+:root.dark .sk-fb__section-head {
+    border-bottom-color: var(--p-surface-700);
+}
+
 /* ── SelectButton → segmented control ──
    A tinted trough holding a raised active chip — design's FB.selectButton(). */
 .p-selectbutton {

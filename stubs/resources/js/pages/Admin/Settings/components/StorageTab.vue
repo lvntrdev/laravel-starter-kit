@@ -13,6 +13,8 @@
             spaces_bucket: string | null;
             spaces_endpoint: string | null;
             spaces_url: string | null;
+            // AWS S3 — kept on the payload for backward compatibility, but
+            // hidden from the UI for now.
             aws_key: string | null;
             aws_secret: null;
             aws_secret_is_set: boolean;
@@ -26,12 +28,11 @@
     const props = defineProps<Props>();
 
     const spacesSecretPlaceholder = computed(() => (props.settings.spaces_secret_is_set ? '••••••••' : ''));
-    const awsSecretPlaceholder = computed(() => (props.settings.aws_secret_is_set ? '••••••••' : ''));
 
+    // Card-style driver picker. Amazon S3 is intentionally omitted for now.
     const diskOptions = [
-        { label: 'Local', value: 'local' },
-        { label: 'DigitalOcean Spaces', value: 'do' },
-        { label: 'Amazon S3', value: 's3' },
+        { label: 'sk-setting.storage.local', value: 'local', description: 'sk-setting.storage.local_desc' },
+        { label: 'sk-setting.storage.spaces', value: 'do', description: 'sk-setting.storage.spaces_desc' },
     ];
 
     const doRegionOptions = [
@@ -48,25 +49,8 @@
         { label: 'SYD1', value: 'syd1' },
     ];
 
-    const awsRegionOptions = [
-        { label: 'US East (N. Virginia)', value: 'us-east-1' },
-        { label: 'US East (Ohio)', value: 'us-east-2' },
-        { label: 'US West (N. California)', value: 'us-west-1' },
-        { label: 'US West (Oregon)', value: 'us-west-2' },
-        { label: 'EU (Ireland)', value: 'eu-west-1' },
-        { label: 'EU (London)', value: 'eu-west-2' },
-        { label: 'EU (Frankfurt)', value: 'eu-central-1' },
-        { label: 'EU (Paris)', value: 'eu-west-3' },
-        { label: 'EU (Stockholm)', value: 'eu-north-1' },
-        { label: 'Asia Pacific (Singapore)', value: 'ap-southeast-1' },
-        { label: 'Asia Pacific (Tokyo)', value: 'ap-northeast-1' },
-        { label: 'Asia Pacific (Sydney)', value: 'ap-southeast-2' },
-        { label: 'Asia Pacific (Mumbai)', value: 'ap-south-1' },
-        { label: 'South America (São Paulo)', value: 'sa-east-1' },
-    ];
-
+    const isLocal = (values: Record<string, unknown>) => values.media_disk === 'local';
     const isDo = (values: Record<string, unknown>) => values.media_disk === 'do';
-    const isS3 = (values: Record<string, unknown>) => values.media_disk === 's3';
 
     const formConfig = computed(() =>
         FB.form()
@@ -84,6 +68,8 @@
                 spaces_bucket: props.settings.spaces_bucket ?? '',
                 spaces_endpoint: props.settings.spaces_endpoint ?? '',
                 spaces_url: props.settings.spaces_url ?? '',
+                // AWS values stay on the payload (hidden) so the backend keeps
+                // preserving existing credentials on empty submissions.
                 aws_key: props.settings.aws_key ?? '',
                 aws_secret: '',
                 aws_region: props.settings.aws_region ?? '',
@@ -97,10 +83,21 @@
                 preserveScroll: true,
             })
             .addFields(
-                FB.select().key('media_disk').options(diskOptions).class('col-span-full'),
+                // Vertical layout → kit's bordered radio cards. `sk-fb__cards-row`
+                // lays those cards side-by-side (responsive 2-col grid) per the
+                // design; see formbuilder.css.
+                FB.radio()
+                    .key('media_disk')
+                    .label(false)
+                    .options(diskOptions)
+                    .radioLayout('vertical')
+                    .class('col-span-full sk-fb__cards-row'),
+
+                // Local-disk hint (shown when "Local" is selected).
+                FB.slot().key('media_local_hint').visible(isLocal).class('col-span-full'),
 
                 // ── DO Spaces ──
-                FB.title('sk-setting.storage.spaces_title').class('col-span-full').visible(isDo),
+                FB.slot().key('spaces_header').visible(isDo).class('col-span-full'),
                 FB.inputText().key('spaces_key').visible(isDo).optional(),
                 FB.password()
                     .key('spaces_secret')
@@ -120,25 +117,41 @@
                     .placeholder('https://bucket.fra1.cdn.digitaloceanspaces.com')
                     .visible(isDo)
                     .optional(),
-
-                // ── AWS S3 ──
-                FB.title('sk-setting.storage.s3_title').class('col-span-full').visible(isS3),
-                FB.inputText().key('aws_key').visible(isS3).optional(),
-                FB.password()
-                    .key('aws_secret')
-                    .toggleMask()
-                    .visible(isS3)
-                    .optional()
-                    .placeholder(awsSecretPlaceholder.value),
-                FB.select().key('aws_region').options(awsRegionOptions).visible(isS3).optional(),
-                FB.inputText().key('aws_bucket').visible(isS3).optional(),
-                FB.inputText().key('aws_endpoint').placeholder('https://s3.amazonaws.com').visible(isS3).optional(),
-                FB.inputText().key('aws_url').placeholder('https://bucket.s3.amazonaws.com').visible(isS3).optional(),
             )
             .build(),
     );
 </script>
 
 <template>
-    <SkForm :config="formConfig" />
+    <SkForm :config="formConfig">
+        <!-- DO Spaces section header — tinted icon tile + title + subtitle,
+             matching the kit's section-header motif (.sk-secrow / .sk-testbox-head). -->
+        <template #spaces_header>
+            <div class="sk-fb__section-head flex items-start gap-3 pt-2">
+                <span
+                    class="grid size-9 shrink-0 place-items-center rounded-md text-[15px]"
+                    :style="{
+                        background: 'color-mix(in srgb, var(--p-primary-color) 10%, transparent)',
+                        color: 'var(--p-primary-color)',
+                    }"
+                >
+                    <i class="pi pi-cloud" />
+                </span>
+                <div class="min-w-0">
+                    <span class="sk-fb__title">{{ $t('sk-setting.storage.spaces_title') }}</span>
+                    <small class="sk-fb__hint mt-0.5 block text-xs leading-snug">
+                        {{ $t('sk-setting.storage.spaces_subtitle') }}
+                    </small>
+                </div>
+            </div>
+        </template>
+
+        <template #media_local_hint>
+            <!-- eslint-disable-next-line vue/no-v-html — static, trusted i18n string -->
+            <p
+                class="mt-1 text-[11.5px] leading-relaxed text-[var(--panel-text-muted)] [&_code]:rounded [&_code]:font-mono [&_code]:text-[12px] [&_code]:text-[var(--panel-text-soft)]"
+                v-html="$t('sk-setting.storage.local_hint')"
+            />
+        </template>
+    </SkForm>
 </template>
