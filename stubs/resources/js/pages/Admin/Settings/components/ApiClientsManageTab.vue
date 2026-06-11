@@ -32,8 +32,8 @@
     const tableBuilder = DB.table<ApiClient>()
         .route(apiClients.dtApi.url())
         .isCard(true)
-        .cardTitle('sk-api-clients.title')
-        .cardSubtitle('sk-api-clients.subtitle')
+        .title('sk-api-clients.title')
+        .subtitle('sk-api-clients.subtitle')
         .searchable(true)
         .sortable(true)
         .addColumns(

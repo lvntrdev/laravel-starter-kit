@@ -99,8 +99,6 @@
 
     const tableConfig = DB.table<User>()
         .route(users.dtApi.url())
-        .title('sk-menu.users')
-        .subtitle('sk-user.subtitle')
         // .searchable(true)
         .sortable(true)
         // .isCard(false)
@@ -123,6 +121,8 @@
             // inline() → header'da pill olarak; aynı filtreler filtre popover'ında da listelenir
             DB.filter().key('status').definitionOptions('userStatus').inline(),
             DB.filter().key('role').label('sk-common.role').type('select').options(props.roleOptions).inline(),
+            // Tarih aralığı filtresi — hem header'da (inline) hem filtre popover'ında (created_at_from / _to)
+            DB.filter().key('created_at').label('sk-common.created_at').type('daterange').inline(),
         )
         .addActions(
             DB.action<User>()

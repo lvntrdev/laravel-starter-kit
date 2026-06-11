@@ -30,12 +30,48 @@
     @apply flex flex-col justify-center shrink-0 sm:pr-4 sm:mr-1 sm:border-r sm:border-slate-200 sm:dark:border-slate-700;
 }
 
+/* When a title is present, the heading is pushed to the far left and every
+   other toolbar item (search + inline filters + the popover/columns group)
+   clusters on the right. The heading's mr-auto is the *only* auto margin in
+   this mode — the right group's own ml-auto is cancelled so the free space
+   isn't split between them (which would leave the search box stuck mid-row).
+   The heading's right divider is dropped since the search box no longer sits
+   next to the title. */
+/* A titled toolbar doubles as the card head, so its padding matches
+   .sk-card__head (px-6 py-[18px]) — title/search row reads identically to a
+   plain SkCard heading. */
+.sk-dt-toolbar--titled {
+    @apply px-6 py-[18px];
+}
+
+.sk-dt-toolbar--titled .sk-dt-toolbar__head {
+    @apply sm:mr-auto sm:pr-0 sm:border-r-0;
+}
+
+.sk-dt-toolbar--titled .sk-dt-toolbar__right {
+    @apply sm:ml-0;
+}
+
+/* Title/subtitle typography mirrors SkCard head (.sk-card__title /
+   .sk-card__subtitle) so a datatable heading reads identically to a card
+   heading — only whitespace-nowrap is added for the single-row toolbar. */
 .sk-dt-toolbar__title {
-    @apply text-[16px] font-semibold tracking-tight leading-tight whitespace-nowrap text-slate-900 dark:text-slate-100;
+    @apply text-base font-semibold whitespace-nowrap;
+    letter-spacing: -0.01em;
+    color: var(--p-surface-900);
+}
+
+:root.dark .sk-dt-toolbar__title {
+    color: var(--p-surface-0);
 }
 
 .sk-dt-toolbar__subtitle {
-    @apply mt-0.5 text-xs leading-snug whitespace-nowrap text-slate-500 dark:text-slate-400;
+    @apply mt-1 text-[13px] leading-normal whitespace-nowrap;
+    color: var(--p-surface-500);
+}
+
+:root.dark .sk-dt-toolbar__subtitle {
+    color: var(--p-surface-400);
 }
 
 /* Compact gray search box — 38px, surface-2 background (design: .dt-search) */
@@ -118,10 +154,15 @@
 }
 
 .sk-dt-pill__clear {
-    @apply grid place-items-center size-[18px] shrink-0 self-center rounded-[5px] text-[11px] leading-none text-slate-400 transition-colors duration-150;
+    @apply inline-flex items-center justify-center size-[18px] shrink-0 self-center rounded-[5px] text-[11px] text-slate-400 transition-colors duration-150;
+    line-height: 1;
 
+    /* PrimeIcons pi-times glyph sits high in its em-box; nudge it down so the
+       ✕ lands in the optical center of the 18px hit area. */
     &::before {
-        @apply leading-none;
+        @apply block;
+        line-height: 1;
+        transform: translateY(3px);
     }
 
     &:hover {
@@ -183,20 +224,6 @@
     @apply text-white;
 }
 
-/* Clear-filters ghost button (design: .dt-clearfilters) */
-.sk-dt-clearfilters {
-    @apply hidden sm:inline-flex items-center gap-[7px] h-[38px] shrink-0 rounded-md border-0 bg-transparent px-3 cursor-pointer;
-    @apply text-[12.5px] font-medium whitespace-nowrap text-slate-500 dark:text-slate-400 transition-colors duration-150;
-
-    & .pi {
-        @apply text-[13px];
-    }
-
-    &:hover {
-        @apply bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100;
-    }
-}
-
 /* Filter-popover icon button — idle: neutral like the pills; open/active: primary */
 .sk-dt-filterbtn {
     @apply relative grid size-[38px] shrink-0 cursor-pointer place-items-center rounded-md border text-sm transition-colors duration-150;
@@ -251,6 +278,22 @@
 
 .sk-dt-toolbar__inline-filter {
     @apply hidden items-center gap-2 sm:flex;
+}
+
+/* Inline date/daterange pickers must read as siblings of the select pills —
+   same 38px height, radius, border, type scale. Scoped to the toolbar so the
+   global FormBuilder DatePicker styling is untouched. */
+.sk-dt-toolbar__inline-filter .p-datepicker {
+    @apply h-[38px];
+}
+
+.sk-dt-toolbar__inline-filter .p-datepicker-input {
+    @apply h-[38px] rounded-md px-3 text-[12.75px];
+    @apply bg-white border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100;
+}
+
+.sk-dt-toolbar__inline-filter .p-datepicker-input::placeholder {
+    @apply text-slate-500 dark:text-slate-400;
 }
 
 .sk-dt-toolbar__inline-filter-label {
@@ -446,28 +489,54 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt-tags {
-    @apply mb-2 mx-4 flex flex-wrap items-center gap-2 rounded-md p-2;
-    @apply border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60;
+    /* Active-filter band — no surrounding frame/fill; just the tag row, with
+       symmetric top/bottom spacing. */
+    @apply my-3 mx-4 flex flex-wrap items-center gap-2;
 }
 
+/* Soft / tonal "info" tag, fully rounded, normal size — matches the PrimeVue
+   Tag info severity (blue tonal) without a border. */
 .sk-dt-tags__tag {
-    @apply inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs;
-    @apply border border-slate-200 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200;
+    @apply inline-flex items-center gap-1.5 h-8 pl-3.5 pr-2 rounded-full text-sm;
+    @apply bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300;
 }
 
 .sk-dt-tags__tag-label {
-    @apply font-semibold text-slate-500 dark:text-slate-400;
+    @apply font-semibold text-blue-600/70 dark:text-blue-300/70;
 }
 
 .sk-dt-tags__tag-value {
-    @apply max-w-40 truncate font-medium;
+    @apply max-w-40 truncate font-semibold;
 }
 
+/* The ✕ is drawn as two CSS strokes instead of the PrimeIcons pi-times glyph:
+   font-glyph metrics are not pixel-centerable across sizes, but two absolutely
+   positioned bars are. Both pseudo-elements override the PrimeIcons content. */
 .sk-dt-tags__tag-remove {
-    @apply ml-1 grid size-4 cursor-pointer place-items-center rounded text-[10px] text-slate-400 transition-colors duration-150;
+    @apply relative grid size-5 shrink-0 cursor-pointer rounded-full text-blue-500/70 transition-colors duration-150 dark:text-blue-300/70;
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 9px;
+        height: 1.5px;
+        border-radius: 1px;
+        background: currentColor;
+    }
+
+    &::before {
+        transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    &::after {
+        transform: translate(-50%, -50%) rotate(-45deg);
+    }
 
     &:hover {
-        @apply bg-red-500/10 text-red-500;
+        @apply bg-red-500/15 text-red-500;
     }
 }
 

@@ -46,8 +46,8 @@
     const tableBuilder = DB.table<ApiToken>()
         .route(apiTokens.dtApi.url())
         .isCard(true)
-        .cardTitle('sk-api-tokens.title')
-        .cardSubtitle('sk-api-tokens.subtitle')
+        .title('sk-api-tokens.title')
+        .subtitle('sk-api-tokens.subtitle')
         .searchable(true)
         .sortable(true)
         .addColumns(
