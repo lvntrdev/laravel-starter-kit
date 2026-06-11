@@ -22,4 +22,5 @@ return [
     'confirm' => 'Onayla',
     'filter' => 'Filtrele',
     'reset' => 'Sıfırla',
+    'refresh' => 'Yenile',
 ];

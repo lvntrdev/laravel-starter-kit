@@ -22,4 +22,5 @@ return [
     'confirm' => 'Confirm',
     'filter' => 'Filter',
     'reset' => 'Reset',
+    'refresh' => 'Refresh',
 ];

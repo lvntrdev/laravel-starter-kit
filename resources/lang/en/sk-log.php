@@ -13,17 +13,33 @@ return [
     'active' => 'Active',
     'active_yes' => 'Active',
     'back_to_list' => 'Back to list',
+    'all' => 'All',
+
+    // List view
+    'search_files' => 'Search filename',
+    'channel_all' => 'All',
+    'clear_filters' => 'Clear filters',
+    'no_files_title' => 'No matching log files',
+    'no_files_sub' => 'Review your search or channel filter.',
+    'per_page' => 'Per page',
+    'showing_files_range' => 'Showing :from–:to of :total',
 
     // Filters
     'level' => 'Level',
     'from' => 'From',
     'to' => 'To',
     'search_messages' => 'Search in messages',
+    'keyword_placeholder' => 'Keyword, class, file…',
     'all_levels' => 'All levels',
     'apply' => 'Apply',
     'reset' => 'Reset',
     'load_more' => 'Load more',
+    'expand_all' => 'Expand all',
+    'collapse_all' => 'Collapse all',
+    'entry_count' => ':count entries',
+    'stacktrace' => 'stacktrace',
     'no_entries' => 'No entries match the filters',
+    'no_entries_sub' => 'Review the level, time range or search criteria.',
     'showing_n_entries' => 'Showing :count entries',
     'eof' => 'End of file',
 
