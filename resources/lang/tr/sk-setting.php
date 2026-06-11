@@ -106,8 +106,13 @@ return [
 
     'mail' => [
         'title' => 'E-posta Ayarları',
-        'subtitle' => 'Giden e-posta ayarlarını yapılandırın.',
+        'subtitle' => 'Sistem e-postalarının gönderici bilgilerini ve SMTP yapılandırmasını düzenleyin.',
         'encryption_none' => 'Yok',
+        'sender_title' => 'Gönderici Bilgileri',
+        'sender_subtitle' => 'Sistem e-postalarında gözükecek gönderen adı ve adresi.',
+        'smtp_title' => 'SMTP Sunucusu',
+        'smtp_subtitle' => 'E-posta gönderimi için kullanılacak SMTP yapılandırması.',
+        'send_limit_unit' => 'e-posta',
         'test_title' => 'Test E-postası',
         'test_subtitle' => 'E-posta yapılandırmanızı doğrulamak için bir test e-postası gönderin.',
         'test_send' => 'Test Gönder',

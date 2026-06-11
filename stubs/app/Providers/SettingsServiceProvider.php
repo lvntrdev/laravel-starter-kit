@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Listeners\EnforceMailSendLimit;
 use App\Models\Setting;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Features;
@@ -194,7 +198,18 @@ class SettingsServiceProvider extends ServiceProvider
             if ($mail['from_name'] ?? null) {
                 config(['mail.from.name' => $mail['from_name']]);
             }
+            // Apply a global Reply-To to every outgoing mailable when configured.
+            if (! empty($mail['reply_to'])) {
+                config(['mail.reply_to.address' => $mail['reply_to']]);
+                Mail::alwaysReplyTo($mail['reply_to'], $mail['from_name'] ?? null);
+            }
+            // Expose the hourly send cap to the throttle listener (0 = unlimited).
+            config(['mail.send_limit' => (int) ($mail['send_limit'] ?? 0)]);
         }
+
+        // Enforce the hourly outgoing-mail cap. The listener short-circuits when
+        // the limit is 0 (unlimited), so registering it unconditionally is safe.
+        Event::listen(MessageSending::class, EnforceMailSendLimit::class);
 
         // Storage
         if ($storage = $settings['storage'] ?? null) {

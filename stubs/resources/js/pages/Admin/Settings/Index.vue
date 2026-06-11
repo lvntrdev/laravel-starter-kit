@@ -61,6 +61,8 @@
                 encryption: string | null;
                 from_address: string;
                 from_name: string;
+                reply_to: string | null;
+                send_limit: number;
             };
             storage: {
                 media_disk: string;

@@ -35,6 +35,9 @@ class UpdateMailSettingsRequest extends FormRequest
             'encryption' => ['required_if:mailer,smtp', 'string', 'in:none,tls,ssl'],
             'from_address' => ['required', 'email', 'max:255'],
             'from_name' => ['required', 'string', 'max:255'],
+            'reply_to' => ['nullable', 'email', 'max:255'],
+            // 0 (or empty) = unlimited; otherwise an hourly outgoing-mail cap.
+            'send_limit' => ['nullable', 'integer', 'min:0', 'max:1000000'],
         ];
     }
 

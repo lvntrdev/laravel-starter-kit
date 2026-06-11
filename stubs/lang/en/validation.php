@@ -219,6 +219,8 @@ return [
         'encryption' => 'Encryption',
         'from_address' => 'From Address',
         'from_name' => 'From Name',
+        'reply_to' => 'Reply-To Address',
+        'send_limit' => 'Hourly Send Limit',
         'mailer' => 'Mailer',
         'test_recipient' => 'Recipient Email',
         'app_name' => 'App Name',

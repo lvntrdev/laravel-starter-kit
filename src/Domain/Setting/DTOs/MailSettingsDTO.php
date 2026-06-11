@@ -18,6 +18,8 @@ readonly class MailSettingsDTO extends BaseDTO
         public ?string $encryption,
         public string $fromAddress,
         public string $fromName,
+        public ?string $replyTo,
+        public ?string $sendLimit,
     ) {}
 
     /**
@@ -25,6 +27,8 @@ readonly class MailSettingsDTO extends BaseDTO
      */
     public static function fromArray(array $data): static
     {
+        $sendLimit = $data['send_limit'] ?? null;
+
         return new static(
             mailer: $data['mailer'],
             host: $data['host'] ?? null,
@@ -34,6 +38,8 @@ readonly class MailSettingsDTO extends BaseDTO
             encryption: $data['encryption'] ?? null,
             fromAddress: $data['from_address'],
             fromName: $data['from_name'],
+            replyTo: ($data['reply_to'] ?? null) ?: null,
+            sendLimit: ($sendLimit === null || $sendLimit === '') ? null : (string) $sendLimit,
         );
     }
 
@@ -50,6 +56,8 @@ readonly class MailSettingsDTO extends BaseDTO
             'encryption' => $this->encryption,
             'from_address' => $this->fromAddress,
             'from_name' => $this->fromName,
+            'reply_to' => $this->replyTo,
+            'send_limit' => $this->sendLimit,
         ];
 
         // Omit password when blank so the existing stored value is preserved.

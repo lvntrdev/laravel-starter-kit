@@ -192,6 +192,9 @@ class SettingsDefaultsQuery
             'encryption' => $stored['encryption'] ?? config('mail.mailers.smtp.encryption'),
             'from_address' => $stored['from_address'] ?? config('mail.from.address'),
             'from_name' => $stored['from_name'] ?? config('mail.from.name'),
+            'reply_to' => $stored['reply_to'] ?? config('mail.reply_to.address'),
+            // 0 = unlimited; the outgoing-mail throttle treats <= 0 as "no cap".
+            'send_limit' => (int) ($stored['send_limit'] ?? 0),
         ];
     }
 

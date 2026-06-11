@@ -106,8 +106,13 @@ return [
 
     'mail' => [
         'title' => 'Mail Settings',
-        'subtitle' => 'Configure outgoing email settings.',
+        'subtitle' => 'Configure the sender details and SMTP setup for system emails.',
         'encryption_none' => 'None',
+        'sender_title' => 'Sender Details',
+        'sender_subtitle' => 'The sender name and address shown on system emails.',
+        'smtp_title' => 'SMTP Server',
+        'smtp_subtitle' => 'The SMTP configuration used to deliver email.',
+        'send_limit_unit' => 'emails',
         'test_title' => 'Test Email',
         'test_subtitle' => 'Send a test email to verify your mail configuration.',
         'test_send' => 'Send Test',

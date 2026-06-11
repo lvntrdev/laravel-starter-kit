@@ -209,6 +209,8 @@ return [
         'encryption' => 'Şifreleme',
         'from_address' => 'Gönderen Adresi',
         'from_name' => 'Gönderen Adı',
+        'reply_to' => 'Yanıtla Adresi (Reply-To)',
+        'send_limit' => 'Gönderim Limiti (saat)',
         'mailer' => 'Mail Sürücüsü',
         'test_recipient' => 'Alıcı E-postası',
         'app_name' => 'Uygulama Adı',
