@@ -21,20 +21,17 @@ class ApiRouteController extends Controller
         $apidogToken = Setting::getValue('apidog.access_token');
         $apidogProject = Setting::getValue('apidog.project_id');
 
-        $settingsUrl = route('settings.index').'#api_clients';
-
         return Inertia::render('Admin/ApiRoutes/Index', [
             'routes' => $query->get(),
             'postman' => [
                 'configured' => $this->filled($postmanKey) && $this->filled($postmanWorkspace),
-                'collection_id' => Setting::getValue('postman.collection_id'),
                 'workspace_id' => $postmanWorkspace,
-                'settings_url' => $settingsUrl,
+                'api_key_is_set' => $this->filled($postmanKey),
             ],
             'apidog' => [
                 'configured' => $this->filled($apidogToken) && $this->filled($apidogProject),
                 'project_id' => $apidogProject,
-                'settings_url' => $settingsUrl,
+                'access_token_is_set' => $this->filled($apidogToken),
             ],
         ]);
     }

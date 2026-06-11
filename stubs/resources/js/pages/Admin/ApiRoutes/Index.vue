@@ -1,11 +1,14 @@
 <script setup lang="ts">
-    import { Head, router } from '@inertiajs/vue3';
+    import { computed, ref } from 'vue';
+    import { Head } from '@inertiajs/vue3';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { trans } from 'laravel-vue-i18n';
     import { useApi } from '@/composables/useApi';
+    import { useCan } from '@/composables/useCan';
+    import { useDialog } from '@/composables/useDialog';
     import apiRoutes from '@/routes/api-routes';
     import { useToast } from 'primevue/usetoast';
-    import SkCard from '@lvntr/components/ui/SkCard.vue';
+    import ApiIntegrationsDialog from './components/ApiIntegrationsDialog.vue';
 
     interface RouteItem {
         method: string;
@@ -22,14 +25,13 @@
         };
         postman: {
             configured: boolean;
-            collection_id: string | null;
             workspace_id: string | null;
-            settings_url: string;
+            api_key_is_set: boolean;
         };
         apidog: {
             configured: boolean;
             project_id: string | null;
-            settings_url: string;
+            access_token_is_set: boolean;
         };
     }
 
@@ -37,6 +39,9 @@
 
     const api = useApi();
     const toast = useToast();
+    const dialog = useDialog();
+    const { can } = useCan();
+
     const regenerating = ref(false);
     const syncingPostman = ref(false);
     const syncingApidog = ref(false);
@@ -64,7 +69,7 @@
                 group: 'bc',
                 life: 4000,
             });
-            router.visit(props.postman.settings_url);
+            if (can('settings.update')) openIntegrations();
             return;
         }
 
@@ -90,7 +95,7 @@
                 group: 'bc',
                 life: 4000,
             });
-            router.visit(props.apidog.settings_url);
+            if (can('settings.update')) openIntegrations();
             return;
         }
 
@@ -108,20 +113,112 @@
         }
     }
 
-    const methodColors: Record<string, string> = {
-        GET: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400',
-        POST: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400',
-        PUT: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400',
-        PATCH: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400',
-        DELETE: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400',
-    };
-
-    function getMethodClass(method: string): string {
-        return (
-            methodColors[method.split('|')[0]] ??
-            'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-300'
+    function openIntegrations(): void {
+        dialog.open(
+            ApiIntegrationsDialog,
+            { postman: props.postman, apidog: props.apidog },
+            trans('sk-api-route.integrations.title'),
+            {
+                icon: 'pi pi-cog',
+                subtitle: trans('sk-api-route.integrations.subtitle'),
+                width: '560px',
+                footer: {
+                    hideConfirm: true,
+                    cancelLabel: trans('sk-button.close'),
+                },
+            },
         );
     }
+
+    // ── Tabs + per-tab search ───────────────────────────────────────────
+    const activeTab = ref<'api' | 'service'>('api');
+    const apiSearch = ref('');
+    const serviceSearch = ref('');
+
+    const search = computed({
+        get: () => (activeTab.value === 'api' ? apiSearch.value : serviceSearch.value),
+        set: (val: string) => {
+            if (activeTab.value === 'api') apiSearch.value = val;
+            else serviceSearch.value = val;
+        },
+    });
+
+    function filterRoutes(routes: RouteItem[], query: string): RouteItem[] {
+        const q = query.trim().toLowerCase();
+        if (!q) return routes;
+
+        return routes.filter(
+            (r) =>
+                r.uri.toLowerCase().includes(q) ||
+                (r.name ?? '').toLowerCase().includes(q) ||
+                r.action.toLowerCase().includes(q) ||
+                r.method.toLowerCase().includes(q),
+        );
+    }
+
+    const filteredRoutes = computed(() =>
+        activeTab.value === 'api'
+            ? filterRoutes(props.routes.api, apiSearch.value)
+            : filterRoutes(props.routes.service, serviceSearch.value),
+    );
+
+    // ── Cell rendering helpers ──────────────────────────────────────────
+    const methodBadgeClasses: Record<string, string> = {
+        GET: 'border-green-600/25 bg-green-600/10 text-green-700 dark:text-green-400',
+        POST: 'border-[color-mix(in_srgb,var(--p-primary-color)_25%,transparent)] bg-[color-mix(in_srgb,var(--p-primary-color)_12%,transparent)] text-[var(--p-primary-color)]',
+        PUT: 'border-amber-600/25 bg-amber-600/10 text-amber-700 dark:text-amber-400',
+        PATCH: 'border-amber-600/25 bg-amber-600/10 text-amber-700 dark:text-amber-400',
+        DELETE: 'border-red-600/25 bg-red-600/10 text-red-700 dark:text-red-400',
+    };
+
+    function methodBadgeClass(method: string): string {
+        return (
+            methodBadgeClasses[method] ??
+            'border-surface-200 bg-surface-50 text-surface-600 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300'
+        );
+    }
+
+    /** Split a URI into static and `{param}` segments for two-tone rendering. */
+    function uriParts(uri: string): { text: string; param: boolean }[] {
+        return uri
+            .split(/(\{[^}]+\})/)
+            .filter(Boolean)
+            .map((s) => ({ text: s, param: s.startsWith('{') }));
+    }
+
+    /** Split `Controller@method` for muted-@ rendering. */
+    function actionParts(action: string): { controller: string; method: string | null } {
+        const at = action.indexOf('@');
+        if (at === -1) return { controller: action, method: null };
+
+        return { controller: action.slice(0, at), method: action.slice(at + 1) };
+    }
+
+    /** Auth / permission gates render in the accent color. */
+    function isAccentMiddleware(mw: string): boolean {
+        return /^(auth|verified|check\.permission)/.test(mw);
+    }
+
+    const tabs = computed(() => [
+        {
+            key: 'api' as const,
+            label: trans('sk-api-route.api_endpoints'),
+            icon: 'pi pi-cloud',
+            count: props.routes.api.length,
+            subtitle: trans('sk-api-route.api_endpoints_subtitle'),
+        },
+        {
+            key: 'service' as const,
+            label: trans('sk-api-route.service_endpoints'),
+            icon: 'pi pi-server',
+            count: props.routes.service.length,
+            subtitle: trans('sk-api-route.service_endpoints_subtitle'),
+        },
+    ]);
+
+    const activeSubtitle = computed(
+        () => tabs.value.find((t) => t.key === activeTab.value)?.subtitle ?? '',
+    );
 </script>
 
 <template>
@@ -129,185 +226,202 @@
 
     <AdminLayout :title="$t('sk-api-route.title')" :subtitle="$t('sk-api-route.subtitle')">
         <template #page-actions>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <Button
+                    v-if="can('settings.update')"
+                    :label="$t('sk-api-route.settings')"
+                    icon="pi pi-cog"
+                    severity="secondary"
+                    outlined
+                    @click="openIntegrations"
+                />
+                <span
+                    v-if="can('settings.update')"
+                    class="mx-1 h-6 w-px self-center bg-surface-200 dark:bg-surface-700"
+                />
                 <Button
                     :label="$t('sk-api-route.regenerate_docs')"
                     icon="pi pi-sync"
+                    severity="amber"
                     outlined
-                    severity="warn"
                     :loading="regenerating"
                     @click="regenerateDocs"
                 />
                 <Button
                     :label="$t('sk-api-route.sync_postman')"
                     icon="pi pi-send"
+                    severity="sky"
                     outlined
-                    severity="info"
                     :loading="syncingPostman"
                     @click="syncPostman"
                 />
                 <Button
                     :label="$t('sk-api-route.sync_apidog')"
                     icon="pi pi-share-alt"
+                    severity="violet"
                     outlined
-                    severity="help"
                     :loading="syncingApidog"
                     @click="syncApidog"
                 />
                 <a href="/docs/api" target="_blank" rel="noopener noreferrer">
-                    <Button :label="$t('sk-api-route.open_api_docs')" icon="pi pi-book" outlined />
+                    <Button
+                        :label="$t('sk-api-route.open_api_docs')"
+                        icon="pi pi-book"
+                        severity="blue"
+                        outlined
+                    />
                 </a>
             </div>
         </template>
 
-        <div class="space-y-6">
-            <!-- API Endpoints -->
-            <SkCard>
-                <template #title>
-                    {{ $t('sk-api-route.api_endpoints') }}
-                </template>
-                <template #subtitle>
-                    {{ $t('sk-api-route.api_endpoints_subtitle') }}
-                </template>
-                <template #content>
-                    <div v-if="routes.api.length === 0" class="text-sm text-surface-500">
-                        {{ $t('sk-api-route.no_routes') }}
-                    </div>
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-surface-200 dark:border-surface-700">
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.method') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.uri') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.name') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.action') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.middleware') }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="(route, index) in routes.api"
-                                    :key="index"
-                                    class="border-b border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50"
-                                >
-                                    <td class="px-3 py-2">
-                                        <span
-                                            v-for="m in route.method.split('|')"
-                                            :key="m"
-                                            class="mr-1 inline-block rounded px-2 py-0.5 text-xs font-bold"
-                                            :class="getMethodClass(m)"
-                                        >
-                                            {{ m }}
-                                        </span>
-                                    </td>
-                                    <td class="px-3 py-2 font-mono text-xs text-surface-700 dark:text-surface-300">
-                                        {{ route.uri }}
-                                    </td>
-                                    <td class="px-3 py-2 text-xs text-surface-500">
-                                        {{ route.name ?? '—' }}
-                                    </td>
-                                    <td class="px-3 py-2 font-mono text-xs text-surface-600 dark:text-surface-400">
-                                        {{ route.action }}
-                                    </td>
-                                    <td class="px-3 py-2">
-                                        <span
-                                            v-for="mw in route.middleware"
-                                            :key="mw"
-                                            class="mr-1 mb-1 inline-block rounded-full bg-surface-100 px-2 py-0.5 text-xs text-surface-600 dark:bg-surface-800 dark:text-surface-400"
-                                        >
-                                            {{ mw }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
-            </SkCard>
+        <div
+            class="overflow-hidden rounded border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
+        >
+            <!-- Tab bar -->
+            <div class="flex gap-0.5 border-b border-surface-200 dark:border-surface-700">
+                <button
+                    v-for="tab in tabs"
+                    :key="tab.key"
+                    type="button"
+                    class="relative inline-flex h-14 items-center gap-2 px-5 text-[13.5px] font-semibold whitespace-nowrap transition-colors first:pl-6"
+                    :class="
+                        activeTab === tab.key
+                            ? 'text-[var(--p-primary-color)]'
+                            : 'text-surface-500 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-0'
+                    "
+                    @click="activeTab = tab.key"
+                >
+                    <i :class="tab.icon" class="text-sm" />
+                    {{ tab.label }}
+                    <span
+                        class="inline-grid h-[22px] min-w-6 place-items-center rounded-full border border-surface-200 bg-surface-50 px-2 text-[11.5px] font-semibold text-surface-500 tabular-nums dark:border-surface-700 dark:bg-surface-800 dark:text-surface-400"
+                    >
+                        {{ tab.count }}
+                    </span>
+                    <span
+                        v-if="activeTab === tab.key"
+                        class="absolute inset-x-0 -bottom-px h-[3px] bg-[var(--p-primary-color)]"
+                    />
+                </button>
+            </div>
 
-            <!-- Service Endpoints -->
-            <SkCard>
-                <template #title>
-                    {{ $t('sk-api-route.service_endpoints') }}
-                </template>
-                <template #subtitle>
-                    {{ $t('sk-api-route.service_endpoints_subtitle') }}
-                </template>
-                <template #content>
-                    <div v-if="routes.service.length === 0" class="text-sm text-surface-500">
-                        {{ $t('sk-api-route.no_routes') }}
-                    </div>
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-surface-200 dark:border-surface-700">
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.method') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.uri') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.name') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.action') }}
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-surface-500">
-                                        {{ $t('sk-api-route.middleware') }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="(route, index) in routes.service"
-                                    :key="index"
-                                    class="border-b border-surface-100 dark:border-surface-800 hover:bg-surface-50 dark:hover:bg-surface-800/50"
+            <!-- Panel head: subtitle + search -->
+            <div
+                class="flex flex-wrap items-center gap-3.5 border-b border-surface-200 px-6 py-4 dark:border-surface-700"
+            >
+                <p class="text-[12.5px] text-surface-500 dark:text-surface-400">
+                    {{ activeSubtitle }}
+                </p>
+                <div
+                    class="ml-auto flex h-9 w-[232px] max-w-[46vw] items-center gap-2 rounded-md border border-surface-200 bg-surface-50 px-3 transition-colors focus-within:border-[var(--p-primary-color)] dark:border-surface-700 dark:bg-surface-800"
+                >
+                    <i class="pi pi-search text-[13px] text-surface-400 dark:text-surface-500" />
+                    <input
+                        v-model="search"
+                        type="text"
+                        :placeholder="$t('sk-api-route.search_placeholder')"
+                        class="w-full min-w-0 flex-1 border-0 bg-transparent text-[13px] text-surface-900 outline-none placeholder:text-surface-400 dark:text-surface-0 dark:placeholder:text-surface-500"
+                    />
+                </div>
+            </div>
+
+            <!-- Routes table -->
+            <div class="overflow-x-auto">
+                <table v-if="filteredRoutes.length" class="w-full text-sm">
+                    <thead
+                        class="border-b border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/50"
+                    >
+                        <tr
+                            class="text-left text-xs font-semibold tracking-wider text-surface-500 uppercase dark:text-surface-400"
+                        >
+                            <th class="px-4 py-3 pl-6">{{ $t('sk-api-route.method') }}</th>
+                            <th class="px-4 py-3">{{ $t('sk-api-route.uri') }}</th>
+                            <th class="px-4 py-3">{{ $t('sk-api-route.name') }}</th>
+                            <th class="px-4 py-3">{{ $t('sk-api-route.action') }}</th>
+                            <th class="w-[38%] px-4 py-3">{{ $t('sk-api-route.middleware') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="(route, index) in filteredRoutes"
+                            :key="index"
+                            class="border-b border-surface-100 transition-colors last:border-0 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                        >
+                            <td class="px-4 py-3 pl-6 align-middle">
+                                <span class="inline-flex flex-wrap items-center gap-1.5">
+                                    <span
+                                        v-for="m in route.method.split('|')"
+                                        :key="m"
+                                        class="inline-flex h-[22px] items-center rounded-md border px-2 font-mono text-[10.5px] font-bold tracking-wide whitespace-nowrap"
+                                        :class="methodBadgeClass(m)"
+                                    >
+                                        {{ m }}
+                                    </span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span class="font-mono text-[12.5px] whitespace-nowrap">
+                                    <span
+                                        v-for="(part, i) in uriParts(route.uri)"
+                                        :key="i"
+                                        :class="
+                                            part.param
+                                                ? 'font-semibold text-[var(--p-primary-color)]'
+                                                : 'text-surface-500 dark:text-surface-400'
+                                        "
+                                        >{{ part.text }}</span
+                                    >
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span
+                                    class="font-mono text-xs whitespace-nowrap text-surface-500 dark:text-surface-400"
                                 >
-                                    <td class="px-3 py-2">
-                                        <span
-                                            v-for="m in route.method.split('|')"
-                                            :key="m"
-                                            class="mr-1 inline-block rounded px-2 py-0.5 text-xs font-bold"
-                                            :class="getMethodClass(m)"
-                                        >
-                                            {{ m }}
-                                        </span>
-                                    </td>
-                                    <td class="px-3 py-2 font-mono text-xs text-surface-700 dark:text-surface-300">
-                                        {{ route.uri }}
-                                    </td>
-                                    <td class="px-3 py-2 text-xs text-surface-500">
-                                        {{ route.name ?? '—' }}
-                                    </td>
-                                    <td class="px-3 py-2 font-mono text-xs text-surface-600 dark:text-surface-400">
-                                        {{ route.action }}
-                                    </td>
-                                    <td class="px-3 py-2">
-                                        <span
-                                            v-for="mw in route.middleware"
-                                            :key="mw"
-                                            class="mr-1 mb-1 inline-block rounded-full bg-surface-100 px-2 py-0.5 text-xs text-surface-600 dark:bg-surface-800 dark:text-surface-400"
-                                        >
-                                            {{ mw }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
-            </SkCard>
+                                    {{ route.name ?? '—' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span
+                                    class="font-mono text-[12.5px] whitespace-nowrap text-surface-600 dark:text-surface-300"
+                                >
+                                    {{ actionParts(route.action).controller
+                                    }}<template v-if="actionParts(route.action).method !== null"
+                                        ><span class="text-surface-400 dark:text-surface-500">@</span
+                                        >{{ actionParts(route.action).method }}</template
+                                    >
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span class="flex flex-wrap items-center gap-1.5">
+                                    <span
+                                        v-for="mw in route.middleware"
+                                        :key="mw"
+                                        class="inline-flex h-[21px] items-center rounded-md border px-2 font-mono text-[10.75px] whitespace-nowrap"
+                                        :class="
+                                            isAccentMiddleware(mw)
+                                                ? 'border-[color-mix(in_srgb,var(--p-primary-color)_22%,transparent)] bg-[color-mix(in_srgb,var(--p-primary-color)_10%,transparent)] text-[var(--p-primary-color)]'
+                                                : 'border-surface-200 bg-surface-50 text-surface-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-400'
+                                        "
+                                    >
+                                        {{ mw }}
+                                    </span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty state -->
+                <div v-else class="flex flex-col items-center gap-2 px-6 py-16">
+                    <i class="pi pi-share-alt text-3xl text-surface-300 dark:text-surface-600" />
+                    <p class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                        {{ $t('sk-api-route.no_matches') }}
+                    </p>
+                    <p class="text-[13px] text-surface-500 dark:text-surface-400">
+                        {{ $t('sk-api-route.no_matches_hint') }}
+                    </p>
+                </div>
+            </div>
         </div>
     </AdminLayout>
 </template>

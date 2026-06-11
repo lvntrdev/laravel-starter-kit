@@ -2,7 +2,6 @@
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { TB } from '@lvntr/components/TabBuilder/core';
     import ApiClientsManageTab from './components/ApiClientsManageTab.vue';
-    import ApiClientsTab from './components/ApiClientsTab.vue';
     import ApiTokensManageTab from './components/ApiTokensManageTab.vue';
     import ContentLanguagesTab from './components/ContentLanguagesTab.vue';
     import FileManagerTab from './components/FileManagerTab.vue';
@@ -96,17 +95,6 @@
                 secret_key: null;
                 secret_key_is_set: boolean;
             };
-            postman: {
-                workspace_id: string | null;
-                collection_id: string | null;
-                api_key: null;
-                api_key_is_set: boolean;
-            };
-            apidog: {
-                project_id: string | null;
-                access_token: null;
-                access_token_is_set: boolean;
-            };
         };
         timezones: string[];
         availableLanguages: Record<string, string>;
@@ -155,12 +143,6 @@
                 .description('sk-setting.tab_descriptions.content_languages')
                 .icon('pi pi-language')
                 .iconColor('green'),
-            TB.item()
-                .key('api_integrations')
-                .label('sk-setting.tabs.api_integrations')
-                .description('sk-setting.tab_descriptions.api_integrations')
-                .icon('pi pi-code')
-                .iconColor('indigo'),
             TB.item()
                 .key('api_clients')
                 .label('sk-setting.tabs.api_clients')
@@ -215,10 +197,6 @@
 
             <template #content_languages>
                 <ContentLanguagesTab />
-            </template>
-
-            <template #api_integrations>
-                <ApiClientsTab :postman="props.settings.postman" :apidog="props.settings.apidog" />
             </template>
 
             <template #api_clients>

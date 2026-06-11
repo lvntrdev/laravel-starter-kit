@@ -94,7 +94,7 @@ class EjectCommand extends Command
         'ApiClient' => [
             'backend' => 'src/Domain/ApiClient',
             // ApiClient/ApiToken management Vue lives inside Settings tab components
-            // (ApiClientsTab.vue, ApiTokensManageTab.vue), not a dedicated folder —
+            // (ApiClientsManageTab.vue, ApiTokensManageTab.vue), not a dedicated folder —
             // it travels with the Settings domain. No standalone ApiClient page set.
             'vue' => [],
             'events' => [],

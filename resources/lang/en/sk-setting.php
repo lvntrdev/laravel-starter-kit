@@ -25,7 +25,6 @@ return [
         'storage' => 'Storage',
         'file_manager' => 'File Manager',
         'content_languages' => 'Content Languages',
-        'api_integrations' => 'API Integrations',
         'api_clients' => 'API Clients',
         'api_tokens' => 'API Tokens',
         'system_health' => 'System Health',
@@ -38,7 +37,6 @@ return [
         'storage' => 'S3, Spaces and local disk',
         'file_manager' => 'Upload sizes and file types',
         'content_languages' => 'Languages for multilingual content fields',
-        'api_integrations' => 'Postman and Apidog integration',
         'api_clients' => 'OAuth client management',
         'api_tokens' => 'Personal access token management',
         'system_health' => 'System doctor checks',
@@ -175,22 +173,17 @@ return [
     ],
 
     'postman' => [
-        'title' => 'Postman Integration',
-        'subtitle' => 'Push the generated OpenAPI spec to Postman from the API Routes page.',
         'api_key_label' => 'API Key',
         'api_key_hint' => 'Personal API key from postman.co → Settings → API Keys (starts with PMAK-).',
         'workspace_id_label' => 'Workspace ID',
         'workspace_id_hint' => 'UUID portion of the workspace URL.',
-        'collection_id_label' => 'Current Postman Collection UID',
-        'collection_id_hint' => 'Automatically updated after each Postman sync. No need to edit manually.',
     ],
 
     'apidog' => [
-        'title' => 'Apidog Integration',
-        'subtitle' => 'Push the generated OpenAPI spec to an existing Apidog project (endpoints are overwritten in place).',
         'access_token_label' => 'Access Token',
         'access_token_hint' => 'Personal access token from apidog.com → Account Settings → API Access Token.',
         'project_id_label' => 'Project ID',
         'project_id_hint' => 'Numeric project ID from the Apidog project URL (…/project/<id>).',
+        'project_id_placeholder' => 'e.g. 1234567',
     ],
 ];

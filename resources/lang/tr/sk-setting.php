@@ -25,7 +25,6 @@ return [
         'storage' => 'Depolama',
         'file_manager' => 'Dosya Yöneticisi',
         'content_languages' => 'İçerik Dilleri',
-        'api_integrations' => 'API Entegrasyonları',
         'api_clients' => 'API İstemcileri',
         'api_tokens' => 'API Tokenleri',
         'system_health' => 'Sistem Sağlığı',
@@ -38,7 +37,6 @@ return [
         'storage' => 'S3, Spaces ve yerel disk',
         'file_manager' => 'Yükleme boyutu ve dosya türleri',
         'content_languages' => 'Çok dilli içerik alanları için diller',
-        'api_integrations' => 'Postman ve Apidog entegrasyonu',
         'api_clients' => 'OAuth istemcileri yönetimi',
         'api_tokens' => 'Kişisel erişim token yönetimi',
         'system_health' => 'Sistem doktoru kontrolleri',
@@ -175,22 +173,17 @@ return [
     ],
 
     'postman' => [
-        'title' => 'Postman Entegrasyonu',
-        'subtitle' => "API Rotaları sayfasından OpenAPI belgesini Postman'e gönderebilmek için yapılandırın.",
         'api_key_label' => 'API Anahtarı',
         'api_key_hint' => "postman.co → Settings → API Keys'ten üretilen kişisel anahtar (PMAK- ile başlar).",
         'workspace_id_label' => 'Workspace ID',
         'workspace_id_hint' => "Workspace URL'indeki UUID kısmı.",
-        'collection_id_label' => 'Mevcut Postman Koleksiyon UID',
-        'collection_id_hint' => 'Her Postman senkronizasyonundan sonra otomatik güncellenir. Manuel düzenlemeye gerek yok.',
     ],
 
     'apidog' => [
-        'title' => 'Apidog Entegrasyonu',
-        'subtitle' => 'OpenAPI belgesini mevcut bir Apidog projesine gönderir; eşleşen endpointler üzerine yazılır.',
         'access_token_label' => 'Access Token',
         'access_token_hint' => 'apidog.com → Account Settings → API Access Token üzerinden üretilen kişisel token.',
         'project_id_label' => 'Proje ID',
         'project_id_hint' => 'Apidog proje URL\'inde yer alan sayısal proje ID (…/project/<id>).',
+        'project_id_placeholder' => 'Örn. 1234567',
     ],
 ];
