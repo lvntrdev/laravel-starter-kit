@@ -90,7 +90,7 @@
             if (response.ok) {
                 const json = await response.json();
                 currentUrl.value = json.data?.avatar_url ?? currentUrl.value;
-                router.reload();
+                router.reload({ only: ['auth'] });
             } else {
                 currentUrl.value = props.avatarUrl ?? null;
             }
@@ -120,7 +120,7 @@
 
                 if (response.ok || response.status === 204) {
                     currentUrl.value = null;
-                    router.reload();
+                    router.reload({ only: ['auth'] });
                 }
             } catch {
                 // silently fail
@@ -138,18 +138,18 @@
                 <!-- Avatar -->
                 <button
                     type="button"
-                    class="group relative flex size-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-primary-200 bg-primary-50 transition-colors hover:border-primary-400 dark:border-primary-800/60 dark:bg-primary-900/30"
+                    class="group relative flex size-12 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded bg-primary-50 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:hover:bg-primary-900/50"
                     :aria-label="$t('sk-avatar.change')"
                     @click="selectFile"
                 >
                     <img v-if="currentUrl" :src="currentUrl" alt="" class="size-full object-cover">
                     <span
                         v-else-if="initials"
-                        class="text-base font-semibold uppercase text-primary-700 dark:text-primary-300"
+                        class="text-base font-semibold uppercase text-primary-600 dark:text-primary-300"
                     >
                         {{ initials }}
                     </span>
-                    <i v-else class="pi pi-user text-xl text-primary-400 dark:text-primary-500" />
+                    <i v-else class="pi pi-user text-lg text-primary-400 dark:text-primary-500" />
 
                     <div
                         class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
@@ -163,7 +163,7 @@
                 <div v-if="title !== '' || subtitle !== ''" class="flex min-w-0 flex-1 flex-col gap-0.5">
                     <div
                         v-if="title !== ''"
-                        class="text-base font-semibold text-surface-900 dark:text-surface-100"
+                        class="text-sm font-semibold text-surface-900 dark:text-surface-100"
                     >
                         {{ title ?? $t('sk-avatar.title') }}
                     </div>
@@ -180,7 +180,7 @@
                         :label="$t('sk-avatar.remove')"
                         icon="pi pi-trash"
                         size="small"
-                        severity="secondary"
+                        severity="danger"
                         text
                         :disabled="uploading"
                         @click="removeAvatar"

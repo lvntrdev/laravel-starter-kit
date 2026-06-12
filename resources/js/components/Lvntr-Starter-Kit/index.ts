@@ -34,6 +34,7 @@ export { default as SkeletonText } from './Skeleton/SkeletonText.vue';
 export { default as ToastComponent } from './ui/ToastComponent.vue';
 export { default as AppDialog } from './ui/AppDialog.vue';
 export { default as AvatarUpload } from './ui/AvatarUpload.vue';
+export { default as SkImageUpload } from './ui/SkImageUpload.vue';
 export { default as ConfirmDialogComponent } from './ui/ConfirmDialogComponent.vue';
 export { default as ImageLightbox } from './ui/ImageLightbox.vue';
 export { default as FilePreviewModal } from './ui/FilePreviewModal.vue';

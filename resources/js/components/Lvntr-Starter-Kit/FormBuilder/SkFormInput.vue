@@ -134,6 +134,46 @@
     /** True when the password field should render the generate button. */
     const showPasswordGenerator = computed(() => useCustomPasswordInput.value && !!asPassword.value.generator);
 
+    /** True when the inline strength meter renders below the password input. */
+    const showStrengthMeter = computed(
+        () => props.field.type === 'password' && useCustomPasswordInput.value && !!asPassword.value.strengthMeter,
+    );
+
+    /**
+     * Strength score (1–4) from length + character-class variety. 0 = empty.
+     * Length alone never exceeds "fair" — variety is required for the top tiers,
+     * so a long single-class string still reads as weak.
+     */
+    const passwordStrength = computed(() => {
+        const pw = stringVal.value ?? '';
+        const len = pw.length;
+        if (len === 0) {
+            return { score: 0, label: '', barClass: '', textClass: '', length: 0 };
+        }
+
+        const variety =
+            (/[a-z]/.test(pw) ? 1 : 0) +
+            (/[A-Z]/.test(pw) ? 1 : 0) +
+            (/\d/.test(pw) ? 1 : 0) +
+            (/[^a-zA-Z0-9]/.test(pw) ? 1 : 0);
+
+        let score = 0;
+        if (len >= 8) score++;
+        if (len >= 12) score++;
+        if (variety >= 2) score++;
+        if (variety >= 3 && len >= 8) score++;
+        score = Math.min(4, Math.max(1, score));
+
+        const meta = [
+            { label: 'sk-common.password_strength_weak', bar: 'bg-red-500', text: 'text-red-500' },
+            { label: 'sk-common.password_strength_fair', bar: 'bg-orange-500', text: 'text-orange-500' },
+            { label: 'sk-common.password_strength_good', bar: 'bg-amber-500', text: 'text-amber-500' },
+            { label: 'sk-common.password_strength_strong', bar: 'bg-green-500', text: 'text-green-500' },
+        ][score - 1];
+
+        return { score, label: meta.label, barClass: meta.bar, textClass: meta.text, length: len };
+    });
+
     /**
      * True when the field should render inside an IconField wrapper.
      * Exclusions:
@@ -986,4 +1026,25 @@
             />
         </InputGroupAddon>
     </component>
+
+    <!-- Inline password strength meter (4-segment bar + label + char count) -->
+    <div v-if="showStrengthMeter" class="mt-2">
+        <div class="flex gap-1.5">
+            <span
+                v-for="i in 4"
+                :key="i"
+                class="h-1 flex-1 rounded-full transition-colors"
+                :class="i <= passwordStrength.score ? passwordStrength.barClass : 'bg-surface-200 dark:bg-surface-700'"
+            />
+        </div>
+        <div v-if="passwordStrength.length > 0" class="mt-1.5 flex items-center justify-between text-xs">
+            <span class="text-surface-600 dark:text-surface-300">
+                {{ $t('sk-common.password_strength') }}:
+                <span class="font-semibold" :class="passwordStrength.textClass">{{ $t(passwordStrength.label) }}</span>
+            </span>
+            <span class="text-surface-400 dark:text-surface-500">
+                {{ $t('sk-common.characters_count', { count: String(passwordStrength.length) }) }}
+            </span>
+        </div>
+    </div>
 </template>

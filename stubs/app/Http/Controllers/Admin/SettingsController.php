@@ -213,7 +213,7 @@ class SettingsController extends Controller
         $path = $request->file('logo')->store('logo', 'public');
         Setting::setValue('general.logo', $path);
 
-        return to_api(['logo_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.logo_uploaded'));
+        return to_api(['logo_url' => $this->publicUrl($path)], __('sk-setting.flash.logo_uploaded'));
     }
 
     /**
@@ -247,7 +247,7 @@ class SettingsController extends Controller
         $path = $request->file('logo')->store('appearance', 'public');
         Setting::setValue($key, $path);
 
-        return to_api(['logo_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.logo_uploaded'));
+        return to_api(['logo_url' => $this->publicUrl($path)], __('sk-setting.flash.logo_uploaded'));
     }
 
     /**
@@ -277,7 +277,7 @@ class SettingsController extends Controller
         $path = $request->file('favicon')->store('appearance', 'public');
         Setting::setValue('appearance.favicon', $path);
 
-        return to_api(['favicon_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.favicon_uploaded'));
+        return to_api(['favicon_url' => $this->publicUrl($path)], __('sk-setting.flash.favicon_uploaded'));
     }
 
     /**
@@ -315,6 +315,30 @@ class SettingsController extends Controller
         if (is_string($path) && $path !== '' && Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
         }
+    }
+
+    /**
+     * Resolve a public-disk asset URL, guarding against mixed-content.
+     *
+     * The public disk builds its URL from APP_URL / the disk `url` config. When
+     * that base is `http://` but the page is served over HTTPS, the browser
+     * blocks the asset as mixed content. Returning a protocol-relative URL lets
+     * the browser inherit the page scheme — no dependency on proxy/`isSecure()`
+     * detection, and never a downgrade. Relative/path-only URLs pass through.
+     */
+    private function publicUrl(string $path): string
+    {
+        $url = Storage::disk('public')->url($path);
+
+        if (str_starts_with($url, 'http://')) {
+            return substr($url, 5);   // 'http://...' → '//...'
+        }
+
+        if (str_starts_with($url, 'https://')) {
+            return substr($url, 6);   // 'https://...' → '//...'
+        }
+
+        return $url;
     }
 
     /**

@@ -57,6 +57,20 @@
     @apply -mx-6 -mb-[22px] px-6 py-[14px];
 }
 
+/* Same bleed when the form is rendered with `.isCard(false)` inside a card body
+   (e.g. PasswordTab: SkCard > SkForm). SkForm still wraps itself in a TRANSPARENT
+   inner SkCard, so the `.sk-fb` is one level deeper. Cancel the OUTER non-transparent
+   card body's padding (the transparent inner body is `p-0`) so the action-bar divider
+   reads full-width with no left/right gap. */
+.sk-card:not(.sk-card--transparent)
+    > .sk-card__body
+    > .sk-card--transparent
+    > .sk-card__body
+    > .sk-fb
+    > .sk-fb__actions--bottom {
+    @apply -mx-6 -mb-[22px] px-6 py-[14px];
+}
+
 /* Dialog mode — Material Flat shell integration.
    The body scrolls (its scrollbar is hidden in `_dialog.scss` via
    `scrollbar-width: none` so the bar's `-mx-8` extension reaches the

@@ -17,7 +17,7 @@
             })
             .addFields(
                 FB.password().key('current_password').toggleMask(),
-                FB.password().key('password').toggleMask().feedback(true),
+                FB.password().key('password').toggleMask().strengthMeter(),
                 FB.password().key('password_confirmation').toggleMask(),
             )
             .actionLabels({ submit: trans('sk-profile.update_password') })

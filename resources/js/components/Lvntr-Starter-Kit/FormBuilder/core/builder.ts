@@ -474,6 +474,19 @@ export class PasswordBuilder extends BaseFieldBuilder<PasswordFieldConfig> {
         return this;
     }
 
+    /**
+     * Show an inline strength meter below the input: a 4-segment bar, a
+     * strength label, and a live character count. Pairs with the custom
+     * eye-toggle input (unlike `.feedback()`, which uses PrimeVue's overlay).
+     *
+     * @example
+     *   FB.password().key('password').toggleMask().strengthMeter()
+     */
+    strengthMeter(show = true): this {
+        this.config.strengthMeter = show;
+        return this;
+    }
+
     toggleMask(show = true): this {
         this.config.toggleMask = show;
         return this;

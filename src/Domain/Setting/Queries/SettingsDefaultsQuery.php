@@ -80,9 +80,9 @@ class SettingsDefaultsQuery
             'accent_color' => $stored['accent_color'] ?? 'default',
             'dark_mode_default' => ($stored['dark_mode_default'] ?? '0') === '1',
             'sidebar_style' => $stored['sidebar_style'] ?? 'colored',
-            'logo_light_url' => $this->isFilled($logoLight) ? Storage::disk('public')->url($logoLight) : null,
-            'logo_dark_url' => $this->isFilled($logoDark) ? Storage::disk('public')->url($logoDark) : null,
-            'favicon_url' => $this->isFilled($favicon) ? Storage::disk('public')->url($favicon) : null,
+            'logo_light_url' => $this->isFilled($logoLight) ? $this->publicUrl($logoLight) : null,
+            'logo_dark_url' => $this->isFilled($logoDark) ? $this->publicUrl($logoDark) : null,
+            'favicon_url' => $this->isFilled($favicon) ? $this->publicUrl($favicon) : null,
         ];
     }
 
@@ -185,7 +185,7 @@ class SettingsDefaultsQuery
             'app_name' => $stored['app_name'] ?? config('app.name'),
             'timezone' => $stored['timezone'] ?? config('app.display_timezone'),
             'languages' => $languages,
-            'logo_url' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
+            'logo_url' => $logoPath ? $this->publicUrl($logoPath) : null,
             'welcome_message' => $stored['welcome_message'] ?? null,
             'tagline' => $stored['tagline'] ?? null,
             'admin_email' => $stored['admin_email'] ?? config('mail.from.address'),
@@ -296,5 +296,29 @@ class SettingsDefaultsQuery
     private function isFilled(mixed $value): bool
     {
         return is_string($value) ? $value !== '' : $value !== null;
+    }
+
+    /**
+     * Resolve a public-disk asset URL, guarding against mixed-content.
+     *
+     * The public disk builds its URL from APP_URL / the disk `url` config. When
+     * that base is `http://` but the page is served over HTTPS, the browser
+     * blocks the asset as mixed content. Returning a protocol-relative URL lets
+     * the browser inherit the page scheme — no dependency on proxy/`isSecure()`
+     * detection, and never a downgrade. Relative/path-only URLs pass through.
+     */
+    private function publicUrl(string $path): string
+    {
+        $url = Storage::disk('public')->url($path);
+
+        if (str_starts_with($url, 'http://')) {
+            return substr($url, 5);   // 'http://...' → '//...'
+        }
+
+        if (str_starts_with($url, 'https://')) {
+            return substr($url, 6);   // 'https://...' → '//...'
+        }
+
+        return $url;
     }
 }

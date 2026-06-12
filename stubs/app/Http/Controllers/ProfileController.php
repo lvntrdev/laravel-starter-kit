@@ -9,6 +9,7 @@ use App\Domain\Session\Queries\UserSessionsQuery;
 use App\Http\Requests\DestroySessionsRequest;
 use App\Http\Requests\UploadAvatarRequest;
 use App\Http\Responses\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +38,9 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Index', [
             'twoFactorEnabled' => ! is_null($user->two_factor_secret),
             'twoFactorConfirmed' => ! is_null($user->two_factor_confirmed_at),
+            'twoFactorConfirmedAt' => $user->two_factor_confirmed_at
+                ? \Illuminate\Support\Carbon::parse($user->two_factor_confirmed_at)->toIso8601String()
+                : null,
         ]);
     }
 
@@ -67,7 +71,7 @@ class ProfileController extends Controller
     /**
      * Delete avatar for the authenticated user.
      */
-    public function deleteAvatar(Request $request, ClearMediaAction $action): ApiResponse
+    public function deleteAvatar(Request $request, ClearMediaAction $action): ApiResponse|JsonResponse
     {
         $action->execute($request->user(), 'avatar');
 

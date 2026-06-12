@@ -230,8 +230,14 @@ export interface PasswordGeneratorConfig {
 export interface PasswordFieldConfig extends BaseFieldConfig {
     type: 'password';
     placeholder?: string;
-    /** Show strength meter (default: false). */
+    /** Show PrimeVue's overlay strength meter (default: false). */
     feedback?: boolean;
+    /**
+     * Show an inline strength meter below the input: a 4-segment bar, a
+     * strength label, and a live character count. Works with the custom
+     * eye-toggle input (does not force PrimeVue's `<Password>` overlay).
+     */
+    strengthMeter?: boolean;
     toggleMask?: boolean;
     /**
      * Render a "generate" button next to the input.

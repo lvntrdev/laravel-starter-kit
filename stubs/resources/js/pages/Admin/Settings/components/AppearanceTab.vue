@@ -2,7 +2,6 @@
     import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
     import { router } from '@inertiajs/vue3';
     import { trans } from 'laravel-vue-i18n';
-    import { useConfirm } from '@/composables/useConfirm';
     import {
         ACCENT_COLORS,
         ACCENT_SWATCH,
@@ -28,7 +27,6 @@
 
     const props = defineProps<Props>();
 
-    const { confirmDelete } = useConfirm();
     // applyAccent drives the live preview; `accent` is the persisted per-user
     // override we DON'T touch here — this tab edits the global default only,
     // so we keep a local restore value to undo the preview on cancel/leave.
@@ -103,130 +101,6 @@
         applyAccent(restoreAccent);
     });
 
-    // ── CSRF + upload helpers (mirror AvatarUpload's fetch pattern) ──────
-    function csrf(): Record<string, string> {
-        const headers: Record<string, string> = {
-            Accept: 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-        };
-        const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-        if (match) headers['X-XSRF-TOKEN'] = decodeURIComponent(match[2]);
-        return headers;
-    }
-
-    type Slot = 'light' | 'dark' | 'favicon';
-
-    const uploading = reactive<Record<Slot, boolean>>({ light: false, dark: false, favicon: false });
-
-    // Local preview URLs so an upload reflects instantly before the page reload
-    // hands back the canonical URL from the server.
-    const previews = reactive<Record<Slot, string | null>>({
-        light: props.settings.logo_light_url,
-        dark: props.settings.logo_dark_url,
-        favicon: props.settings.favicon_url,
-    });
-
-    watch(
-        () => props.settings,
-        (s) => {
-            previews.light = s.logo_light_url;
-            previews.dark = s.logo_dark_url;
-            previews.favicon = s.favicon_url;
-        },
-    );
-
-    function uploadUrl(slot: Slot): string {
-        return slot === 'favicon' ? '/settings/appearance/favicon' : `/settings/appearance/logo/${slot}`;
-    }
-
-    function fieldName(slot: Slot): string {
-        return slot === 'favicon' ? 'favicon' : 'logo';
-    }
-
-    async function onFileSelected(slot: Slot, event: Event): Promise<void> {
-        const input = event.target as HTMLInputElement;
-        const file = input.files?.[0];
-        input.value = '';
-        if (!file) return;
-
-        // Instant local preview.
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previews[slot] = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-
-        uploading[slot] = true;
-        try {
-            const body = new FormData();
-            body.append(fieldName(slot), file);
-
-            const response = await fetch(uploadUrl(slot), {
-                method: 'POST',
-                headers: csrf(),
-                credentials: 'same-origin',
-                body,
-            });
-
-            if (response.ok) {
-                const json = await response.json();
-                previews[slot] =
-                    (slot === 'favicon' ? json.data?.favicon_url : json.data?.logo_url) ?? previews[slot];
-                router.reload({ only: ['settings'] });
-            } else {
-                previews[slot] = currentUrl(slot);
-            }
-        } catch {
-            previews[slot] = currentUrl(slot);
-        } finally {
-            uploading[slot] = false;
-        }
-    }
-
-    function currentUrl(slot: Slot): string | null {
-        if (slot === 'light') return props.settings.logo_light_url;
-        if (slot === 'dark') return props.settings.logo_dark_url;
-        return props.settings.favicon_url;
-    }
-
-    function removeFile(slot: Slot): void {
-        const message = trans(
-            slot === 'favicon'
-                ? 'sk-setting.appearance.favicon_remove_confirm'
-                : 'sk-setting.appearance.logo_remove_confirm',
-        );
-
-        confirmDelete(async () => {
-            uploading[slot] = true;
-            try {
-                const response = await fetch(uploadUrl(slot), {
-                    method: 'DELETE',
-                    headers: csrf(),
-                    credentials: 'same-origin',
-                });
-                if (response.ok || response.status === 204) {
-                    previews[slot] = null;
-                    router.reload({ only: ['settings'] });
-                }
-            } catch {
-                // surface nothing; the next reload reconciles state.
-            } finally {
-                uploading[slot] = false;
-            }
-        }, message);
-    }
-
-    // ── File pickers (one hidden input per slot) ─────────────────────────
-    const inputs = reactive<Record<Slot, HTMLInputElement | null>>({
-        light: null,
-        dark: null,
-        favicon: null,
-    });
-
-    function pick(slot: Slot): void {
-        inputs[slot]?.click();
-    }
-
     // ── Save ─────────────────────────────────────────────────────────────
     function save(): void {
         router.put('/settings/appearance', { ...form }, {
@@ -268,73 +142,34 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div
-                        v-for="slot in (['light', 'dark'] as const)"
-                        :key="slot"
-                        class="flex flex-col gap-4 rounded-md border border-surface-200 bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="grid h-16 w-[92px] shrink-0 place-items-center overflow-hidden rounded-md border border-surface-200 bg-surface-50 dark:border-surface-700"
-                                :class="slot === 'dark' ? 'bg-surface-800 dark:bg-surface-950' : 'dark:bg-surface-800'"
-                            >
-                                <img
-                                    v-if="previews[slot]"
-                                    :src="previews[slot]!"
-                                    alt=""
-                                    class="max-h-full max-w-full object-contain p-1.5"
-                                >
-                                <i v-else class="pi pi-image text-xl text-surface-400" />
-                            </div>
-
-                            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <span class="text-sm font-bold text-surface-900 dark:text-surface-100">
-                                    {{
-                                        slot === 'light'
-                                            ? $t('sk-setting.appearance.logo_light_label')
-                                            : $t('sk-setting.appearance.logo_dark_label')
-                                    }}
-                                </span>
-                                <small class="text-surface-600 dark:text-surface-300">
-                                    {{
-                                        slot === 'light'
-                                            ? $t('sk-setting.appearance.logo_light_hint')
-                                            : $t('sk-setting.appearance.logo_dark_hint')
-                                    }}
-                                </small>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                :label="$t('sk-setting.appearance.upload_label')"
-                                icon="pi pi-upload"
-                                size="small"
-                                outlined
-                                :loading="uploading[slot]"
-                                @click="pick(slot)"
-                            />
-                            <Button
-                                v-if="previews[slot]"
-                                type="button"
-                                icon="pi pi-trash"
-                                size="small"
-                                severity="danger"
-                                outlined
-                                :aria-label="$t('sk-setting.appearance.remove_label')"
-                                :disabled="uploading[slot]"
-                                @click="removeFile(slot)"
-                            />
-                            <input
-                                :ref="(el) => (inputs[slot] = el as HTMLInputElement | null)"
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp"
-                                class="hidden"
-                                @change="onFileSelected(slot, $event)"
-                            >
-                        </div>
-                    </div>
+                    <SkImageUpload
+                        layout="stacked"
+                        variant="logo-light"
+                        :preview-url="props.settings.logo_light_url"
+                        upload-url="/settings/appearance/logo/light"
+                        field-name="logo"
+                        response-key="logo_url"
+                        accept="image/png,image/jpeg,image/webp"
+                        :label="$t('sk-setting.appearance.logo_light_label')"
+                        :hint="$t('sk-setting.appearance.logo_light_hint')"
+                        :upload-label="$t('sk-setting.appearance.upload_label')"
+                        :remove-label="$t('sk-setting.appearance.remove_label')"
+                        :remove-confirm="$t('sk-setting.appearance.logo_remove_confirm')"
+                    />
+                    <SkImageUpload
+                        layout="stacked"
+                        variant="logo-dark"
+                        :preview-url="props.settings.logo_dark_url"
+                        upload-url="/settings/appearance/logo/dark"
+                        field-name="logo"
+                        response-key="logo_url"
+                        accept="image/png,image/jpeg,image/webp"
+                        :label="$t('sk-setting.appearance.logo_dark_label')"
+                        :hint="$t('sk-setting.appearance.logo_dark_hint')"
+                        :upload-label="$t('sk-setting.appearance.upload_label')"
+                        :remove-label="$t('sk-setting.appearance.remove_label')"
+                        :remove-confirm="$t('sk-setting.appearance.logo_remove_confirm')"
+                    />
                 </div>
             </div>
 
@@ -349,60 +184,20 @@
                     </div>
                 </div>
 
-                <div
-                    class="flex flex-col gap-4 rounded-md border border-surface-200 bg-surface-0 p-4 sm:flex-row sm:items-center dark:border-surface-700 dark:bg-surface-900"
-                >
-                    <div
-                        class="grid size-16 shrink-0 place-items-center overflow-hidden rounded-md border border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800"
-                    >
-                        <img
-                            v-if="previews.favicon"
-                            :src="previews.favicon!"
-                            alt=""
-                            class="max-h-full max-w-full object-contain p-2"
-                        >
-                        <i v-else class="pi pi-globe text-xl text-surface-400" />
-                    </div>
-
-                    <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span class="text-sm font-bold text-surface-900 dark:text-surface-100">
-                            {{ $t('sk-setting.appearance.favicon_label') }}
-                        </span>
-                        <small class="text-surface-600 dark:text-surface-300">
-                            {{ $t('sk-setting.appearance.favicon_hint') }}
-                        </small>
-                    </div>
-
-                    <div class="flex shrink-0 items-center gap-2">
-                        <Button
-                            type="button"
-                            :label="$t('sk-setting.appearance.upload_label')"
-                            icon="pi pi-upload"
-                            size="small"
-                            outlined
-                            :loading="uploading.favicon"
-                            @click="pick('favicon')"
-                        />
-                        <Button
-                            v-if="previews.favicon"
-                            type="button"
-                            icon="pi pi-trash"
-                            size="small"
-                            severity="danger"
-                            outlined
-                            :aria-label="$t('sk-setting.appearance.remove_label')"
-                            :disabled="uploading.favicon"
-                            @click="removeFile('favicon')"
-                        />
-                        <input
-                            :ref="(el) => (inputs.favicon = el as HTMLInputElement | null)"
-                            type="file"
-                            accept="image/png,image/x-icon,.ico"
-                            class="hidden"
-                            @change="onFileSelected('favicon', $event)"
-                        >
-                    </div>
-                </div>
+                <SkImageUpload
+                    layout="row"
+                    variant="favicon"
+                    :preview-url="props.settings.favicon_url"
+                    upload-url="/settings/appearance/favicon"
+                    field-name="favicon"
+                    response-key="favicon_url"
+                    accept="image/png,image/x-icon,.ico"
+                    :label="$t('sk-setting.appearance.favicon_label')"
+                    :hint="$t('sk-setting.appearance.favicon_hint')"
+                    :upload-label="$t('sk-setting.appearance.upload_label')"
+                    :remove-label="$t('sk-setting.appearance.remove_label')"
+                    :remove-confirm="$t('sk-setting.appearance.favicon_remove_confirm')"
+                />
             </div>
 
             <!-- ── Tema ─────────────────────────────────────────────────── -->

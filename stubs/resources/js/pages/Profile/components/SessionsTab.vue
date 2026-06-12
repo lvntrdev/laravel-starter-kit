@@ -84,27 +84,38 @@
                 {{ $t('sk-profile.sessions_subtitle') }}
             </template>
             <template #content>
-                <div class="space-y-4">
-                    <p class="text-sm text-surface-500 dark:text-surface-400">
-                        {{ $t('sk-profile.sessions_description') }}
-                    </p>
-
+                <div>
                     <!-- Loading State -->
                     <div v-if="sessionsLoading" class="space-y-3">
-                        <div v-for="i in 2" :key="i" class="flex items-center gap-3">
-                            <div class="h-8 w-8 animate-pulse rounded-full bg-surface-200 dark:bg-surface-700" />
-                            <div class="flex-1 space-y-1">
+                        <div
+                            v-for="i in 2"
+                            :key="i"
+                            class="flex items-center gap-3 rounded-lg border border-surface-200 px-4 py-3 dark:border-surface-700"
+                        >
+                            <div class="size-10 shrink-0 animate-pulse rounded-md bg-surface-200 dark:bg-surface-700" />
+                            <div class="flex-1 space-y-1.5">
                                 <div class="h-4 w-40 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
-                                <div class="h-3 w-24 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
+                                <div class="h-3 w-56 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
                             </div>
                         </div>
                     </div>
 
                     <!-- Session List -->
                     <div v-else-if="sessions.length > 0" class="space-y-3">
-                        <div v-for="(session, index) in sessions" :key="index" class="flex items-center gap-3">
+                        <div
+                            v-for="(session, index) in sessions"
+                            :key="index"
+                            class="flex items-center gap-3 rounded-lg border px-4 py-3 transition"
+                            :class="
+                                session.is_current_device
+                                    ? 'border-primary-200 bg-primary-50/40 dark:border-primary-900/40 dark:bg-primary-950/20'
+                                    : 'border-surface-200 dark:border-surface-700'
+                            "
+                        >
                             <!-- Device Icon -->
-                            <div class="shrink-0 text-surface-400 dark:text-surface-500">
+                            <div
+                                class="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400"
+                            >
                                 <svg
                                     v-if="session.device.desktop"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -112,7 +123,7 @@
                                     viewBox="0 0 24 24"
                                     stroke-width="1.5"
                                     stroke="currentColor"
-                                    class="h-8 w-8"
+                                    class="size-5"
                                 >
                                     <path
                                         stroke-linecap="round"
@@ -127,7 +138,7 @@
                                     viewBox="0 0 24 24"
                                     stroke-width="1.5"
                                     stroke="currentColor"
-                                    class="h-8 w-8"
+                                    class="size-5"
                                 >
                                     <path
                                         stroke-linecap="round"
@@ -138,42 +149,72 @@
                             </div>
 
                             <!-- Session Info -->
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-surface-700 dark:text-surface-300">
-                                    {{ session.device.platform }} — {{ session.device.browser }}
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-sm font-semibold text-surface-900 dark:text-surface-100">
+                                        {{ session.device.platform }} — {{ session.device.browser }}
+                                    </span>
+                                    <span
+                                        v-if="session.is_current_device"
+                                        class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    >
+                                        <span class="size-1.5 rounded-full bg-green-500" />
+                                        {{ $t('sk-profile.sessions_this_device') }}
+                                    </span>
                                 </div>
-                                <div class="text-xs text-surface-500 dark:text-surface-400">
-                                    {{ session.ip_address }}
-                                    <span v-if="session.is_current_device" class="font-semibold text-green-500">
-                                        — {{ $t('sk-profile.sessions_this_device') }}
+                                <div class="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
+                                    {{ session.ip_address }} ·
+                                    <span v-if="session.is_current_device">
+                                        {{ $t('sk-profile.sessions_active_now') }}
                                     </span>
-                                    <span v-else>
-                                        — {{ $t('sk-profile.sessions_last_active', { time: session.last_active }) }}
-                                    </span>
+                                    <span v-else>{{ session.last_active }}</span>
                                 </div>
                             </div>
+
+                            <!-- Per-session logout (opens the log-out-others flow) -->
+                            <Button
+                                v-if="!session.is_current_device"
+                                :label="$t('sk-profile.sessions_logout_one')"
+                                icon="pi pi-sign-out"
+                                severity="secondary"
+                                size="small"
+                                text
+                                @click="openLogoutOtherSessionsDialog"
+                            />
                         </div>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="flex items-center gap-3">
-                        <Button
-                            :label="$t('sk-profile.sessions_logout')"
-                            icon="pi pi-sign-out"
-                            severity="danger"
-                            :loading="logoutProcessing"
-                            @click="openLogoutOtherSessionsDialog"
-                        />
-                        <Transition
-                            enter-active-class="transition duration-300"
-                            enter-from-class="opacity-0"
-                            leave-active-class="transition duration-300"
-                            leave-to-class="opacity-0"
-                        >
-                            <span v-if="logoutSuccess" class="text-sm text-green-600 dark:text-green-400">
-                                {{ $t('sk-profile.sessions_done') }}
-                            </span>
-                        </Transition>
+                    <!-- Full-bleed danger footer -->
+                    <div
+                        class="-mx-6 -mb-[22px] mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-surface-200 bg-red-50/50 px-6 py-4 dark:border-surface-700 dark:bg-red-950/15"
+                    >
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-red-600 dark:text-red-400">
+                                {{ $t('sk-profile.sessions_logout_all_title') }}
+                            </p>
+                            <p class="mt-0.5 max-w-xl text-xs leading-relaxed text-surface-500 dark:text-surface-400">
+                                {{ $t('sk-profile.sessions_logout_all_desc') }}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <Transition
+                                enter-active-class="transition duration-300"
+                                enter-from-class="opacity-0"
+                                leave-active-class="transition duration-300"
+                                leave-to-class="opacity-0"
+                            >
+                                <span v-if="logoutSuccess" class="text-sm text-green-600 dark:text-green-400">
+                                    {{ $t('sk-profile.sessions_done') }}
+                                </span>
+                            </Transition>
+                            <Button
+                                :label="$t('sk-profile.sessions_logout_all_action')"
+                                icon="pi pi-sign-out"
+                                severity="danger"
+                                :loading="logoutProcessing"
+                                @click="openLogoutOtherSessionsDialog"
+                            />
+                        </div>
                     </div>
                 </div>
             </template>

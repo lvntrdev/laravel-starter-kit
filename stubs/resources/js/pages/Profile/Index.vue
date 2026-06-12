@@ -10,6 +10,7 @@
     interface Props {
         twoFactorEnabled: boolean;
         twoFactorConfirmed: boolean;
+        twoFactorConfirmedAt?: string | null;
     }
 
     const props = defineProps<Props>();
@@ -63,6 +64,7 @@
                 <TwoFactorTab
                     :two-factor-enabled="props.twoFactorEnabled"
                     :two-factor-confirmed="props.twoFactorConfirmed"
+                    :two-factor-confirmed-at="props.twoFactorConfirmedAt"
                 />
             </template>
 

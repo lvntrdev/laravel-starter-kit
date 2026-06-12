@@ -9,7 +9,6 @@
     import StarterKit from '@tiptap/starter-kit';
     import Image from '@tiptap/extension-image';
     import Placeholder from '@tiptap/extension-placeholder';
-    import Link from '@tiptap/extension-link';
     import TextAlign from '@tiptap/extension-text-align';
     import { Table } from '@tiptap/extension-table';
     import { TableRow } from '@tiptap/extension-table-row';
@@ -113,7 +112,13 @@
     });
 
     const extensions: Extensions = [
-        StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
+        // StarterKit v3 bundles the Link extension, so configure it here instead
+        // of pushing a second one (which triggers a "Duplicate extension names"
+        // warning). Disable it entirely when links are not enabled.
+        StarterKit.configure({
+            heading: { levels: [2, 3, 4] },
+            link: props.links ? { openOnClick: false, autolink: true } : false,
+        }),
         Placeholder.configure({ placeholder: () => props.placeholder ?? '' }),
         TextAlign.configure({
             types: ['heading', 'paragraph'],
@@ -126,9 +131,6 @@
         TextStyle,
         Color.configure({ types: ['textStyle'] }),
     ];
-    if (props.links) {
-        extensions.push(Link.configure({ openOnClick: false, autolink: true }));
-    }
     if (props.imageUpload) {
         extensions.push(CustomImage.configure({ inline: true, allowBase64: false }));
     }
