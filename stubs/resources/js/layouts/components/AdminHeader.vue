@@ -7,6 +7,10 @@
     import type { AccentColor, SidebarStyle } from '@/composables/useAccentColor';
     import { trans } from 'laravel-vue-i18n';
     import locale from '@/routes/locale';
+    import apiRoutes from '@/routes/api-routes';
+    import { useCan } from '@/composables/useCan';
+
+    const { can, hasRole } = useCan();
 
     interface Props {
         collapsed: boolean;
@@ -36,6 +40,7 @@
     const showLocaleSwitcher = computed(() => Object.keys(availableLocales.value).length > 1);
 
     const localeMenuRef = ref();
+    const localeOpen = ref(false);
 
     const localeMenuItems = computed<MenuItem[]>(() =>
         Object.entries(availableLocales.value).map(([code, label]) => ({
@@ -74,11 +79,37 @@
 
     const userMenuRef = ref();
 
+    const currentLocaleLabel = computed(
+        () => availableLocales.value[currentLocale.value] ?? currentLocale.value.toUpperCase(),
+    );
+
     const userMenuItems = computed<MenuItem[]>(() => [
         {
-            label: trans('sk-menu.profile'),
+            label: trans('sk-menu.my_profile'),
             icon: 'pi pi-user',
             command: () => router.visit('/profile'),
+        },
+        // Example items — visual placeholders only, not wired yet.
+        {
+            label: trans('sk-menu.account_settings'),
+            icon: 'pi pi-id-card',
+        },
+        {
+            label: trans('sk-menu.notification_preferences'),
+            icon: 'pi pi-bell',
+        },
+        {
+            label: trans('sk-menu.change_password'),
+            icon: 'pi pi-key',
+        },
+        { separator: true },
+        {
+            label: `${trans('sk-menu.language')}: ${currentLocaleLabel.value}`,
+            icon: 'pi pi-globe',
+        },
+        {
+            label: trans('sk-menu.help'),
+            icon: 'pi pi-question-circle',
         },
         { separator: true },
         {
@@ -95,6 +126,7 @@
 
     // Appearance popover — dark mode + accent color picker.
     const appearanceRef = ref();
+    const appearanceOpen = ref(false);
 
     function toggleAppearance(event: Event): void {
         appearanceRef.value?.toggle(event);
@@ -106,6 +138,69 @@
 
     function selectSidebarStyle(style: SidebarStyle): void {
         emit('setSidebarStyle', style);
+    }
+
+    // ── Notifications popover (example data — not wired to a backend yet) ──
+    const notificationsRef = ref();
+    const notificationsOpen = ref(false);
+
+    interface NotificationItem {
+        icon: string;
+        tint: string;
+        title: string;
+        desc: string;
+        time: string;
+    }
+
+    const notifications: NotificationItem[] = [
+        { icon: 'pi pi-shopping-bag', tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300', title: 'Yeni sipariş alındı', desc: '#10293 — 3 ürün · ₺ 1.249,00', time: '2 dk önce' },
+        { icon: 'pi pi-user-plus', tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300', title: 'Yeni kullanıcı kaydı', desc: 'Ayşe K. üyelik oluşturdu', time: '18 dk önce' },
+        { icon: 'pi pi-exclamation-triangle', tint: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300', title: 'Düşük stok uyarısı', desc: 'Bilişsel Set · 4 adet kaldı', time: '1 sa önce' },
+        { icon: 'pi pi-megaphone', tint: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300', title: 'Duyuru yayınlandı', desc: 'Yarıyıl tatili kampanyası', time: 'Dün' },
+        { icon: 'pi pi-credit-card', tint: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300', title: 'Ödeme alındı', desc: 'Fatura #F-2291 tahsil edildi', time: 'Dün' },
+        { icon: 'pi pi-comments', tint: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300', title: 'Yeni yorum', desc: 'Destek talebine yanıt geldi', time: '2 gün önce' },
+    ];
+
+    function toggleNotifications(event: Event): void {
+        notificationsRef.value?.toggle(event);
+    }
+
+    // ── Messages popover (example data — not wired to a backend yet) ──
+    const messagesRef = ref();
+    const messagesOpen = ref(false);
+
+    interface MessageItem {
+        initials: string;
+        avatar: string;
+        name: string;
+        desc: string;
+        time: string;
+    }
+
+    const messages: MessageItem[] = [
+        { initials: 'AY', avatar: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200', name: 'Ayşe Yıldız', desc: 'Demo hesap talebi hakkında', time: '09:24' },
+        { initials: 'EK', avatar: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200', name: 'Emre Kaya', desc: 'Banka transferi onayı bekliyor', time: '08:51' },
+        { initials: 'SD', avatar: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200', name: 'Selin Demir', desc: 'Yeni kurum kaydı: Mercan Koleji', time: 'Dün' },
+        { initials: 'MT', avatar: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200', name: 'Mert Tan', desc: 'Lisans yenileme talebi', time: 'Dün' },
+        { initials: 'CK', avatar: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200', name: 'Can Korkmaz', desc: "Fatura PDF'i ulaşmadı", time: 'Dün' },
+        { initials: 'FT', avatar: 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200', name: 'Furkan Taş', desc: 'Entegrasyon dökümanı talebi', time: '2 gün' },
+    ];
+
+    function toggleMessages(event: Event): void {
+        messagesRef.value?.toggle(event);
+    }
+
+    // ── Developer popover ──
+    const developerRef = ref();
+    const developerOpen = ref(false);
+
+    function toggleDeveloper(event: Event): void {
+        developerRef.value?.toggle(event);
+    }
+
+    function openApiRoutes(): void {
+        developerRef.value?.hide();
+        router.visit(apiRoutes.index.url());
     }
 </script>
 
@@ -135,13 +230,14 @@
             <template v-if="showLocaleSwitcher">
                 <button
                     class="admin-header__btn admin-header__btn--locale"
+                    :class="{ 'admin-header__btn--active': localeOpen }"
                     :title="availableLocales[currentLocale]"
                     @click="toggleLocaleMenu"
                 >
                     <i class="pi pi-globe" />
                     <span class="admin-header__locale-code">{{ currentLocale.toUpperCase() }}</span>
                 </button>
-                <Menu ref="localeMenuRef" class="sk-locale-menu" :model="localeMenuItems" :popup="true">
+                <Menu ref="localeMenuRef" class="sk-locale-menu" :model="localeMenuItems" :popup="true" @show="localeOpen = true" @hide="localeOpen = false">
                     <template #start>
                         <div class="sk-locale-menu__label">
                             {{ $t('sk-layout.language') }}
@@ -161,15 +257,8 @@
                 </Menu>
             </template>
 
-            <!-- Appearance: dark mode + accent color picker -->
-            <button
-                class="admin-header__btn"
-                :title="$t('sk-layout.appearance')"
-                @click="toggleAppearance"
-            >
-                <i class="pi pi-palette" />
-            </button>
-            <Popover ref="appearanceRef">
+            <!-- Appearance popover (trigger lives in the action cluster below) -->
+            <Popover ref="appearanceRef" @show="appearanceOpen = true" @hide="appearanceOpen = false">
                 <div class="w-[360px] max-w-[90vw]">
                     <!-- Dark mode -->
                     <div class="flex items-center justify-between gap-4">
@@ -286,22 +375,208 @@
                 </div>
             </Popover>
 
-            <button class="admin-header__btn" :title="$t('sk-layout.notifications')">
+            <!-- Notifications -->
+            <button
+                class="admin-header__btn relative"
+                :class="{ 'admin-header__btn--active': notificationsOpen }"
+                :title="$t('sk-layout.notifications')"
+                @click="toggleNotifications"
+            >
                 <i class="pi pi-bell" />
+                <span class="admin-header__dot" />
             </button>
+            <Popover ref="notificationsRef" class="sk-flush-popover" @show="notificationsOpen = true" @hide="notificationsOpen = false">
+                <div class="w-[340px] max-w-[92vw]">
+                    <div class="flex items-center justify-between gap-3 px-4 py-3">
+                        <span class="text-sm font-semibold text-surface-800 dark:text-surface-0">
+                            {{ $t('sk-layout.notifications') }}
+                            <span class="font-normal text-surface-400">({{ notifications.length }})</span>
+                        </span>
+                        <button type="button" class="text-xs font-medium text-primary-500 hover:underline">
+                            {{ $t('sk-layout.mark_all_read') }}
+                        </button>
+                    </div>
+                    <hr class="border-surface-200 dark:border-surface-700">
+                    <div class="max-h-[312px] overflow-y-auto">
+                        <button
+                            v-for="(n, i) in notifications"
+                            :key="i"
+                            type="button"
+                            class="flex w-full items-start gap-3 border-b border-surface-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
+                        >
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-[5px] text-base" :class="n.tint">
+                                <i :class="n.icon" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-semibold text-surface-800 dark:text-surface-100">{{ n.title }}</span>
+                                <span class="block truncate text-xs text-surface-500">{{ n.desc }}</span>
+                                <span class="mt-0.5 block text-[11px] text-surface-400">{{ n.time }}</span>
+                            </span>
+                        </button>
+                    </div>
+                    <hr class="border-surface-200 dark:border-surface-700">
+                    <div class="px-4 py-3 text-center">
+                        <button type="button" class="text-sm font-semibold text-primary-500 hover:underline">
+                            {{ $t('sk-layout.view_all_notifications') }}
+                        </button>
+                    </div>
+                </div>
+            </Popover>
+
+            <!-- Messages -->
+            <button
+                class="admin-header__btn"
+                :class="{ 'admin-header__btn--active': messagesOpen }"
+                :title="$t('sk-layout.messages')"
+                @click="toggleMessages"
+            >
+                <i class="pi pi-envelope" />
+            </button>
+            <Popover ref="messagesRef" class="sk-flush-popover" @show="messagesOpen = true" @hide="messagesOpen = false">
+                <div class="w-[340px] max-w-[92vw]">
+                    <div class="flex items-center justify-between gap-3 px-4 py-3">
+                        <span class="text-sm font-semibold text-surface-800 dark:text-surface-0">
+                            {{ $t('sk-layout.messages') }}
+                            <span class="font-normal text-surface-400">({{ messages.length }})</span>
+                        </span>
+                        <button type="button" class="text-xs font-medium text-primary-500 hover:underline">
+                            {{ $t('sk-layout.new_message') }}
+                        </button>
+                    </div>
+                    <hr class="border-surface-200 dark:border-surface-700">
+                    <div class="max-h-[312px] overflow-y-auto">
+                        <button
+                            v-for="(m, i) in messages"
+                            :key="i"
+                            type="button"
+                            class="flex w-full items-center gap-3 border-b border-surface-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
+                        >
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold" :class="m.avatar">
+                                {{ m.initials }}
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="flex items-center justify-between gap-2">
+                                    <span class="truncate text-sm font-semibold text-surface-800 dark:text-surface-100">{{ m.name }}</span>
+                                    <span class="shrink-0 text-[11px] text-surface-400">{{ m.time }}</span>
+                                </span>
+                                <span class="block truncate text-xs text-surface-500">{{ m.desc }}</span>
+                            </span>
+                        </button>
+                    </div>
+                    <hr class="border-surface-200 dark:border-surface-700">
+                    <div class="px-4 py-3 text-center">
+                        <button type="button" class="text-sm font-semibold text-primary-500 hover:underline">
+                            {{ $t('sk-layout.open_inbox') }}
+                        </button>
+                    </div>
+                </div>
+            </Popover>
+
+            <!-- Developer (system admins only; inner items gated per permission) -->
+            <button
+                v-if="hasRole('system_admin')"
+                class="admin-header__btn"
+                :class="{ 'admin-header__btn--active': developerOpen }"
+                :title="$t('sk-layout.developer')"
+                @click="toggleDeveloper"
+            >
+                <i class="pi pi-code" />
+            </button>
+            <Popover ref="developerRef" class="sk-flush-popover" @show="developerOpen = true" @hide="developerOpen = false">
+                <div class="w-[340px] max-w-[92vw]">
+                    <div class="flex items-center gap-2 px-4 py-3">
+                        <i class="pi pi-code text-xs text-surface-400" />
+                        <span class="text-sm font-semibold text-surface-800 dark:text-surface-0">
+                            {{ $t('sk-layout.developer') }}
+                        </span>
+                    </div>
+                    <hr class="border-surface-200 dark:border-surface-700">
+                    <div>
+                        <button
+                            v-if="can('api-routes.read')"
+                            type="button"
+                            class="flex w-full items-center gap-3 border-b border-surface-100 px-4 py-3 text-left transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
+                            @click="openApiRoutes"
+                        >
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-[5px] bg-primary-50 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+                                <i class="pi pi-sitemap" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-semibold text-surface-800 dark:text-surface-100">{{ $t('sk-menu.api_routes') }}</span>
+                                <span class="block truncate text-xs text-surface-500">{{ $t('sk-layout.api_routes_hint') }}</span>
+                            </span>
+                            <i class="pi pi-chevron-right text-xs text-surface-400" />
+                        </button>
+                        <a
+                            href="https://laravel.com/docs"
+                            target="_blank"
+                            rel="noopener"
+                            class="flex w-full items-center gap-3 border-b border-surface-100 px-4 py-3 text-left no-underline transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800"
+                        >
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-[5px] bg-primary-50 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+                                <i class="pi pi-book" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-semibold text-surface-800 dark:text-surface-100">{{ $t('sk-menu.laravel_docs') }}</span>
+                                <span class="block truncate text-xs text-surface-500">laravel.com/docs</span>
+                            </span>
+                            <i class="pi pi-external-link text-xs text-surface-400" />
+                        </a>
+                        <a
+                            href="https://starter-kit.lvntr.dev"
+                            target="_blank"
+                            rel="noopener"
+                            class="flex w-full items-center gap-3 px-4 py-3 text-left no-underline transition-colors hover:bg-surface-50 dark:hover:bg-surface-800"
+                        >
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-[5px] bg-primary-50 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+                                <i class="pi pi-box" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-semibold text-surface-800 dark:text-surface-100">{{ $t('sk-menu.kits_docs') }}</span>
+                                <span class="block truncate text-xs text-surface-500">starter-kit.lvntr.dev</span>
+                            </span>
+                            <i class="pi pi-external-link text-xs text-surface-400" />
+                        </a>
+                    </div>
+                </div>
+            </Popover>
+
+            <!-- Help -->
+            <a
+                href="https://starter-kit.lvntr.dev"
+                target="_blank"
+                rel="noopener"
+                class="admin-header__btn"
+                :title="$t('sk-layout.help')"
+            >
+                <i class="pi pi-question-circle" />
+            </a>
+
+            <!-- Appearance (palette) — immediately left of the user badge -->
+            <button
+                class="admin-header__btn"
+                :class="{ 'admin-header__btn--active': appearanceOpen }"
+                :title="$t('sk-layout.appearance')"
+                @click="toggleAppearance"
+            >
+                <i class="pi pi-palette" />
+            </button>
+
+            <span class="admin-header__divider" />
 
             <!-- User Profile -->
             <button v-if="user" class="admin-header__user" @click="toggleUserMenu">
+                <img v-if="user.avatar_url" :src="user.avatar_url" alt="Avatar" class="admin-header__avatar">
+                <div v-else class="admin-header__avatar-placeholder">
+                    {{ initials }}
+                </div>
                 <div class="admin-header__user-info">
                     <span class="admin-header__user-name">{{ user.full_name }}</span>
                     <span v-if="role" class="admin-header__user-role">
                         {{ role }}
                     </span>
                 </div>
-                <img v-if="user.avatar_url" :src="user.avatar_url" alt="Avatar" class="admin-header__avatar">
-                <div v-else class="admin-header__avatar-placeholder">
-                    {{ initials }}
-                </div>
+                <i class="pi pi-chevron-down admin-header__user-chevron" />
             </button>
 
             <Menu ref="userMenuRef" class="sk-user-menu" :model="userMenuItems" :popup="true">

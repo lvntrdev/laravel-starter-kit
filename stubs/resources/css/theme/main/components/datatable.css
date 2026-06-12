@@ -84,7 +84,7 @@
     }
 
     & input {
-        @apply min-w-0 flex-1 border-0 bg-transparent outline-none text-[13.5px] text-slate-900 dark:text-slate-100;
+        @apply min-w-0 flex-1 border-0 bg-transparent outline-none text-[14px] text-slate-900 dark:text-slate-100;
 
         &::placeholder {
             @apply text-slate-400 dark:text-slate-500;
@@ -569,7 +569,7 @@
 }
 
 .sk-dt__table {
-    @apply w-full border-collapse text-[13.5px];
+    @apply w-full border-collapse text-[14px];
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -88,7 +88,7 @@
 }
 
 .sk-user-menu__avatar {
-    @apply size-11 shrink-0 rounded-md object-cover;
+    @apply size-11 shrink-0 rounded-[5px] object-cover;
     box-shadow:
         0 0 0 2px var(--p-surface-0),
         0 0 0 3px color-mix(in srgb, var(--p-primary-500) 45%, transparent),

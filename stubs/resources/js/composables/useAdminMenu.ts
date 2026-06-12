@@ -1,7 +1,6 @@
 // resources/js/composables/useAdminMenu.ts
 import { useMenuBuilder } from '@/composables/useMenuBuilder';
 import activityLogs from '@/routes/activity-logs';
-import apiRoutes from '@/routes/api-routes';
 import dashboard from '@/routes/dashboard';
 import files from '@/routes/files';
 import logs from '@/routes/logs';
@@ -94,32 +93,6 @@ export function useAdminMenu() {
             icon: 'pi pi-pencil',
             href: '/components/forms',
             role: 'system_admin',
-        },
-        {
-            title: 'sk-menu.developer',
-            section: true,
-        },
-        {
-            title: 'sk-menu.developer_docs',
-            icon: 'pi pi-code',
-            permission: 'developer.read',
-            children: [
-                {
-                    title: 'sk-menu.api_routes',
-                    href: apiRoutes.index.url(),
-                    permission: 'api-routes.read',
-                },
-                {
-                    title: 'sk-menu.laravel_docs',
-                    href: 'https://laravel.com/docs',
-                    external: true,
-                },
-                {
-                    title: 'sk-menu.kits_docs',
-                    href: 'https://starter-kit.lvntr.dev',
-                    external: true,
-                },
-            ],
         },
     ];
 
