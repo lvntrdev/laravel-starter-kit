@@ -34,6 +34,11 @@ Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])->group(
 
     // Web route files inside this group are authenticated.
     // Some skip permission checks, but they are still not public.
+    // 'components-route.php' is legacy: the showcase moved into the package
+    // (/sk-components, vendor-mounted). The entry stays so older projects that
+    // still ship the published file keep their role-gated routes out of the
+    // dynamic permission middleware (which would deny the unmapped
+    // "components.*" names in production).
     $routesWithoutPermissionMiddleware = ['profile-route.php', 'service-route.php', 'file-manager-route.php', 'log-route.php', 'components-route.php'];
     $permissionProtectedRouteFiles = [];
 

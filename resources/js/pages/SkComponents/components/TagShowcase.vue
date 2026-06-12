@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { Head } from '@inertiajs/vue3';
-    import AdminLayout from '@/layouts/AdminLayout.vue';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
     import { trans } from 'laravel-vue-i18n';
 
@@ -28,14 +26,16 @@
 </script>
 
 <template>
-    <Head :title="$t('sk-component.tag.title')" />
-
-    <AdminLayout :title="$t('sk-component.tag.title')" :subtitle="$t('sk-component.tag.subtitle')">
-        <template #page-actions>
+    <div>
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="text-[17px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">{{ $t('sk-component.tag.title') }}</h2>
+                <p class="mt-0.5 text-[13px] leading-relaxed text-surface-500 dark:text-surface-400">{{ $t('sk-component.tag.subtitle') }}</p>
+            </div>
             <a href="https://primevue.org/tag/" target="_blank" rel="noopener noreferrer">
                 <Button :label="$t('sk-component.docs')" icon="pi pi-book" outlined size="small" />
             </a>
-        </template>
+        </div>
 
         <Message severity="info" :closable="false" class="mb-6">
             <span class="text-[13.5px] leading-relaxed">{{ trans('sk-component.tag.intro') }}</span>
@@ -184,5 +184,5 @@
                 </div>
             </SkCard>
         </div>
-    </AdminLayout>
+    </div>
 </template>

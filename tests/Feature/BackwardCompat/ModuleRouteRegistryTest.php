@@ -257,6 +257,48 @@ it('(d) keeps the share endpoint defined and auth-exempt (K1)', function (): voi
         ->and($excluded)->toContain('auth:api');
 });
 
+it('(f) carries the sk-components descriptor and its loader mounts the role-gated showcase route', function (): void {
+    // Descriptor contract — vendor-resident developer showcase (v13.6.x).
+    $descriptors = (new ModuleRouteRegistryProbe(app()))->registryDescriptors();
+
+    $sk = collect($descriptors)->firstWhere('name', 'sk-components');
+
+    expect($sk)->not->toBeNull('sk-components must be a registry entry');
+    expect($sk['middleware'])->toBe(['web', 'auth', 'verified']);
+    expect($sk['loader'])->toBeInstanceOf(Closure::class);
+    expect($sk['overrideStubs'])->toBe([
+        base_path('routes/web/sk-components-route.php'),
+    ]);
+
+    // Drive the real loader through the registry loop (same pattern as (a2));
+    // the probe's route is registered after the boot-time mount, so the name
+    // lookup resolves to it after refreshNameLookups().
+    $probe = (new ModuleRouteRegistryProbe(app()))->withRegistry([
+        [
+            'name' => 'sk-components',
+            'overrideStubs' => [base_path('routes/web/__definitely_missing_sk_stub__.php')],
+            'middleware' => ['web', 'auth', 'verified'],
+            'loader' => static function (): void {
+                require dirname(__DIR__, 3).'/src/routes/sk-components.php';
+            },
+        ],
+    ]);
+
+    $probe->runRegisterRoutes();
+
+    /** @var Router $router */
+    $router = app('router');
+
+    $middleware = moduleRouteMiddleware($router, 'sk-components.show');
+
+    expect($middleware)->toContain('web')
+        ->and($middleware)->toContain('auth')
+        ->and($middleware)->toContain('verified')
+        // The role gate lives inside the route file itself — the showcase is
+        // developer-only (system_admin), not permission-seeded.
+        ->and($middleware)->toContain('role:system_admin');
+});
+
 it('(e) production registry carries the file-manager descriptor with its real tier', function (): void {
     $descriptors = (new ModuleRouteRegistryProbe(app()))->registryDescriptors();
 

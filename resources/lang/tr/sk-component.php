@@ -30,6 +30,9 @@ return [
 
     'docs' => 'Dokümantasyon',
 
+    // Sekmeli showcase sayfasının (SkComponents/Show) genel metinleri.
+    'subtitle' => 'UI kit örnekleri — kit\'in PrimeVue + SK bileşenleri tüm varyantlarıyla.',
+
     'tag' => [
         'title' => 'Etiketler',
         'subtitle' => 'Tag bileşeni — tüm varyantlar ve renkler.',

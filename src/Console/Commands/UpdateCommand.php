@@ -108,6 +108,15 @@ class UpdateCommand extends Command
         'app/Support/MediaPathGenerator.php',
         'app/Support/HasTranslatableRules.php',
         'app/Support/Scramble/ApiResponseExtension.php',
+        // v13.6.x: the developer component showcase moved into the package
+        // (src/Http/Controllers/ComponentShowcaseController.php +
+        // src/routes/sk-components.php + resources/js/pages/SkComponents/,
+        // auto-mounted at /sk-components). Old published copies keep working —
+        // their /components/* route names never clash with the vendor mount —
+        // and are reported here only (they may be customized).
+        'app/Http/Controllers/Admin/ComponentShowcaseController.php',
+        'routes/web/components-route.php',
+        'resources/js/pages/Admin/Components/',
         // These third-party configs are no longer published — the kit applies
         // its required overrides from vendor at runtime (StarterKitServiceProvider
         // ::applyVendorConfigDefaults). Publishing them again is optional.

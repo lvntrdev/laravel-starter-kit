@@ -937,6 +937,21 @@ class StarterKitServiceProvider extends ServiceProvider
                     FileManagerFacade::routes();
                 },
             ],
+            [
+                'name' => 'sk-components',
+                // Vendor-resident developer showcase (never published). The
+                // override stub does not ship by default; a consumer can create
+                // it to take over (or disable) the mount.
+                'overrideStubs' => [
+                    base_path('routes/web/sk-components-route.php'),
+                ],
+                // role:system_admin is applied inside the route file itself —
+                // this tier only guarantees an authenticated, verified session.
+                'middleware' => ['web', 'auth', 'verified'],
+                'loader' => static function (): void {
+                    require __DIR__.'/routes/sk-components.php';
+                },
+            ],
         ];
     }
 

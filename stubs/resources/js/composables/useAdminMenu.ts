@@ -61,37 +61,11 @@ export function useAdminMenu() {
             permission: 'settings.read',
         },
         {
+            // Vendor-resident gelistirici showcase'i (SkComponents/Show) —
+            // sekmeli tek sayfa; rota paketten mount edilir (/sk-components).
             title: 'sk-menu.components',
-            section: true,
-        },
-        {
-            title: 'sk-menu.tag',
-            icon: 'pi pi-tag',
-            href: '/components/tag',
-            role: 'system_admin',
-        },
-        {
-            title: 'sk-menu.buttons',
-            icon: 'pi pi-stop',
-            href: '/components/buttons',
-            role: 'system_admin',
-        },
-        {
-            title: 'sk-menu.message',
-            icon: 'pi pi-comment',
-            href: '/components/messages',
-            role: 'system_admin',
-        },
-        {
-            title: 'sk-menu.toast',
-            icon: 'pi pi-bell',
-            href: '/components/toast',
-            role: 'system_admin',
-        },
-        {
-            title: 'sk-menu.forms',
-            icon: 'pi pi-pencil',
-            href: '/components/forms',
+            icon: 'pi pi-objects-column',
+            href: '/sk-components',
             role: 'system_admin',
         },
     ];

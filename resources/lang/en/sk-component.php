@@ -30,6 +30,9 @@ return [
 
     'docs' => 'Documentation',
 
+    // Tabbed showcase page (SkComponents/Show) chrome.
+    'subtitle' => 'UI kit examples — the kit\'s PrimeVue + SK components in every variant.',
+
     'tag' => [
         'title' => 'Tags',
         'subtitle' => 'Tag component — all variants and colors.',

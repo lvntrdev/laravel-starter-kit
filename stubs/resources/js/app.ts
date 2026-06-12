@@ -1,6 +1,7 @@
 import '../css/app.css';
 import 'primeicons/primeicons.css';
 import { createInertiaApp, usePage } from '@inertiajs/vue3';
+import type { DefineComponent } from 'vue';
 import axios from 'axios';
 import { i18nVue } from 'laravel-vue-i18n';
 import PrimeVue from 'primevue/config';
@@ -20,9 +21,26 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
 createInertiaApp({
-    pages: {
-        path: './pages',
-        lazy: false,
+    // Sayfa cozumu iki katmandan birlesir, app-once (asagidaki i18n merge ile
+    // ayni katmanlama):
+    //   1. APP — tuketicinin ./pages dizini. Her zaman kazanir; ayni adla yerel
+    //      bir sayfa olusturarak vendor sayfasi override edilebilir.
+    //   2. VENDOR (fallback) — kit'in vendor-resident, publish edilmeyen
+    //      sayfalari (`@lvntr/pages/**` →
+    //      vendor/lvntr/laravel-starter-kit/resources/js/pages/, or.
+    //      SkComponents/Show).
+    // Elle yazilmis `resolve:` @inertiajs/vite'in `pages:` donusumunun yerini
+    // alir (plugin mevcut resolve'a dokunmaz) — `pages.path` tek dizin kabul
+    // ettigi icin vendor fallback ancak boyle kurulur. Globlar eager + sync
+    // resolve: SSR'da sync cozum sart (lang globlariyla ayni gerekce); eski
+    // `lazy: false` davranisinin birebir karsiligi.
+    resolve: (name) => {
+        const appPages = import.meta.glob<DefineComponent>('./pages/**/*.vue', { eager: true, import: 'default' });
+        const vendorPages = import.meta.glob<DefineComponent>('@lvntr/pages/**/*.vue', { eager: true, import: 'default' });
+        const page = appPages[`./pages/${name}.vue`]
+            ?? vendorPages[`/vendor/lvntr/laravel-starter-kit/resources/js/pages/${name}.vue`];
+        if (!page) throw new Error(`Page not found: ${name}`);
+        return page;
     },
     progress: {
         delay: 250,
