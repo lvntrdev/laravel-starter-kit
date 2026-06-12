@@ -3,6 +3,12 @@
     import adminUsers from '@/routes/users';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import { Button } from 'primevue';
+    import { usePageHeader } from '@/composables/usePageHeader';
+
+    // Aura + geri-butonlu sayfa: başlık topbar'da; form kartı geri butonunu
+    // kendi başlık alanında (#title-end) gösterir.
+    const pageHeader = usePageHeader();
 
     interface Props {
         userId?: string | null;
@@ -73,6 +79,16 @@
             :is-card="!inDialog"
             class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
         />
-        <SkForm ref="formRef" :config="formConfig" @success="emit('success')" @cancel="emit('cancel')" />
+        <SkForm ref="formRef" :config="formConfig" @success="emit('success')" @cancel="emit('cancel')">
+            <template v-if="pageHeader.active" #title-end>
+                <Button
+                    icon="pi pi-arrow-left"
+                    :label="$t('sk-button.back')"
+                    severity="secondary"
+                    variant="outlined"
+                    @click="pageHeader.goBack"
+                />
+            </template>
+        </SkForm>
     </div>
 </template>

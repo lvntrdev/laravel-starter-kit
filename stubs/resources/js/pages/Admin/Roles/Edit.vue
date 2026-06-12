@@ -27,7 +27,7 @@
 </script>
 
 <template>
-    <AdminLayout :title="trans('sk-role.edit')" :subtitle="role.name" :back-url="true">
+    <AdminLayout :title="trans('sk-role.edit')" :subtitle="role.name" :back-url="true" :header-in-card="true">
         <RoleForm
             :role="role"
             :permissions-by-group="permissionsByGroup"

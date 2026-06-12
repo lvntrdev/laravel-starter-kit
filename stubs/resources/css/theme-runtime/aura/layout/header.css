@@ -128,6 +128,23 @@ html[data-sk-theme='aura'] .admin-header__tag--debug {
     color: #ffffff;
 }
 
+/* Page title in the topbar (back-button-less pages) — sits after the dev/debug
+   tags. Block only renders in aura (the layout passes `pageTitle` solely then),
+   but scoped per the runtime contract regardless. */
+html[data-sk-theme='aura'] .admin-header__page {
+    @apply ml-1 flex flex-col justify-center;
+}
+
+html[data-sk-theme='aura'] .admin-header__page-title {
+    @apply text-[15px] font-semibold leading-tight;
+    color: var(--admin-header-text);
+}
+
+html[data-sk-theme='aura'] .admin-header__page-subtitle {
+    @apply text-xs leading-tight;
+    color: var(--sk-aura-text-soft);
+}
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    DARK-MODE RE-ASSERTS
    ─────────────────────────────────────────────────────────────────

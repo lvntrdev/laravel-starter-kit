@@ -1,12 +1,24 @@
 <script setup lang="ts">
     import { computed, onMounted, reactive, ref } from 'vue';
-    import { Head } from '@inertiajs/vue3';
+    import { Head, router } from '@inertiajs/vue3';
     import { getActiveLanguage, trans } from 'laravel-vue-i18n';
     import { Button } from 'primevue';
     import { useToast } from 'primevue/usetoast';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import { useApi } from '@/composables/useApi';
+    import { useTheme } from '@/composables/useTheme';
     import logs from '@/routes/logs';
+
+    // Aura: başlık topbar'da; geri butonu dosya başlık çubuğunda (Yenile'nin
+    // sağında) durur — ayrı bir üst AdminPageHeader bloğu gösterilmez. Bu sayfa
+    // AdminLayout'un PARENT'ı olduğundan usePageHeader (provide/inject aşağı akar)
+    // burada çalışmaz; aura'yı doğrudan useTheme ile tespit ederiz.
+    const { theme } = useTheme();
+    const isAura = computed(() => theme.value === 'aura');
+
+    function goBack(): void {
+        router.visit(logs.index.url());
+    }
 
     interface LogFileMeta {
         name: string;
@@ -213,7 +225,7 @@
 <template>
     <Head :title="file.name" />
 
-    <AdminLayout :title="file.name" :subtitle="$t('sk-log.subtitle')" :back-url="logs.index.url()">
+    <AdminLayout :title="file.name" :subtitle="$t('sk-log.subtitle')" :back-url="logs.index.url()" :header-in-card="true">
         <div class="flex flex-col gap-4">
             <!-- File header bar -->
             <div
@@ -259,6 +271,14 @@
                         text
                         :loading="loading"
                         @click="applyFilters"
+                    />
+                    <Button
+                        v-if="isAura"
+                        icon="pi pi-arrow-left"
+                        :label="$t('sk-button.back')"
+                        severity="secondary"
+                        variant="outlined"
+                        @click="goBack"
                     />
                 </div>
             </div>

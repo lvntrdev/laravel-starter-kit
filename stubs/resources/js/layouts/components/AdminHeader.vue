@@ -18,9 +18,15 @@
         isDark: boolean;
         accent: AccentColor;
         sidebarStyle: SidebarStyle;
+        /** Aura: başlık/alt başlık topbar'da gösterilir. Boş string → gösterilmez. */
+        pageTitle?: string;
+        pageSubtitle?: string;
     }
 
-    defineProps<Props>();
+    withDefaults(defineProps<Props>(), {
+        pageTitle: '',
+        pageSubtitle: '',
+    });
 
     const emit = defineEmits<{
         toggleSidebar: [];
@@ -228,6 +234,13 @@
 
             <span v-if="isLocal" class="admin-header__tag admin-header__tag--dev"> Dev Mode </span>
             <span v-if="isDebug" class="admin-header__tag admin-header__tag--debug"> Debug Mode </span>
+
+            <!-- Aura: sayfa başlığı topbar'da (geri butonu olmayan sayfalar) -->
+            <span v-if="pageTitle" class="admin-header__divider" />
+            <div v-if="pageTitle" class="admin-header__page">
+                <span class="admin-header__page-title">{{ pageTitle }}</span>
+                <span v-if="pageSubtitle" class="admin-header__page-subtitle">{{ pageSubtitle }}</span>
+            </div>
         </div>
 
         <div class="admin-header__right">

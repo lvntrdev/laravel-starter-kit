@@ -3,6 +3,7 @@
     import { useCan } from '@/composables/useCan';
     import { useConfirm } from '@/composables/useConfirm';
     import { useRefreshBus } from '@/composables/useRefreshBus';
+    import { useTheme } from '@/composables/useTheme';
     import { useDatatableSelection } from '@/composables/useDatatableSelection';
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import roles from '@/routes/roles';
@@ -32,6 +33,7 @@
     const { confirmDelete, confirmAction } = useConfirm();
     const bus = useRefreshBus();
     const { can } = useCan();
+    const { theme } = useTheme();
 
     const REFRESH_KEY = 'roles-table';
 
@@ -111,8 +113,16 @@
 
     // ── SkDatatable ─────────────────────────────────────────────────────────────────
 
-    const tableConfig = DB.table<Role>()
-        .route(roles.dtApi.url())
+    const tableBuilder = DB.table<Role>().route(roles.dtApi.url());
+
+    // Create butonu yalnızca `aura` temasında datatable toolbar'ında görünür
+    // (URL variant — Link olarak render edilir); diğer temalarda header'daki
+    // page-action Link butonu kullanılır.
+    if (theme.value === 'aura' && can('roles.create')) {
+        tableBuilder.create({ url: roles.create.url(), label: 'sk-role.create', icon: 'pi pi-plus' });
+    }
+
+    const tableConfig = tableBuilder
         .addColumns(
             DB.column<Role>().key('name').tag('value').tagSeverityKey('color').tagSoft(),
             DB.column<Role>()
@@ -176,7 +186,7 @@
     <AdminLayout :title="$t('sk-menu.roles_permissions')" :subtitle="$t('sk-role.subtitle')">
         <template v-if="can('roles.create') || isSystemAdmin" #page-actions>
             <Button
-                v-if="isSystemAdmin"
+                v-if="isSystemAdmin && theme !== 'aura'"
                 :label="$t('sk-role.sync_permissions')"
                 icon="pi pi-sync"
                 severity="secondary"
@@ -184,7 +194,7 @@
                 :loading="syncing"
                 @click="syncPermissions"
             />
-            <Link v-if="can('roles.create')" :href="roles.create.url()">
+            <Link v-if="can('roles.create') && theme !== 'aura'" :href="roles.create.url()">
                 <Button :label="$t('sk-role.create')" icon="pi pi-plus" />
             </Link>
         </template>
@@ -195,6 +205,18 @@
             :selection="selection"
             @load="onTableLoad"
         >
+            <!-- İzin senkronizasyon butonu aura temasında datatable toolbar'ında (slot) -->
+            <template v-if="isSystemAdmin && theme === 'aura'" #toolbar-start>
+                <Button
+                    :label="$t('sk-role.sync_permissions')"
+                    icon="pi pi-sync"
+                    severity="secondary"
+                    outlined
+                    :loading="syncing"
+                    @click="syncPermissions"
+                />
+            </template>
+
             <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
             <template #bulk-actions>
                 <Button

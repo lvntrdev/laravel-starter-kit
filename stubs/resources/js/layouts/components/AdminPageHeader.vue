@@ -5,13 +5,21 @@
         title?: string;
         subtitle?: string;
         backUrl?: string | boolean;
+        /**
+         * Aura: başlık topbar'da gösterildiğinde bu blok başlığı tekrarlamasın —
+         * yalnızca geri butonu + aksiyonlar kalır.
+         */
+        hideTitle?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         title: '',
         subtitle: '',
         backUrl: false,
+        hideTitle: false,
     });
+
+    const showTitle = computed(() => !!props.title && !props.hideTitle);
 
     const resolvedBackUrl = computed(() => {
         if (props.backUrl === true) {
@@ -30,8 +38,8 @@
 </script>
 
 <template>
-    <div v-if="title || resolvedBackUrl || $slots.actions" class="admin-page-header">
-        <div v-if="title" class="admin-page-header__title">
+    <div v-if="showTitle || resolvedBackUrl || $slots.actions" class="admin-page-header">
+        <div v-if="showTitle" class="admin-page-header__title">
             <h1 class="admin-page-header__heading">
                 {{ title }}
             </h1>

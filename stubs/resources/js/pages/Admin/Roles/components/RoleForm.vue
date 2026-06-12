@@ -7,6 +7,11 @@
     import SkCard from '@lvntr/components/ui/SkCard.vue';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
     import { FB } from '@lvntr/components/FormBuilder/core';
+    import { usePageHeader } from '@/composables/usePageHeader';
+
+    // Aura + geri-butonlu sayfa: başlık topbar'da; ilk kart geri butonunu
+    // kendi aksiyon alanında gösterir (kart başlığı kendi değerinde kalır).
+    const pageHeader = usePageHeader();
 
     interface PermissionGroup {
         label: string;
@@ -274,7 +279,19 @@
 
 <template>
     <form class="space-y-6" @submit.prevent="submit">
-        <SkCard :title="trans('sk-role.basic_info')" :subtitle="trans('sk-role.basic_info_description')">
+        <SkCard
+            :title="trans('sk-role.basic_info')"
+            :subtitle="trans('sk-role.basic_info_description')"
+        >
+            <template v-if="pageHeader.active" #actions>
+                <Button
+                    icon="pi pi-arrow-left"
+                    :label="trans('sk-button.back')"
+                    severity="secondary"
+                    variant="outlined"
+                    @click="pageHeader.goBack"
+                />
+            </template>
             <template #content>
                 <SkForm v-model="basics" :config="basicsConfig" :errors="form.errors as Record<string, string>" />
             </template>

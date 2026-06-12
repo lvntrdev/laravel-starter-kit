@@ -53,6 +53,13 @@ html[data-sk-theme='aura'] .admin-content {
     @apply w-full flex-1 min-h-0 overflow-y-auto p-6 flex flex-col;
 }
 
+/* Dikey-tab menüsü STATİK — sticky (main: md:top-6) menü içerikten uzun olunca
+   scroll'da üste pinlenip üst boşluğu kaybediyor, tab'lar arası tutarsız görünüyordu.
+   Statik konumda menü içerikle birlikte kayar; üst boşluk her tab'da eşit p-6 kalır. */
+html[data-sk-theme='aura'] .sk-tabs-vertical__sidebar {
+    position: static;
+}
+
 /* Mobile: drop the gutter — the panel goes full-bleed, the sidebar becomes a
    fixed drawer (see aura/layout/sidebar.css). */
 @media (max-width: 1023px) {

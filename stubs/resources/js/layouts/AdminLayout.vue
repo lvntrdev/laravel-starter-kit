@@ -4,6 +4,7 @@
     import { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
     import { useDarkMode } from '@/composables/useDarkMode';
     import { useTheme } from '@/composables/useTheme';
+    import { PAGE_HEADER_KEY } from '@/composables/usePageHeader';
     import { useFlash } from '@/composables/useFlash';
     import AppShell from '@/layouts/AppShell.vue';
     import AdminFooter from '@/layouts/components/AdminFooter.vue';
@@ -21,18 +22,60 @@
         title?: string;
         subtitle?: string;
         backUrl?: string | boolean;
+        /**
+         * Aura: geri-butonlu sayfalarda başlığı ayrı page-header yerine içeriğin
+         * ilk kartının başlığına gömer (sayfa `usePageHeader()` ile tüketir).
+         */
+        headerInCard?: boolean;
     }
 
-    withDefaults(defineProps<Props>(), {
+    const props = withDefaults(defineProps<Props>(), {
         title: '',
         subtitle: '',
         backUrl: false,
+        headerInCard: false,
     });
 
     const { isDark, toggleDark } = useDarkMode();
     const { accent, setAccent, sidebarStyle, setSidebarStyle } = useAccentColor();
     const { applyFavicon } = useAppearanceDefaults();
-    useTheme();
+    const { theme } = useTheme();
+
+    // Aura, başlığı üst bara (topbar) taşır; diğer temalarda klasik
+    // AdminPageHeader bloğu içerir kalır.
+    const isAura = computed(() => theme.value === 'aura');
+    const hasBack = computed(() => props.backUrl !== false && props.backUrl !== '');
+
+    // Aura'da başlık HER sayfada topbar'da durur (geri butonu olsun olmasın).
+    const showTitleInTopbar = computed(() => isAura.value && !!props.title);
+    // Aura + geri butonu VAR + sayfa opt-in → ilk kart geri butonunu host eder
+    // (başlık topbar'da; kart kendi başlığını korur).
+    const titleInCard = computed(() => isAura.value && hasBack.value && props.headerInCard);
+    // AdminPageHeader bloğu: non-aura'da her zaman; aura'da yalnızca geri butonu
+    // varken VE karta gömülmüyorken (ör. Logs/Show) gösterilir.
+    const showPageHeader = computed(() => {
+        if (!isAura.value) return true;
+        if (!hasBack.value) return false;
+        return !props.headerInCard;
+    });
+
+    function goBack() {
+        if (props.backUrl === true) {
+            window.history.back();
+        } else if (typeof props.backUrl === 'string') {
+            router.visit(props.backUrl);
+        }
+    }
+
+    // İlk-kart tüketicileri için sağla: aura geri-butonlu form sayfalarında
+    // `active` true olur → kart, geri butonunu kendi aksiyon alanında gösterir
+    // (başlık topbar'da kaldığı için kart başlığını ezmez).
+    provide(PAGE_HEADER_KEY, reactive({
+        active: titleInCard,
+        title: computed(() => props.title),
+        subtitle: computed(() => props.subtitle),
+        goBack,
+    }));
     const { flash } = useFlash();
     const toast = useToast();
 
@@ -106,6 +149,8 @@
                 :is-dark="isDark"
                 :accent="accent"
                 :sidebar-style="sidebarStyle"
+                :page-title="showTitleInTopbar ? title : ''"
+                :page-subtitle="showTitleInTopbar ? subtitle : ''"
                 @toggle-sidebar="toggle"
                 @toggle-dark="toggleDark"
                 @set-accent="setAccent"
@@ -114,7 +159,13 @@
         </template>
 
         <!-- Content -->
-        <AdminPageHeader :title="title" :subtitle="subtitle" :back-url="backUrl">
+        <AdminPageHeader
+            v-if="showPageHeader"
+            :title="title"
+            :subtitle="subtitle"
+            :back-url="backUrl"
+            :hide-title="showTitleInTopbar"
+        >
             <template #actions>
                 <slot name="page-actions" />
             </template>
