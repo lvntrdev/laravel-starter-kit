@@ -25,18 +25,18 @@ import Material from '@primevue/themes/material';
  */
 const AppPreset = definePreset(Material, {
     primitive: {
-        // ── Border radius / Köşe yarıçapı (kit design language = 6px) ──
+        // ── Border radius / Köşe yarıçapı (kit design language = 5px) ──
         // Material's stock UI radius is `sm: 4px`, which most non-form components
         // (Button, ToggleButton, Chip, Message, Menu, Tag, …) reference via
-        // `{border.radius.sm}`. Bump it to 6px so they match the 6px form controls
+        // `{border.radius.sm}`. Bump it to 5px so they match the 5px form controls
         // (formField below), SkCard and sidebar nav (`--radius` in app.css). Other
         // steps (xs/md/lg/xl) keep Material's values.
         // Material'in stok UI radius'u `sm: 4px`; çoğu form-dışı bileşen (Button,
         // ToggleButton, Chip, Message, Menu, Tag, …) bunu `{border.radius.sm}` ile
-        // kullanır. 6px'e çıkarıp 6px form alanları, SkCard ve sidebar nav ile
+        // kullanır. 5px'e çıkarıp 5px form alanları, SkCard ve sidebar nav ile
         // hizalarız. Diğer adımlar (xs/md/lg/xl) Material değerinde kalır.
         borderRadius: {
-            sm: '6px',
+            sm: '5px',
         },
     },
     semantic: {
@@ -60,19 +60,19 @@ const AppPreset = definePreset(Material, {
         },
 
         // ── Form field / Form alanı (kit override) ──
-        // "Outline ferah + soft" giriş stili: 6px köşe, ferah dikey padding (≈46px
+        // "Outline ferah + soft" giriş stili: 5px köşe, ferah dikey padding (≈46px
         // yükseklik) ve yumuşak (saydam) 3px focus halkası. TÜM form alanlarına
         // (InputText, Select, Textarea, DatePicker, Password vb.) küresel olarak
         // uygulanır. Material'in stok radius/focus değerlerini değiştirir.
         // (Material formField yalnızca şu token'ları tanır: paddingX/Y, borderRadius,
         // focusRing, transitionDuration — borderWidth tokenize değildir.)
-        // "Outline ferah + soft" input style: 6px radius, generous vertical padding
+        // "Outline ferah + soft" input style: 5px radius, generous vertical padding
         // (≈46px height) and a soft (translucent) 3px focus ring. Applied globally to
         // every form field. Overrides Material's stock radius/focus.
         formField: {
             paddingX: '0.875rem',
             paddingY: '0.6875rem',
-            borderRadius: '6px',
+            borderRadius: '5px',
             focusRing: {
                 width: '3px',
                 style: 'solid',
@@ -109,17 +109,17 @@ const AppPreset = definePreset(Material, {
     },
     components: {
         // ── Button / Buton (kit override) ──
-        // Kit-specific horizontal padding + 6px radius (kit design language). All other
+        // Kit-specific horizontal padding + 5px radius (kit design language). All other
         // button spacing/sizing follows Material. `border.radius.sm` already lands buttons
-        // on 6px via the primitive above; this pins it explicitly on the button token so
+        // on 5px via the primitive above; this pins it explicitly on the button token so
         // it is guaranteed regardless of which scale step the style references.
-        // Kit'e özel yatay padding + 6px köşe (kit tasarım dili). Diğer tüm buton
+        // Kit'e özel yatay padding + 5px köşe (kit tasarım dili). Diğer tüm buton
         // boşluk/boyutları Material'i izler. Üstteki primitive `border.radius.sm` zaten
-        // butonu 6px'e taşır; bu, style hangi adımı kullanırsa kullansın garanti olsun
+        // butonu 5px'e taşır; bu, style hangi adımı kullanırsa kullansın garanti olsun
         // diye buton token'ında açıkça sabitlenmiştir.
         button: {
             paddingX: '1rem',
-            borderRadius: '6px',
+            borderRadius: '5px',
         },
 
         // ── Tag / Etiket (kit override) ──

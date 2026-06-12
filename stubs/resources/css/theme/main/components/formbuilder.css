@@ -625,7 +625,7 @@
 .p-multiselect,
 .p-inputotp-input {
     border-width: 1.5px;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 /* Idle / hover / focus / invalid border COLORS are token-driven (preset
@@ -650,15 +650,15 @@
 .p-inputgroup > .p-inputtext:first-child,
 .p-inputgroup > .p-component:first-child,
 .p-inputgroup > .p-inputwrapper:first-child > .p-component {
-    border-start-start-radius: 6px;
-    border-end-start-radius: 6px;
+    border-start-start-radius: 5px;
+    border-end-start-radius: 5px;
 }
 
 .p-inputgroup > .p-inputtext:last-child,
 .p-inputgroup > .p-component:last-child,
 .p-inputgroup > .p-inputwrapper:last-child > .p-component {
-    border-start-end-radius: 6px;
-    border-end-end-radius: 6px;
+    border-start-end-radius: 5px;
+    border-end-end-radius: 5px;
 }
 
 /* Addons match the 1.5px outline and share the group's outer 6px radius. */
@@ -676,13 +676,13 @@
 }
 
 .p-inputgroupaddon:first-child {
-    border-start-start-radius: 6px;
-    border-end-start-radius: 6px;
+    border-start-start-radius: 5px;
+    border-end-start-radius: 5px;
 }
 
 .p-inputgroupaddon:last-child {
-    border-start-end-radius: 6px;
-    border-end-end-radius: 6px;
+    border-start-end-radius: 5px;
+    border-end-end-radius: 5px;
 }
 
 /* Roomy "ferah" height — scoped to forms so dense non-form inputs
@@ -709,7 +709,7 @@
 /* ── Checkbox & Radio controls — 1.5px outline, 6px checkbox box ── */
 .p-checkbox-box {
     border-width: 1.5px;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 .p-radiobutton-box {
@@ -725,7 +725,7 @@
     gap: 0.7rem;
     padding: 0.8rem 0.9rem;
     border: 1.5px solid var(--p-surface-200);
-    border-radius: 6px;
+    border-radius: 5px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
 }
@@ -788,12 +788,12 @@
     padding: 4px;
     background: var(--p-surface-100);
     border: 1.5px solid var(--p-surface-200);
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 .p-selectbutton .p-togglebutton {
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     background: transparent;
     color: var(--p-surface-600);
     font-weight: 600;
@@ -836,7 +836,7 @@
 /* ── Standalone ToggleButton — 1.5px outline; brand fill when on ── */
 .p-togglebutton {
     border-width: 1.5px;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 .p-togglebutton.p-togglebutton-checked {
@@ -848,7 +848,7 @@
 /* ── MultiSelect chips — brand-tinted pills (display="chip") ── */
 .p-multiselect .p-multiselect-chip,
 .p-multiselect .p-chip {
-    border-radius: 6px;
+    border-radius: 5px;
     background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
     color: var(--p-primary-color);
 }
@@ -874,7 +874,7 @@
     padding: 3px;
     background: var(--p-surface-100);
     border: 1px solid var(--p-surface-200);
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 .sk-translatable-field .p-tablist-active-bar {
@@ -888,7 +888,7 @@
     margin: 0;
     padding: 0.4rem 0.75rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--p-surface-600);
     font-size: 0.8125rem;
     font-weight: 600;
@@ -933,7 +933,7 @@
 
 /* ── File dropzone — 6px radius + circular brand icon (design .drop) ── */
 .sk-fb__upload-zone {
-    border-radius: 6px;
+    border-radius: 5px;
     border-width: 1.5px;
 }
 

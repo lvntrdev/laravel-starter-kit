@@ -205,6 +205,7 @@ return [
         'subtitle' => 'Declarative forms — every FB.* field type plus the card, aside and divided layout compositions.',
         'intro' => 'Forms are configured declaratively with the FB builder and rendered by <SkForm>. Each example below is a live <SkForm> in v-model mode (no submit) — read the heading for the FB.* factory or layout method it demonstrates.',
         'docs' => 'FormBuilder Docs',
+        'field_count' => ':count fields',
         'sections' => [
             'text' => [
                 'title' => 'Text / number inputs',

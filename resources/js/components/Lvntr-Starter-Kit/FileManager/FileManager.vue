@@ -1227,7 +1227,7 @@
 
             <!-- İçerik paneli: breadcrumb başlığı + araç çubuğu + gövde -->
             <div
-                class="fm-content-panel relative flex min-h-0 min-w-0 flex-col rounded-[6px] border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
+                class="fm-content-panel relative flex min-h-0 min-w-0 flex-col rounded-[5px] border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
                 :class="{ 'border-primary-300 bg-primary-50/20 dark:bg-primary-950/10': isDropping }"
             >
                 <!-- Başlık: breadcrumb + sayaç + arama + sıralama + görünüm -->
@@ -1277,7 +1277,7 @@
                     <div class="ml-auto flex flex-wrap items-center gap-2">
                         <!-- Arama -->
                         <div
-                            class="flex h-9 w-full max-w-xs items-center gap-2 rounded-[6px] border border-surface-200 bg-surface-0 px-3 text-surface-400 transition-all focus-within:border-primary-500 focus-within:ring-[3px] focus-within:ring-primary-500/15 dark:border-surface-700 dark:bg-surface-900 sm:w-[220px]"
+                            class="flex h-9 w-full max-w-xs items-center gap-2 rounded-[5px] border border-surface-200 bg-surface-0 px-3 text-surface-400 transition-all focus-within:border-primary-500 focus-within:ring-[3px] focus-within:ring-primary-500/15 dark:border-surface-700 dark:bg-surface-900 sm:w-[220px]"
                         >
                             <i class="pi pi-search" style="font-size: 0.78rem" />
                             <input
@@ -1293,7 +1293,7 @@
                             <button
                                 v-tooltip.bottom="trans('sk-file-manager.labels.sort_by')"
                                 type="button"
-                                class="grid h-9 w-9 place-items-center rounded-[6px] border border-surface-200 bg-surface-0 text-surface-500 transition-colors hover:bg-surface-100 hover:text-surface-700 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200"
+                                class="grid h-9 w-9 place-items-center rounded-[5px] border border-surface-200 bg-surface-0 text-surface-500 transition-colors hover:bg-surface-100 hover:text-surface-700 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200"
                                 :aria-label="trans('sk-file-manager.labels.sort_by')"
                                 @click.stop="sortOpen = !sortOpen"
                             >
@@ -1301,14 +1301,14 @@
                             </button>
                             <div
                                 v-if="sortOpen"
-                                class="absolute right-0 top-[calc(100%+6px)] z-40 min-w-[170px] rounded-[6px] border border-surface-200 bg-surface-0 p-1.5 dark:border-surface-600 dark:bg-surface-800"
+                                class="absolute right-0 top-[calc(100%+6px)] z-40 min-w-[170px] rounded-[5px] border border-surface-200 bg-surface-0 p-1.5 dark:border-surface-600 dark:bg-surface-800"
                                 @click.stop
                             >
                                 <button
                                     v-for="opt in sortOptions"
                                     :key="opt.key"
                                     type="button"
-                                    class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
+                                    class="flex w-full items-center gap-2.5 rounded-[5px] px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
                                     :class="
                                         activeSortKey === opt.key
                                             ? 'font-semibold text-primary-600 dark:text-primary-300'
@@ -1330,7 +1330,7 @@
                         <!-- Izgara / liste -->
                         <div
                             v-if="quickView !== 'trash'"
-                            class="flex overflow-hidden rounded-[6px] border border-surface-200 dark:border-surface-700"
+                            class="flex overflow-hidden rounded-[5px] border border-surface-200 dark:border-surface-700"
                         >
                             <button
                                 v-tooltip.bottom="trans('sk-file-manager.labels.view_grid')"
@@ -1390,10 +1390,10 @@
                         <div v-else class="flex flex-col gap-4">
                             <!-- Bilgi şeridi + boşalt -->
                             <div
-                                class="flex flex-wrap items-center gap-3 rounded-[6px] border border-amber-500/30 bg-amber-50 px-4 py-3 dark:border-amber-400/20 dark:bg-amber-500/10"
+                                class="flex flex-wrap items-center gap-3 rounded-[5px] border border-amber-500/30 bg-amber-50 px-4 py-3 dark:border-amber-400/20 dark:bg-amber-500/10"
                             >
                                 <span
-                                    class="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                    class="grid h-8 w-8 shrink-0 place-items-center rounded-[5px] bg-amber-500/15 text-amber-600 dark:text-amber-400"
                                 >
                                     <i class="pi pi-info-circle" style="font-size: 0.9rem" />
                                 </span>
@@ -1411,7 +1411,7 @@
                                 </div>
                                 <button
                                     type="button"
-                                    class="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[6px] border border-rose-500/35 px-3.5 text-[12.5px] font-semibold text-rose-600 transition-colors hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-45 dark:text-rose-400"
+                                    class="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[5px] border border-rose-500/35 px-3.5 text-[12.5px] font-semibold text-rose-600 transition-colors hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-45 dark:text-rose-400"
                                     :disabled="readonly"
                                     @click="confirmEmptyTrash"
                                 >
@@ -1422,7 +1422,7 @@
 
                             <!-- Silinen öğeler -->
                             <div
-                                class="divide-y divide-surface-200 overflow-hidden rounded-[6px] border border-surface-200 dark:divide-surface-700 dark:border-surface-700"
+                                class="divide-y divide-surface-200 overflow-hidden rounded-[5px] border border-surface-200 dark:divide-surface-700 dark:border-surface-700"
                             >
                                 <div
                                     v-for="(folder, trashFolderIndex) in filteredFolders"
@@ -1431,7 +1431,7 @@
                                     @contextmenu.prevent="(ev) => showFolderMenu(ev, folder)"
                                 >
                                     <span
-                                        class="grid h-9 w-9 shrink-0 place-items-center rounded-[6px]"
+                                        class="grid h-9 w-9 shrink-0 place-items-center rounded-[5px]"
                                         :class="[folderPaletteAt(trashFolderIndex).tint, folderPaletteAt(trashFolderIndex).text]"
                                     >
                                         <i class="pi pi-folder" style="font-size: 0.9rem" />
@@ -1451,7 +1451,7 @@
                                     <div class="flex shrink-0 items-center gap-1.5">
                                         <button
                                             type="button"
-                                            class="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-surface-200 bg-surface-0 px-2.5 text-[12.5px] font-semibold text-surface-700 transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200 dark:hover:text-primary-300"
+                                            class="inline-flex h-8 items-center gap-1.5 rounded-[5px] border border-surface-200 bg-surface-0 px-2.5 text-[12.5px] font-semibold text-surface-700 transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200 dark:hover:text-primary-300"
                                             :disabled="readonly"
                                             @click="restoreFolder(folder)"
                                         >
@@ -1460,7 +1460,7 @@
                                         </button>
                                         <button
                                             type="button"
-                                            class="grid h-8 w-8 place-items-center rounded-[6px] border border-surface-200 bg-surface-0 text-surface-400 transition-colors hover:border-rose-500/35 hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:hover:text-rose-400"
+                                            class="grid h-8 w-8 place-items-center rounded-[5px] border border-surface-200 bg-surface-0 text-surface-400 transition-colors hover:border-rose-500/35 hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:hover:text-rose-400"
                                             :disabled="readonly"
                                             :aria-label="trans('sk-file-manager.labels.permanently_delete')"
                                             @click="confirmPermanentDeleteFolder(folder)"
@@ -1477,7 +1477,7 @@
                                     @contextmenu.prevent="(ev) => showFileMenu(ev, file)"
                                 >
                                     <span
-                                        class="grid h-9 w-9 shrink-0 place-items-center rounded-[6px]"
+                                        class="grid h-9 w-9 shrink-0 place-items-center rounded-[5px]"
                                         :class="[paletteForMime(file.mime_type).tint, paletteForMime(file.mime_type).text]"
                                     >
                                         <i :class="paletteForMime(file.mime_type).icon" style="font-size: 0.9rem" />
@@ -1497,7 +1497,7 @@
                                     <div class="flex shrink-0 items-center gap-1.5">
                                         <button
                                             type="button"
-                                            class="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-surface-200 bg-surface-0 px-2.5 text-[12.5px] font-semibold text-surface-700 transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200 dark:hover:text-primary-300"
+                                            class="inline-flex h-8 items-center gap-1.5 rounded-[5px] border border-surface-200 bg-surface-0 px-2.5 text-[12.5px] font-semibold text-surface-700 transition-colors hover:border-primary-500/40 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200 dark:hover:text-primary-300"
                                             :disabled="readonly"
                                             @click="restoreFile(file)"
                                         >
@@ -1506,7 +1506,7 @@
                                         </button>
                                         <button
                                             type="button"
-                                            class="grid h-8 w-8 place-items-center rounded-[6px] border border-surface-200 bg-surface-0 text-surface-400 transition-colors hover:border-rose-500/35 hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:hover:text-rose-400"
+                                            class="grid h-8 w-8 place-items-center rounded-[5px] border border-surface-200 bg-surface-0 text-surface-400 transition-colors hover:border-rose-500/35 hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:bg-surface-900 dark:hover:text-rose-400"
                                             :disabled="readonly"
                                             :aria-label="trans('sk-file-manager.labels.permanently_delete')"
                                             @click="confirmPermanentDeleteFile(file)"
@@ -1576,7 +1576,7 @@
 
                 <div
                     v-if="fm.loading.contents"
-                    class="absolute inset-0 z-20 flex items-center justify-center rounded-[6px] bg-white/50 dark:bg-surface-900/50"
+                    class="absolute inset-0 z-20 flex items-center justify-center rounded-[5px] bg-white/50 dark:bg-surface-900/50"
                 >
                     <ProgressSpinner style="width: 32px; height: 32px" stroke-width="4" />
                 </div>
@@ -1598,7 +1598,7 @@
             class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-primary-500/10 backdrop-blur-sm"
         >
             <div
-                class="flex flex-col items-center gap-3 rounded-[6px] border-2 border-dashed border-primary-400 bg-surface-0/95 px-10 py-8 text-primary-700 shadow-xl dark:border-primary-500 dark:bg-surface-900/95 dark:text-primary-200"
+                class="flex flex-col items-center gap-3 rounded-[5px] border-2 border-dashed border-primary-400 bg-surface-0/95 px-10 py-8 text-primary-700 shadow-xl dark:border-primary-500 dark:bg-surface-900/95 dark:text-primary-200"
             >
                 <i class="pi pi-cloud-upload" style="font-size: 3.5rem" />
                 <span class="text-base font-semibold">{{ trans('sk-file-manager.labels.drop_files_here') }}</span>
@@ -1611,7 +1611,7 @@
             class="absolute inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
         >
             <div
-                class="flex w-88 max-w-[90%] flex-col gap-3 rounded-[6px] bg-surface-0 p-6 shadow-2xl dark:bg-surface-900"
+                class="flex w-88 max-w-[90%] flex-col gap-3 rounded-[5px] bg-surface-0 p-6 shadow-2xl dark:bg-surface-900"
             >
                 <div class="flex items-center gap-3">
                     <i class="pi pi-spin pi-spinner shrink-0 text-primary-500" style="font-size: 1.4rem" />
@@ -1728,7 +1728,7 @@
                         <!-- İndir + Paylaş + Taşı + Sil — çöp görünümünde seçim yok, satır içi aksiyonlar kullanılır -->
                         <button
                             type="button"
-                            class="flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
                             :disabled="!hasSelectedFiles"
                             @click="bulkDownload"
                         >
@@ -1737,7 +1737,7 @@
                         </button>
                         <button
                             type="button"
-                            class="flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
                             :disabled="!hasSelectedFiles"
                             @click="bulkShare"
                         >
@@ -1746,7 +1746,7 @@
                         </button>
                         <button
                             type="button"
-                            class="flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
                             :disabled="readonly"
                             @click="bulkMove"
                         >
@@ -1755,7 +1755,7 @@
                         </button>
                         <button
                             type="button"
-                            class="flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px] font-medium text-rose-300 transition-colors hover:bg-rose-500/15 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                            class="flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[13px] font-medium text-rose-300 transition-colors hover:bg-rose-500/15 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
                             :disabled="readonly"
                             @click="confirmBulkDelete"
                         >
@@ -1766,7 +1766,7 @@
                         <span class="mx-1 h-5 w-px bg-white/15" />
                         <button
                             type="button"
-                            class="flex h-8 w-8 items-center justify-center rounded-[6px] text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                            class="flex h-8 w-8 items-center justify-center rounded-[5px] text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                             :aria-label="trans('sk-file-manager.labels.close')"
                             @click="fm.clearSelection"
                         >

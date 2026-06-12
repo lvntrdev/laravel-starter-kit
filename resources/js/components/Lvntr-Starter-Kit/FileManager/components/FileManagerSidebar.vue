@@ -71,12 +71,12 @@
 
 <template>
     <aside
-        class="fm-sidebar flex h-full flex-col gap-1 overflow-y-auto rounded-[6px] border border-surface-200 bg-surface-0 p-3 dark:border-surface-700 dark:bg-surface-900"
+        class="fm-sidebar flex h-full flex-col gap-1 overflow-y-auto rounded-[5px] border border-surface-200 bg-surface-0 p-3 dark:border-surface-700 dark:bg-surface-900"
     >
         <!-- Yükleme butonu — favoriler/çöp sanal görünümlerinde hedef klasör yok, devre dışı -->
         <button
             type="button"
-            class="mb-2 flex h-10 shrink-0 items-center justify-center gap-2 rounded-[6px] bg-primary-500 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            class="mb-2 flex h-10 shrink-0 items-center justify-center gap-2 rounded-[5px] bg-primary-500 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="readonly || uploading || quickView === 'favorites' || quickView === 'trash'"
             @click="emit('upload')"
         >
@@ -89,7 +89,7 @@
             v-for="item in quickItems"
             :key="item.key"
             type="button"
-            class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
+            class="flex w-full items-center gap-2.5 rounded-[5px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
             :class="navClass(quickView === item.key && currentFolderId === null)"
             @click="emit('select-quick', item.key)"
         >
@@ -102,7 +102,7 @@
 
             <button
                 type="button"
-                class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
+                class="flex w-full items-center gap-2.5 rounded-[5px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
                 :class="navClass(quickView === 'trash')"
                 @click="emit('select-quick', 'trash')"
             >
@@ -146,7 +146,7 @@
                 v-else
                 :key="folder.id"
                 type="button"
-                class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
+                class="flex w-full items-center gap-2.5 rounded-[5px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors"
                 :class="navClass(currentFolderId === folder.id)"
                 @click="emit('select-folder', folder.id)"
             >
@@ -160,7 +160,7 @@
 
             <button
                 type="button"
-                class="flex items-center gap-2 rounded-[6px] border border-dashed border-surface-300 px-2.5 py-2 text-[12.5px] font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
+                class="flex items-center gap-2 rounded-[5px] border border-dashed border-surface-300 px-2.5 py-2 text-[12.5px] font-medium text-surface-500 transition-colors hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-surface-600 dark:text-surface-400 dark:hover:border-primary-500 dark:hover:bg-primary-950/20 dark:hover:text-primary-300"
                 :disabled="readonly"
                 @click="emit('new-folder')"
             >

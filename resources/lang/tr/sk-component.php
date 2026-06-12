@@ -205,6 +205,7 @@ return [
         'subtitle' => 'Bildirimsel formlar — tüm FB.* alan tipleri ve kart, aside, ayraçlı layout düzenleri.',
         'intro' => 'Formlar FB builder ile bildirimsel olarak yapılandırılır ve <SkForm> ile render edilir. Aşağıdaki her örnek v-model modunda canlı bir <SkForm>\'dur (submit yok) — başlık, gösterilen FB.* factory\'sini veya layout metodunu belirtir.',
         'docs' => 'FormBuilder Dokümanı',
+        'field_count' => ':count alan',
         'sections' => [
             'text' => [
                 'title' => 'Metin / sayı girişleri',

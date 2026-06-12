@@ -33,7 +33,7 @@
     background: transparent;
     border: 0;
     box-shadow: none;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 /* Defaults — set BEFORE the per-severity tokens so a severity class (equal
@@ -163,7 +163,7 @@
     width: 100%;
     max-width: 440px;
     padding: 13px 15px;
-    border-radius: 6px;
+    border-radius: 5px;
     background: color-mix(in srgb, var(--toast-c) 13%, var(--toast-surface));
     border: 1px solid color-mix(in srgb, var(--toast-c) 22%, transparent);
     box-shadow:
@@ -233,7 +233,7 @@
 .sk-toast-btn {
     height: 32px;
     padding: 0 14px;
-    border-radius: 6px;
+    border-radius: 5px;
     font-size: 12.5px;
     font-weight: 600;
     border: 1.5px solid transparent;
@@ -268,7 +268,7 @@
     place-items: center;
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 5px;
     border: 0;
     background: transparent;
     color: var(--p-text-muted-color, #64748b);

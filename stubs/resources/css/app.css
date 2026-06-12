@@ -3,12 +3,17 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Kit design radius — the bare `rounded` utility resolves `var(--radius)`
-   (Tailwind stock 0.25rem / 4px). Bump it to 6px so every `@apply rounded`
+   (Tailwind stock 0.25rem / 4px). Bump it to 5px so every `@apply rounded`
    surface — SkCard, sidebar nav (.nav-link / .nav-group), menus — matches the
-   6px form controls and PrimeVue buttons. Suffixed steps (rounded-sm / -md / -lg
+   5px form controls and PrimeVue buttons. Suffixed steps (rounded-sm / -md / -lg
    / -full) are untouched. */
 @theme {
-    --radius: 0.375rem; /* 6px */
+    --radius: 0.3125rem; /* 5px */
+    /* Kit design language = 5px. `rounded-md` is the kit's default box radius on
+       cards, settings nav items, color swatches and segmented controls — pin it to
+       5px too so it matches the bare `rounded` above. rounded-lg/-xl (larger steps)
+       stay at Tailwind stock. */
+    --radius-md: 0.3125rem; /* 5px */
 }
 
 @layer tailwind-base, primevue, tailwind-utilities;

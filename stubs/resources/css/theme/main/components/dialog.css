@@ -289,7 +289,7 @@
 
 .sk-dlg__body::-webkit-scrollbar-thumb {
     background: var(--p-surface-200);
-    border-radius: 6px;
+    border-radius: 5px;
     border: 2px solid var(--p-surface-0);
 }
 

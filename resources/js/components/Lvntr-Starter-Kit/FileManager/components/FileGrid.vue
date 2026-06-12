@@ -264,10 +264,10 @@
 
     // Hover aksiyon butonu — önizleme üstü beyaz kareler.
     const actBtnClass =
-        'grid h-7 w-7 place-items-center rounded-[6px] border border-surface-200 bg-white/95 text-surface-500 transition-colors hover:text-primary-600 dark:border-surface-600 dark:bg-surface-900/90 dark:text-surface-300 dark:hover:text-primary-300';
+        'grid h-7 w-7 place-items-center rounded-[5px] border border-surface-200 bg-white/95 text-surface-500 transition-colors hover:text-primary-600 dark:border-surface-600 dark:bg-surface-900/90 dark:text-surface-300 dark:hover:text-primary-300';
     // Liste satırı aksiyon butonu — çerçevesiz mini ikon.
     const rowActBtnClass =
-        'grid h-7 w-7 place-items-center rounded-[6px] text-surface-400 transition-colors hover:bg-surface-200/60 hover:text-surface-700 dark:hover:bg-surface-700/60 dark:hover:text-surface-200';
+        'grid h-7 w-7 place-items-center rounded-[5px] text-surface-400 transition-colors hover:bg-surface-200/60 hover:text-surface-700 dark:hover:bg-surface-700/60 dark:hover:text-surface-200';
 </script>
 
 <template>
@@ -325,7 +325,7 @@
                         tabindex="0"
                         :draggable="!props.readonly"
                         :data-fm-key="`folder:${folder.id}`"
-                        class="fm-tile group relative flex flex-col gap-4 overflow-hidden rounded-[6px] border p-5 text-left transition-colors"
+                        class="fm-tile group relative flex flex-col gap-4 overflow-hidden rounded-[5px] border p-5 text-left transition-colors"
                         :class="[
                             isSelected('folder', folder.id)
                                 ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30'
@@ -350,7 +350,7 @@
 
                         <div class="flex items-center gap-2.5">
                             <span
-                                class="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] text-white"
+                                class="grid h-10 w-10 shrink-0 place-items-center rounded-[5px] text-white"
                                 :class="folderPaletteAt(folderIndex).solid"
                             >
                                 <i class="pi pi-folder" style="font-size: 1.05rem" />
@@ -365,7 +365,7 @@
                             <!-- Seçim -->
                             <button
                                 type="button"
-                                class="grid h-5 w-5 shrink-0 place-items-center rounded-[6px] border-[1.5px] transition-all"
+                                class="grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border-[1.5px] transition-all"
                                 :class="
                                     isSelected('folder', folder.id)
                                         ? 'border-primary-500 bg-primary-500 text-white opacity-100'
@@ -380,7 +380,7 @@
                             <!-- Favori -->
                             <button
                                 type="button"
-                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[6px] transition-all"
+                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[5px] transition-all"
                                 :class="[
                                     folder.is_favorited
                                         ? 'text-rose-500 opacity-100'
@@ -404,7 +404,7 @@
                             <!-- Menü -->
                             <button
                                 type="button"
-                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[6px] text-surface-400 opacity-0 transition-all hover:bg-surface-200/60 hover:text-surface-700 group-hover:opacity-100 dark:hover:bg-surface-700/60 dark:hover:text-surface-200"
+                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[5px] text-surface-400 opacity-0 transition-all hover:bg-surface-200/60 hover:text-surface-700 group-hover:opacity-100 dark:hover:bg-surface-700/60 dark:hover:text-surface-200"
                                 aria-haspopup="menu"
                                 @click.stop="(ev) => emit('context-folder', ev, folder)"
                             >
@@ -459,7 +459,7 @@
                         tabindex="0"
                         :draggable="!props.readonly"
                         :data-fm-key="`file:${file.id}`"
-                        class="fm-tile group relative flex flex-col overflow-hidden rounded-[6px] border text-left transition-colors"
+                        class="fm-tile group relative flex flex-col overflow-hidden rounded-[5px] border text-left transition-colors"
                         :class="
                             isSelected('file', file.id)
                                 ? 'border-primary-500'
@@ -492,7 +492,7 @@
                             </div>
                             <span
                                 v-else
-                                class="grid h-14 w-14 place-items-center rounded-[6px] text-white"
+                                class="grid h-14 w-14 place-items-center rounded-[5px] text-white"
                                 :class="paletteForMime(file.mime_type).solid"
                             >
                                 <i :class="paletteForMime(file.mime_type).icon" style="font-size: 1.5rem" />
@@ -500,7 +500,7 @@
 
                             <!-- Uzantı rozeti -->
                             <span
-                                class="absolute left-2 top-2 rounded-[6px] border border-surface-200 bg-white/95 px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wide text-surface-700 dark:border-surface-600 dark:bg-surface-900/85 dark:text-surface-200"
+                                class="absolute left-2 top-2 rounded-[5px] border border-surface-200 bg-white/95 px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wide text-surface-700 dark:border-surface-600 dark:bg-surface-900/85 dark:text-surface-200"
                             >
                                 {{ extOf(file) }}
                             </span>
@@ -508,7 +508,7 @@
                             <!-- Seçim -->
                             <button
                                 type="button"
-                                class="absolute left-2 top-2 z-10 grid h-5 w-5 place-items-center rounded-[6px] border-[1.5px] transition-all"
+                                class="absolute left-2 top-2 z-10 grid h-5 w-5 place-items-center rounded-[5px] border-[1.5px] transition-all"
                                 :class="
                                     isSelected('file', file.id)
                                         ? 'border-primary-500 bg-primary-500 text-white opacity-100'
@@ -571,7 +571,7 @@
                         <!-- Alt bilgi -->
                         <div class="flex items-center gap-2 px-2.5 py-2">
                             <span
-                                class="grid h-6 w-6 shrink-0 place-items-center rounded-[6px]"
+                                class="grid h-6 w-6 shrink-0 place-items-center rounded-[5px]"
                                 :class="[paletteForMime(file.mime_type).tint, paletteForMime(file.mime_type).text]"
                             >
                                 <i :class="paletteForMime(file.mime_type).icon" style="font-size: 0.7rem" />
@@ -594,7 +594,7 @@
                     <div
                         v-for="item in pending"
                         :key="item.tempId"
-                        class="fm-tile fm-pending-tile relative flex flex-col overflow-hidden rounded-[6px] border text-left"
+                        class="fm-tile fm-pending-tile relative flex flex-col overflow-hidden rounded-[5px] border text-left"
                         :class="
                             item.error
                                 ? 'border-rose-300 dark:border-rose-800'
@@ -612,7 +612,7 @@
                             />
                             <span
                                 v-else
-                                class="grid h-14 w-14 place-items-center rounded-[6px] text-white"
+                                class="grid h-14 w-14 place-items-center rounded-[5px] text-white"
                                 :class="paletteForMime(item.mimeType).solid"
                             >
                                 <i :class="paletteForMime(item.mimeType).icon" style="font-size: 1.5rem" />
@@ -653,7 +653,7 @@
                             <button
                                 v-if="item.error"
                                 type="button"
-                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[6px] text-surface-400 transition-colors hover:bg-surface-200/60 hover:text-surface-700 dark:hover:bg-surface-700/60"
+                                class="grid h-7 w-7 shrink-0 place-items-center rounded-[5px] text-surface-400 transition-colors hover:bg-surface-200/60 hover:text-surface-700 dark:hover:bg-surface-700/60"
                                 :title="trans('sk-file-manager.labels.dismiss')"
                                 @click.stop="emit('dismiss-pending', item.tempId)"
                             >
@@ -666,7 +666,7 @@
                 <!-- Liste -->
                 <div
                     v-else
-                    class="divide-y divide-surface-200 overflow-hidden rounded-[6px] border border-surface-200 dark:divide-surface-700 dark:border-surface-700"
+                    class="divide-y divide-surface-200 overflow-hidden rounded-[5px] border border-surface-200 dark:divide-surface-700 dark:border-surface-700"
                 >
                     <div
                         v-for="file in files"
@@ -686,7 +686,7 @@
                     >
                         <button
                             type="button"
-                            class="grid h-5 w-5 shrink-0 place-items-center rounded-[6px] border-[1.5px] transition-all"
+                            class="grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border-[1.5px] transition-all"
                             :class="
                                 isSelected('file', file.id)
                                     ? 'border-primary-500 bg-primary-500 text-white opacity-100'
@@ -699,7 +699,7 @@
                         </button>
 
                         <span
-                            class="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[6px]"
+                            class="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[5px]"
                             :class="[paletteForMime(file.mime_type).tint, paletteForMime(file.mime_type).text]"
                         >
                             <img

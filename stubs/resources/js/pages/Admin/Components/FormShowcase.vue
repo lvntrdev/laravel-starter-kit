@@ -4,6 +4,7 @@
     import SkCard from '@lvntr/components/ui/SkCard.vue';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import SkFormInput from '@lvntr/components/FormBuilder/SkFormInput.vue';
     import { trans } from 'laravel-vue-i18n';
 
     // Showcase-only literal labels: this is a developer-facing (system_admin) page
@@ -138,18 +139,35 @@
             .build(),
     );
 
-    const boolConfig = computed(() =>
-        FB.form()
-            .layout('vertical')
-            .cols(2)
-            .isCard(false)
-            .addFields(
-                FB.checkbox().key('terms').label('Kullanım koşullarını kabul ediyorum').trans(false).optional().controlPosition('right'),
-                FB.toggleSwitch().key('published').label('Yayın durumu').trans(false).optional().controlPosition('right'),
-                FB.toggleButton().key('featured').label('Öne çıkar').trans(false).optional().onLabel('Öne çıkıyor').offLabel('Öne çıkar').onIcon('pi pi-star-fill').offIcon('pi pi-star'),
-            )
-            .build(),
-    );
+    // ── Boolean / toggle — showcase-only hand-rendered chrome ──────────────────
+    // Unlike the other sections, each control is presented with its FB.* factory
+    // as a code badge and its own caption, matching the design mock. Controls render
+    // through SkFormInput directly (not SkForm) so this demo-only chrome never leaks
+    // into the shipped builder/SkForm.
+    const boolDemo = computed(() => [
+        {
+            code: 'FB.checkbox()',
+            label: 'Onay',
+            caption: 'Kullanım koşullarını kabul ediyorum',
+            field: FB.checkbox().key('terms').trans(false).build(),
+        },
+        {
+            code: 'FB.toggleSwitch()',
+            label: 'Yayın durumu',
+            caption: 'Yayında',
+            field: FB.toggleSwitch().key('published').trans(false).build(),
+        },
+        {
+            code: 'FB.toggleButton()',
+            label: 'Öne çıkar',
+            caption: '',
+            field: FB.toggleButton().key('featured').trans(false)
+                .onLabel('Öne çıkıyor').offLabel('Öne çıkar')
+                .onIcon('pi pi-star-fill').offIcon('pi pi-star')
+                .props({ class: 'w-full' })
+                .build(),
+        },
+    ]);
 
     const specialConfig = computed(() =>
         FB.form()
@@ -293,17 +311,29 @@
                 <SkForm v-model="choiceModel" :config="choiceConfig" />
             </SkCard>
 
-            <!-- 03 · Boolean -->
+            <!-- 03 · Boolean — showcase-only layout: per-field FB code badge + caption -->
             <SkCard>
-                <div class="mb-5 flex items-start gap-3">
-                    <span class="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-md font-mono text-[11.5px] font-semibold"
-                          :style="{ color: 'var(--p-primary-color)', background: 'color-mix(in srgb, var(--p-primary-color) 10%, transparent)' }">03</span>
-                    <div>
-                        <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">{{ $t('sk-component.form.sections.boolean.title') }}</h3>
-                        <p class="mt-0.5 text-[12.5px] leading-relaxed text-surface-500 dark:text-surface-400">{{ $t('sk-component.form.sections.boolean.desc') }}</p>
+                <div class="mb-5 flex items-center gap-2.5 border-b border-surface-200 pb-4 dark:border-surface-700">
+                    <h3 class="text-[14.5px] font-semibold tracking-tight text-surface-800 dark:text-surface-100">{{ $t('sk-component.form.sections.boolean.title') }}</h3>
+                    <span class="text-[12px] font-medium text-surface-400">{{ trans('sk-component.form.field_count', { count: String(boolDemo.length) }) }}</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+                    <div v-for="item in boolDemo" :key="item.field.key">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-[13px] font-semibold text-surface-700 dark:text-surface-200">{{ item.label }}</span>
+                            <span class="rounded bg-surface-100 px-2 py-0.5 font-mono text-[11px] text-surface-500 dark:bg-surface-800 dark:text-surface-400">{{ item.code }}</span>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2.5">
+                            <SkFormInput
+                                :field="item.field"
+                                :value="boolModel[item.field.key]"
+                                @update="(v) => (boolModel[item.field.key] = v)"
+                            />
+                            <label v-if="item.caption" :for="item.field.key" class="text-[13px] text-surface-600 dark:text-surface-300">{{ item.caption }}</label>
+                        </div>
                     </div>
                 </div>
-                <SkForm v-model="boolModel" :config="boolConfig" />
             </SkCard>
 
             <!-- 04 · Special -->

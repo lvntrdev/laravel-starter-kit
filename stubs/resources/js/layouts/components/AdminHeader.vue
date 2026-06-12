@@ -196,7 +196,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <button
                             type="button"
-                            class="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition"
+                            class="flex items-center gap-2.5 rounded-[5px] border px-3.5 py-3 text-left transition"
                             :class="
                                 sidebarStyle === 'colored'
                                     ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10'
@@ -218,7 +218,7 @@
 
                         <button
                             type="button"
-                            class="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition"
+                            class="flex items-center gap-2.5 rounded-[5px] border px-3.5 py-3 text-left transition"
                             :class="
                                 sidebarStyle === 'light'
                                     ? 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-500/10'
@@ -252,7 +252,7 @@
                             @click="selectAccent('default')"
                         >
                             <span
-                                class="flex h-12 w-full items-center justify-center rounded-lg border border-surface-200 bg-surface-0 text-surface-400 transition dark:border-surface-700 dark:bg-surface-800"
+                                class="flex h-12 w-full items-center justify-center rounded-[5px] border border-surface-200 bg-surface-0 text-surface-400 transition dark:border-surface-700 dark:bg-surface-800"
                                 :class="{ 'ring-2 ring-primary-500 ring-offset-1 ring-offset-surface-0 dark:ring-offset-surface-900': accent === 'default' }"
                             >
                                 <i class="pi pi-ban" />
@@ -272,7 +272,7 @@
                             @click="selectAccent(color)"
                         >
                             <span
-                                class="flex h-12 w-full items-center justify-center rounded-lg text-white shadow-sm transition"
+                                class="flex h-12 w-full items-center justify-center rounded-[5px] text-white shadow-sm transition"
                                 :style="{ background: ACCENT_SWATCH[color] }"
                                 :class="{ 'ring-2 ring-surface-900 ring-offset-1 ring-offset-surface-0 dark:ring-surface-0 dark:ring-offset-surface-900': accent === color }"
                             >
