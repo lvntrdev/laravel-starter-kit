@@ -1,9 +1,9 @@
 /**
  * Header Popup Menus
  *
- * Refined styling for the admin-header user & locale dropdowns.
- * Targets PrimeVue Menu popup instances that carry a `.sk-user-menu`
- * or `.sk-locale-menu` root class.
+ * Refined styling for the admin-header user dropdown — a PrimeVue
+ * TieredMenu popup carrying a `.sk-user-menu` root class. The language
+ * row is a nested submenu that flies out to the side.
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -21,9 +21,8 @@
     }
 }
 
-.sk-user-menu.p-menu,
-.sk-locale-menu.p-menu {
-    @apply mt-2.5 overflow-hidden rounded-md border border-surface-200 bg-surface-0 p-0 dark:border-surface-700 dark:bg-surface-800;
+.sk-user-menu.p-tieredmenu {
+    @apply mt-2.5 min-w-80 rounded-md border border-surface-200 bg-surface-0 p-0 dark:border-surface-700 dark:bg-surface-800;
     transform-origin: top right;
     animation: sk-menu-enter 180ms cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow:
@@ -32,36 +31,53 @@
         0 24px 48px -16px rgba(15, 23, 42, 0.14);
 }
 
-:root.dark .sk-user-menu.p-menu,
-:root.dark .sk-locale-menu.p-menu {
+:root.dark .sk-user-menu.p-tieredmenu {
     box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.3),
         0 12px 28px -8px rgba(0, 0, 0, 0.55),
         0 24px 48px -16px rgba(0, 0, 0, 0.6);
 }
 
-.sk-user-menu.p-menu {
-    @apply min-w-80;
+.sk-user-menu .p-tieredmenu-root-list,
+.sk-user-menu .p-tieredmenu-submenu {
+    @apply flex list-none flex-col gap-0.5 p-1.5;
 }
 
-.sk-locale-menu.p-menu {
-    @apply min-w-56;
+/* Flyout panel — the language submenu pops out to the left, flush
+   against the main panel. PrimeVue's `-100%` flip is relative to the
+   full row width, so a narrower submenu leaves a gap; we pin it to the
+   panel's left edge with right:100% to stay adjacent regardless of width. */
+.sk-user-menu .p-tieredmenu-submenu {
+    @apply max-h-[320px] min-w-56 overflow-y-auto rounded-md border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-800;
+    inset-inline-start: auto !important;
+    right: 100%;
+    margin-right: 3px;
+    animation: sk-menu-enter 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 12px 28px -8px rgba(15, 23, 42, 0.12),
+        0 24px 48px -16px rgba(15, 23, 42, 0.14);
 }
 
-.sk-user-menu .p-menu-list,
-.sk-locale-menu .p-menu-list {
-    @apply flex flex-col gap-0.5 p-1.5;
+:root.dark .sk-user-menu .p-tieredmenu-submenu {
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 12px 28px -8px rgba(0, 0, 0, 0.55),
+        0 24px 48px -16px rgba(0, 0, 0, 0.6);
 }
 
-.sk-user-menu .p-menu-separator,
-.sk-locale-menu .p-menu-separator {
+.sk-user-menu .p-tieredmenu-separator {
     @apply mx-2 my-1 border-t border-surface-200 dark:border-surface-700;
 }
 
 /* Kill PrimeVue default item styles — we render our own anchor */
-.sk-user-menu .p-menu-item-content,
-.sk-locale-menu .p-menu-item-content {
+.sk-user-menu .p-tieredmenu-item-content {
     @apply rounded bg-transparent p-0 hover:bg-transparent;
+}
+
+/* Hide PrimeVue's default submenu arrow — we render our own chevron */
+.sk-user-menu .p-tieredmenu-submenu-icon {
+    @apply hidden;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -69,7 +85,7 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-user-menu__header {
-    @apply flex items-center gap-3 border-b border-surface-200 px-3.5 pt-4 pb-3.5 dark:border-surface-700;
+    @apply flex items-center gap-3 rounded-t-md border-b border-surface-200 px-3.5 pt-4 pb-3.5 dark:border-surface-700;
     background: linear-gradient(
         135deg,
         color-mix(in srgb, var(--p-primary-500) 10%, transparent) 0%,
@@ -181,65 +197,39 @@
     background: color-mix(in srgb, var(--p-red-400) 15%, transparent);
 }
 
+/* Language row — chevron always visible (points to the flyout) */
+.sk-user-menu__item-arrow--static {
+    @apply translate-0 opacity-100;
+}
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   LOCALE MENU — LANGUAGE PICKER
+   LANGUAGE SUBMENU — LOCALE ROWS (code badge + active state)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-.sk-locale-menu__label {
-    @apply px-3.5 pt-3 pb-2 text-[10.5px] font-semibold tracking-[0.12em] text-surface-500 uppercase dark:text-surface-400;
-}
-
-.sk-locale-menu__item {
-    @apply flex cursor-pointer items-center gap-3 rounded px-2.5 py-2 text-sm font-medium text-surface-700 no-underline transition-colors duration-150 dark:text-surface-200;
-}
-
-.sk-locale-menu__item:hover,
-.sk-locale-menu__item:focus-visible {
-    @apply bg-surface-100 text-surface-900 outline-none dark:bg-surface-700 dark:text-surface-50;
-
-    .sk-locale-menu__code {
-        @apply border-primary-400 text-primary-700 dark:text-primary-300;
-    }
-}
-
-.sk-locale-menu__code {
-    @apply inline-flex h-[26px] min-w-[34px] items-center justify-center rounded border border-surface-200 bg-surface-50 px-2 text-[11px] font-bold tracking-wider text-surface-600 transition-colors duration-150 dark:border-surface-600 dark:bg-surface-700 dark:text-surface-200;
+.sk-user-menu__item-code {
+    @apply inline-flex size-[30px] shrink-0 items-center justify-center rounded border border-surface-200 bg-surface-50 text-[11px] font-bold tracking-wider text-surface-600 transition-colors duration-150 dark:border-surface-600 dark:bg-surface-700 dark:text-surface-200;
     font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-.sk-locale-menu__name {
-    @apply flex-1 truncate;
+.sk-user-menu__item:hover .sk-user-menu__item-code,
+.sk-user-menu__item:focus-visible .sk-user-menu__item-code {
+    @apply border-primary-400 text-primary-700 dark:text-primary-300;
 }
 
-.sk-locale-menu__check {
-    @apply text-xs text-primary-500 dark:text-primary-300;
-}
-
-.sk-locale-menu__item--active {
+.sk-user-menu__item--active {
     @apply text-primary-700 dark:text-primary-200;
     background: color-mix(in srgb, var(--p-primary-500) 8%, transparent);
 
-    .sk-locale-menu__code {
+    .sk-user-menu__item-code {
         @apply border-primary-500 text-primary-700 dark:border-primary-400 dark:text-primary-100;
         background: color-mix(in srgb, var(--p-primary-500) 14%, transparent);
     }
-}
 
-:root.dark .sk-locale-menu__item--active {
-    background: color-mix(in srgb, var(--p-primary-400) 14%, transparent);
-
-    .sk-locale-menu__code {
-        background: color-mix(in srgb, var(--p-primary-400) 22%, transparent);
+    .sk-user-menu__item-arrow {
+        @apply text-primary-500 dark:text-primary-300;
     }
 }
 
-.sk-locale-menu__item--active:hover,
-.sk-locale-menu__item--active:focus-visible {
-    @apply text-primary-800;
-    background: color-mix(in srgb, var(--p-primary-500) 14%, transparent);
-}
-
-:root.dark .sk-locale-menu__item--active:hover,
-:root.dark .sk-locale-menu__item--active:focus-visible {
-    background: color-mix(in srgb, var(--p-primary-400) 20%, transparent);
+:root.dark .sk-user-menu__item--active {
+    background: color-mix(in srgb, var(--p-primary-400) 14%, transparent);
 }

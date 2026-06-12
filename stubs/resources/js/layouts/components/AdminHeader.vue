@@ -38,22 +38,18 @@
     const currentLocale = computed(() => (page.props.locale as string) ?? 'en');
     const availableLocales = computed(() => (page.props.availableLocales as Record<string, string>) ?? {});
     const showLocaleSwitcher = computed(() => Object.keys(availableLocales.value).length > 1);
+    const currentLocaleLabel = computed(
+        () => availableLocales.value[currentLocale.value] ?? currentLocale.value.toUpperCase(),
+    );
 
-    const localeMenuRef = ref();
-    const localeOpen = ref(false);
-
-    const localeMenuItems = computed<MenuItem[]>(() =>
+    const localeItems = computed<MenuItem[]>(() =>
         Object.entries(availableLocales.value).map(([code, label]) => ({
             label,
-            code,
-            active: code === currentLocale.value,
+            localeCode: code,
+            localeActive: code === currentLocale.value,
             command: () => switchLocale(code),
         })),
     );
-
-    function toggleLocaleMenu(event: Event): void {
-        localeMenuRef.value?.toggle(event);
-    }
 
     function switchLocale(code: string): void {
         if (code === currentLocale.value) {
@@ -79,10 +75,6 @@
 
     const userMenuRef = ref();
 
-    const currentLocaleLabel = computed(
-        () => availableLocales.value[currentLocale.value] ?? currentLocale.value.toUpperCase(),
-    );
-
     const userMenuItems = computed<MenuItem[]>(() => [
         {
             label: trans('sk-menu.my_profile'),
@@ -102,11 +94,16 @@
             label: trans('sk-menu.change_password'),
             icon: 'pi pi-key',
         },
-        { separator: true },
-        {
-            label: `${trans('sk-menu.language')}: ${currentLocaleLabel.value}`,
-            icon: 'pi pi-globe',
-        },
+        ...(showLocaleSwitcher.value
+            ? [
+                  { separator: true },
+                  {
+                      label: trans('sk-menu.language'),
+                      icon: 'pi pi-globe',
+                      items: localeItems.value,
+                  } as MenuItem,
+              ]
+            : []),
         {
             label: trans('sk-menu.help'),
             icon: 'pi pi-question-circle',
@@ -122,6 +119,14 @@
 
     function toggleUserMenu(event: Event): void {
         userMenuRef.value?.toggle(event);
+        // PrimeVue gates hover-to-open submenus behind an internal `dirty`
+        // flag that only flips true after a click. Pre-arm it so the language
+        // submenu opens on first hover, no click needed.
+        nextTick(() => {
+            if (userMenuRef.value) {
+                (userMenuRef.value as unknown as { dirty: boolean }).dirty = true;
+            }
+        });
     }
 
     // Appearance popover — dark mode + accent color picker.
@@ -226,37 +231,6 @@
         </div>
 
         <div class="admin-header__right">
-            <!-- Language Switcher (only when more than one language is active) -->
-            <template v-if="showLocaleSwitcher">
-                <button
-                    class="admin-header__btn admin-header__btn--locale"
-                    :class="{ 'admin-header__btn--active': localeOpen }"
-                    :title="availableLocales[currentLocale]"
-                    @click="toggleLocaleMenu"
-                >
-                    <i class="pi pi-globe" />
-                    <span class="admin-header__locale-code">{{ currentLocale.toUpperCase() }}</span>
-                </button>
-                <Menu ref="localeMenuRef" class="sk-locale-menu" :model="localeMenuItems" :popup="true" @show="localeOpen = true" @hide="localeOpen = false">
-                    <template #start>
-                        <div class="sk-locale-menu__label">
-                            {{ $t('sk-layout.language') }}
-                        </div>
-                    </template>
-                    <template #item="{ item, props }">
-                        <a
-                            v-bind="props.action"
-                            class="sk-locale-menu__item"
-                            :class="{ 'sk-locale-menu__item--active': (item as any).active }"
-                        >
-                            <span class="sk-locale-menu__code">{{ (item as any).code?.toUpperCase() }}</span>
-                            <span class="sk-locale-menu__name">{{ item.label }}</span>
-                            <i v-if="(item as any).active" class="pi pi-check sk-locale-menu__check" />
-                        </a>
-                    </template>
-                </Menu>
-            </template>
-
             <!-- Appearance popover (trigger lives in the action cluster below) -->
             <Popover ref="appearanceRef" @show="appearanceOpen = true" @hide="appearanceOpen = false">
                 <div class="w-[360px] max-w-[90vw]">
@@ -579,7 +553,7 @@
                 <i class="pi pi-chevron-down admin-header__user-chevron" />
             </button>
 
-            <Menu ref="userMenuRef" class="sk-user-menu" :model="userMenuItems" :popup="true">
+            <TieredMenu ref="userMenuRef" class="sk-user-menu" :model="userMenuItems" :popup="true">
                 <template #start>
                     <div v-if="user" class="sk-user-menu__header">
                         <img v-if="user.avatar_url" :src="user.avatar_url" alt="Avatar" class="sk-user-menu__avatar">
@@ -600,20 +574,36 @@
                         </div>
                     </div>
                 </template>
-                <template #item="{ item, props }">
+                <template #item="{ item, props, hasSubmenu }">
                     <a
                         v-bind="props.action"
                         class="sk-user-menu__item"
-                        :class="{ 'sk-user-menu__item--danger': (item as any).danger }"
+                        :class="{
+                            'sk-user-menu__item--danger': (item as any).danger,
+                            'sk-user-menu__item--active': (item as any).localeActive,
+                        }"
                     >
-                        <span class="sk-user-menu__item-icon">
+                        <span v-if="(item as any).localeCode" class="sk-user-menu__item-code">
+                            {{ (item as any).localeCode.toUpperCase() }}
+                        </span>
+                        <span v-else class="sk-user-menu__item-icon">
                             <i :class="item.icon" />
                         </span>
-                        <span class="sk-user-menu__item-label">{{ item.label }}</span>
-                        <i class="pi pi-arrow-up-right sk-user-menu__item-arrow" />
+                        <span class="sk-user-menu__item-label">
+                            {{ item.label }}<template v-if="hasSubmenu">: {{ currentLocaleLabel }}</template>
+                        </span>
+                        <i
+                            v-if="(item as any).localeActive"
+                            class="pi pi-check sk-user-menu__item-arrow sk-user-menu__item-arrow--static"
+                        />
+                        <i
+                            v-else-if="hasSubmenu"
+                            class="pi pi-chevron-left sk-user-menu__item-arrow sk-user-menu__item-arrow--static"
+                        />
+                        <i v-else-if="!(item as any).localeCode" class="pi pi-arrow-up-right sk-user-menu__item-arrow" />
                     </a>
                 </template>
-            </Menu>
+            </TieredMenu>
         </div>
     </header>
 </template>

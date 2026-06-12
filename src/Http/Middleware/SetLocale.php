@@ -9,15 +9,21 @@ use Symfony\Component\HttpFoundation\Response;
 class SetLocale
 {
     /**
-     * Apply the user's preferred locale (stored in session) when it is one
-     * of the active languages configured by the admin. Falls back to the
-     * default locale set by SettingsServiceProvider.
+     * Apply the user's preferred locale when it is one of the active languages
+     * configured by the admin. Falls back to the default locale set by
+     * SettingsServiceProvider.
+     *
+     * The preference is read from a long-lived cookie (set by LocaleController)
+     * so it survives logout — the session is flushed on sign-out and would
+     * otherwise reset the language to the admin default. The legacy session key
+     * is still honored as a fallback for installs that wrote it before the
+     * cookie switch.
      *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->session()->get('locale');
+        $locale = $request->cookie('locale') ?? $request->session()->get('locale');
 
         if ($locale && array_key_exists($locale, config('app.languages', []))) {
             app()->setLocale($locale);
