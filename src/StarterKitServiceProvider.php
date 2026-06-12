@@ -64,6 +64,7 @@ use Lvntr\StarterKit\Domain\Setting\Actions\SendTestMailAction;
 use Lvntr\StarterKit\Domain\Setting\Actions\UpdateAuthSettingsAction;
 use Lvntr\StarterKit\Domain\Setting\Actions\UpdateSettingsAction;
 use Lvntr\StarterKit\Domain\Setting\DTOs\ApidogSettingsDTO;
+use Lvntr\StarterKit\Domain\Setting\DTOs\AppearanceSettingsDTO;
 use Lvntr\StarterKit\Domain\Setting\DTOs\AuthSettingsDTO;
 use Lvntr\StarterKit\Domain\Setting\DTOs\FileManagerSettingsDTO;
 use Lvntr\StarterKit\Domain\Setting\DTOs\GeneralSettingsDTO;
@@ -326,6 +327,7 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Domain\Setting\Actions\UpdateAuthSettingsAction' => UpdateAuthSettingsAction::class,
             'App\Domain\Setting\Actions\UpdateSettingsAction' => UpdateSettingsAction::class,
             'App\Domain\Setting\DTOs\ApidogSettingsDTO' => ApidogSettingsDTO::class,
+            'App\Domain\Setting\DTOs\AppearanceSettingsDTO' => AppearanceSettingsDTO::class,
             'App\Domain\Setting\DTOs\AuthSettingsDTO' => AuthSettingsDTO::class,
             'App\Domain\Setting\DTOs\FileManagerSettingsDTO' => FileManagerSettingsDTO::class,
             'App\Domain\Setting\DTOs\GeneralSettingsDTO' => GeneralSettingsDTO::class,

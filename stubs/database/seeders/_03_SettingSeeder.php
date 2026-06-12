@@ -91,6 +91,15 @@ class _03_SettingSeeder extends Seeder
                 'enable_trash' => '1',
                 'trash_retention_days' => '7',
             ],
+            'appearance' => [
+                // Global appearance defaults. Per-user header-popover choices
+                // (localStorage) still override these for that user; this is
+                // what new / logged-out / not-yet-personalized users see.
+                'theme' => 'main',
+                'accent_color' => 'default',
+                'dark_mode_default' => '0',
+                'sidebar_style' => 'colored',
+            ],
         ];
 
         foreach ($defaults as $group => $groupSettings) {

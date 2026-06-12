@@ -22,7 +22,9 @@
  * one-line summary.
  *
  * Model: full-replacement + fallback (NOT layered diff).
- *   - The active theme is chosen at build time via `VITE_SK_THEME` (default `main`).
+ *   - The active theme is chosen at build time. Precedence: explicit arg →
+ *     `.sk-active-theme` marker file (the DB-backed admin choice, written by the
+ *     PHP side) → `VITE_SK_THEME` env → `main` default. See `resolveThemeName`.
  *   - For every slot found under `main/`, the resolver emits
  *     `<active>/<slot>` IF that file exists, otherwise `main/<slot>`.
  *   - So a `custom` theme that ships only `components/datatable.css` overrides
@@ -41,9 +43,46 @@
  * by `sk:update`. Open it to see exactly which files the active theme resolved to.
  */
 
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * Marker file (relative to the consumer project root) written by the PHP side
+ * (`ThemeResolver::writeMarker`) when an admin saves the appearance theme. The
+ * node build resolver reads it so the DB-selected theme becomes the build source
+ * of truth WITHOUT node ever touching the DB — the file is the PHP→node contract.
+ * Must stay byte-for-byte in sync with `ThemeResolver::MARKER_RELATIVE_PATH`.
+ */
+export const ACTIVE_THEME_MARKER = 'resources/css/theme/.sk-active-theme';
+
+/**
+ * Read the active-theme marker file under `projectRoot`, returning the trimmed
+ * value or `null` when absent/empty/unreadable. This is the SECOND precedence
+ * source in `resolveThemeName` (after an explicit arg, before `VITE_SK_THEME`).
+ *
+ * Reading is best-effort and NEVER throws: a missing or unreadable marker simply
+ * yields `null` so resolution falls through to `VITE_SK_THEME`/`main`. Slug
+ * VALIDATION is deliberately left to `resolveThemeName` so a tampered/garbage
+ * marker produces the same loud, explicit build error as a mistyped env var
+ * (rather than a silent fallback that hides the misconfiguration).
+ *
+ * @param {string} projectRoot CONSUMER project root (cwd / options.root), NOT
+ *   the vendor-resident script's own directory.
+ * @returns {string | null} trimmed marker value, or null when there is none.
+ */
+export function readThemeMarker(projectRoot) {
+    const markerPath = join(projectRoot, ACTIVE_THEME_MARKER);
+    if (!existsSync(markerPath)) {
+        return null;
+    }
+    try {
+        const value = readFileSync(markerPath, 'utf8').trim();
+        return value === '' ? null : value;
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Recursively collect stylesheet files (`*.css` and `*.scss`) under `dir`,
@@ -76,8 +115,16 @@ function collectSlots(dir) {
 }
 
 /**
- * Resolve and validate the active theme name from an explicit value, then
- * `VITE_SK_THEME`, then the `main` default.
+ * Resolve and validate the active theme name. Precedence (highest first):
+ *
+ *   1. explicit `theme` arg (only the build/Vite plugin passes one),
+ *   2. the `.sk-active-theme` marker file under the project root — the DB-backed
+ *      admin choice written by the PHP side; this makes the DB the build source
+ *      of truth without node ever touching the DB,
+ *   3. `process.env.VITE_SK_THEME` — the legacy `.env` flow, still honored when
+ *      no marker is present (consumers who never adopted the admin appearance
+ *      tab keep working unchanged),
+ *   4. the `main` default.
  *
  * The result is used verbatim as a path segment under `theme/` (both for the
  * CSS slots here and the PrimeVue preset in vite-plugin-sk-theme.mjs), so it
@@ -85,22 +132,33 @@ function collectSlots(dir) {
  * — letters, digits, `-`, `_` — which structurally cannot contain `/`, `\`,
  * `.`, a null byte, or whitespace, so `../`-style traversal is impossible by
  * construction (no separate "is it still under root?" assert is needed — the
- * allowlist already makes an escaping segment unrepresentable).
+ * allowlist already makes an escaping segment unrepresentable). Identical to the
+ * PHP-side rule in `ThemeResolver::isValidName`.
  *
- * An invalid name THROWS rather than silently falling back to `main`: a
- * mistyped `VITE_SK_THEME` should be a loud build error, not a confusing
- * zero-override "stock" build that looks like the theme simply did nothing.
+ * An invalid name THROWS rather than silently falling back to `main`: a mistyped
+ * `VITE_SK_THEME` OR a tampered marker should be a loud build error, not a
+ * confusing zero-override "stock" build that looks like the theme simply did
+ * nothing. (The marker is slug-validated by PHP on write, so a bad value here
+ * means out-of-band tampering — exactly the case we want to surface loudly.)
  *
- * @param {string} [theme] Explicit theme name. Defaults to
- *   `process.env.VITE_SK_THEME`, then `main`.
+ * @param {string} [theme] Explicit theme name. When omitted, falls through to
+ *   the marker file, then `process.env.VITE_SK_THEME`, then `main`.
+ * @param {string} [root] CONSUMER project root used to locate the marker file.
+ *   Defaults to `process.cwd()` — the directory Vite/node runs from. NOT relative
+ *   to this vendor-resident script's own location.
  * @returns {string} the validated theme name.
  */
-export function resolveThemeName(theme) {
-    const name = (theme ?? process.env.VITE_SK_THEME ?? 'main').trim() || 'main';
+export function resolveThemeName(theme, root) {
+    const explicit = theme != null ? String(theme).trim() : '';
+    const marker = explicit === '' ? readThemeMarker(root ?? process.cwd()) : null;
+    const env = explicit === '' && (marker === null || marker === '') ? process.env.VITE_SK_THEME : null;
+
+    const name = (explicit || marker || env || 'main').trim() || 'main';
     if (!/^[A-Za-z0-9_-]+$/.test(name)) {
         throw new Error(
-            `[sk-theme-build] invalid VITE_SK_THEME "${name}": only letters, digits, "-" and "_" are allowed ` +
-                '(no path separators, dots or spaces).',
+            `[sk-theme-build] invalid theme name "${name}": only letters, digits, "-" and "_" are allowed ` +
+                '(no path separators, dots or spaces). Source: explicit arg, ' +
+                `${ACTIVE_THEME_MARKER} marker, or VITE_SK_THEME.`,
         );
     }
     return name;
@@ -126,7 +184,10 @@ export function buildActiveTheme({ root, theme } = {}) {
     const themeDir = join(projectRoot, 'resources', 'css', 'theme');
     const mainDir = join(themeDir, 'main');
 
-    const activeTheme = resolveThemeName(theme);
+    // Resolve against THIS projectRoot so the marker file is read from the same
+    // base as the theme dir (matters when a caller pins `options.root` instead of
+    // relying on cwd — e.g. vite.config).
+    const activeTheme = resolveThemeName(theme, projectRoot);
     const activeDir = join(themeDir, activeTheme);
 
     if (!existsSync(mainDir)) {
@@ -171,7 +232,7 @@ export function buildActiveTheme({ root, theme } = {}) {
     lines.push('/**');
     lines.push(' * GENERATED FILE — do not edit by hand.');
     lines.push(' * Produced by the kit theme resolver (sk-theme-build.mjs, dev/build chain + Vite plugin).');
-    lines.push(` * Active theme: ${activeTheme} (VITE_SK_THEME). Gitignored, not hash-tracked.`);
+    lines.push(` * Active theme: ${activeTheme} (.sk-active-theme marker / VITE_SK_THEME). Gitignored, not hash-tracked.`);
     lines.push(' * Each slot resolves to <active>/<slot> when present, else main/<slot>.');
     lines.push(' */');
     lines.push('');

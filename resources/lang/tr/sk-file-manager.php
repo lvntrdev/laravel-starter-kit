@@ -22,11 +22,13 @@ return [
     'trash_empty_title' => 'Çöp kutusu boş',
     'trash_empty_subtitle' => 'Silinen öğeler burada görünür.',
     'trash_emptied' => 'Çöp kutusu boşaltıldı.',
+    'trash_notice_title' => 'Silinen öğeler kalıcı olarak silinmeden önce çöp kutusunda saklanır',
+    'trash_notice_sub' => ':count öğe geri yüklenebilir. Kalıcı silme geri alınamaz.',
     'link_copied' => 'Bağlantı panoya kopyalandı.',
     'coming_soon' => 'Bu özellik yakında eklenecek.',
 
     'labels' => [
-        'root' => 'Kök',
+        'root' => 'Ana Dizin',
         'new_folder' => 'Yeni Klasör',
         'upload' => 'Yükle',
         'upload_new' => 'Yeni dosya yükle',
@@ -42,7 +44,7 @@ return [
         'add_to_favorites' => 'Sık Kullanılanlara Ekle',
         'remove_from_favorites' => 'Beğenilenlerden Çıkar',
         'details_action' => 'Ayrıntılar',
-        'empty_trash' => 'Çöpü Boşalt',
+        'empty_trash' => 'Çöp Kutusunu Boşalt',
         'empty_folder' => 'Bu klasör boş.',
         'drop_files_here' => 'Dosyaları buraya bırakın.',
         'delete_selected' => 'Seçilenleri Sil',
@@ -51,6 +53,7 @@ return [
         'sort_size' => 'Boyut',
         'sort_date' => 'Tarih',
         'total_files' => ':count dosya',
+        'count_folders' => ':count klasör',
         'total_size' => 'Toplam :size',
         'selected_count' => ':count öğe seçili',
         'select_all' => 'Tümünü Seç',
@@ -90,17 +93,14 @@ return [
         'folders_section' => 'Klasörler',
         'no_results' => 'Aramanızla eşleşen bir öğe bulunamadı.',
 
-        'filter' => [
-            'all' => 'Tümü',
-            'image' => 'Görsel',
-            'video' => 'Video',
-            'pdf' => 'PDF',
-            'audio' => 'Ses',
-            'archive' => 'Arşiv',
+        'sort_menu' => [
+            'recent' => 'Son eklenen',
+            'name' => 'Ada göre',
+            'size' => 'Boyuta göre',
         ],
 
         'sidebar' => [
-            'storage_usage' => 'Depolama Kullanımı',
+            'storage_usage' => 'Depolama',
             'storage_used_of' => ':used / :total',
             'quick_access' => 'Hızlı Erişim',
             'all_files' => 'Tüm Dosyalar',
@@ -113,17 +113,7 @@ return [
         ],
 
         'stats' => [
-            'total_files' => 'Toplam Dosya',
-            'total_size' => 'Toplam Boyut',
-            'folder_count' => 'Klasör Sayısı',
-            'favorites' => 'Favoriler',
-            'recent_upload' => 'Son Yüklenen',
-            'item_count' => ':count öge',
-            'never_uploaded' => 'Henüz yok',
-            'time_just_now' => 'Az önce',
-            'time_minutes' => ':count dakika',
-            'time_hours' => ':count saat',
-            'time_days' => ':count gün',
+            'item_count' => ':count öğe',
         ],
 
         'details' => [

@@ -94,6 +94,7 @@ interface DialogState {
     width: string;
     loading: boolean;
     footer: DialogFooter | null;
+    darkMask: boolean;
 }
 
 interface OpenOptions {
@@ -111,6 +112,8 @@ interface OpenOptions {
     footer?: DialogFooter;
     /** Refresh bus key — auto-injects onSuccess (close + refresh) and onCancel (close) into props. */
     refreshKey?: string;
+    /** Koyu backdrop (bg-black/85 + blur) — medya önizleme gibi immersive dialoglar için. */
+    darkMask?: boolean;
 }
 
 interface OpenAsyncOptions<T = unknown> extends OpenOptions {
@@ -128,6 +131,7 @@ const state = reactive<DialogState>({
     width: '640px',
     loading: false,
     footer: null,
+    darkMask: false,
 });
 
 /**
@@ -199,6 +203,7 @@ export function useDialog() {
         state.icon = options.icon ?? '';
         state.width = options.width ?? '640px';
         state.footer = normalizeFooter(options.footer ?? null);
+        state.darkMask = options.darkMask ?? false;
         state.loading = false;
         state.visible = true;
     }
@@ -254,6 +259,7 @@ export function useDialog() {
             state.icon = '';
             state.footer = null;
             state.loading = false;
+            state.darkMask = false;
             closeTimer = null;
         }, 300);
     }

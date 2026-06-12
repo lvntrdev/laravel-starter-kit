@@ -1,6 +1,7 @@
 // resources/js/composables/useAccentColor.ts
 
 import { updatePrimaryPalette } from '@primevue/themes';
+import { migrateLegacyAppearanceStorage, useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
 
 /**
  * Composable for the admin accent color.
@@ -84,12 +85,13 @@ export const TAILWIND_PALETTES: Record<string, Record<number, string>> = {
 };
 
 /**
- * Swatch preview for the "sidebar color theme" grid = each palette's 900 shade.
- * The colored sidebar surface is the 950 deep tint; 900 reads as that same deep
- * tone while keeping the hue recognisable in a small swatch.
+ * Swatch preview for the "site color" grid = each palette's 500 shade — the
+ * bright mid-tone that reads the hue clearly in a swatch. The applied colored
+ * sidebar surface stays the deeper 950 tint (see tokens.css); the swatch only
+ * has to identify the colour, not mirror the surface.
  */
 export const ACCENT_SWATCH: Record<string, string> = Object.fromEntries(
-    ACCENT_COLORS.map((color) => [color, TAILWIND_PALETTES[color][900]]),
+    ACCENT_COLORS.map((color) => [color, TAILWIND_PALETTES[color][500]]),
 );
 
 /**
@@ -104,12 +106,68 @@ const DEFAULT_PRIMARY: Record<number, string> = {
     500: '{blue.500}', 600: '{blue.600}', 700: '{blue.700}', 800: '{blue.800}', 900: '{blue.900}', 950: '{blue.950}',
 };
 
+/** Validate a raw server-supplied accent name; falls back to `'default'`. */
+function resolveAccent(value: string | undefined): AccentColor {
+    if (value === 'default') {
+        return 'default';
+    }
+    return value && (ACCENT_COLORS as readonly string[]).includes(value)
+        ? (value as AccentColor)
+        : 'default';
+}
+
+/** Validate a raw server-supplied sidebar style; falls back to `'colored'`. */
+function resolveSidebarStyle(value: string | undefined): SidebarStyle {
+    return value && (SIDEBAR_STYLES as readonly string[]).includes(value)
+        ? (value as SidebarStyle)
+        : 'colored';
+}
+
+/**
+ * Resolve the *effective* accent. `'default'` is NOT kit-blue — it means "follow
+ * the admin GLOBAL DEFAULT" (Görünüm › Varsayılan Renk). So a user with no
+ * personal colour, or who picks the "Varsayılan" swatch, renders the admin's
+ * chosen default; only when the admin default is ITSELF `'default'` does it fall
+ * back to the kit primary (blue). `followGlobal = false` keeps `'default'`
+ * literal — used by the Görünüm preview, where the admin is DEFINING the default
+ * and must see kit-blue for the `'default'` swatch.
+ */
+export function resolveEffectiveAccent(
+    color: AccentColor,
+    globalDefault: string | undefined,
+    followGlobal = true,
+): AccentColor {
+    if (color !== 'default') {
+        return color;
+    }
+    return followGlobal ? resolveAccent(globalDefault) : 'default';
+}
+
 export function useAccentColor() {
     const STORAGE_KEY = 'admin-accent-color';
     const SIDEBAR_STYLE_KEY = 'admin-sidebar-style';
 
-    /** Currently selected accent color (`'default'` = kit primary + neutral sidebar). */
-    const accent = useLocalStorage<AccentColor>(STORAGE_KEY, 'default');
+    const { defaultAccent, defaultSidebarStyle } = useAppearanceDefaults();
+
+    // Clear legacy auto-persisted defaults once so a stale stored value can't mask
+    // the admin global default (must run BEFORE the localStorage reads below).
+    migrateLegacyAppearanceStorage();
+
+    // Read raw localStorage BEFORE `useLocalStorage` (which writes its initial on
+    // first access and would mask the "no override" state). SSR-safe (guarded).
+    const hasStored = (key: string): boolean =>
+        typeof window !== 'undefined' && window.localStorage.getItem(key) !== null;
+
+    const sidebarStyleInitial: SidebarStyle = hasStored(SIDEBAR_STYLE_KEY)
+        ? 'colored'
+        : resolveSidebarStyle(defaultSidebarStyle.value);
+
+    // Accent is a raw per-user choice; `'default'` defers to the admin global at
+    // apply time (effectiveAccent). writeDefaults:false keeps the seed out of
+    // storage so the global default stays live across reloads until the user
+    // explicitly picks a colour. A stored legacy `'default'` resolves the same way.
+    /** Currently selected accent (`'default'` = follow admin global default). */
+    const accent = useLocalStorage<AccentColor>(STORAGE_KEY, 'default', { writeDefaults: false });
 
     /**
      * Sidebar surface treatment (LIGHT mode only):
@@ -118,9 +176,17 @@ export function useAccentColor() {
      * In DARK mode this has no effect — the sidebar always stays the neutral dark
      * surface. Themed in CSS via the `data-sk-sidebar` marker (tokens.css).
      */
-    const sidebarStyle = useLocalStorage<SidebarStyle>(SIDEBAR_STYLE_KEY, 'colored');
+    const sidebarStyle = useLocalStorage<SidebarStyle>(SIDEBAR_STYLE_KEY, sidebarStyleInitial, {
+        writeDefaults: false,
+    });
 
-    function applyAccent(color: AccentColor): void {
+    /**
+     * Apply an accent. By default a `'default'` value follows the admin global
+     * default (effectiveAccent); pass `{ followGlobal: false }` to treat
+     * `'default'` literally as the kit primary (the Görünüm tab preview).
+     */
+    function applyAccent(color: AccentColor, options: { followGlobal?: boolean } = {}): void {
+        const effective = resolveEffectiveAccent(color, defaultAccent.value, options.followGlobal ?? true);
         const root = typeof document !== 'undefined' ? document.documentElement : null;
 
         // Clear any legacy inline overrides (older builds set --admin-sidebar-*
@@ -129,17 +195,17 @@ export function useAccentColor() {
         root?.style.removeProperty('--admin-sidebar-logo-bg');
         root?.style.removeProperty('--admin-sidebar-border');
 
-        if (color === 'default') {
+        if (effective === 'default') {
             updatePrimaryPalette(DEFAULT_PRIMARY);
             root?.removeAttribute('data-sk-accent');
             return;
         }
 
-        updatePrimaryPalette(TAILWIND_PALETTES[color]);
+        updatePrimaryPalette(TAILWIND_PALETTES[effective]);
         // Sidebar tint is themed in CSS (tokens.css → [data-sk-accent]:not(.dark)),
         // so it colours the sidebar in LIGHT mode only; dark mode keeps the neutral
         // dark surface. Active item keeps following --p-primary-color in both modes.
-        root?.setAttribute('data-sk-accent', color);
+        root?.setAttribute('data-sk-accent', effective);
     }
 
     /** Set and persist the accent color. */

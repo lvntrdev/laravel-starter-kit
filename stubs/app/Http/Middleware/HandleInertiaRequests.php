@@ -2,16 +2,19 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Setting\Queries\SettingsDefaultsQuery;
 use App\Models\ContentLanguage;
 use App\Models\Setting;
 use Composer\InstalledVersions;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Middleware;
 use Laravel\Fortify\Features;
+use Lvntr\StarterKit\Support\ThemeResolver;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -50,6 +53,9 @@ class HandleInertiaRequests extends Middleware
                 'appName' => config('app.name'),
                 'locale' => app()->getLocale(),
                 'availableLocales' => config('app.languages', []),
+                // No DB on the installer: hand the boot a static appearance
+                // default so the install screen still applies a coherent theme.
+                'appearance' => $this->installerAppearanceDefaults(),
                 'flash' => [
                     'success' => $request->session()->get('success'),
                     'error' => $request->session()->get('error'),
@@ -61,6 +67,16 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'appName' => config('app.name'),
             'appLogo' => fn () => ($logo = Setting::getValue('general.logo')) ? Storage::disk('public')->url($logo) : null,
+            // Global appearance defaults (theme/accent/dark/sidebar + logo &
+            // favicon URLs) shared to EVERY page — including the login screen —
+            // so boot can apply the admin-set look for logged-out / not-yet-
+            // personalized users. Resolved lazily so it costs nothing on
+            // partial reloads that don't request it. Only non-sensitive,
+            // already-public values are exposed here: `available_themes` (the
+            // installed theme-folder enumeration) is stripped — it is only
+            // needed by the permission-gated Görünüm tab, which reads it from
+            // the settings index payload, not from this unauthenticated share.
+            'appearance' => fn () => Arr::except(app(SettingsDefaultsQuery::class)->appearance(), ['available_themes']),
             'appVersion' => InstalledVersions::getPrettyVersion('lvntr/laravel-starter-kit'),
             // Only share env/debug signals in non-production environments —
             // exposing them to every authenticated user in prod leaks useful
@@ -122,6 +138,30 @@ class HandleInertiaRequests extends Middleware
                 'enabled' => (bool) config('services.turnstile.enabled'),
                 'site_key' => config('services.turnstile.enabled') ? config('services.turnstile.site_key') : null,
             ],
+        ];
+    }
+
+    /**
+     * Static appearance defaults for the installer (no DB available).
+     *
+     * Mirrors the shape of the globally shared appearance prop (the
+     * SettingsDefaultsQuery::appearance() payload minus `available_themes`,
+     * which is reserved for the permission-gated settings page) with neutral
+     * defaults and no logo/favicon URLs, so the install screen's boot logic can
+     * read the same prop shape it sees everywhere else.
+     *
+     * @return array<string, mixed>
+     */
+    protected function installerAppearanceDefaults(): array
+    {
+        return [
+            'theme' => ThemeResolver::activeTheme(),
+            'accent_color' => 'default',
+            'dark_mode_default' => false,
+            'sidebar_style' => 'colored',
+            'logo_light_url' => null,
+            'logo_dark_url' => null,
+            'favicon_url' => null,
         ];
     }
 

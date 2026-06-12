@@ -3,9 +3,32 @@
 
     const lightbox = useImageLightbox();
 
+    // Çift tık koruması: görseli çift tıklayan kullanıcının ikinci tıkı yeni
+    // açılan backdrop'a düşüyor ve lightbox anında kapanıyordu. Açılıştan
+    // sonraki kısa pencerede backdrop tıkı yoksayılır.
+    const backdropArmed = ref(false);
+    let backdropTimer: ReturnType<typeof setTimeout> | null = null;
+
+    watch(
+        () => lightbox.state.visible,
+        (visible) => {
+            if (backdropTimer !== null) {
+                clearTimeout(backdropTimer);
+                backdropTimer = null;
+            }
+            backdropArmed.value = false;
+            if (visible) {
+                backdropTimer = setTimeout(() => {
+                    backdropArmed.value = true;
+                    backdropTimer = null;
+                }, 400);
+            }
+        },
+    );
+
     function onBackdropClick(event: MouseEvent): void {
         // Only close when the click originated on the backdrop itself, not on the image
-        if (event.target === event.currentTarget) {
+        if (backdropArmed.value && event.target === event.currentTarget) {
             lightbox.close();
         }
     }

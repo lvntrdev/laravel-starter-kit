@@ -6,6 +6,7 @@ use App\Domain\Setting\Actions\SendTestMailAction;
 use App\Domain\Setting\Actions\UpdateAuthSettingsAction;
 use App\Domain\Setting\Actions\UpdateSettingsAction;
 use App\Domain\Setting\DTOs\ApidogSettingsDTO;
+use App\Domain\Setting\DTOs\AppearanceSettingsDTO;
 use App\Domain\Setting\DTOs\AuthSettingsDTO;
 use App\Domain\Setting\DTOs\FileManagerSettingsDTO;
 use App\Domain\Setting\DTOs\GeneralSettingsDTO;
@@ -17,6 +18,7 @@ use App\Domain\Setting\Queries\SettingsDefaultsQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Settings\SendTestMailRequest;
 use App\Http\Requests\Admin\Settings\UpdateApidogSettingsRequest;
+use App\Http\Requests\Admin\Settings\UpdateAppearanceSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateFileManagerSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest;
@@ -24,6 +26,8 @@ use App\Http\Requests\Admin\Settings\UpdateMailSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdatePostmanSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest;
+use App\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest;
+use App\Http\Requests\Admin\Settings\UploadFaviconRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
@@ -34,6 +38,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Laravel\Passport\Passport;
+use Lvntr\StarterKit\Support\ThemeResolver;
 
 /**
  * Admin panel settings controller.
@@ -145,6 +150,29 @@ class SettingsController extends Controller
     }
 
     /**
+     * Update appearance settings (theme, accent, dark-mode default, sidebar).
+     *
+     * Persists the appearance group, then writes the node-readable theme marker
+     * so the next build resolves the admin-selected theme. The theme name is
+     * slug-validated both by the FormRequest (must be an installed theme) and
+     * by ThemeResolver before the marker write — no traversal value can reach
+     * the path-segment file.
+     */
+    public function updateAppearance(UpdateAppearanceSettingsRequest $request, UpdateSettingsAction $action): RedirectResponse
+    {
+        $dto = AppearanceSettingsDTO::fromArray($request->validated());
+
+        $action->execute('appearance', $dto);
+
+        // Bridge the DB choice to the build: write the marker the node resolver
+        // reads (sk-theme-build.mjs). Validation already restricted $dto->theme
+        // to an installed, slug-safe theme; writeMarker re-validates defensively.
+        ThemeResolver::writeMarker($dto->theme);
+
+        return back()->with('success', __('sk-setting.flash.appearance'));
+    }
+
+    /**
      * Upload application logo.
      */
     public function uploadLogo(Request $request): ApiResponse
@@ -186,6 +214,92 @@ class SettingsController extends Controller
         Setting::setValue('general.logo', null);
 
         return to_api(status: 204);
+    }
+
+    /**
+     * Upload an appearance logo variant (`logo_light` | `logo_dark`).
+     *
+     * Stored under the `appearance/` directory on the public disk. SVG is
+     * intentionally excluded (same rationale as uploadLogo) — it can embed
+     * <script>/onload and execute in the app origin when served publicly.
+     */
+    public function uploadAppearanceLogo(UploadAppearanceLogoRequest $request, string $variant): ApiResponse
+    {
+        $key = $this->appearanceLogoKey($variant);
+
+        $this->deleteStoredFile($key);
+
+        $path = $request->file('logo')->store('appearance', 'public');
+        Setting::setValue($key, $path);
+
+        return to_api(['logo_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.logo_uploaded'));
+    }
+
+    /**
+     * Delete an appearance logo variant (`logo_light` | `logo_dark`).
+     */
+    public function deleteAppearanceLogo(string $variant): JsonResponse
+    {
+        $key = $this->appearanceLogoKey($variant);
+
+        $this->deleteStoredFile($key);
+        Setting::setValue($key, null);
+
+        return to_api(status: 204);
+    }
+
+    /**
+     * Upload the favicon.
+     *
+     * Accepts png/ico only (no svg, no jpeg/webp — favicons are small raster
+     * or .ico). Stored under `appearance/`. `.ico` is not an `image` per the
+     * validator's GD check, so the rule is mimes-only, not `image`.
+     */
+    public function uploadFavicon(UploadFaviconRequest $request): ApiResponse
+    {
+        $this->deleteStoredFile('appearance.favicon');
+
+        $path = $request->file('favicon')->store('appearance', 'public');
+        Setting::setValue('appearance.favicon', $path);
+
+        return to_api(['favicon_url' => Storage::disk('public')->url($path)], __('sk-setting.flash.favicon_uploaded'));
+    }
+
+    /**
+     * Delete the favicon.
+     */
+    public function deleteFavicon(): JsonResponse
+    {
+        $this->deleteStoredFile('appearance.favicon');
+        Setting::setValue('appearance.favicon', null);
+
+        return to_api(status: 204);
+    }
+
+    /**
+     * Resolve the settings key for an appearance logo variant, rejecting any
+     * value outside the known set so the variant cannot be used to write an
+     * arbitrary settings key.
+     */
+    private function appearanceLogoKey(string $variant): string
+    {
+        return match ($variant) {
+            'light' => 'appearance.logo_light',
+            'dark' => 'appearance.logo_dark',
+            default => abort(404),
+        };
+    }
+
+    /**
+     * Delete the file currently referenced by a settings key from the public
+     * disk, if it exists. No-op when the key is empty.
+     */
+    private function deleteStoredFile(string $key): void
+    {
+        $path = Setting::getValue($key);
+        if (is_string($path) && $path !== '' && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     /**

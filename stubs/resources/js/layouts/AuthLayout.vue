@@ -5,9 +5,10 @@
         subtitle?: string;
     }
 
-    import { computed } from 'vue';
+    import { computed, onMounted } from 'vue';
     import { useDarkMode } from '@/composables/useDarkMode';
     import { useAccentColor } from '@/composables/useAccentColor';
+    import { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
     import { Head, usePage } from '@inertiajs/vue3';
 
     withDefaults(defineProps<Props>(), {
@@ -15,15 +16,25 @@
         subtitle: '',
     });
 
+    // Dark mode + accent now seed from the admin GLOBAL DEFAULT when the visitor
+    // has no personal choice yet, so the login screen reflects the admin-set look
+    // for logged-out users; a returning user's localStorage choice still wins.
+    // onMounted inside each composable does the DOM work; never touches the DOM
+    // during SSR.
     const { isDark, toggleDark } = useDarkMode();
-
-    // Re-apply the accent saved in localStorage (e.g. indigo picked in the admin)
-    // so the login screen matches the user's last choice. With no saved accent it
-    // falls back to 'default' (blue). onMounted inside the composable does the work;
-    // never touches the DOM during SSR.
     useAccentColor();
+
+    const { logoLightUrl, applyFavicon } = useAppearanceDefaults();
+    onMounted(() => {
+        applyFavicon();
+    });
+
     const appName = computed(() => (usePage().props.appName as string) || 'Laravel');
-    const appLogo = computed(() => usePage().props.appLogo as string | null);
+    // Prefer the admin-set light logo (shared appearance prop); fall back to the
+    // legacy `appLogo` (general.logo) so apps already using it keep working.
+    const appLogo = computed(
+        () => logoLightUrl.value ?? (usePage().props.appLogo as string | null),
+    );
 </script>
 
 <template>

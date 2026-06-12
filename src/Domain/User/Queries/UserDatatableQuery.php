@@ -49,6 +49,14 @@ class UserDatatableQuery
                 AllowedFilter::callback('role', function (Builder $q, $value) {
                     $q->whereHas('roles', fn (Builder $r) => $r->where('name', $value));
                 }),
+                // Date-range filter — the frontend daterange control sends
+                // filter[created_at_from] / filter[created_at_to] (YYYY-MM-DD).
+                AllowedFilter::callback('created_at_from', function (Builder $q, $value) {
+                    $q->whereDate('created_at', '>=', $value);
+                }),
+                AllowedFilter::callback('created_at_to', function (Builder $q, $value) {
+                    $q->whereDate('created_at', '<=', $value);
+                }),
             ])
             ->with(['roles', 'media'])
             ->defaultSort('-created_at')

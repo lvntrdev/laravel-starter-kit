@@ -13,6 +13,7 @@ export { useMenuBuilder } from '@/composables/useMenuBuilder';
 export { useDarkMode } from '@/composables/useDarkMode';
 export { useAccentColor, ACCENT_COLORS, ACCENT_SWATCH, SIDEBAR_STYLES } from '@/composables/useAccentColor';
 export type { AccentColor, SidebarStyle } from '@/composables/useAccentColor';
+export { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
 export { useFlash } from '@/composables/useFlash';
 export { useConfirm } from '@/composables/useConfirm';
 export { useApi } from '@/composables/useApi';

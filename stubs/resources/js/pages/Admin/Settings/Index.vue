@@ -3,6 +3,7 @@
     import { TB } from '@lvntr/components/TabBuilder/core';
     import ApiClientsManageTab from './components/ApiClientsManageTab.vue';
     import ApiTokensManageTab from './components/ApiTokensManageTab.vue';
+    import AppearanceTab from './components/AppearanceTab.vue';
     import ContentLanguagesTab from './components/ContentLanguagesTab.vue';
     import FileManagerTab from './components/FileManagerTab.vue';
     import GeneralTab from './components/GeneralTab.vue';
@@ -37,6 +38,16 @@
                 date_format: string;
                 logo_url: string | null;
                 welcome_message: string | null;
+            };
+            appearance: {
+                theme: string;
+                available_themes: string[];
+                accent_color: string;
+                dark_mode_default: boolean;
+                sidebar_style: string;
+                logo_light_url: string | null;
+                logo_dark_url: string | null;
+                favicon_url: string | null;
             };
             auth: {
                 registration: boolean;
@@ -114,6 +125,13 @@
                 .icon('pi pi-cog')
                 .iconColor('blue'),
             TB.item()
+                .key('appearance')
+                .label('sk-setting.tabs.appearance')
+                .description('sk-setting.tab_descriptions.appearance')
+                .icon('pi pi-palette')
+                .iconColor('purple')
+                .permission('settings.update'),
+            TB.item()
                 .key('auth')
                 .label('sk-setting.tabs.auth')
                 .description('sk-setting.tab_descriptions.auth')
@@ -177,6 +195,10 @@
                     :timezones="props.timezones"
                     :available-languages="props.availableLanguages"
                 />
+            </template>
+
+            <template #appearance>
+                <AppearanceTab :settings="props.settings.appearance" />
             </template>
 
             <template #auth>

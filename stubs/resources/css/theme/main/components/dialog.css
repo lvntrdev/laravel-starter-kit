@@ -14,13 +14,19 @@
  */
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   BACKDROP / MASK
+   BACKDROP / MASK — koyu varyant (opt-in)
+   ImageLightbox backdrop'u ile aynı: bg-black/85 + blur(4px).
+   PrimeVue mask background'u kalıcı `p-overlay-mask-enter-active`
+   animasyonunun son keyframe'inden gelir (`forwards`) — keyframe değeri
+   normal kuralları ezer. Bu yüzden background doğrudan değil,
+   keyframe'in okuduğu `--px-mask-background` değişkeniyle verilir.
+   Kullanım: Dialog PT → mask: { class: 'sk-dlg__mask--dark' }.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-.sk-dlg__mask {
-    background: rgba(16, 15, 22, 0.42);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+.sk-dlg__mask--dark.p-overlay-mask {
+    --px-mask-background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

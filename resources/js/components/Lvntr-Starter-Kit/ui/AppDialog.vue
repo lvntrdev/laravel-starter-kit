@@ -12,6 +12,30 @@
 
     const confirmBusy = ref(false);
 
+    // Çift tık koruması: kartı çift tıklayan kullanıcının ikinci tıkı, yeni
+    // mount olan mask'e düşüyor ve PrimeVue dismissableMask bunu backdrop tıkı
+    // sanıp modalı anında kapatıyordu. Açılıştan sonraki kısa pencerede mask
+    // dismissal'ı kapalı tutulur (çift tık aralığı + açılış animasyonu ~320ms).
+    const maskDismissable = ref(false);
+    let maskGuardTimer: ReturnType<typeof setTimeout> | null = null;
+
+    watch(
+        () => state.visible,
+        (visible) => {
+            if (maskGuardTimer !== null) {
+                clearTimeout(maskGuardTimer);
+                maskGuardTimer = null;
+            }
+            if (visible) {
+                maskDismissable.value = false;
+                maskGuardTimer = setTimeout(() => {
+                    maskDismissable.value = true;
+                    maskGuardTimer = null;
+                }, 400);
+            }
+        },
+    );
+
     const cancelLabel = computed(() => state.footer?.cancelLabel ?? trans('sk-button.cancel'));
     const confirmLabel = computed(() => state.footer?.confirmLabel ?? trans('sk-button.confirm'));
     const confirmIcon = computed(() => state.footer?.confirmIcon ?? 'pi pi-check');
@@ -35,14 +59,14 @@
         :visible="state.visible"
         :modal="true"
         :draggable="false"
-        :dismissable-mask="true"
+        :dismissable-mask="maskDismissable"
         :close-on-escape="true"
         :show-header="false"
         :style="{ width: state.width }"
         :breakpoints="{ '768px': '95vw' }"
         :pt="{
             root: { class: 'sk-dlg' },
-            mask: { class: 'sk-dlg__mask' },
+            mask: { class: ['sk-dlg__mask', { 'sk-dlg__mask--dark': state.darkMask }] },
         }"
         @update:visible="(val) => !val && close()"
     >

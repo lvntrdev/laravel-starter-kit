@@ -28,7 +28,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildActiveTheme, resolveThemeName } from './sk-theme-build.mjs';
+import { buildActiveTheme, readThemeMarker, resolveThemeName } from './sk-theme-build.mjs';
 
 /**
  * Resolve the active PrimeVue preset module for the given theme.
@@ -54,7 +54,11 @@ export function resolveActivePreset({ root, theme } = {}) {
     const themeDir = join(projectRoot, 'resources', 'js', 'theme');
     const basePreset = join(themeDir, 'preset.ts');
 
-    const activeTheme = resolveThemeName(theme);
+    // Pass projectRoot so the preset alias follows the SAME marker file the CSS
+    // resolver does — otherwise a marker-selected theme would swap CSS slots but
+    // keep the `main` PrimeVue preset, splitting the styled-mode palette from the
+    // stylesheet. Precedence is identical: explicit → marker → VITE_SK_THEME → main.
+    const activeTheme = resolveThemeName(theme, projectRoot);
     if (activeTheme !== 'main') {
         const override = join(themeDir, activeTheme, 'preset.ts');
         if (existsSync(override)) {
@@ -75,13 +79,16 @@ export function resolveActivePreset({ root, theme } = {}) {
  */
 export default function skTheme(options = {}) {
     // The active theme, resolved once `configResolved` fires. An explicit
-    // `skTheme({ theme })` option always wins; otherwise we honor `VITE_SK_THEME`
-    // from Vite's loaded env (`config.env`), which carries the value whether it
-    // was set in `.env` or in the shell. This is what makes `.env`-based
-    // activation reach the CSS resolver: Vite loads `.env` into `import.meta.env`
-    // (and `config.env`) but NOT into `process.env`, so without this the resolver
-    // — which falls back to `process.env.VITE_SK_THEME` — never saw a `.env`-only
-    // value and silently resolved to `main`.
+    // `skTheme({ theme })` option always wins. Below that the precedence is the
+    // resolver's own: `.sk-active-theme` marker (the DB-backed admin choice) →
+    // `VITE_SK_THEME` → `main`. We only LIFT `VITE_SK_THEME` out of Vite's loaded
+    // env (`config.env`) into `resolvedTheme` when there is NO marker — because
+    // Vite loads `.env` into `import.meta.env`/`config.env` but NOT into
+    // `process.env`, so a `.env`-only value would otherwise be invisible to
+    // `resolveThemeName` (which reads `process.env.VITE_SK_THEME`). Lifting it
+    // unconditionally would make the env beat the marker and invert precedence,
+    // so the marker check gates the lift. When a marker exists we leave
+    // `resolvedTheme` null and let `resolveThemeName` read the marker directly.
     let resolvedTheme = options.theme;
 
     const generate = () => {
@@ -105,8 +112,14 @@ export default function skTheme(options = {}) {
         // Earliest reliable point: config is known, no module resolved yet.
         // `config.env` holds the VITE_-prefixed vars Vite loaded from `.env`.
         configResolved(config) {
+            // Lift the Vite-loaded VITE_SK_THEME only when neither an explicit
+            // option nor a marker file decides the theme — so the marker keeps
+            // precedence over a `.env` value (see the constructor note above).
             if (resolvedTheme == null && config?.env?.VITE_SK_THEME) {
-                resolvedTheme = config.env.VITE_SK_THEME;
+                const projectRoot = options.root ?? config?.root ?? process.cwd();
+                if (readThemeMarker(projectRoot) === null) {
+                    resolvedTheme = config.env.VITE_SK_THEME;
+                }
             }
             generate();
         },

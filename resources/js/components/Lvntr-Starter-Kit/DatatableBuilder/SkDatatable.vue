@@ -89,6 +89,17 @@
         return [];
     }
 
+    /**
+     * Option color dot background. `opt.color` is typically a Tailwind color
+     * name (e.g. "sky", "emerald", "slate") which is NOT a valid CSS named
+     * color, so a raw `background: sky` would render nothing. Map it to the
+     * Tailwind 4 color variable, falling back to the literal value for hex /
+     * real CSS colors.
+     */
+    function dotStyle(color: string): Record<string, string> {
+        return { background: `var(--color-${color}-500, ${color})` };
+    }
+
     // ── Scroll constraint ──────────────────────────────────────────────────────
 
     const scrollRef = ref<HTMLElement | null>(null);
@@ -1050,7 +1061,7 @@
                     $slots['toolbar-start']
                 "
                 class="sk-dt-toolbar"
-                :class="{ 'no-padding': !config.isCard }"
+                :class="{ 'no-padding': !config.isCard, 'sk-dt-toolbar--titled': !!config.title }"
             >
                 <!-- Left: optional title / subtitle block (before the search input) -->
                 <div v-if="config.title || config.subtitle" class="sk-dt-toolbar__head">
@@ -1117,7 +1128,7 @@
                                         <span
                                             v-else-if="opt.color"
                                             class="sk-dt-pillmenu__dot"
-                                            :style="{ background: opt.color }"
+                                            :style="dotStyle(opt.color)"
                                         />
                                     </span>
                                     <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
@@ -1136,7 +1147,13 @@
 
                     <!-- Other inline filter types keep their PrimeVue inputs -->
                     <div v-else class="sk-dt-toolbar__inline-filter">
-                        <span class="sk-dt-toolbar__inline-filter-label">{{ resolveFilterLabel(filter) }}</span>
+                        <!-- Date pickers carry their label via the placeholder; only
+                             select-button needs an external label. -->
+                        <span
+                            v-if="filter.type === 'select-button'"
+                            class="sk-dt-toolbar__inline-filter-label"
+                            >{{ resolveFilterLabel(filter) }}</span
+                        >
                         <SelectButton
                             v-if="filter.type === 'select-button'"
                             v-model="activeFilters[filter.key]"
@@ -1166,18 +1183,6 @@
                         />
                     </div>
                 </template>
-
-                <!-- Clear filters — appears while any filter or search is active -->
-                <Transition name="sk-dt-dd">
-                    <button
-                        v-if="activeTags.length > 0 || search"
-                        type="button"
-                        class="sk-dt-clearfilters"
-                        @click="clearAllFilters"
-                    >
-                        <i class="pi pi-filter-slash" />{{ $t('sk-datatable.clear_filters') }}
-                    </button>
-                </Transition>
 
                 <!-- Right: Filter Popover, Columns, Actions -->
                 <div class="sk-dt-toolbar__right">
@@ -1329,7 +1334,7 @@
                                             <span
                                                 v-else-if="opt.color"
                                                 class="sk-dt-pillmenu__dot"
-                                                :style="{ background: opt.color }"
+                                                :style="dotStyle(opt.color)"
                                             />
                                         </span>
                                         <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
@@ -1346,7 +1351,13 @@
                             </Transition>
                         </div>
                         <template v-else>
-                            <label class="sk-dt-filter-popover__label">{{ resolveFilterLabel(filter) }}</label>
+                            <!-- Date pickers carry their label via the placeholder; only
+                                 select-button needs the uppercase heading. -->
+                            <label
+                                v-if="filter.type === 'select-button'"
+                                class="sk-dt-filter-popover__label"
+                                >{{ resolveFilterLabel(filter) }}</label
+                            >
                             <SelectButton
                                 v-if="filter.type === 'select-button'"
                                 v-model="activeFilters[filter.key]"
@@ -1448,7 +1459,7 @@
                 <span v-for="tag in activeTags" :key="tag.key" class="sk-dt-tags__tag">
                     <span class="sk-dt-tags__tag-label">{{ tag.label }}:</span>
                     <span class="sk-dt-tags__tag-value">{{ tag.value }}</span>
-                    <i class="pi pi-times sk-dt-tags__tag-remove" @click="clearFilter(tag.key)" />
+                    <i class="sk-dt-tags__tag-remove" :aria-label="$t('sk-button.clear_all')" @click="clearFilter(tag.key)" />
                 </span>
                 <button class="sk-dt-tags__clear-all" @click="clearAllFilters">
                     {{ $t('sk-button.clear_all') }}

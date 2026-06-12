@@ -1,6 +1,7 @@
 <!-- resources/js/layouts/AdminLayout.vue -->
 <script setup lang="ts">
     import { useAccentColor } from '@/composables/useAccentColor';
+    import { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
     import { useDarkMode } from '@/composables/useDarkMode';
     import { useFlash } from '@/composables/useFlash';
     import AppShell from '@/layouts/AppShell.vue';
@@ -29,8 +30,14 @@
 
     const { isDark, toggleDark } = useDarkMode();
     const { accent, setAccent, sidebarStyle, setSidebarStyle } = useAccentColor();
+    const { applyFavicon } = useAppearanceDefaults();
     const { flash } = useFlash();
     const toast = useToast();
+
+    // Apply the admin-set favicon on boot (SSR-safe; no-op when none configured).
+    onMounted(() => {
+        applyFavicon();
+    });
 
     const removeFinishListener = router.on('finish', () => {
         if (flash.value.success) {

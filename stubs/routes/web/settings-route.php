@@ -16,7 +16,12 @@ Route::prefix('settings')
         Route::put('turnstile', 'updateTurnstile')->name('update.turnstile')->middleware('check.permission:settings.update');
         Route::put('postman', 'updatePostman')->name('update.postman')->middleware('check.permission:settings.update');
         Route::put('apidog', 'updateApidog')->name('update.apidog')->middleware('check.permission:settings.update');
+        Route::put('appearance', 'updateAppearance')->name('update.appearance')->middleware('check.permission:settings.update');
         Route::post('test-mail', 'testMail')->name('testMail')->middleware('check.permission:settings.update');
         Route::post('logo', 'uploadLogo')->name('upload.logo')->middleware('check.permission:settings.update');
         Route::delete('logo', 'deleteLogo')->name('delete.logo')->middleware('check.permission:settings.update');
+        Route::post('appearance/logo/{variant}', 'uploadAppearanceLogo')->name('upload.appearanceLogo')->middleware('check.permission:settings.update');
+        Route::delete('appearance/logo/{variant}', 'deleteAppearanceLogo')->name('delete.appearanceLogo')->middleware('check.permission:settings.update');
+        Route::post('appearance/favicon', 'uploadFavicon')->name('upload.favicon')->middleware('check.permission:settings.update');
+        Route::delete('appearance/favicon', 'deleteFavicon')->name('delete.favicon')->middleware('check.permission:settings.update');
     });

@@ -22,11 +22,13 @@ return [
     'trash_empty_title' => 'Trash is empty',
     'trash_empty_subtitle' => 'Deleted items will appear here.',
     'trash_emptied' => 'Trash emptied.',
+    'trash_notice_title' => 'Deleted items are kept in the trash before being permanently removed',
+    'trash_notice_sub' => ':count items can be restored. Permanent deletion cannot be undone.',
     'link_copied' => 'Link copied to clipboard.',
     'coming_soon' => 'This feature is coming soon.',
 
     'labels' => [
-        'root' => 'Root',
+        'root' => 'Home',
         'new_folder' => 'New Folder',
         'upload' => 'Upload',
         'upload_new' => 'Upload new file',
@@ -51,6 +53,7 @@ return [
         'sort_size' => 'Size',
         'sort_date' => 'Date',
         'total_files' => ':count files',
+        'count_folders' => ':count folders',
         'total_size' => 'Total :size',
         'selected_count' => ':count selected',
         'select_all' => 'Select All',
@@ -90,17 +93,14 @@ return [
         'folders_section' => 'Folders',
         'no_results' => 'No items match your search.',
 
-        'filter' => [
-            'all' => 'All',
-            'image' => 'Image',
-            'video' => 'Video',
-            'pdf' => 'PDF',
-            'audio' => 'Audio',
-            'archive' => 'Archive',
+        'sort_menu' => [
+            'recent' => 'Recently added',
+            'name' => 'By name',
+            'size' => 'By size',
         ],
 
         'sidebar' => [
-            'storage_usage' => 'Storage Usage',
+            'storage_usage' => 'Storage',
             'storage_used_of' => ':used / :total',
             'quick_access' => 'Quick Access',
             'all_files' => 'All Files',
@@ -113,17 +113,7 @@ return [
         ],
 
         'stats' => [
-            'total_files' => 'Total Files',
-            'total_size' => 'Total Size',
-            'folder_count' => 'Folder Count',
-            'favorites' => 'Favorites',
-            'recent_upload' => 'Last Upload',
             'item_count' => ':count items',
-            'never_uploaded' => 'Never',
-            'time_just_now' => 'Just now',
-            'time_minutes' => ':count min',
-            'time_hours' => ':count hr',
-            'time_days' => ':count d',
         ],
 
         'details' => [

@@ -2,6 +2,7 @@
 <script setup lang="ts">
     import { usePage } from '@inertiajs/vue3';
     import { useAdminMenu } from '@/composables/useAdminMenu';
+    import { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
     import SidebarMenuItem from '@/layouts/components/SidebarMenuItem.vue';
     import AdminSidebarFooter from '@/layouts/components/AdminSidebarFooter.vue';
 
@@ -20,8 +21,14 @@
     const { items: menuItems, isItemActive, isGroupOpen } = useAdminMenu();
     provide('adminMenu', { isItemActive, isGroupOpen });
 
+    const { logoLightUrl } = useAppearanceDefaults();
+
     const appName = computed(() => usePage().props.appName as string);
-    const appLogo = computed(() => usePage().props.appLogo as string | null);
+    // Prefer the admin-set light logo (shared appearance prop); fall back to the
+    // legacy `appLogo` (general.logo) so existing apps keep their current logo.
+    const appLogo = computed(
+        () => logoLightUrl.value ?? (usePage().props.appLogo as string | null),
+    );
 
     // Whether the sidebar is visually collapsed via CSS (icon-only mode)
     const isCollapsed = computed(() => props.collapsed && !props.isMobile);

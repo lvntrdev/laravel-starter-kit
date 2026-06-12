@@ -5,6 +5,7 @@ namespace Lvntr\StarterKit\Domain\Setting\Queries;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Storage;
 use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
+use Lvntr\StarterKit\Support\ThemeResolver;
 
 /**
  * Query: Resolve settings with config fallbacks for each group.
@@ -29,7 +30,45 @@ class SettingsDefaultsQuery
             'turnstile' => $this->turnstile(),
             'postman' => $this->postman(),
             'apidog' => $this->apidog(),
+            'appearance' => $this->appearance(),
             'storage_usage' => $this->storageUsage(),
+        ];
+    }
+
+    /**
+     * Appearance defaults: the admin-controlled global theme/accent/dark-mode/
+     * sidebar plus resolved logo + favicon URLs. `logo_light` falls back to the
+     * legacy `general.logo` for apps that set a logo before this group existed.
+     *
+     * The `theme` value is the *active* theme resolved from the marker file /
+     * VITE_SK_THEME / `main` (NOT the raw stored string) so the UI always shows
+     * what the build will actually use. `available_themes` is the installed set
+     * the Görünüm tab renders as selectable cards.
+     *
+     * @return array<string, mixed>
+     */
+    public function appearance(): array
+    {
+        $stored = Setting::getGroup('appearance');
+
+        $logoLight = $stored['logo_light'] ?? null;
+        // logo_light backward-compat: fall back to the legacy general.logo so
+        // apps that already set a logo keep showing it under the new group.
+        if (! $this->isFilled($logoLight)) {
+            $logoLight = Setting::getValue('general.logo');
+        }
+        $logoDark = $stored['logo_dark'] ?? null;
+        $favicon = $stored['favicon'] ?? null;
+
+        return [
+            'theme' => ThemeResolver::activeTheme(),
+            'available_themes' => ThemeResolver::availableThemes(),
+            'accent_color' => $stored['accent_color'] ?? 'default',
+            'dark_mode_default' => ($stored['dark_mode_default'] ?? '0') === '1',
+            'sidebar_style' => $stored['sidebar_style'] ?? 'colored',
+            'logo_light_url' => $this->isFilled($logoLight) ? Storage::disk('public')->url($logoLight) : null,
+            'logo_dark_url' => $this->isFilled($logoDark) ? Storage::disk('public')->url($logoDark) : null,
+            'favicon_url' => $this->isFilled($favicon) ? Storage::disk('public')->url($favicon) : null,
         ];
     }
 

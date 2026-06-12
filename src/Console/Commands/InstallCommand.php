@@ -163,6 +163,7 @@ class InstallCommand extends Command
         ],
         'Üretilen tema manifesti (sk-theme-build resolver çıktısı)' => [
             '/resources/css/theme/_active.css',
+            '/resources/css/theme/.sk-active-theme',
         ],
     ];
 
