@@ -136,6 +136,7 @@
                             input-class="!pl-9"
                             class="w-full"
                             @update:model-value="onUpdate"
+                            @input="onUpdate?.($event.value)"
                         />
                     </div>
                     <small class="text-xs text-surface-400 dark:text-surface-500">

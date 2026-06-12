@@ -25,6 +25,7 @@ return [
     'show_password' => 'Şifreyi göster',
     'hide_password' => 'Şifreyi gizle',
     'error' => 'Hata',
+    'unsaved' => 'Kaydedilmemiş değişiklikler var.',
 
     'confirmation' => 'Onay',
     'confirm_delete_header' => 'Silme Onayı',

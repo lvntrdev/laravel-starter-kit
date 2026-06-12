@@ -36,9 +36,11 @@ class UpdateAppearanceSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // The theme must be a real, installed theme folder — the available
-            // set is the single source of truth (ThemeResolver scans the
-            // theme dir; the slug rule there blocks any traversal value).
+            // The theme must be a member of the full selectable set — the
+            // single source of truth (ThemeResolver::availableThemes() = the
+            // always-available runtime themes [main, aura] ∪ the build-time
+            // custom theme folders; the slug rule there blocks any traversal
+            // value). The combined list validates both layers without change.
             'theme' => ['required', 'string', Rule::in(ThemeResolver::availableThemes())],
             'accent_color' => ['required', 'string', Rule::in(self::ACCENT_COLORS)],
             'sidebar_style' => ['required', 'string', Rule::in(['colored', 'light'])],

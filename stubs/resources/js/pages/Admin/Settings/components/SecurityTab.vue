@@ -251,8 +251,16 @@
 
         <!-- Edge-to-edge card footer drives the active form -->
         <template #footer>
-            <!-- Always present so its `mr-auto` keeps the buttons right-aligned -->
-            <span class="sk-card__foot-hint">{{ activeForm?.isDirty ? $t('sk-setting.security.unsaved') : '' }}</span>
+            <!-- Match the other settings tabs: amber unsaved hint + warning icon.
+                 The v-else span keeps `mr-auto` so the button stays right-aligned. -->
+            <small
+                v-if="activeForm?.isDirty"
+                class="mr-auto flex items-center gap-1.5 text-amber-600 dark:text-amber-400"
+            >
+                <i class="pi pi-exclamation-circle text-xs" />
+                {{ $t('sk-common.unsaved') }}
+            </small>
+            <span v-else class="mr-auto" />
             <Button
                 :label="$t('sk-button.update')"
                 icon="pi pi-save"

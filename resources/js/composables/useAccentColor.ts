@@ -1,7 +1,9 @@
 // resources/js/composables/useAccentColor.ts
 
+import { usePage } from '@inertiajs/vue3';
 import { updatePrimaryPalette } from '@primevue/themes';
 import { migrateLegacyAppearanceStorage, useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
+import type { Appearance } from '@/types';
 
 /**
  * Composable for the admin accent color.
@@ -106,6 +108,16 @@ const DEFAULT_PRIMARY: Record<number, string> = {
     500: '{blue.500}', 600: '{blue.600}', 700: '{blue.700}', 800: '{blue.800}', 900: '{blue.900}', 950: '{blue.950}',
 };
 
+/**
+ * Aura's signature default primary — indigo (vs main's blue). When the active
+ * runtime theme is `aura` AND no personal accent is chosen, the whole UI (brand
+ * frame via --p-primary-800, buttons, active item) reads indigo. Picking any
+ * accent from the grid overrides it like under main. Uses the v4 oklch indigo
+ * scale (same source the indigo swatch applies) so the tone matches the rest of
+ * the UI — not Material's v3 `{indigo.x}` primitive.
+ */
+const AURA_DEFAULT_PRIMARY: Record<number, string> = TAILWIND_PALETTES.indigo;
+
 /** Validate a raw server-supplied accent name; falls back to `'default'`. */
 function resolveAccent(value: string | undefined): AccentColor {
     if (value === 'default') {
@@ -147,7 +159,12 @@ export function useAccentColor() {
     const STORAGE_KEY = 'admin-accent-color';
     const SIDEBAR_STYLE_KEY = 'admin-sidebar-style';
 
+    const page = usePage();
     const { defaultAccent, defaultSidebarStyle } = useAppearanceDefaults();
+
+    /** The active runtime theme, used to pick the default primary (aura → indigo). */
+    const isAuraTheme = (): boolean =>
+        (page.props.appearance as Appearance | undefined)?.theme === 'aura';
 
     // Clear legacy auto-persisted defaults once so a stale stored value can't mask
     // the admin global default (must run BEFORE the localStorage reads below).
@@ -196,7 +213,9 @@ export function useAccentColor() {
         root?.style.removeProperty('--admin-sidebar-border');
 
         if (effective === 'default') {
-            updatePrimaryPalette(DEFAULT_PRIMARY);
+            // No personal accent → the theme's signature default: indigo under
+            // aura, kit-blue under main. data-sk-accent stays absent (default).
+            updatePrimaryPalette(isAuraTheme() ? AURA_DEFAULT_PRIMARY : DEFAULT_PRIMARY);
             root?.removeAttribute('data-sk-accent');
             return;
         }
@@ -232,6 +251,13 @@ export function useAccentColor() {
     // React to changes (e.g. from another tab via storage sync) and on first mount.
     watch(accent, (val) => applyAccent(val), { immediate: false });
     watch(sidebarStyle, (val) => applySidebarStyle(val), { immediate: false });
+    // Re-apply the accent when the runtime theme flips: a 'default' accent
+    // resolves to indigo under aura and blue under main, so the palette must
+    // refresh on switch (the accent value itself doesn't change).
+    watch(
+        () => (page.props.appearance as Appearance | undefined)?.theme,
+        () => applyAccent(accent.value),
+    );
     onMounted(() => {
         applyAccent(accent.value);
         applySidebarStyle(sidebarStyle.value);

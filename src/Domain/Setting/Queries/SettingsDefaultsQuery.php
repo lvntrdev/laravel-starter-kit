@@ -40,10 +40,19 @@ class SettingsDefaultsQuery
      * sidebar plus resolved logo + favicon URLs. `logo_light` falls back to the
      * legacy `general.logo` for apps that set a logo before this group existed.
      *
-     * The `theme` value is the *active* theme resolved from the marker file /
-     * VITE_SK_THEME / `main` (NOT the raw stored string) so the UI always shows
-     * what the build will actually use. `available_themes` is the installed set
-     * the Görünüm tab renders as selectable cards.
+     * The `theme` value is resolved against the two-layer theme model:
+     *   - a stored RUNTIME theme (main/aura) is returned verbatim — runtime
+     *     themes are switched live by `data-sk-theme`, so the stored DB value is
+     *     authoritative regardless of the build marker;
+     *   - any other stored value (a build-time custom theme, or empty) falls
+     *     back to ThemeResolver::activeTheme() (marker → VITE_SK_THEME → `main`)
+     *     so the UI shows what the build will actually use.
+     *
+     * `available_themes` is the full selectable set (runtime ∪ custom folders)
+     * the Görünüm tab renders as cards; `runtime_themes` is the runtime subset
+     * the tab uses to badge each card as instant vs. requires-rebuild. Both are
+     * stripped from the unauthenticated global Inertia share — only the
+     * permission-gated settings page needs them.
      *
      * @return array<string, mixed>
      */
@@ -60,9 +69,14 @@ class SettingsDefaultsQuery
         $logoDark = $stored['logo_dark'] ?? null;
         $favicon = $stored['favicon'] ?? null;
 
+        $storedTheme = is_string($stored['theme'] ?? null) ? $stored['theme'] : '';
+
         return [
-            'theme' => ThemeResolver::activeTheme(),
+            'theme' => ThemeResolver::isRuntimeTheme($storedTheme)
+                ? $storedTheme
+                : ThemeResolver::activeTheme(),
             'available_themes' => ThemeResolver::availableThemes(),
+            'runtime_themes' => ThemeResolver::RUNTIME_THEMES,
             'accent_color' => $stored['accent_color'] ?? 'default',
             'dark_mode_default' => ($stored['dark_mode_default'] ?? '0') === '1',
             'sidebar_style' => $stored['sidebar_style'] ?? 'colored',

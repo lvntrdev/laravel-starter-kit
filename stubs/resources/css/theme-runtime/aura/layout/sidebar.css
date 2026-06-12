@@ -1,0 +1,202 @@
+/**
+ * Layout sidebar shell — aura (RUNTIME)
+ *
+ * Repaints main/layout/sidebar.css when `<html data-sk-theme="aura">` is active.
+ * The sidebar is a STATIC flex child on the brand frame (transparent in the
+ * default colored style; a rounded card in the light style and in dark mode —
+ * both driven by tokens). Collapse behavior and the mobile drawer are kept, but
+ * the drawer is the only fixed-position state.
+ *
+ * Nav ITEM styles still come from main/components/navigation.css and follow
+ * the --admin-sidebar-* tokens; only sidebar-shell rules live here.
+ *
+ * RUNTIME CONTRACT — every top-level rule carries the `html[data-sk-theme='aura']`
+ * ancestor (nested `&` rules inherit it). The mobile-drawer surface overrides
+ * are rewritten from main-style `:root[data-sk-sidebar='light']:not(.dark)` /
+ * `.dark` prefixes to the scoped `html[data-sk-theme='aura'][data-sk-sidebar='light']…`
+ * / `html.dark[data-sk-theme='aura']…` forms so they outspecify main.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SIDEBAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Mobile overlay */
+html[data-sk-theme='aura'] .admin-overlay {
+    @apply fixed inset-0 z-39 bg-black/50 backdrop-blur-sm;
+}
+
+/* Sidebar container — static flex child on the frame.
+   border-0 zeroes main/layout/sidebar.css's `border-r` (which aura does not
+   otherwise reset) — that hairline renders as a white line on the brand frame
+   because aura's --admin-sidebar-border is rgba(255,255,255,0.1). */
+html[data-sk-theme='aura'] .admin-sidebar {
+    @apply relative z-40 flex w-sidebar shrink-0 flex-col overflow-hidden border-0 transition-[width,transform] duration-300 ease-in-out;
+    background: var(--admin-sidebar-bg);
+    color: var(--admin-sidebar-text);
+    /* Run the sidebar flush to the top/left/bottom frame edges — cancel the
+       frame gutter on those sides so there is no white/grey frame around the
+       sidebar card. The gap to the main panel and the main panel's own inset
+       frame are untouched. */
+    margin: calc(-1 * var(--sk-aura-gap)) 0 calc(-1 * var(--sk-aura-gap)) calc(-1 * var(--sk-aura-gap));
+    border-radius: 0;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar--collapsed {
+    @apply w-sidebar-collapsed;
+
+    &:hover {
+        @apply w-sidebar;
+    }
+
+    .nav-group,
+    .nav-link {
+        @apply justify-center gap-0 px-0;
+    }
+
+    .nav-label {
+        @apply w-0 overflow-hidden;
+    }
+
+    .nav-section {
+        @apply py-3 px-0;
+    }
+
+    .nav-chevron,
+    .nav-external {
+        @apply hidden;
+    }
+
+    &:hover .nav-section {
+        @apply pb-1 pt-5 px-3;
+    }
+
+    &:hover .nav-group,
+    &:hover .nav-link {
+        @apply justify-start gap-3 px-3;
+    }
+
+    &:hover .nav-label {
+        @apply w-auto overflow-visible;
+    }
+
+    &:hover .nav-chevron,
+    &:hover .nav-external {
+        @apply flex;
+    }
+}
+
+html[data-sk-theme='aura'] .admin-sidebar--hidden {
+    @apply -translate-x-full;
+}
+
+/* Inactive items brighten to the strong foreground on hover (the colored
+   sidebar reads white-on-brand; active items keep their own colors). */
+html[data-sk-theme='aura'] .admin-sidebar .nav-link:not(.nav-link--active):hover,
+html[data-sk-theme='aura'] .admin-sidebar .nav-group:not(.nav-group--active):hover {
+    color: var(--sk-aura-sb-fg-strong);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LOGO — brand square + name, transparent row (no band, no border)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+html[data-sk-theme='aura'] .admin-sidebar__logo {
+    @apply flex h-header shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-0 px-3;
+    background: transparent;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__logo-icon {
+    @apply flex size-10 shrink-0 items-center justify-center rounded text-lg;
+    background: var(--sk-aura-logo-sq-bg);
+    color: var(--sk-aura-logo-sq-fg);
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__logo-text {
+    @apply text-lg font-semibold transition-opacity duration-300;
+    color: var(--sk-aura-sb-fg-strong);
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__logo-img {
+    @apply h-8 w-auto max-w-[160px] object-contain;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAVIGATION SCROLL REGION
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+html[data-sk-theme='aura'] .admin-sidebar__nav {
+    @apply flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-3;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--admin-sidebar-border);
+    border-radius: 2px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER — version chip card
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Plain footer row — no boxed chip frame (no bg, no border, no card margins),
+   light + dark. The version sits inline like the rest of the sidebar. */
+html[data-sk-theme='aura'] .admin-sidebar__footer {
+    @apply mx-0 mb-0 flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap px-3 py-3;
+    background: transparent;
+    border: 0;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__footer-icon {
+    @apply flex size-8 shrink-0 items-center justify-center rounded text-sm;
+    background: var(--sk-aura-chip-bg);
+    color: var(--sk-aura-sb-fg-strong);
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__footer-info {
+    @apply flex flex-col gap-0.5 transition-opacity duration-300;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__footer-title {
+    @apply text-sm font-semibold leading-none;
+    color: var(--admin-sidebar-text);
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__footer-version {
+    @apply text-xs leading-none;
+    color: var(--admin-sidebar-text-muted);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOBILE DRAWER (< 1024px — matches useSidebar's MOBILE_BREAKPOINT)
+   ─────────────────────────────────────────────────────────────────
+   The static flex child becomes a fixed drawer over the full-bleed panel.
+   In the colored style it rides on the brand frame color; the light-style
+   and dark cards keep their own surface (tokens).
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@media (max-width: 1023px) {
+    html[data-sk-theme='aura'] .admin-sidebar {
+        @apply fixed inset-y-0 left-0;
+        margin: 0;
+        border-radius: 0;
+        background: var(--sk-aura-frame-bg);
+    }
+
+    html[data-sk-theme='aura'][data-sk-sidebar='light']:not(.dark) .admin-sidebar {
+        background: var(--admin-sidebar-bg);
+    }
+
+    /* Dark drawer needs a SOLID surface — the token is transparent (desktop
+       melts into the frame), a see-through fixed drawer would be unreadable. */
+    html.dark[data-sk-theme='aura'] .admin-sidebar {
+        background: var(--sk-aura-panel-surface);
+    }
+}

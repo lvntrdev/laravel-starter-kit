@@ -40,6 +40,12 @@ export interface Appearance {
      * global (unauthenticated) Inertia share, so it is optional here.
      */
     available_themes?: string[];
+    /**
+     * Runtime (instant-switch) theme names. Present only in the settings payload
+     * (`AppearanceTab` uses it to decide whether a theme needs a rebuild hint).
+     * When absent (global share) the composable falls back to `['main','aura']`.
+     */
+    runtime_themes?: string[];
     /** Default accent color name, or `'default'` for the kit primary. */
     accent_color: string;
     /** Whether dark mode is the default for users with no personal choice. */

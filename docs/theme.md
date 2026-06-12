@@ -3,8 +3,9 @@
 This document covers:
 
 - The `AppShell` / `AdminLayout` composition model and how to build a new layout
-- The `main` + `custom` CSS structure, the build-time resolver, and the full-replacement + fallback model
-- `VITE_SK_THEME` activation
+- The two-layer theme model: runtime kit themes (`main`, `aura`) and build-time custom slot-overrides
+- The build-time resolver and full-replacement + fallback model for custom themes
+- `VITE_SK_THEME` activation for custom themes
 - Step-by-step recipe for adding a custom theme or overriding a single component's styles
 
 ---
@@ -96,14 +97,33 @@ Pages using the new layout import it by path — `AdminLayout` pages are unaffec
 
 ## Two style layers
 
-The theme system has two independent, complementary layers. Both are keyed off the same `VITE_SK_THEME` environment variable and resolved at build time — there is no runtime theme switch.
+The theme system has two independent, complementary layers.
+
+| Layer | Themes | How it activates | Resolver | Artifact |
+|---|---|---|---|---|
+| **Runtime kit themes** | `main`, `aura` | `appearance.theme` DB setting (Settings → Appearance) — takes effect instantly, no rebuild | `useTheme` composable sets `<html data-sk-theme>` at runtime | None — CSS always bundled |
+| **Build-time custom themes** | Consumer-created `theme/<custom>/` directories | `VITE_SK_THEME=custom` in `.env` + `npm run build` | `sk-theme-build.mjs` (vendor-resident) writes `_active.css` | Generated file (`_active.css`), gitignored |
+
+Additionally, the **PrimeVue preset layer** is keyed off `VITE_SK_THEME` at build time:
 
 | Layer | What it covers | Resolver | Artifact |
 |---|---|---|---|
-| **CSS theme override** | Layout dimensions, colours, shadows, component CSS classes | `sk-theme-build.mjs` (vendor-resident) writes `_active.css` | Generated file (`_active.css`), gitignored |
 | **PrimeVue preset** | Primary palette, surface colours, border radius, component tokens (`--p-*` variables) | alias `customResolver` in `vite.config.ts` (`resolveActivePreset`) | None — pure JS module resolution |
 
-The two layers are independent: you can override the CSS without touching the preset and vice versa. A `tokens.css` override typically reads the `--p-*` tokens the preset emits — see [Dependency chain](#dependency-chain-tokens-and-preset) below.
+### Runtime kit themes — `main` and `aura`
+
+Both `main` and `aura` are **always bundled** in every build. Switching between them requires no rebuild — the `useTheme` composable reads `appearance.theme` from the shared Inertia props and writes `<html data-sk-theme="aura">` (or removes the attribute for `main`) on mount and on every prop change.
+
+- **`main`** — the default. No `data-sk-theme` attribute on `<html>`; all base rules apply.
+- **`aura`** — activates when `data-sk-theme="aura"` is set on `<html>`. All aura rules are scoped to `html[data-sk-theme='aura']`, so they are inert until the attribute is present.
+
+Switch from the admin **Settings → Appearance** panel; the change takes effect immediately and persists admin-wide. There is no per-user override.
+
+### Build-time custom themes
+
+Custom themes live in `resources/css/theme/<name>/` directories and use the full-replacement + fallback slot model — see [CSS theme system](#css-theme-system) below. They require `VITE_SK_THEME=<name>` in `.env` and a `npm run build` / `npm run dev` to become active. When a custom theme is selected in Settings → Appearance, a "rebuild required" hint is shown in the UI.
+
+The two layers are independent: you can have `VITE_SK_THEME=custom` (build-time custom base) while the runtime attribute switches between `main` and `aura` visual styles. A `tokens.css` override typically reads the `--p-*` tokens the preset emits — see [Dependency chain](#dependency-chain-tokens-and-preset) below.
 
 ---
 
@@ -112,41 +132,64 @@ The two layers are independent: you can override the CSS without touching the pr
 ### Directory structure
 
 ```
-resources/css/theme/
-├── theme.css              # Entry: imports _active.css only
-├── _active.css            # GENERATED — do not edit; gitignored
-├── main/                  # Built-in base theme (source of truth for all slots)
-│   ├── tokens.css         # CSS custom properties: layout dims, colours, shadows
-│   ├── fonts.css          # Web font declarations
-│   ├── _base.scss         # Base reset / typography
-│   ├── layout/
-│   │   ├── shell.css        # .admin-layout, .admin-main, Vue transitions
-│   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
-│   │   ├── header.css       # .admin-header*
-│   │   ├── page-header.css  # .admin-page-header*
-│   │   └── footer.css       # .admin-footer*
-│   ├── components/
-│   │   ├── card.css
-│   │   ├── button.css
-│   │   ├── confirm.css
-│   │   ├── datatable.css
-│   │   ├── dialog.css
-│   │   ├── editor.css
-│   │   ├── formbuilder.css
-│   │   ├── menus.css
-│   │   ├── message.css
-│   │   ├── navigation.css
-│   │   ├── primevue.css
-│   │   ├── tabs.css
-│   │   ├── tag.css
-│   │   └── toast.css
-│   ├── _auth.scss         # Auth layout styles
-│   └── utilities.css      # Tailwind utility overrides
-└── custom/                # Your override theme — not shipped; you create it
-    └── (create as needed — see recipe below)
+resources/css/
+├── theme/
+│   ├── theme.css              # Entry: imports _active.css then theme-runtime/aura/aura.css
+│   ├── _active.css            # GENERATED — do not edit; gitignored
+│   ├── main/                  # Built-in base theme (source of truth for all slots)
+│   │   ├── tokens.css         # CSS custom properties: layout dims, colours, shadows
+│   │   ├── fonts.css          # Web font declarations
+│   │   ├── _base.scss         # Base reset / typography
+│   │   ├── layout/
+│   │   │   ├── shell.css        # .admin-layout, .admin-main, Vue transitions
+│   │   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
+│   │   │   ├── header.css       # .admin-header*
+│   │   │   ├── page-header.css  # .admin-page-header*
+│   │   │   └── footer.css       # .admin-footer*
+│   │   ├── components/
+│   │   │   ├── card.css
+│   │   │   ├── button.css
+│   │   │   ├── confirm.css
+│   │   │   ├── datatable.css
+│   │   │   ├── dialog.css
+│   │   │   ├── editor.css
+│   │   │   ├── formbuilder.css
+│   │   │   ├── menus.css
+│   │   │   ├── message.css
+│   │   │   ├── navigation.css
+│   │   │   ├── primevue.css
+│   │   │   ├── tabs.css
+│   │   │   ├── tag.css
+│   │   │   └── toast.css
+│   │   ├── _auth.scss         # Auth layout styles
+│   │   └── utilities.css      # Tailwind utility overrides
+│   └── custom/                # Your override theme — not shipped; you create it
+│       └── (create as needed — see recipe below)
+└── theme-runtime/
+    └── aura/                  # Runtime kit theme — always bundled, scoped to html[data-sk-theme='aura']
+        ├── aura.css           # Index: imports the four files below in order
+        ├── tokens.css         # Frame/panel/sidebar tokens (scoped + dark + sidebar variants)
+        └── layout/
+            ├── shell.css        # Brand-colored frame + inset rounded panel
+            ├── sidebar.css      # Static sidebar on the frame, version chip, mobile drawer
+            └── header.css       # 70px panel header, solid dev/debug tags
 ```
 
 > The kit no longer ships an empty `custom/` directory. If you want to override any slot, create the directory yourself first (see recipes below).
+
+> `theme-runtime/aura/` is not a build-time slot directory. It is not read by the resolver (`sk-theme-build.mjs`) and setting `VITE_SK_THEME=aura` has no effect — `aura` activates at runtime via the `data-sk-theme` attribute only.
+
+### Built-in `aura` theme
+
+`aura` is the kit's second built-in theme. It restyles the admin shell as an **inset, rounded panel inside a brand-colored frame**: the sidebar sits directly on the frame (white active pill in the colored style), and the header/content/footer share the panel surface. It overrides only four visual areas — `tokens.css`, `layout/shell.css`, `layout/sidebar.css`, `layout/header.css` — everything else (navigation, footer, page-header, all components) falls back to `main` and is repainted purely by the tokens.
+
+The frame color follows the active PrimeVue primary (`--p-primary-800`), so the existing accent picker recolors the whole frame; the sidebar style switch (`colored` / `light`) and dark mode are fully supported.
+
+**Activating `aura`:** open admin **Settings → Appearance** and select the Aura theme card. The change applies instantly — no build step required. The setting is admin-wide (stored in DB as `appearance.theme`).
+
+`aura`'s CSS lives in `resources/css/theme-runtime/aura/` and is **always bundled** alongside `main`. All its rules are scoped to `html[data-sk-theme='aura']` so they are completely inert until the runtime attribute is present. The `useTheme` composable (called from `AdminLayout`) writes and removes this attribute in response to the Inertia shared `appearance.theme` prop.
+
+> Do not set `VITE_SK_THEME=aura` — that variable controls the build-time custom-theme resolver only, and `aura` is not a slot-based theme. Setting it has no effect on `aura`'s runtime behavior and may produce unexpected results from the resolver.
 
 ### How the resolver works
 
@@ -170,13 +213,15 @@ Note: `_base.scss` and `_auth.scss` are `.scss` files — their extension is pre
 
 ### `VITE_SK_THEME` activation
 
-Set the active theme in `.env`:
+`VITE_SK_THEME` controls the **build-time custom theme resolver only**. It has no effect on the runtime kit themes (`main`, `aura`) — those are always bundled and activated via the `data-sk-theme` attribute at runtime.
+
+Set the active custom theme in `.env`:
 
 ```dotenv
 VITE_SK_THEME=custom
 ```
 
-The default is `main`. If the variable is absent or blank, `main` is used. Run `npm run dev` or `npm run build` — the `skTheme()` Vite plugin guarantees the resolver runs and regenerates `_active.css` before Vite processes any assets. This approach is safe under `ignore-scripts=true` because it does not rely on npm lifecycle hooks.
+The default is `main`. If the variable is absent or blank, `main` is used — i.e. every slot resolves to `main/` and no custom files are loaded. Run `npm run dev` or `npm run build` — the `skTheme()` Vite plugin guarantees the resolver runs and regenerates `_active.css` before Vite processes any assets. This approach is safe under `ignore-scripts=true` because it does not rely on npm lifecycle hooks.
 
 To preview the resolved manifest without a full build, use the `theme:build` npm script (which runs the vendor script directly):
 
@@ -428,6 +473,8 @@ Then edit the `--admin-*` properties to reference your chosen `--p-*` tokens.
 CSS custom properties for dark mode are declared inside `.dark { … }` blocks in `main/tokens.css` (and in the per-region layout files where layout-specific dark overrides exist). If you override `tokens.css`, copy those `.dark` blocks too.
 
 Dark mode is toggled by `useDarkMode` — it adds / removes the `dark` class on `<html>`. No build step or separate CSS file is needed.
+
+The `aura` theme's dark-mode rules are declared as `html.dark[data-sk-theme='aura'] { … }` blocks inside `theme-runtime/aura/tokens.css`. Both attributes are independent — dark mode and the theme switch compose correctly in all four combinations (`light/dark` × `main/aura`).
 
 ---
 

@@ -1,0 +1,72 @@
+/**
+ * Layout shell — aura (RUNTIME)
+ *
+ * Repaints main/layout/shell.css when `<html data-sk-theme="aura">` is active.
+ * The shell becomes a brand-colored frame with an equal gutter on all sides:
+ * the sidebar is a STATIC flex child that sits directly on the frame (no fixed
+ * positioning, no margin-left dance on .admin-main) and the main area is an
+ * inset, rounded panel.
+ *
+ * RUNTIME CONTRACT — every top-level rule carries the `html[data-sk-theme='aura']`
+ * ancestor so it (a) ships in every bundle next to the always-loaded main rules
+ * and (b) outspecifies them. The `.admin-main--expanded/collapsed/mobile`
+ * ml-0 overrides matter most: main ships `.admin-main--expanded { @apply
+ * ml-sidebar }` (0,1,0); the scoped form here is (0,2,1) so the static sidebar
+ * needs no offset in any collapse state.
+ *
+ * Vue transition blocks (.fade-*, .submenu-*) are intentionally NOT duplicated
+ * here — main's copies are always loaded, so a second definition is dead weight.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ADMIN LAYOUT — brand frame + inset panel
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+html[data-sk-theme='aura'] .admin-layout {
+    @apply flex h-screen overflow-hidden;
+    background: var(--sk-aura-frame-bg);
+    padding: var(--sk-aura-gap);
+    gap: var(--sk-aura-gap);
+    transition: background-color 0.3s ease;
+}
+
+html[data-sk-theme='aura'] .admin-main {
+    @apply flex min-w-0 flex-1 flex-col overflow-hidden;
+    background: var(--admin-content-bg);
+    border-radius: var(--sk-aura-radius);
+}
+
+/* Light mode: hairline around the inset panel so the header top, the content
+   left/right and the footer bottom keep a visible edge on the white gutter. */
+html[data-sk-theme='aura']:not(.dark) .admin-main {
+    border: 1px solid var(--admin-header-border);
+}
+
+/* The sidebar is a static flex child here — no offset needed in any state. */
+html[data-sk-theme='aura'] .admin-main--expanded,
+html[data-sk-theme='aura'] .admin-main--collapsed,
+html[data-sk-theme='aura'] .admin-main--mobile {
+    @apply ml-0;
+}
+
+html[data-sk-theme='aura'] .admin-content {
+    @apply w-full flex-1 min-h-0 overflow-y-auto p-6 flex flex-col;
+}
+
+/* Mobile: drop the gutter — the panel goes full-bleed, the sidebar becomes a
+   fixed drawer (see aura/layout/sidebar.css). */
+@media (max-width: 1023px) {
+    html[data-sk-theme='aura'] .admin-layout {
+        padding: 0;
+        gap: 0;
+    }
+
+    html[data-sk-theme='aura'] .admin-main {
+        border-radius: 0;
+    }
+
+    /* Full-bleed panel on mobile — no hairline at the viewport edges. */
+    html[data-sk-theme='aura']:not(.dark) .admin-main {
+        border: 0;
+    }
+}

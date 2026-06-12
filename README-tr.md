@@ -65,7 +65,7 @@ Her projede aynı admin ekranlarını sıfırdan yazmak istemeyip doğrudan iş 
     - Sayfa aşımı seçim desteği ile datatable bulk action API
     - `sk:update` ile güvenli güncelleme (hash tabanlı, kullanıcı değişikliklerini korur)
     - `sk:doctor` ile sistem sağlık kontrolü
-    - Açık & koyu tema
+    - Yeniden derleme gerektirmeyen anlık geçişli yerleşik `main` ve `aura` kit temaları ile açık & koyu tema
 
 ## Nasıl Kullanılır?
 

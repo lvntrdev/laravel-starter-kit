@@ -152,11 +152,20 @@ class SettingsController extends Controller
     /**
      * Update appearance settings (theme, accent, dark-mode default, sidebar).
      *
-     * Persists the appearance group, then writes the node-readable theme marker
-     * so the next build resolves the admin-selected theme. The theme name is
-     * slug-validated both by the FormRequest (must be an installed theme) and
-     * by ThemeResolver before the marker write — no traversal value can reach
-     * the path-segment file.
+     * Persists the appearance group, then reconciles the build-time theme
+     * marker against the two-layer theme model:
+     *
+     *   - A RUNTIME theme (main/aura) is applied live via `data-sk-theme` and
+     *     needs no rebuild, so the marker is reset to the default (`main`). This
+     *     neutralizes the build-time slot layer — coming back from a custom
+     *     theme, `_active.css` then resolves deterministically to `main` instead
+     *     of leaving a stale custom build active underneath the runtime layer.
+     *   - A build-time CUSTOM theme keeps the legacy behavior: write its marker
+     *     so the next build resolves it.
+     *
+     * The theme name is slug-validated both by the FormRequest (must be a
+     * member of ThemeResolver::availableThemes()) and by ThemeResolver before
+     * the marker write — no traversal value can reach the path-segment file.
      */
     public function updateAppearance(UpdateAppearanceSettingsRequest $request, UpdateSettingsAction $action): RedirectResponse
     {
@@ -164,10 +173,16 @@ class SettingsController extends Controller
 
         $action->execute('appearance', $dto);
 
-        // Bridge the DB choice to the build: write the marker the node resolver
-        // reads (sk-theme-build.mjs). Validation already restricted $dto->theme
-        // to an installed, slug-safe theme; writeMarker re-validates defensively.
-        ThemeResolver::writeMarker($dto->theme);
+        // Bridge the DB choice to the build marker the node resolver reads
+        // (sk-theme-build.mjs). Runtime themes neutralize the build layer
+        // (marker → default); custom themes select themselves for the next
+        // build. Validation already restricted $dto->theme to an installed,
+        // slug-safe theme; writeMarker re-validates defensively.
+        ThemeResolver::writeMarker(
+            ThemeResolver::isRuntimeTheme($dto->theme)
+                ? ThemeResolver::DEFAULT_THEME
+                : $dto->theme
+        );
 
         return back()->with('success', __('sk-setting.flash.appearance'));
     }

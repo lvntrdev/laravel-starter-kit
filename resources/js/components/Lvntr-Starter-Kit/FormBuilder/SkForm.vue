@@ -742,6 +742,13 @@
 
                 <!-- ── Bottom actions ─────────────────────────────────────────────────── -->
                 <div v-if="showBottomActions && hasActionArea" class="sk-fb__actions sk-fb__actions--bottom">
+                    <small
+                        v-if="isInternalMode && !isDialogMode && !isReadOnly && internalForm.isDirty"
+                        class="mr-auto flex items-center gap-1.5 text-amber-600 dark:text-amber-400"
+                    >
+                        <i class="pi pi-exclamation-circle text-xs" />
+                        {{ $t('sk-common.unsaved') }}
+                    </small>
                     <slot name="actions-start" />
                     <template v-if="isInternalMode">
                         <Button

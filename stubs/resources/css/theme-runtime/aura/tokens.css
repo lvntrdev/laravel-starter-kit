@@ -1,0 +1,167 @@
+/**
+ * Theme Tokens — aura (RUNTIME)
+ *
+ * Second built-in theme: the admin shell sits INSIDE a brand-colored frame
+ * (equal gutter on all sides), the sidebar lives directly on that frame and
+ * the main area is an inset, rounded panel. Token-only repaint where possible;
+ * the structural changes live in this theme's layout/ overrides
+ * (shell.css, sidebar.css, header.css). Everything else (navigation, footer,
+ * page-header, components) falls back to `main` and follows these tokens.
+ *
+ * RUNTIME CONTRACT — this is NOT a build-time slot. Every rule is scoped to
+ * `html[data-sk-theme='aura']` so it ships in EVERY bundle alongside `main`
+ * (which stays scope-less) and is applied/removed at runtime by flipping the
+ * `<html data-sk-theme="aura">` attribute (useTheme composable). Specificity is
+ * the contract that lets aura override the always-loaded main rules:
+ *   - base block      → `html[data-sk-theme='aura']`                 (0,1,1) > :root (0,1,0)
+ *   - dark block      → `html.dark[data-sk-theme='aura']`            (0,2,1) > .dark / :root.dark
+ *   - light-sidebar   → `html[data-sk-theme='aura'][data-sk-sidebar='light']:not(.dark)`  (0,4,1)
+ *   - accent-guard    → `html[data-sk-theme='aura'][data-sk-accent]:not([data-sk-sidebar='light']):not(.dark)` (0,4,1)
+ *     re-asserts aura's sidebar tokens against main's
+ *     `:root[data-sk-accent]:not([data-sk-sidebar='light']):not(.dark)` (0,4,0) block,
+ *     which would otherwise deep-tint the (transparent) aura sidebar.
+ *
+ * The frame color derives from the ACTIVE PrimeVue primary (`--p-primary-800`),
+ * so the existing accent picker (useAccentColor → updatePrimaryPalette)
+ * recolors the whole frame with no extra wiring. The sidebar style switch
+ * (`data-sk-sidebar="light"`) and dark mode (`.dark`) are honored below.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LIGHT MODE — COLORED SIDEBAR (default)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html[data-sk-theme='aura'] {
+    /* Layout dimensions */
+    --sidebar-w: 256px;
+    --sidebar-collapsed-w: 64px;
+    --header-h: 70px;
+    --footer-h: 56px;
+
+    /* Aura frame */
+    --sk-aura-brand: var(--p-primary-800);
+    --sk-aura-frame-bg: var(--sk-aura-brand);
+    --sk-aura-gap: 1rem;
+    --sk-aura-radius: 5px; /* kit design radius */
+
+    /* Inset panel surfaces */
+    --sk-aura-panel-surface: #ffffff;
+    --sk-aura-panel-hover: #f4f5f8;
+    --sk-aura-text-soft: #6b7280;
+
+    /* Sidebar chrome (on the brand frame) */
+    --sk-aura-sb-fg-strong: #ffffff;
+    --sk-aura-logo-sq-bg: #ffffff;
+    --sk-aura-logo-sq-fg: var(--sk-aura-brand);
+    --sk-aura-chip-bg: rgba(255, 255, 255, 0.07);
+    --sk-aura-chip-border: rgba(255, 255, 255, 0.1);
+
+    /* Sidebar */
+    --admin-sidebar-bg: transparent;
+    --admin-sidebar-text: rgba(255, 255, 255, 0.6);
+    --admin-sidebar-text-muted: rgba(255, 255, 255, 0.42);
+    --admin-sidebar-item-hover-bg: rgba(255, 255, 255, 0.1);
+    --admin-sidebar-item-active-bg: #ffffff;
+    --admin-sidebar-item-active-text: var(--sk-aura-brand);
+    --admin-sidebar-border: rgba(255, 255, 255, 0.1);
+    --admin-sidebar-logo-bg: transparent;
+
+    /* Header (inside the inset panel) */
+    --admin-header-bg: var(--sk-aura-panel-surface);
+    --admin-header-text: #1c2230;
+    --admin-header-border: #e7e9f0;
+
+    /* Footer */
+    --admin-footer-bg: var(--sk-aura-panel-surface);
+    --admin-footer-text: #6b7280;
+    --admin-footer-border: #e7e9f0;
+
+    /* Content */
+    --admin-content-bg: #f3f4f7;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LIGHT MODE — ACCENT GUARD (colored sidebar only)
+   ─────────────────────────────────────────────────────────────────
+   main/tokens.css always ships
+   `:root[data-sk-accent]:not([data-sk-sidebar='light']):not(.dark)` (0,4,0),
+   which deep-tints the sidebar to `--p-primary-950`. Aura's sidebar must stay
+   TRANSPARENT on the brand frame (the accent already reaches the frame through
+   `--p-primary-800`). This guard (0,4,1) re-asserts aura's four sidebar tokens
+   so the always-loaded main accent block cannot bleed through when an accent is
+   picked in the default colored style.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html[data-sk-theme='aura'][data-sk-accent]:not([data-sk-sidebar='light']):not(.dark) {
+    --admin-sidebar-bg: transparent;
+    --admin-sidebar-logo-bg: transparent;
+    --admin-sidebar-border: rgba(255, 255, 255, 0.1);
+    --admin-sidebar-item-hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LIGHT MODE — LIGHT SIDEBAR STYLE
+   ─────────────────────────────────────────────────────────────────
+   `data-sk-sidebar="light"` (useAccentColor): the sidebar becomes a white
+   card, the gutter goes neutral grey, and the brand color survives only on
+   the active item. Stops matching in dark mode — the dark block wins.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html[data-sk-theme='aura'][data-sk-sidebar='light']:not(.dark) {
+    /* White gutter — the whole light-mode canvas reads as one white surface */
+    --sk-aura-frame-bg: #ffffff;
+
+    --sk-aura-sb-fg-strong: #1c2230;
+    --sk-aura-logo-sq-bg: #eef1f6;
+    --sk-aura-logo-sq-fg: #1c2230;
+    --sk-aura-chip-bg: #f3f4f7;
+    --sk-aura-chip-border: #e7e9f0;
+
+    --admin-sidebar-bg: #ffffff;
+    --admin-sidebar-text: #5b6270;
+    --admin-sidebar-text-muted: #8a909d;
+    --admin-sidebar-item-hover-bg: rgba(20, 24, 34, 0.05);
+    --admin-sidebar-item-active-bg: var(--p-primary-color);
+    --admin-sidebar-item-active-text: #ffffff;
+    --admin-sidebar-border: #e7e9f0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DARK MODE
+   ─────────────────────────────────────────────────────────────────
+   The frame goes near-black and the sidebar becomes a dark elevated card in
+   BOTH sidebar styles; the brand color survives only on the active item.
+   Header/content/footer share ONE surface so the panel reads as a single
+   cohesive card separated by hairlines.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.dark[data-sk-theme='aura'] {
+    --sk-aura-frame-bg: #0a0c11;
+
+    --sk-aura-panel-surface: #13161f;
+    --sk-aura-panel-hover: #1d2331;
+    --sk-aura-text-soft: #aeb4c2;
+
+    --sk-aura-sb-fg-strong: #e7e9ee;
+    --sk-aura-logo-sq-bg: #1b2030;
+    --sk-aura-logo-sq-fg: #e7e9ee;
+    --sk-aura-chip-bg: #1b2030;
+    --sk-aura-chip-border: #232b3b;
+
+    /* No sidebar surface — transparent on the near-black frame, the sidebar
+       melts into the dark canvas (mobile drawer gets a solid bg in layout). */
+    --admin-sidebar-bg: transparent;
+    --admin-sidebar-text: #8a8f9c;
+    --admin-sidebar-text-muted: #5d6373;
+    --admin-sidebar-item-hover-bg: rgba(255, 255, 255, 0.05);
+    --admin-sidebar-item-active-bg: var(--p-primary-color);
+    --admin-sidebar-item-active-text: #ffffff;
+    --admin-sidebar-border: #232b3b;
+    --admin-sidebar-logo-bg: transparent;
+
+    --admin-header-bg: var(--sk-aura-panel-surface);
+    --admin-header-text: #e7e9ee;
+    --admin-header-border: #232a3a;
+
+    --admin-footer-bg: var(--sk-aura-panel-surface);
+    --admin-footer-text: #aeb4c2;
+    --admin-footer-border: #232a3a;
+
+    --admin-content-bg: #13161f;
+}

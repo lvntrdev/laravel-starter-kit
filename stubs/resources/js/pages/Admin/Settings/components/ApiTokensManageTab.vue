@@ -119,6 +119,7 @@
                     CreateTokenModal,
                     {
                         availableScopes: props.availableScopes,
+                        inDialog: true,
                         onCreated: (accessToken: string) => {
                             bus.refresh(REFRESH_KEY);
                             dialog.open(

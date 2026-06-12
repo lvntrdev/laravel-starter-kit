@@ -20,6 +20,48 @@ npm run build                  # panel should look identical
 
 ---
 
+### Runtime theme switching — `main` and `aura`
+
+Theme selection in **Settings → Appearance** now applies instantly for the two built-in kit themes (`main` and `aura`) — no rebuild required. Both are always bundled; `aura` activates via a `data-sk-theme="aura"` attribute on `<html>` written at runtime by the new `useTheme` composable.
+
+| Theme | How it activates | Rebuild required? |
+|---|---|---|
+| `main` | Default — no `data-sk-theme` attribute | No |
+| `aura` | `data-sk-theme="aura"` set on `<html>` by `useTheme` | No |
+| Custom (consumer-created) | `VITE_SK_THEME=<name>` in `.env` | Yes |
+
+#### Existing installs
+
+Run `php artisan sk:update && npm run build` (the standard v13.6.0 upgrade). The updated `AdminLayout.vue` stub calls `useTheme()` alongside the existing `useDarkMode()` and `useAccentColor()` calls. After the build, switching between `main` and `aura` in Settings → Appearance is instant.
+
+Custom themes you created under `resources/css/theme/<name>/` continue to work exactly as before — the build-time slot resolver is unchanged.
+
+#### `aura` CSS moved to `theme-runtime/`
+
+The aura CSS files that were previously at `resources/css/theme/aura/` have moved to `resources/css/theme-runtime/aura/`. All rules are now scoped to `html[data-sk-theme='aura']`.
+
+`sk:update` delivers the new `theme-runtime/aura/` tree and removes the old `theme/aura/` directory. The `theme.css` entry file now contains two imports:
+
+```css
+@import './_active.css';
+@import '../theme-runtime/aura/aura.css';
+```
+
+**If you customised `theme/theme.css`:** re-add the second import after `sk:update`. `sk:update` will report a hash difference for `theme.css`; apply the two-import pattern to your copy manually.
+
+**If you set `VITE_SK_THEME=aura`:** remove that variable — it no longer has the intended effect. The `aura` theme is no longer a slot-based build-time theme; it activates at runtime via Settings → Appearance only. Setting `VITE_SK_THEME=aura` with the new layout causes the resolver to produce `24 slots, 0 overrides` (aura is not in the slot tree), and the `aura` visual style will still activate — but only via the runtime attribute, not via `_active.css`.
+
+#### No visual change
+
+For projects that used `main` (the default), the visual output after the build is byte-identical. For projects that used `VITE_SK_THEME=aura`, remove the variable, rebuild, and switch to `aura` via Settings → Appearance — the result is visually identical.
+
+#### Related smaller changes
+
+- **`sk:doctor` Theme Manifest check** no longer warns when the `_active.css` header theme differs from `VITE_SK_THEME`. Saving a runtime theme now routinely resets the marker to `main`, so that comparison would produce systematic false positives. The hard-fail on a missing manifest and the `../` traversal warning remain.
+- **`.env.example` no longer ships `VITE_SK_THEME`.** The variable is still honored by the build-time resolver (marker → `VITE_SK_THEME` → `main`) for custom themes — add it to your `.env` yourself when you use one.
+
+---
+
 ### Install-time domain eject (User + Role)
 
 Starting from this release, `sk:install` automatically ejects the `User` and `Role` domain runtime into `app/Domain/User/` and `app/Domain/Role/` on the first run. This is a new-install-only change — **existing installs are not affected**.

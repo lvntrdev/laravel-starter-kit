@@ -16,8 +16,11 @@ use Lvntr\StarterKit\Console\Doctor\DoctorReport;
  * "Can't resolve './_active.css'" ile hard-fail eder → bu durum Fail.
  *
  * Manifest mevcutsa içeriği de denetlenir (bkz. inspectManifest): tema kökü
- * dışına çıkan (`../`) bir @import veya header'daki aktif tema ile ortamdaki
- * VITE_SK_THEME uyuşmazlığı → Warn (build'i bozmaz, dikkat çeker).
+ * dışına çıkan (`../`) bir @import → Warn (build'i bozmaz, dikkat çeker).
+ *
+ * Aktif tema artık `.sk-active-theme` marker'ı (admin Görünüm seçimi) ile
+ * çözülür; VITE_SK_THEME tutarlılık kontrolü kasıtlı olarak yapılmaz — marker
+ * seçimi env değerinden meşru biçimde farklı olabilir ve yanlış pozitif üretir.
  *
  * Tema-resolver sistemini henüz almamış (theme.css `_active.css` import
  * etmeyen) eski consumer'larda check uygulanmaz → Ok döner.
@@ -52,56 +55,33 @@ class ThemeManifestCheck implements DoctorCheck
             );
         }
 
-        $raw = env('VITE_SK_THEME');
-
-        return $this->inspectManifest($activeManifestPath, is_string($raw) ? $raw : null);
+        return $this->inspectManifest($activeManifestPath);
     }
 
     /**
-     * Üretilmiş _active.css içeriğini denetler:
-     *
-     *  1. Tema kökü dışına çıkan (`../`) bir @import var mı — bu, resolver'ın
-     *     tema-adı doğrulamasına (resolver'ın `resolveThemeName`'i, vendor-resident)
-     *     EK, bağımsız bir güvenlik ağıdır; elle düzenlenmiş ya da eski/güvensiz
-     *     bir resolver'dan kalmış stale artefaktı yakalar.
-     *  2. Header'daki "Active theme: <x>" değeri ortamdaki VITE_SK_THEME ile
-     *     eşleşiyor mu — eşleşmiyorsa manifest stale'dir (env değişti, rebuild
-     *     edilmedi). VITE_SK_THEME okunamıyorsa (unset ya da config cache nedeniyle
-     *     env() null döndüyse) bu karşılaştırma atlanır; yanlış pozitif üretmez.
-     *
-     * Her iki sorun da Warn'dır (build'i bozmaz); tek hard-fail eksik manifest.
-     *
-     * @param  string|null  $expectedTheme  Ortamdaki aktif tema; null/boş ise eşleşme atlanır.
+     * Üretilmiş _active.css içeriğini denetler: tema kökü dışına çıkan (`../`)
+     * bir @import var mı — bu, resolver'ın tema-adı doğrulamasına (resolver'ın
+     * `resolveThemeName`'i, vendor-resident) EK, bağımsız bir güvenlik ağıdır;
+     * elle düzenlenmiş ya da eski/güvensiz bir resolver'dan kalmış stale
+     * artefaktı yakalar. Sorun Warn'dır (build'i bozmaz); tek hard-fail eksik
+     * manifest.
      */
-    protected function inspectManifest(string $activeManifestPath, ?string $expectedTheme): DoctorReport
+    protected function inspectManifest(string $activeManifestPath): DoctorReport
     {
         $contents = (string) file_get_contents($activeManifestPath);
 
-        // 1) Tema dizininden çıkan import (traversal) — bağımsız güvenlik ağı.
+        // Tema dizininden çıkan import (traversal) — bağımsız güvenlik ağı.
         if (preg_match('#@import\s+[\'"][^\'"]*\.\./#', $contents) === 1) {
             return DoctorReport::warn(
                 $this->name(),
                 '_active.css contains an @import that escapes the theme directory (../).',
-                'Regenerate with npm run build and check VITE_SK_THEME for a stray path value.'
-            );
-        }
-
-        // 2) Header'daki aktif tema, ortamdaki VITE_SK_THEME ile eşleşiyor mu?
-        $expected = $expectedTheme !== null && trim($expectedTheme) !== '' ? trim($expectedTheme) : null;
-        if ($expected !== null
-            && preg_match('/Active theme:\s*(\S+)/', $contents, $m) === 1
-            && $m[1] !== $expected
-        ) {
-            return DoctorReport::warn(
-                $this->name(),
-                sprintf('Theme manifest was built for "%s" but VITE_SK_THEME is "%s".', $m[1], $expected),
-                'Run npm run build to regenerate _active.css for the active theme.'
+                'Regenerate with npm run build.'
             );
         }
 
         return DoctorReport::ok(
             $this->name(),
-            'Theme manifest present and consistent (resources/css/theme/_active.css).'
+            'Theme manifest present (resources/css/theme/_active.css).'
         );
     }
 

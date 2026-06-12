@@ -3,6 +3,7 @@
     import { useAccentColor } from '@/composables/useAccentColor';
     import { useAppearanceDefaults } from '@/composables/useAppearanceDefaults';
     import { useDarkMode } from '@/composables/useDarkMode';
+    import { useTheme } from '@/composables/useTheme';
     import { useFlash } from '@/composables/useFlash';
     import AppShell from '@/layouts/AppShell.vue';
     import AdminFooter from '@/layouts/components/AdminFooter.vue';
@@ -31,6 +32,7 @@
     const { isDark, toggleDark } = useDarkMode();
     const { accent, setAccent, sidebarStyle, setSidebarStyle } = useAccentColor();
     const { applyFavicon } = useAppearanceDefaults();
+    useTheme();
     const { flash } = useFlash();
     const toast = useToast();
 

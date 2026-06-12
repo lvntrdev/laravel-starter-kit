@@ -210,10 +210,11 @@ return [
         'favicon_label' => 'Favicon',
         'favicon_hint' => 'Accepted formats: PNG, ICO. Recommended size: 32×32 or 64×64 px.',
         'theme_section_title' => 'Theme',
-        'theme_section_subtitle' => 'Select the visual theme applied on the next build.',
-        'theme_hint' => 'The selected theme takes effect after the next frontend build.',
+        'theme_section_subtitle' => 'The selected theme is applied instantly when saved.',
+        'theme_hint' => 'Custom themes take effect after the next frontend build.',
         'theme_desc' => [
             'main' => 'System default theme',
+            'aura' => 'Inset panel layout inside a brand-colored frame',
         ],
         'accent_section_title' => 'Default Color',
         'accent_section_subtitle' => 'Your primary brand colour. Links, buttons and accents derive from it.',

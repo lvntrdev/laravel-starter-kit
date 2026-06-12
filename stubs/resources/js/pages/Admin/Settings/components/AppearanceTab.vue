@@ -13,6 +13,7 @@
     interface AppearanceSettings {
         theme: string;
         available_themes: string[];
+        runtime_themes?: string[];
         accent_color: string;
         dark_mode_default: boolean;
         sidebar_style: string;
@@ -66,6 +67,13 @@
         const key = `sk-setting.appearance.theme_desc.${theme}`;
         const label = trans(key);
         return label === key ? trans('sk-setting.appearance.theme_section_subtitle') : label;
+    }
+
+    // Returns true when the theme is a runtime (instant) kit theme.
+    // Falls back to ['main', 'aura'] if the payload field is absent.
+    function isRuntimeTheme(theme: string): boolean {
+        const runtimeThemes = props.settings.runtime_themes ?? ['main', 'aura'];
+        return runtimeThemes.includes(theme);
     }
 
     // ── Accent swatches ──────────────────────────────────────────────────
@@ -437,6 +445,12 @@
                             </span>
                             <span class="text-[11.5px] text-surface-500 dark:text-surface-400">
                                 {{ themeDesc(theme) }}
+                            </span>
+                            <span
+                                v-if="!isRuntimeTheme(theme)"
+                                class="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400"
+                            >
+                                {{ $t('sk-setting.appearance.theme_hint') }}
                             </span>
                         </span>
                         <span

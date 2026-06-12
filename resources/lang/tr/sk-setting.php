@@ -210,10 +210,11 @@ return [
         'favicon_label' => 'Favicon',
         'favicon_hint' => 'Kabul edilen formatlar: PNG, ICO. Önerilen boyut: 32×32 veya 64×64 piksel.',
         'theme_section_title' => 'Tema',
-        'theme_section_subtitle' => 'Sonraki derlemede uygulanacak görsel temayı seçin.',
-        'theme_hint' => 'Seçilen tema bir sonraki frontend derlemesinde geçerli olur.',
+        'theme_section_subtitle' => 'Seçilen tema kaydedildiğinde anında uygulanır.',
+        'theme_hint' => 'Özel (custom) temalar bir sonraki frontend derlemesinde geçerli olur.',
         'theme_desc' => [
             'main' => 'Sistem ana teması',
+            'aura' => 'Marka renkli çerçeve içinde gömülü panel düzeni',
         ],
         'accent_section_title' => 'Varsayılan Renk',
         'accent_section_subtitle' => 'Birincil marka renginiz. Bağlantılar, butonlar ve vurgular bu renge göre oluşur.',

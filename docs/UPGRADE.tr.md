@@ -20,6 +20,48 @@ npm run build                  # panel birebir aynı görünmeli
 
 ---
 
+### Runtime tema geçişi — `main` ve `aura`
+
+**Ayarlar → Görünüm**'de tema seçimi artık iki yerleşik kit teması (`main` ve `aura`) için anında uygulanır — derleme gerekmez. Her ikisi de her zaman bundle'a dahildir; `aura`, yeni `useTheme` composable'ının runtime'da `<html>` üzerine yazdığı `data-sk-theme="aura"` attribute'u ile etkinleşir.
+
+| Tema | Nasıl etkinleşir | Derleme gerekli mi? |
+|---|---|---|
+| `main` | Varsayılan — `data-sk-theme` attribute'u yok | Hayır |
+| `aura` | `useTheme` tarafından `<html>` üzerine `data-sk-theme="aura"` yazılır | Hayır |
+| Custom (consumer tarafından oluşturulan) | `.env`'de `VITE_SK_THEME=<isim>` | Evet |
+
+#### Mevcut kurulumlar
+
+`php artisan sk:update && npm run build` komutlarını çalıştırın (standart v13.6.0 geçişi). Güncellenmiş `AdminLayout.vue` stub'ı, mevcut `useDarkMode()` ve `useAccentColor()` çağrılarının yanına `useTheme()` çağrısı ekler. Build sonrasında Ayarlar → Görünüm'de `main` ile `aura` arasında geçiş yapmak anında gerçekleşir.
+
+`resources/css/theme/<isim>/` altında oluşturduğunuz custom temalar eskisi gibi çalışmaya devam eder — build-zamanı slot resolver'ı değişmemiştir.
+
+#### `aura` CSS `theme-runtime/`'a taşındı
+
+Daha önce `resources/css/theme/aura/` konumundaki aura CSS dosyaları `resources/css/theme-runtime/aura/` konumuna taşındı. Tüm kurallar artık `html[data-sk-theme='aura']`'ya scope'ludur.
+
+`sk:update`, yeni `theme-runtime/aura/` ağacını getirir ve eski `theme/aura/` dizinini kaldırır. `theme.css` giriş dosyası artık iki import içerir:
+
+```css
+@import './_active.css';
+@import '../theme-runtime/aura/aura.css';
+```
+
+**`theme/theme.css`'i özelleştirdiyseniz:** `sk:update` sonrasında ikinci import'u yeniden ekleyin. `sk:update`, `theme.css` için hash farkı raporlar; iki-import modelini kopyanıza elle uygulayın.
+
+**`VITE_SK_THEME=aura` kullanıyorsanız:** bu değişkeni kaldırın — artık istenen etkiyi üretmemektedir. `aura` teması artık slot tabanlı bir build-zamanı teması değildir; yalnızca Ayarlar → Görünüm üzerinden runtime'da etkinleşir. `VITE_SK_THEME=aura` ayarıyla resolver `24 slots, 0 overrides` üretir (aura slot ağacında değil) ve `aura` görsel stili yine de etkinleşir — ancak `_active.css` üzerinden değil, yalnızca runtime attribute üzerinden.
+
+#### Görsel değişiklik yok
+
+`main` (varsayılan) kullanan projelerde build sonrası görsel çıktı byte-identical'dır. `VITE_SK_THEME=aura` kullanan projeler için değişkeni kaldırın, yeniden derleyin ve Ayarlar → Görünüm üzerinden `aura`'ya geçin — sonuç görsel olarak aynıdır.
+
+#### İlgili küçük değişiklikler
+
+- **`sk:doctor` Theme Manifest kontrolü** artık `_active.css` başlığındaki tema `VITE_SK_THEME` ile uyuşmadığında uyarı vermiyor. Runtime tema kaydı marker'ı rutin olarak `main`'e sıfırladığından bu karşılaştırma sistematik yanlış pozitif üretirdi. Eksik manifest hard-fail'i ve `../` traversal uyarısı yerinde duruyor.
+- **`.env.example` artık `VITE_SK_THEME` göndermiyor.** Değişken build-time resolver tarafından custom temalar için hâlâ tanınır (marker → `VITE_SK_THEME` → `main`) — custom tema kullanacaksanız `.env` dosyanıza kendiniz ekleyin.
+
+---
+
 ### Kurulum anında domain eject'i (User + Role)
 
 Bu sürümden itibaren `sk:install`, ilk çalıştırmada `User` ve `Role` domain runtime'ını otomatik olarak `app/Domain/User/` ve `app/Domain/Role/` altına eject eder. Bu değişiklik yalnızca yeni kurulumları etkiler — **mevcut kurulumlar etkilenmez**.

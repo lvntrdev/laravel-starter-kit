@@ -25,6 +25,7 @@ return [
     'show_password' => 'Show password',
     'hide_password' => 'Hide password',
     'error' => 'Error',
+    'unsaved' => 'You have unsaved changes.',
 
     'confirmation' => 'Confirmation',
     'confirm_delete_header' => 'Delete Confirmation',

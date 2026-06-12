@@ -1,0 +1,25 @@
+/**
+ * Built-in RUNTIME theme — aura (index)
+ *
+ * Imports aura's four scoped stylesheets in cascade order. Unlike a build-time
+ * `theme/<name>/` override (resolved into _active.css by sk-theme-build.mjs),
+ * this index is imported DIRECTLY by theme/theme.css and therefore ships in
+ * EVERY bundle, side by side with the always-loaded `main` layer.
+ *
+ * RUNTIME CONTRACT (the rule every file in this folder obeys):
+ *   - SCOPE: every selector is prefixed with `html[data-sk-theme='aura']` so the
+ *     rules are dormant until the useTheme composable flips
+ *     `<html data-sk-theme="aura">` at runtime (admin-wide, no rebuild). `main`
+ *     stays scope-less and renders whenever the attribute is absent.
+ *   - SPECIFICITY: because main's rules are ALWAYS loaded, aura must outspecify
+ *     them. The attribute + (html|.dark) ancestors put every aura rule one notch
+ *     above its main counterpart at equal-or-higher class count; tokens.css ships
+ *     an extra accent-guard block to beat main's (0,4,0) accent-sidebar rule.
+ *   - SOURCE ORDER: this index is imported AFTER `_active.css` in theme.css, so on
+ *     a true specificity tie aura (later in source) still wins.
+ */
+
+@import './tokens.css';
+@import './layout/shell.css';
+@import './layout/sidebar.css';
+@import './layout/header.css';

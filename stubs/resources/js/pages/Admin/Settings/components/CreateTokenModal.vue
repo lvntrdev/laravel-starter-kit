@@ -19,12 +19,14 @@
 
     interface Props {
         availableScopes?: ScopeOption[];
+        inDialog?: boolean;
         onCreated?: (accessToken: string) => void;
         onCancel?: () => void;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         availableScopes: () => [],
+        inDialog: false,
     });
 
     const emit = defineEmits<{
@@ -58,6 +60,7 @@
         FB.form()
             .layout('vertical')
             .cols(1)
+            .inDialog(props.inDialog)
             .isCard(false)
             .addFields(
                 FB.inputText().key('name'),

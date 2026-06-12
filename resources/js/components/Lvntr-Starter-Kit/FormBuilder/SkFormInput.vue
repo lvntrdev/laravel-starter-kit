@@ -446,6 +446,7 @@
                 :invalid="invalid"
                 class="w-full"
                 v-bind="extraProps"
+                @input="numberVal = ($event.value ?? null) as number | null"
             />
         </IconField>
         <InputNumber
@@ -466,6 +467,7 @@
             :invalid="invalid"
             class="w-full"
             v-bind="extraProps"
+            @input="numberVal = ($event.value ?? null) as number | null"
         />
 
         <!-- InputOtp -->

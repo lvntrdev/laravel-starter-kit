@@ -73,10 +73,11 @@ class HandleInertiaRequests extends Middleware
             // personalized users. Resolved lazily so it costs nothing on
             // partial reloads that don't request it. Only non-sensitive,
             // already-public values are exposed here: `available_themes` (the
-            // installed theme-folder enumeration) is stripped — it is only
-            // needed by the permission-gated Görünüm tab, which reads it from
-            // the settings index payload, not from this unauthenticated share.
-            'appearance' => fn () => Arr::except(app(SettingsDefaultsQuery::class)->appearance(), ['available_themes']),
+            // installed theme-folder enumeration) and `runtime_themes` (the
+            // runtime-vs-build badge source) are stripped — both are only needed
+            // by the permission-gated Görünüm tab, which reads them from the
+            // settings index payload, not from this unauthenticated share.
+            'appearance' => fn () => Arr::except(app(SettingsDefaultsQuery::class)->appearance(), ['available_themes', 'runtime_themes']),
             'appVersion' => InstalledVersions::getPrettyVersion('lvntr/laravel-starter-kit'),
             // Only share env/debug signals in non-production environments —
             // exposing them to every authenticated user in prod leaks useful

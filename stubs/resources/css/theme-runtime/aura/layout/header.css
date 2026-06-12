@@ -1,0 +1,174 @@
+/**
+ * Layout header shell — aura (RUNTIME)
+ *
+ * Repaints main/layout/header.css when `<html data-sk-theme="aura">` is active.
+ * Same markup contract (AdminHeader.vue), repainted onto the inset panel: 70px
+ * bar on the panel surface (height comes from the --header-h token), soft icon
+ * buttons that hover with the panel hover tint in BOTH modes, and SOLID
+ * dev/debug mode tags per the Aura design.
+ *
+ * RUNTIME CONTRACT — every top-level rule carries the `html[data-sk-theme='aura']`
+ * ancestor (nested `&` rules inherit it) so it ships in every bundle next to the
+ * always-loaded main rules and outspecifies them.
+ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HEADER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+html[data-sk-theme='aura'] .admin-header {
+    @apply sticky top-0 z-30 flex h-header shrink-0 items-center justify-between border-b px-5;
+    border-color: var(--admin-header-border);
+    background: var(--admin-header-bg);
+    color: var(--admin-header-text);
+}
+
+html[data-sk-theme='aura'] .admin-header__left {
+    @apply flex items-center gap-2;
+}
+
+html[data-sk-theme='aura'] .admin-header__right {
+    @apply flex items-center gap-1.5;
+}
+
+html[data-sk-theme='aura'] .admin-header__btn {
+    @apply flex size-9 cursor-pointer items-center justify-center rounded border-none bg-transparent text-base transition-colors duration-150;
+    color: var(--sk-aura-text-soft);
+
+    &:hover {
+        background: var(--sk-aura-panel-hover);
+        color: var(--admin-header-text);
+    }
+}
+
+html[data-sk-theme='aura'] .admin-header__btn--locale {
+    @apply w-auto gap-1.5 px-2.5 text-sm;
+}
+
+/* Active action button — when its popover is open */
+html[data-sk-theme='aura'] .admin-header__btn--active {
+    background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+    color: var(--p-primary-color);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+}
+
+html[data-sk-theme='aura'] .admin-header__btn--active:hover {
+    background: color-mix(in srgb, var(--p-primary-color) 16%, transparent);
+}
+
+/* Unread indicator dot on an action button */
+html[data-sk-theme='aura'] .admin-header__dot {
+    @apply absolute right-[7px] top-[6px] size-[7px] rounded-full;
+    background: var(--p-red-500);
+    box-shadow: 0 0 0 2px var(--admin-header-bg);
+}
+
+/* Vertical separator between the action cluster and the user badge */
+html[data-sk-theme='aura'] .admin-header__divider {
+    @apply mx-1.5 h-7 w-px shrink-0;
+    background: var(--admin-header-border);
+}
+
+/* Flush popover — list/menu popovers that manage their own padding */
+html[data-sk-theme='aura'] .sk-flush-popover.p-popover .p-popover-content {
+    padding: 0;
+}
+
+/* Hide the Popover caret on every popover — arrows are not used in the header */
+html[data-sk-theme='aura'] .p-popover::before,
+html[data-sk-theme='aura'] .p-popover::after {
+    display: none;
+}
+
+html[data-sk-theme='aura'] .admin-header__locale-code {
+    @apply text-xs font-semibold tracking-wide;
+}
+
+html[data-sk-theme='aura'] .admin-header__user {
+    @apply flex cursor-pointer items-center gap-2.5 rounded border-none bg-transparent px-2 py-1.5 transition-colors duration-150;
+
+    &:hover {
+        background: var(--sk-aura-panel-hover);
+    }
+}
+
+html[data-sk-theme='aura'] .admin-header__user-info {
+    @apply hidden flex-col items-start gap-0.5 text-left sm:flex;
+}
+
+html[data-sk-theme='aura'] .admin-header__user-chevron {
+    @apply text-xs transition-transform duration-150;
+    color: var(--sk-aura-text-soft);
+}
+
+html[data-sk-theme='aura'] .admin-header__user-name {
+    @apply text-sm font-semibold leading-tight;
+    color: var(--admin-header-text);
+}
+
+html[data-sk-theme='aura'] .admin-header__user-role {
+    @apply text-xs leading-tight;
+    color: var(--sk-aura-text-soft);
+}
+
+html[data-sk-theme='aura'] .admin-header__avatar {
+    @apply size-9 rounded-[5px] object-cover ring-2;
+    --tw-ring-color: var(--admin-header-border);
+}
+
+html[data-sk-theme='aura'] .admin-header__avatar-placeholder {
+    @apply flex size-9 items-center justify-center rounded-[5px] text-sm font-semibold text-white;
+    background: var(--p-primary-color);
+}
+
+/* Dev / Debug mode tags — solid plates (Aura design), readable in both modes */
+html[data-sk-theme='aura'] .admin-header__tag {
+    @apply inline-flex items-center rounded px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider leading-tight text-white select-none;
+}
+
+html[data-sk-theme='aura'] .admin-header__tag--dev {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+html[data-sk-theme='aura'] .admin-header__tag--debug {
+    background: #d97706;
+    color: #ffffff;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DARK-MODE RE-ASSERTS
+   ─────────────────────────────────────────────────────────────────
+   main/layout/header.css raises six rules to `:root.dark …` —
+   (0,3,0)/(0,4,0) — which beats this file's base scope. Per the runtime
+   contract, each gets an `html.dark[data-sk-theme='aura']` counterpart:
+   (0,3,1)/(0,4,1) outranks main in dark mode so aura keeps its own
+   hover tint, hairlines and solid mode tags.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+html.dark[data-sk-theme='aura'] .admin-header__btn:hover {
+    background: var(--sk-aura-panel-hover);
+    color: var(--admin-header-text);
+}
+
+html.dark[data-sk-theme='aura'] .admin-header__divider {
+    background: var(--admin-header-border);
+}
+
+html.dark[data-sk-theme='aura'] .admin-header__user:hover {
+    background: var(--sk-aura-panel-hover);
+}
+
+html.dark[data-sk-theme='aura'] .admin-header__avatar {
+    --tw-ring-color: var(--admin-header-border);
+}
+
+html.dark[data-sk-theme='aura'] .admin-header__tag--dev {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+html.dark[data-sk-theme='aura'] .admin-header__tag--debug {
+    background: #d97706;
+    color: #ffffff;
+}

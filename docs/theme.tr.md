@@ -3,8 +3,9 @@
 Bu belge şunları kapsar:
 
 - `AppShell` / `AdminLayout` kompozisyon modeli ve yeni layout kurma
-- `main` + `custom` CSS yapısı, build-zamanı resolver ve tam-değiştirme + fallback modeli
-- `VITE_SK_THEME` ile aktivasyon
+- İki katmanlı tema modeli: runtime kit temaları (`main`, `aura`) ve build-zamanı custom slot-override'ları
+- Custom temalar için build-zamanı resolver ve tam-değiştirme + fallback modeli
+- Custom temalar için `VITE_SK_THEME` ile aktivasyon
 - Özel tema ekleme veya tek bir bileşenin stilini değiştirme adım adım reçetesi
 
 ---
@@ -96,14 +97,33 @@ Yeni layout'u kullanan sayfalar onu yoluna göre import eder — `AdminLayout` s
 
 ## İki stil katmanı
 
-Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir. Her ikisi de aynı `VITE_SK_THEME` ortam değişkenine bağlıdır ve build zamanında çözümlenir — runtime tema geçişi yoktur.
+Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir.
+
+| Katman | Temalar | Nasıl etkinleşir | Resolver | Artefakt |
+|---|---|---|---|---|
+| **Runtime kit temaları** | `main`, `aura` | `appearance.theme` DB ayarı (Ayarlar → Görünüm) — anında etkin, derleme gerekmez | `useTheme` composable'ı runtime'da `<html data-sk-theme>` yazar | Yok — CSS her zaman bundle'da |
+| **Build-zamanı custom temalar** | Consumer'ın oluşturduğu `theme/<custom>/` dizinleri | `.env`'de `VITE_SK_THEME=custom` + `npm run build` | `sk-theme-build.mjs` (vendor-resident), `_active.css`'i üretir | Üretilen dosya (`_active.css`), gitignore'da |
+
+Ek olarak, **PrimeVue preset katmanı** build zamanında `VITE_SK_THEME`'e bağlıdır:
 
 | Katman | Ne kapsar | Resolver | Artefakt |
 |---|---|---|---|
-| **CSS tema override'ı** | Layout ölçüleri, renkler, gölgeler, bileşen CSS sınıfları | `sk-theme-build.mjs` (vendor-resident), `_active.css`'i üretir | Üretilen dosya (`_active.css`), gitignore'da |
 | **PrimeVue preset** | Birincil palet, yüzey renkleri, border radius, bileşen token'ları (`--p-*` değişkenleri) | `vite.config.ts`'teki alias `customResolver`'ı (`resolveActivePreset`) | Yok — saf JS modül çözümlemesi |
 
-İki katman birbirinden bağımsızdır: preset'e dokunmadan CSS'i override edebilir, ya da tersi. Bir `tokens.css` override'ı genellikle preset'in emit ettiği `--p-*` token'larını okur — aşağıdaki [Bağımlılık zinciri](#bağımlılık-zinciri--tokenlar-ve-preset) bölümüne bakın.
+### Runtime kit temaları — `main` ve `aura`
+
+`main` ve `aura` temaları her build'de **her zaman bundle'a dahil edilir**. Aralarında geçiş yapmak için derleme gerekmez; `useTheme` composable'ı `appearance.theme`'i paylaşılan Inertia prop'larından okur ve mount'ta ve her prop değişiminde `<html data-sk-theme="aura">` yazar (ya da `main` için attribute'u kaldırır).
+
+- **`main`** — varsayılan. `<html>` üzerinde `data-sk-theme` attribute'u yoktur; tüm base kurallar geçerlidir.
+- **`aura`** — `<html>` üzerinde `data-sk-theme="aura"` ayarlandığında etkinleşir. Aura'nın tüm kuralları `html[data-sk-theme='aura']`'ya scope'ludur; attribute yokken etkinsizdirler.
+
+Admin panelindeki **Ayarlar → Görünüm** ekranından geçiş yapın; değişiklik anında geçerli olur ve admin genelinde kalıcıdır. Kullanıcı başına override yoktur.
+
+### Build-zamanı custom temalar
+
+Custom temalar `resources/css/theme/<isim>/` dizinlerinde yaşar ve tam-değiştirme + fallback slot modelini kullanır — aşağıdaki [CSS tema sistemi](#css-tema-sistemi) bölümüne bakın. Etkin olabilmeleri için `.env`'de `VITE_SK_THEME=<isim>` ve bir `npm run build` / `npm run dev` gereklidir. Ayarlar → Görünüm'de bir custom tema seçildiğinde arayüzde "derleme gerekir" notu gösterilir.
+
+İki katman bağımsızdır: `VITE_SK_THEME=custom` (build-zamanı custom taban) kullanırken runtime attribute `main` ve `aura` görsel stilleri arasında geçiş yapabilir. Bir `tokens.css` override'ı genellikle preset'in emit ettiği `--p-*` token'larını okur — aşağıdaki [Bağımlılık zinciri](#bağımlılık-zinciri--tokenlar-ve-preset) bölümüne bakın.
 
 ---
 
@@ -112,41 +132,64 @@ Tema sistemi iki bağımsız, tamamlayıcı katmana sahiptir. Her ikisi de aynı
 ### Dizin yapısı
 
 ```
-resources/css/theme/
-├── theme.css              # Giriş noktası: yalnızca _active.css'i import eder
-├── _active.css            # OLUŞTURULAN — elle düzenleme; gitignore'da
-├── main/                  # Dahili ana tema (tüm slot'lar için kaynak)
-│   ├── tokens.css         # CSS custom property'leri: layout ölçüleri, renkler, gölgeler
-│   ├── fonts.css          # Web font bildirimleri
-│   ├── _base.scss         # Base reset / tipografi
-│   ├── layout/
-│   │   ├── shell.css        # .admin-layout, .admin-main, Vue geçişleri
-│   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
-│   │   ├── header.css       # .admin-header*
-│   │   ├── page-header.css  # .admin-page-header*
-│   │   └── footer.css       # .admin-footer*
-│   ├── components/
-│   │   ├── card.css
-│   │   ├── button.css
-│   │   ├── confirm.css
-│   │   ├── datatable.css
-│   │   ├── dialog.css
-│   │   ├── editor.css
-│   │   ├── formbuilder.css
-│   │   ├── menus.css
-│   │   ├── message.css
-│   │   ├── navigation.css
-│   │   ├── primevue.css
-│   │   ├── tabs.css
-│   │   ├── tag.css
-│   │   └── toast.css
-│   ├── _auth.scss         # Auth layout stilleri
-│   └── utilities.css      # Tailwind utility override'ları
-└── custom/                # Override tema — kit ile gönderilmez; siz oluşturursunuz
-    └── (gerektiğinde oluşturun — aşağıdaki reçetelere bakın)
+resources/css/
+├── theme/
+│   ├── theme.css              # Giriş noktası: _active.css'i ardından theme-runtime/aura/aura.css'i import eder
+│   ├── _active.css            # OLUŞTURULAN — elle düzenleme; gitignore'da
+│   ├── main/                  # Dahili ana tema (tüm slot'lar için kaynak)
+│   │   ├── tokens.css         # CSS custom property'leri: layout ölçüleri, renkler, gölgeler
+│   │   ├── fonts.css          # Web font bildirimleri
+│   │   ├── _base.scss         # Base reset / tipografi
+│   │   ├── layout/
+│   │   │   ├── shell.css        # .admin-layout, .admin-main, Vue geçişleri
+│   │   │   ├── sidebar.css      # .admin-sidebar*, .admin-overlay
+│   │   │   ├── header.css       # .admin-header*
+│   │   │   ├── page-header.css  # .admin-page-header*
+│   │   │   └── footer.css       # .admin-footer*
+│   │   ├── components/
+│   │   │   ├── card.css
+│   │   │   ├── button.css
+│   │   │   ├── confirm.css
+│   │   │   ├── datatable.css
+│   │   │   ├── dialog.css
+│   │   │   ├── editor.css
+│   │   │   ├── formbuilder.css
+│   │   │   ├── menus.css
+│   │   │   ├── message.css
+│   │   │   ├── navigation.css
+│   │   │   ├── primevue.css
+│   │   │   ├── tabs.css
+│   │   │   ├── tag.css
+│   │   │   └── toast.css
+│   │   ├── _auth.scss         # Auth layout stilleri
+│   │   └── utilities.css      # Tailwind utility override'ları
+│   └── custom/                # Override tema — kit ile gönderilmez; siz oluşturursunuz
+│       └── (gerektiğinde oluşturun — aşağıdaki reçetelere bakın)
+└── theme-runtime/
+    └── aura/                  # Runtime kit teması — her zaman bundle'da, html[data-sk-theme='aura']'ya scope'lu
+        ├── aura.css           # Index: aşağıdaki dört dosyayı sırayla import eder
+        ├── tokens.css         # Çerçeve/panel/sidebar token'ları (scope'lu + koyu + sidebar varyantları)
+        └── layout/
+            ├── shell.css        # Marka renkli çerçeve + gömülü yuvarlatılmış panel
+            ├── sidebar.css      # Çerçeve üzerinde statik sidebar, sürüm çipi, mobil drawer
+            └── header.css       # 70px panel header'ı, solid dev/debug etiketleri
 ```
 
 > Kit artık boş bir `custom/` dizini göndermez. Herhangi bir slot'u override etmek istiyorsanız dizini önce kendiniz oluşturun (aşağıdaki reçetelere bakın).
+
+> `theme-runtime/aura/`, build-zamanı slot dizini değildir. Resolver (`sk-theme-build.mjs`) tarafından okunmaz; `VITE_SK_THEME=aura` ayarının hiçbir etkisi yoktur — `aura` yalnızca `data-sk-theme` attribute'u üzerinden runtime'da etkinleşir.
+
+### Kit ile gelen `aura` teması
+
+`aura`, kit'in ikinci yerleşik temasıdır. Admin shell'i **marka renkli bir çerçeve içine gömülü, yuvarlatılmış bir panel** olarak yeniden biçimlendirir: sidebar doğrudan çerçevenin üzerinde durur (renkli stilde beyaz aktif pill), header/içerik/footer panel yüzeyini paylaşır. Yalnızca dört görsel alanı override eder — `tokens.css`, `layout/shell.css`, `layout/sidebar.css`, `layout/header.css` — geri kalan her şey (navigation, footer, page-header, tüm bileşenler) `main`'e düşer ve sadece token'lar üzerinden yeniden boyanır.
+
+Çerçeve rengi aktif PrimeVue primary'sini izler (`--p-primary-800`); mevcut accent seçici tüm çerçeveyi yeniden renklendirir. Sidebar stil anahtarı (`colored` / `light`) ve koyu mod tam desteklidir.
+
+**`aura`'yı etkinleştirme:** Admin **Ayarlar → Görünüm** ekranını açın ve Aura tema kartını seçin. Değişiklik anında uygulanır — derleme adımı gerekmez. Ayar admin genelinde geçerlidir (`appearance.theme` olarak DB'ye kaydedilir).
+
+`aura`'nın CSS'i `resources/css/theme-runtime/aura/` içinde yer alır ve `main` ile birlikte **her zaman bundle'a dahil edilir**. Tüm kuralları `html[data-sk-theme='aura']`'ya scope'ludur; attribute yokken tamamen etkisizdirler. `useTheme` composable'ı (`AdminLayout` içinde çağrılır), Inertia paylaşılan `appearance.theme` prop'una yanıt olarak bu attribute'u yazar ve kaldırır.
+
+> `VITE_SK_THEME=aura` kullanmayın — bu değişken yalnızca build-zamanı custom-tema resolver'ını denetler; `aura` slot tabanlı bir tema değildir. Bu ayarı yapmak `aura`'nın runtime davranışını etkilemez ve resolver'dan beklenmedik sonuçlara yol açabilir.
 
 ### Resolver nasıl çalışır
 
@@ -170,13 +213,15 @@ Not: `_base.scss` ve `_auth.scss` `.scss` dosyalarıdır — uzantıları korunu
 
 ### `VITE_SK_THEME` ile aktivasyon
 
-Aktif temayı `.env`'de belirtin:
+`VITE_SK_THEME` yalnızca **build-zamanı custom tema resolver'ını** denetler. Runtime kit temaları (`main`, `aura`) üzerinde hiçbir etkisi yoktur — bunlar her zaman bundle'da bulunur ve runtime'da `data-sk-theme` attribute'u aracılığıyla etkinleşir.
+
+Aktif custom temayı `.env`'de belirtin:
 
 ```dotenv
 VITE_SK_THEME=custom
 ```
 
-Varsayılan `main`'dir. Değişken yoksa veya boşsa `main` kullanılır. `npm run dev` veya `npm run build` çalıştırın — `skTheme()` Vite plugin'i, Vite herhangi bir asset'i işlemeden önce resolver'ı çalıştırarak `_active.css`'i yeniden üretir. Bu yaklaşım, npm lifecycle hook'larına dayanmadığı için `ignore-scripts=true` altında da güvenle çalışır.
+Varsayılan `main`'dir. Değişken yoksa veya boşsa `main` kullanılır; yani tüm slot'lar `main/`'e çözümlenir ve hiçbir custom dosya yüklenmez. `npm run dev` veya `npm run build` çalıştırın — `skTheme()` Vite plugin'i, Vite herhangi bir asset'i işlemeden önce resolver'ı çalıştırarak `_active.css`'i yeniden üretir. Bu yaklaşım, npm lifecycle hook'larına dayanmadığı için `ignore-scripts=true` altında da güvenle çalışır.
 
 Tam build yapmadan çözümlenen manifesti önizlemek için `theme:build` npm script'ini kullanın:
 
@@ -428,6 +473,8 @@ Ardından `--admin-*` property'lerini seçtiğiniz `--p-*` token'larına göre d
 Karanlık mod için CSS custom property'leri `main/tokens.css` içindeki `.dark { … }` bloklarında (ve layout-özel karanlık mod override'larının bulunduğu layout dosyalarında) tanımlanır. `tokens.css`'i override ederseniz, `.dark` bloklarını da kopyalayın.
 
 Karanlık mod `useDarkMode` ile değiştirilir — `<html>` üzerine `dark` sınıfı ekler / kaldırır. Ayrı bir build adımı veya CSS dosyası gerekmez.
+
+`aura` temasının karanlık mod kuralları `theme-runtime/aura/tokens.css` içindeki `html.dark[data-sk-theme='aura'] { … }` blokları olarak tanımlanır. Her iki attribute bağımsızdır — karanlık mod ve tema geçişi dört kombinasyonun tamamında doğru şekilde birleşir (`aydınlık/koyu` × `main/aura`).
 
 ---
 
