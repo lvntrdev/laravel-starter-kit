@@ -47,7 +47,7 @@ use Symfony\Component\Process\Process;
 class EjectCommand extends Command
 {
     protected $signature = 'sk:eject
-        {domain : The kit domain to eject (User, Role, Setting, ActivityLog, ApiClient, ApiRoute, Logs, Files, Session, Media)}
+        {domain : The kit domain to eject (User, Role, Setting, ActivityLog, ApiClient, SystemHealth, ContentLanguage, Definitions, MediaUpload, ApiRoute, Logs, Files, Session, Media)}
         {--force : Overwrite existing app/Domain files}
         {--dry-run : Show what would happen without writing anything}
         {--no-vue : Eject only the backend; leave Vue pages untouched}
