@@ -41,6 +41,7 @@ export { default as FilePreviewModal } from './ui/FilePreviewModal.vue';
 export { default as ToggleFeatureCard } from './ui/ToggleFeatureCard.vue';
 export { default as MimePickerField } from './ui/MimePickerField.vue';
 export { default as SkCard } from './ui/SkCard.vue';
+export { default as SkPageLoader } from './ui/SkPageLoader.vue';
 export { default as TurnstileWidget } from './ui/TurnstileWidget.vue';
 
 // FileManager

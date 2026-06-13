@@ -24,6 +24,7 @@ return [
     'open_inbox' => 'Open inbox',
     'api_routes_hint' => 'Inspect endpoints',
     'language' => 'Language',
+    'loading' => 'Loading',
     'success' => 'Success',
     'error' => 'Error',
     'warning' => 'Warning',

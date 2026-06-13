@@ -24,6 +24,7 @@ return [
     'open_inbox' => 'Gelen kutusunu aç',
     'api_routes_hint' => 'Uç noktaları inceleyin',
     'language' => 'Dil',
+    'loading' => 'Yükleniyor',
     'success' => 'Başarılı',
     'error' => 'Hata',
     'warning' => 'Uyarı',

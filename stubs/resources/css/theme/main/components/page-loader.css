@@ -1,0 +1,256 @@
+/**
+ * Page loader — full-screen animated loading overlay shown during Inertia page
+ * switches (ui/SkPageLoader.vue, driven by the usePageLoading composable).
+ *
+ * Replaces Inertia's default top NProgress bar with an animated background
+ * (drifting grid + rotating brand ray fan + floating brand blobs + a readability
+ * veil) behind a large, letter-by-letter waving "Yükleniyor" word with three
+ * bouncing dots.
+ *
+ * Background colour is theme-driven via the local `--skl-*` custom properties:
+ *   • main  theme → the SIDEBAR colour  (--admin-sidebar-bg, a dark surface)
+ *   • aura  theme → the general content bg (--admin-content-bg)
+ * Foreground (text / grid tint) flips to keep contrast on each surface. Brand
+ * (rays / blobs / dots / wave peak) always follows the runtime accent
+ * (--p-primary-color). Defined-and-proven tokens only — no --p-text-color etc.
+ *
+ * These rules are UNLAYERED (app.css imports the theme outside the `primevue`
+ * cssLayer) so the overlay always wins over Aura. Honors prefers-reduced-motion.
+ */
+
+.sk-page-loader {
+    /* main theme defaults: background = sidebar colour, text = sidebar text */
+    --skl-bg: var(--admin-sidebar-bg);
+    --skl-fg: var(--admin-sidebar-text);
+    --skl-brand: var(--p-primary-color);
+
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--skl-bg);
+    color: var(--skl-fg);
+}
+
+/* aura theme: reuse main's dark look (aura's own --admin-sidebar-bg is
+   transparent, so pull the dark surface directly — light surface-900 / dark
+   surface-950, matching main's sidebar bg + text). */
+html[data-sk-theme='aura'] .sk-page-loader {
+    --skl-bg: var(--p-surface-900);
+    --skl-fg: var(--p-surface-200);
+}
+
+html.dark[data-sk-theme='aura'] .sk-page-loader {
+    --skl-bg: var(--p-surface-950);
+}
+
+/* ===== Animated background ===== */
+
+/* drifting thin grid */
+.sk-page-loader__grid {
+    position: absolute;
+    inset: -2px;
+    z-index: -3;
+    background-image:
+        linear-gradient(to right, color-mix(in srgb, var(--skl-fg) 3.5%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in srgb, var(--skl-fg) 3.5%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    animation: sk-loader-grid 18s linear infinite;
+}
+
+@keyframes sk-loader-grid {
+    to {
+        background-position: 44px 44px;
+    }
+}
+
+/* rotating conic ray fan */
+.sk-page-loader__rays {
+    position: absolute;
+    inset: -40%;
+    z-index: -2;
+    background: conic-gradient(
+        from 0deg at 50% 50%,
+        transparent 0deg,
+        color-mix(in srgb, var(--skl-brand) 22%, transparent) 18deg,
+        transparent 36deg,
+        color-mix(in srgb, var(--skl-brand) 16%, transparent) 54deg,
+        transparent 72deg
+    );
+    filter: blur(8px);
+    opacity: 0.55;
+    animation: sk-loader-rays 26s linear infinite;
+}
+
+@keyframes sk-loader-rays {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* slowly floating brand blobs */
+.sk-page-loader__blob {
+    position: absolute;
+    z-index: -2;
+    border-radius: 999px;
+    filter: blur(58px);
+    opacity: 0.85;
+}
+
+.sk-page-loader__blob--1 {
+    width: 540px;
+    height: 540px;
+    background: color-mix(in srgb, var(--skl-brand) 80%, transparent);
+    top: -140px;
+    left: -110px;
+    animation: sk-loader-blob1 16s ease-in-out infinite;
+}
+
+.sk-page-loader__blob--2 {
+    width: 440px;
+    height: 440px;
+    background: color-mix(in srgb, var(--skl-brand) 60%, transparent);
+    bottom: -160px;
+    right: -100px;
+    animation: sk-loader-blob2 20s ease-in-out infinite;
+}
+
+.sk-page-loader__blob--3 {
+    width: 360px;
+    height: 360px;
+    background: color-mix(in srgb, var(--skl-brand) 48%, transparent);
+    top: 45%;
+    left: 55%;
+    animation: sk-loader-blob3 24s ease-in-out infinite;
+}
+
+@keyframes sk-loader-blob1 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(80px, 60px) scale(1.12);
+    }
+}
+
+@keyframes sk-loader-blob2 {
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-70px, -50px) scale(1.1);
+    }
+}
+
+@keyframes sk-loader-blob3 {
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-58%, -42%) scale(1.18);
+    }
+}
+
+/* readability veil over the background */
+.sk-page-loader__veil {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+        ellipse 60% 48% at 50% 50%,
+        color-mix(in srgb, var(--skl-bg) 55%, transparent) 0%,
+        color-mix(in srgb, var(--skl-bg) 30%, transparent) 100%
+    );
+}
+
+/* ===== Text ===== */
+.sk-page-loader__word {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: clamp(34px, 7vw, 64px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--skl-fg);
+}
+
+.sk-page-loader__shimmer {
+    display: inline-flex;
+}
+
+/* letter-by-letter wave */
+.sk-page-loader__ch {
+    display: inline-block;
+    color: var(--skl-fg);
+    animation: sk-loader-wave 1.5s ease-in-out infinite;
+    animation-delay: var(--d, 0s);
+}
+
+@keyframes sk-loader-wave {
+    0%,
+    70%,
+    100% {
+        transform: translateY(0);
+        color: var(--skl-fg);
+    }
+    35% {
+        transform: translateY(-0.16em);
+        color: var(--skl-brand);
+    }
+}
+
+/* bouncing dots */
+.sk-page-loader__dots {
+    display: inline-flex;
+    gap: 6px;
+    transform: translateY(-0.06em);
+}
+
+.sk-page-loader__dots .dot {
+    width: 0.16em;
+    height: 0.16em;
+    border-radius: 999px;
+    background: var(--skl-brand);
+    opacity: 0.3;
+    animation: sk-loader-dot 1.1s ease-in-out infinite;
+}
+
+.sk-page-loader__dots .dot:nth-of-type(2) {
+    animation-delay: 0.18s;
+}
+
+.sk-page-loader__dots .dot:nth-of-type(3) {
+    animation-delay: 0.36s;
+}
+
+@keyframes sk-loader-dot {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-0.18em);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sk-page-loader__grid,
+    .sk-page-loader__rays,
+    .sk-page-loader__blob,
+    .sk-page-loader__ch,
+    .sk-page-loader__dots .dot {
+        animation: none;
+    }
+    .sk-page-loader__ch {
+        color: var(--skl-fg);
+        transform: none;
+    }
+}
