@@ -784,8 +784,13 @@
             if (defValue === null || defValue === undefined || defValue === '') {
                 return {};
             }
+            const mapped = column.tagLabels?.[String(defValue)];
             return {
-                label: column.tagLabels?.[String(defValue)] ?? String(defValue),
+                // tagLabels values are i18n keys — resolve at render time, not at build
+                // time (the builder runs before i18n is ready, so an eager trans() in the
+                // page would freeze the raw key). trans() returns the input unchanged for
+                // plain (non-key) strings, so literal labels still work.
+                label: mapped !== undefined ? trans(mapped) : String(defValue),
                 severity: column.colors?.[mapKey] ?? rowSeverity,
                 icon: column.icons?.[mapKey],
             };

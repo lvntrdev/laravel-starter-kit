@@ -166,18 +166,21 @@
                 FB.inputText()
                     .key('flag')
                     .label('sk-content-languages.fields.flag')
+                    .optional()
                     .hint(trans('sk-content-languages.fields.flag_hint')),
                 FB.select()
                     .key('fallback_code')
                     .label('sk-content-languages.fields.fallback_code')
                     .options(fallbackOptions.value)
                     .filter(true)
+                    .optional()
                     .hint(trans('sk-content-languages.fields.fallback_hint')),
                 FB.inputNumber()
                     .key('sort_order')
                     .label('sk-content-languages.fields.sort_order')
                     .min(0)
                     .step(1)
+                    .optional()
                     .default(0),
                 FB.toggleSwitch()
                     .key('is_active')

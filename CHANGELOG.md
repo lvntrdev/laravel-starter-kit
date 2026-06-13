@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`sk:install` / `sk:update` banner version label** — the installer/updater header now reads `v13.6.x` (was the stale `v13.5.x`). Cosmetic only; the historical `v13.5.0+` behaviour notes are unchanged.
+- **Datatable `value`-mode tags resolve i18n keys at render time** — `tagLabels()` values are now translated when the cell renders instead of when the builder runs. The builder is constructed in a page's `<script setup>` body before the i18n bundle is ready, so an eager `trans()` there froze the raw key (e.g. the Content Languages table showed `sk-content-languages.directions.ltr` instead of "Left to right (LTR)"). `trans()` returns plain (non-key) strings unchanged, so literal tag labels are unaffected.
+- **Content Languages form — spurious required asterisks removed** — FormBuilder fields are required by default, so `flag`, `fallback_code` and `sort_order` (all `nullable` server-side) rendered a red `*`. They are now marked `.optional()`, matching their validation rules; `code`, `name`, `native_name` and `direction` keep the asterisk.
 
 ## [13.6.2] - 2026-06-13
 

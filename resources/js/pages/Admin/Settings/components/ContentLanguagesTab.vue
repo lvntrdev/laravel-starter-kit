@@ -100,8 +100,8 @@
                 .key('direction')
                 .tag('value')
                 .tagLabels({
-                    ltr: trans('sk-content-languages.directions.ltr'),
-                    rtl: trans('sk-content-languages.directions.rtl'),
+                    ltr: 'sk-content-languages.directions.ltr',
+                    rtl: 'sk-content-languages.directions.rtl',
                 })
                 .colors({ ltr: 'blue', rtl: 'purple' })
                 .tagSoft(),
@@ -110,8 +110,8 @@
                 .key('is_active')
                 .tag('value')
                 .tagLabels({
-                    true: trans('sk-content-languages.active'),
-                    false: trans('sk-content-languages.inactive'),
+                    true: 'sk-content-languages.active',
+                    false: 'sk-content-languages.inactive',
                 })
                 .colors({ true: 'emerald', false: 'slate' })
                 .tagSoft(),
@@ -120,7 +120,7 @@
                 .key('is_default')
                 .tag('value')
                 .tagLabels({
-                    true: trans('sk-content-languages.default'),
+                    true: 'sk-content-languages.default',
                     false: '—',
                 })
                 .colors({ true: 'amber' })

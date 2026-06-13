@@ -17,6 +17,8 @@ Yönetim panelinde bir dizi arayüz iyileştirmesi — API veya kurulum değişi
 #### Düzeltildi
 
 - **`sk:install` / `sk:update` banner sürüm etiketi** — kurulum/güncelleme başlığı artık `v13.6.x` yazıyor (bayat `v13.5.x` idi). Yalnızca kozmetik; geçmiş `v13.5.0+` davranış notları değişmedi.
+- **Datatable `value` modu tag'leri i18n anahtarını render anında çözüyor** — `tagLabels()` değerleri artık builder kurulurken değil, hücre render edilirken çevriliyor. Builder bir sayfanın `<script setup>` gövdesinde, i18n bundle yüklenmeden önce kuruluyor; oradaki eager `trans()` ham anahtarı donduruyordu (İçerik Dilleri tablosu "Soldan sağa (LTR)" yerine `sk-content-languages.directions.ltr` gösteriyordu). Düz (anahtar olmayan) etiketler etkilenmez — `trans()` onları değiştirmeden döndürür.
+- **İçerik Dilleri formu — yersiz zorunlu yıldızları kaldırıldı** — FormBuilder alanları varsayılan olarak zorunlu, bu yüzden `flag`, `fallback_code` ve `sort_order` (sunucuda hepsi `nullable`) kırmızı `*` çiziyordu. Artık `.optional()` işaretli, validation kurallarıyla uyumlu; `code`, `name`, `native_name`, `direction` yıldızı korur.
 
 ## 2026-06-13 — v13.6.2
 

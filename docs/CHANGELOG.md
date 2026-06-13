@@ -17,6 +17,8 @@ A round of admin-panel UI refinements — no API or setup change.
 #### Fixed
 
 - **`sk:install` / `sk:update` banner version label** — the installer/updater header now reads `v13.6.x` (was the stale `v13.5.x`). Cosmetic only; the historical `v13.5.0+` behaviour notes are unchanged.
+- **Datatable `value`-mode tags resolve i18n keys at render time** — `tagLabels()` values are translated when the cell renders, not when the builder runs. The builder is built in a page's `<script setup>` body before the i18n bundle loads, so an eager `trans()` there froze the raw key (the Content Languages table showed `sk-content-languages.directions.ltr` instead of "Left to right (LTR)"). Literal (non-key) labels are unaffected since `trans()` returns them unchanged.
+- **Content Languages form — spurious required asterisks removed** — FormBuilder fields are required by default, so `flag`, `fallback_code` and `sort_order` (all `nullable` server-side) drew a red `*`. They are now `.optional()`, matching their validation rules; `code`, `name`, `native_name`, `direction` keep the asterisk.
 
 ## 2026-06-13 — v13.6.2
 
