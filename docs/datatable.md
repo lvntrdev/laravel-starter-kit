@@ -154,6 +154,8 @@ Notes:
 - `inline()`
 - `placement('inline' | 'panel')`
 
+`inline()` filters render directly in the toolbar; `panel` filters (the default) live behind the funnel button in a popover. The funnel button and popover appear **only when at least one `panel` filter exists** — if every filter is `inline()`, the funnel/popover is hidden entirely and inline filters are not duplicated inside it.
+
 Free-text searching is handled by the table-level search box through `searchable(true)`, not by a dedicated text filter type.
 
 ## Row Actions

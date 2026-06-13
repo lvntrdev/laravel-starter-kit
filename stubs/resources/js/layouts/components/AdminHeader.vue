@@ -613,7 +613,6 @@
                             v-else-if="hasSubmenu"
                             class="pi pi-chevron-left sk-user-menu__item-arrow sk-user-menu__item-arrow--static"
                         />
-                        <i v-else-if="!(item as any).localeCode" class="pi pi-arrow-up-right sk-user-menu__item-arrow" />
                     </a>
                 </template>
             </TieredMenu>

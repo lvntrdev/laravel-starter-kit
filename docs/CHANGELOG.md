@@ -2,6 +2,22 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-13 — v13.6.3
+
+### Admin UI polish
+
+A round of admin-panel UI refinements — no API or setup change.
+
+#### Changed
+
+- **Aura sidebar footer is a version pill** — the aura-theme sidebar footer became a single-row pill card: a green status dot and the app name on the left, the version (monospace) pushed to the right edge, with the same left/right inset as the nav item cards above it. Scoped to the aura theme only; the `main` theme footer is unchanged.
+- **Account menu drops the external-link arrow on plain links** — the topbar user/account dropdown no longer shows the hover `↗` arrow on ordinary link items (My Profile, Account Settings, Change Password, Help, Logout). Submenu items keep their chevron and the active language keeps its check mark.
+- **Datatable filter popover is panel-only** — the funnel button and its popover now appear only when a filter uses `panel` placement; `inline()` filters are no longer duplicated inside the popover. The **Activity Logs** page now renders all three filters (Event, Model, Date) inline in the toolbar, so its funnel/popover is gone entirely.
+
+#### Fixed
+
+- **`sk:install` / `sk:update` banner version label** — the installer/updater header now reads `v13.6.x` (was the stale `v13.5.x`). Cosmetic only; the historical `v13.5.0+` behaviour notes are unchanged.
+
 ## 2026-06-13 — v13.6.2
 
 ### Admin panel layout & form alignment fixes

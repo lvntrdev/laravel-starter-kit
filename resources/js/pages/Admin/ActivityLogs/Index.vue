@@ -127,8 +127,8 @@
                     { label: trans('sk-activity-log.event_updated'), value: 'updated' },
                     { label: trans('sk-activity-log.event_deleted'), value: 'deleted' },
                 ]),
-            DB.filter().key('subject_type').label(trans('sk-activity-log.model')).type('select').options(subjectTypes),
-            DB.filter().key('created_at').label(trans('sk-activity-log.date')).type('daterange'),
+            DB.filter().key('subject_type').label(trans('sk-activity-log.model')).type('select').inline().options(subjectTypes),
+            DB.filter().key('created_at').label(trans('sk-activity-log.date')).type('daterange').inline(),
         )
         .addActions(
             DB.action<ActivityLog>()

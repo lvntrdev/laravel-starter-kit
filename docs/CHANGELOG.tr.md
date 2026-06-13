@@ -2,6 +2,22 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-13 — v13.6.3
+
+### Admin arayüz rötuşları
+
+Yönetim panelinde bir dizi arayüz iyileştirmesi — API veya kurulum değişikliği yok.
+
+#### Değiştirildi
+
+- **Aura sidebar footer artık bir sürüm pill'i** — aura teması sidebar footer'ı tek satırlık pill kart oldu: solda yeşil durum noktası ve uygulama adı, sağ kenara yaslanmış sürüm (monospace). Sol/sağ boşluğu üstündeki nav item kartlarıyla aynı hizada. Yalnızca aura temasına özel; `main` teması footer'ı değişmedi.
+- **Hesap menüsünde normal linklerden dış-bağlantı oku kalktı** — üst bar kullanıcı/hesap menüsünde sıradan link öğelerinde (Profilim, Hesap Ayarları, Şifre Değiştir, Yardım, Çıkış) hover'daki `↗` oku artık gösterilmiyor. Açılır (alt menü) öğeleri chevron'unu, aktif dil de tik işaretini korur.
+- **Datatable filtre popover'ı yalnızca panel filtreleri için** — funnel butonu ve popover'ı yalnızca `panel` yerleşimli bir filtre varsa görünüyor; `inline()` filtreler artık popover içinde tekrarlanmıyor. **Aktivite Kayıtları** sayfasında üç filtre de (Olay, Model, Tarih) artık toolbar'da inline; bu sayfada funnel/popover tamamen kalktı.
+
+#### Düzeltildi
+
+- **`sk:install` / `sk:update` banner sürüm etiketi** — kurulum/güncelleme başlığı artık `v13.6.x` yazıyor (bayat `v13.5.x` idi). Yalnızca kozmetik; geçmiş `v13.5.0+` davranış notları değişmedi.
+
 ## 2026-06-13 — v13.6.2
 
 ### Admin panel layout ve form hizalama düzeltmeleri

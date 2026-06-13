@@ -5,6 +5,18 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.3] - 2026-06-13
+
+### Changed
+
+- **Aura sidebar footer is a version pill** — the aura-theme sidebar footer is now a single-row pill card: a green status dot and the app name on the left, the version (monospace) pushed to the right edge. Its left/right inset matches the nav item cards above it (`mx-3` = the nav region's `p-3`). Scoped to `html[data-sk-theme='aura']`; the `main` theme footer is unchanged.
+- **Account menu drops the external-link arrow on plain links** — the topbar user/account dropdown no longer shows the hover `↗` (`pi-arrow-up-right`) on ordinary link items (My Profile, Account Settings, Change Password, Help, Logout). Submenu items keep their chevron and the active locale keeps its check mark.
+- **Datatable filter popover is panel-only** — the funnel button and its popover now render only when at least one filter uses `panel` placement; `inline()` filters are no longer duplicated inside the popover. On the **Activity Logs** page all three filters (Event, Model, Date) are now `inline()`, so its funnel/popover disappears entirely and the filters sit in the toolbar.
+
+### Fixed
+
+- **`sk:install` / `sk:update` banner version label** — the installer/updater header now reads `v13.6.x` (was the stale `v13.5.x`). Cosmetic only; the historical `v13.5.0+` behaviour notes are unchanged.
+
 ## [13.6.2] - 2026-06-13
 
 ### Added

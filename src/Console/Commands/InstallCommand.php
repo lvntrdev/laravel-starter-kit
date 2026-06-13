@@ -172,7 +172,7 @@ class InstallCommand extends Command
         $this->files = new Filesystem;
 
         $this->newLine();
-        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer (v13.5.x)</>');
+        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer (v13.6.x)</>');
         $this->newLine();
         $this->line('  <fg=gray>Package runtime runs from vendor/lvntr/laravel-starter-kit.</>');
         $this->line('  <fg=gray>This command copies the application skeleton (auth, layout,</>');

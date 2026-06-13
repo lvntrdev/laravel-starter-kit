@@ -146,31 +146,33 @@ html[data-sk-theme='aura'] .admin-sidebar__nav::-webkit-scrollbar-thumb {
    FOOTER — version chip card
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* Plain footer row — no boxed chip frame (no bg, no border, no card margins),
-   light + dark. The version sits inline like the rest of the sidebar. */
+/* Pill card — status dot + app name (left) and version (right) on one row.
+   The boxed icon becomes a small green status dot; the pi-box glyph is hidden. */
 html[data-sk-theme='aura'] .admin-sidebar__footer {
-    @apply mx-0 mb-0 flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap px-3 py-3;
-    background: transparent;
+    @apply mx-3 mb-3 flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-3 py-2.5;
+    background: var(--sk-aura-chip-bg);
     border: 0;
 }
 
 html[data-sk-theme='aura'] .admin-sidebar__footer-icon {
-    @apply flex size-8 shrink-0 items-center justify-center rounded text-sm;
-    background: var(--sk-aura-chip-bg);
-    color: var(--sk-aura-sb-fg-strong);
+    @apply size-2 shrink-0 rounded-full bg-green-500 p-0;
+}
+
+html[data-sk-theme='aura'] .admin-sidebar__footer-icon > i {
+    @apply hidden;
 }
 
 html[data-sk-theme='aura'] .admin-sidebar__footer-info {
-    @apply flex flex-col gap-0.5 transition-opacity duration-300;
+    @apply flex min-w-0 flex-1 flex-row items-center justify-between gap-2 transition-opacity duration-300;
 }
 
 html[data-sk-theme='aura'] .admin-sidebar__footer-title {
-    @apply text-sm font-semibold leading-none;
+    @apply truncate text-sm font-medium leading-none;
     color: var(--admin-sidebar-text);
 }
 
 html[data-sk-theme='aura'] .admin-sidebar__footer-version {
-    @apply text-xs leading-none;
+    @apply shrink-0 font-mono text-xs leading-none;
     color: var(--admin-sidebar-text-muted);
 }
 

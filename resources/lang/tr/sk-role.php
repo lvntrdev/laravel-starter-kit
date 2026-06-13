@@ -9,6 +9,7 @@ return [
     'role_name_placeholder' => 'örn. editor',
     'group' => 'Grup',
     'group_placeholder' => 'Bir grup seçin...',
+    'display_name' => 'Görünen Ad',
     'permissions' => 'İzinler',
     'users' => 'Kullanıcılar',
     'resource' => 'Kaynak',

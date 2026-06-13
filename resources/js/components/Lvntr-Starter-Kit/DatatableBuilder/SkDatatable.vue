@@ -845,6 +845,7 @@
     }
 
     const inlineFilters = computed(() => props.config.filters.filter((f) => f.placement === 'inline'));
+    const panelFilters = computed(() => props.config.filters.filter((f) => f.placement !== 'inline'));
     const filterPopoverRef = ref();
     const searchPopoverRef = ref();
 
@@ -1200,7 +1201,7 @@
 
                     <!-- Filter Popover Toggle — quiet icon button per design -->
                     <button
-                        v-if="config.filters.length > 0"
+                        v-if="panelFilters.length > 0"
                         type="button"
                         class="sk-dt-filterbtn"
                         :class="{
@@ -1277,16 +1278,16 @@
             </div>
             <!-- END :: TOOLBAR -->
 
-            <!-- Filter Popover — lists every filter, including the inline ones -->
+            <!-- Filter Popover — lists only panel-placed filters (inline ones live in the toolbar) -->
             <Popover
-                v-if="config.filters.length > 0"
+                v-if="panelFilters.length > 0"
                 ref="filterPopoverRef"
                 class="sk-dt-filter-popover"
                 @show="filterPopoverOpen = true"
                 @hide="filterPopoverOpen = false"
             >
                 <div class="sk-dt-filter-popover__content">
-                    <div v-for="filter in config.filters" :key="filter.key" class="sk-dt-filter-popover__item">
+                    <div v-for="filter in panelFilters" :key="filter.key" class="sk-dt-filter-popover__item">
                         <!-- Select filters render as the same design pills used in the header -->
                         <div v-if="filter.type === 'select'" class="sk-dt-pillwrap" @click.stop>
                             <button

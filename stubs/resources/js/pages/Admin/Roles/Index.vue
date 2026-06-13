@@ -21,6 +21,7 @@
     interface Role {
         id: number;
         name: string;
+        display_name: Record<string, string> | null;
         color: string | null;
         sort_order: number;
         permissions_count: number;
@@ -125,6 +126,13 @@
     const tableConfig = tableBuilder
         .addColumns(
             DB.column<Role>().key('name').tag('value').tagSeverityKey('color').tagSoft(),
+            DB.column<Role>()
+                .label(trans('sk-role.display_name'))
+                .key('display_name')
+                .render((role) => {
+                    const lang = document.documentElement.lang || 'en';
+                    return role.display_name?.[lang] || role.display_name?.en || '—';
+                }),
             DB.column<Role>()
                 .label(trans('sk-role.permissions'))
                 .key('permissions_count')

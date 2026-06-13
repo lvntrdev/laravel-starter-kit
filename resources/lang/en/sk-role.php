@@ -9,6 +9,7 @@ return [
     'role_name_placeholder' => 'e.g. editor',
     'group' => 'Group',
     'group_placeholder' => 'Select a group...',
+    'display_name' => 'Display Name',
     'permissions' => 'Permissions',
     'users' => 'Users',
     'resource' => 'Resource',

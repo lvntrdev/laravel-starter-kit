@@ -154,6 +154,8 @@ Notlar:
 - `inline()`
 - `placement('inline' | 'panel')`
 
+`inline()` filtreler doğrudan toolbar'da görünür; `panel` filtreler (varsayılan) funnel butonunun arkasındaki popover'da yer alır. Funnel butonu ve popover **yalnızca en az bir `panel` filtre varsa** görünür — tüm filtreler `inline()` ise funnel/popover tamamen gizlenir ve inline filtreler popover içinde tekrarlanmaz.
+
 Serbest metin arama, ayrı bir text filter type yerine tablo seviyesindeki `searchable(true)` arama kutusu ile yönetilir.
 
 ## Satır Aksiyonları
