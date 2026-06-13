@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-14 — v13.6.4
+
+### Datatable inline filtre dropdown düzeltmesi
+
+Tek hedefli bir düzeltme — API veya kurulum değişikliği yok.
+
+#### Düzeltildi
+
+- **Inline filtre dropdown'u artık kesilmiyor** — bir select filtresinin inline pill menüsü tablo kartının içinde `absolute` öğe olarak çiziliyordu; bu yüzden uzun seçenek listesi kart / scroll-container `overflow` kenarında kesiliyordu. Menü artık `<body>`'ye fixed overlay olarak teleport ediliyor (PrimeVue `Select`'in `appendTo` ile yaptığının aynısı): trigger'ından konumlanıyor, scroll/resize'da yeniden hizalanıyor, `min(60vh, 420px)` ile sınırlanıp kendi scroll'una sahip oluyor, dış-tık / Escape ile kapanıyor. `panel` yerleşimli popover variant'ı değişmedi (zaten PrimeVue'nun overflow-visible portalını kullanıyor).
+
 ## 2026-06-13 — v13.6.3
 
 ### Admin arayüz rötuşları

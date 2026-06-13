@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-14 — v13.6.4
+
+### Datatable inline filter dropdown fix
+
+A single targeted fix — no API or setup change.
+
+#### Fixed
+
+- **Inline filter dropdown no longer clipped** — a select filter's inline pill menu was rendered as an `absolute` element inside the table card, so a long option list was cut off at the card / scroll-container `overflow` edge. The menu is now teleported to `<body>` as a fixed overlay (the same approach PrimeVue's own `Select` uses via `appendTo`): it is positioned from its trigger, re-aligns on scroll/resize, caps at `min(60vh, 420px)` with its own scroll, and closes on outside-click / Escape. The `panel`-placement popover variant is unchanged (it already rides PrimeVue's overflow-visible portal).
+
 ## 2026-06-13 — v13.6.3
 
 ### Admin UI polish
