@@ -96,6 +96,11 @@
     @apply flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-3;
 }
 
+/* Çoklu grup açıkken içerik taşınca çocuklar dikeyde ezilmesin; scroll'a düşsün. */
+.admin-sidebar__nav > * {
+    @apply shrink-0;
+}
+
 .admin-sidebar__nav::-webkit-scrollbar {
     width: 4px;
 }
@@ -111,7 +116,8 @@
 
 /* Footer */
 .admin-sidebar__footer {
-    @apply flex shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-t px-4 py-3.5;
+    /* h-footer (56px) ile hizalı: icon 32px + py-3 (24px) = 56px → üst border main footer ile aynı Y. */
+    @apply flex h-footer shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-t px-4 py-3;
     border-color: var(--admin-sidebar-border);
     background: var(--admin-sidebar-logo-bg);
 }

@@ -5,7 +5,7 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [13.6.2] - 2026-06-13
 
 ### Added
 
@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`sk:update` self-heals stale imports of vendor-moved components** — when a component moves out of stubs into `@lvntr/components` its old local copy is force-deleted, but user-customized pages that still import the deleted local path were left untouched and broke the Vite build with an `ENOENT` load-fallback error (`@/components/Auth/TurnstileWidget.vue`). `sk:update` now rewrites such stale import specifiers to the vendor path (`@lvntr/components/ui/TurnstileWidget.vue`) across `resources/js`, so the migration that started in v13.6.0 completes on existing consumers' customized Auth pages (`Login`, `Register`, `ForgotPassword`).
+- **Admin panel layout & form alignment** — several `main`-theme layout glitches fixed: the roles form basics section is now a responsive 3-column grid that stacks on small screens (`FB.form().cols(3)`); the permissions table renders flush to its card via the `SkCard` `flush` prop instead of sitting inside the body padding; translatable-field locale tabs (`TranslatableInput`) were taller than plain labels and pushed their input down — the tab pills now match the plain-label height so all inputs in a row align; the sidebar nav crushed its rows when multiple groups were expanded — direct children are now `shrink-0` so overflow scrolls instead; and the sidebar footer height is pinned to `h-footer` (56px) so its top border lines up with the page footer border.
+
+### Changed
+
+- **Security settings sub-tab "Cloudflare Turnstile" renamed to "Bot Protection"** — the settings security sub-tab label (EN/TR) and the related `SecurityTab` section now read "Bot Protection" instead of the provider-specific name.
 
 ## [13.6.0] - 2026-06-07
 

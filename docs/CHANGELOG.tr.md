@@ -2,6 +2,26 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-13 — v13.6.2
+
+### Admin panel layout ve form hizalama düzeltmeleri
+
+`main` teması için bir dizi görsel düzeltme — API veya kurulum değişikliği yok, yalnızca görsel doğruluk.
+
+#### Düzeltildi
+
+- **Roller formu temel bilgiler 3 kolonlu responsive grid** — ad / görünen ad / etiket rengi alanları yan yana dizilir (`FB.form().cols(3)`); küçük ekranlarda hep tam genişlik yerine alt alta yığılır.
+- **İzin tablosu kart kenarına yaslı** — roller izin matrisi `SkCard` `flush` prop'unu kullanır; satır border'ları body padding'i içinde yüzmek yerine kart kenarına ulaşır (hücreler kendi iç boşluğunu korur).
+- **Translatable alan input'ları komşularıyla hizalı** — dil sekmesi pill'leri (`TranslatableInput`) düz label'dan yüksekti ve input'u aşağı itiyordu; pill'ler artık düz-label yüksekliğine eşit, böylece grid satırındaki her input aynı hizada başlar.
+- **Sidebar artık satırları ezmiyor** — birden çok menü grubu açıkken nav, scroll'a düşmeden çocukları sıkıştırıyordu; doğrudan çocuklar artık `shrink-0`, taşma üst üste binmek yerine scroll olur.
+- **Sidebar footer'ı sayfa footer'ıyla hizalı** — sidebar footer yüksekliği `h-footer` (56px) ile sabitlendi; üst border'ı ekran altındaki sayfa footer border'ıyla aynı hizaya gelir.
+
+#### Değişti
+
+- **Güvenlik ayarları alt sekmesi "Cloudflare Turnstile" → "Bot Protection"** — güvenlik alt sekmesi etiketi (EN/TR) ve ilgili `SecurityTab` bölümü artık sağlayıcıdan bağımsız adı kullanır.
+
+---
+
 ## 2026-06-11 — v13.6.0 (devam)
 
 ### Kurulum anında User + Role domain eject'i

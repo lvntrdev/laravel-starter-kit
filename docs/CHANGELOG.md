@@ -2,6 +2,26 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-13 — v13.6.2
+
+### Admin panel layout & form alignment fixes
+
+A batch of `main`-theme polish fixes for the admin panel — no API or setup change, just visual correctness.
+
+#### Fixed
+
+- **Roles form basics is a responsive 3-column grid** — the name / display-name / tag-color fields now sit side by side (`FB.form().cols(3)`) and stack vertically on small screens instead of always being full-width.
+- **Permissions table is flush to its card** — the roles permission matrix uses the `SkCard` `flush` prop, so its row borders reach the card edges instead of floating inside the body padding (cells keep their own inner padding).
+- **Translatable field inputs align with siblings** — the locale tab pills (`TranslatableInput`) were taller than a plain label and pushed their input down; the pills now match the plain-label height, so every input in a grid row starts on the same line.
+- **Sidebar no longer crushes rows** — with multiple menu groups expanded the nav compressed its children before scrolling; direct children are now `shrink-0`, so overflow scrolls instead of overlapping.
+- **Sidebar footer aligns with the page footer** — the sidebar footer height is pinned to `h-footer` (56px) so its top border lines up with the page footer's border at the bottom of the screen.
+
+#### Changed
+
+- **Security settings sub-tab "Cloudflare Turnstile" → "Bot Protection"** — the security sub-tab label (EN/TR) and the related `SecurityTab` section now use the provider-neutral name.
+
+---
+
 ## 2026-06-13 — v13.6.0 (continued)
 
 ### Vendor-first Phase 2 — Settings-tab controllers, Definitions/Media, ContentLanguage

@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { computed, ref, watch } from 'vue';
     import { Button } from 'primevue';
+    import ToggleSwitch from 'primevue/toggleswitch';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
@@ -173,6 +174,15 @@
     const turnstileFormRef = ref<InstanceType<typeof SkForm>>();
     const secretKeyPlaceholder = computed(() => (props.turnstileSettings.secret_key_is_set ? '••••••••' : ''));
 
+    // Header toggle ↔ form's hidden `enabled` field (keeps isDirty + submission intact).
+    const turnstileEnabled = computed<boolean>({
+        get: () =>
+            turnstileFormRef.value
+                ? turnstileFormRef.value.currentValues?.enabled === true
+                : props.turnstileSettings.enabled,
+        set: (v: boolean) => turnstileFormRef.value?.setValue('enabled', v),
+    });
+
     const turnstileFormConfig = computed(() =>
         FB.form()
             .layout('vertical')
@@ -192,12 +202,10 @@
                 preserveScroll: true,
             })
             .addFields(
-                FB.toggleSwitch()
-                    .key('enabled')
-                    .label('sk-setting.turnstile.enabled_label')
-                    .icon('pi pi-cloud')
-                    .description('sk-setting.turnstile.enabled_hint')
-                    .colSpan(2),
+                // `enabled` participates in the submission but renders no UI here —
+                // the framed header toggle (template) owns its presentation and
+                // drives this value via `turnstileEnabled`.
+                FB.toggleSwitch().key('enabled').hidden(),
                 FB.inputText().key('site_key').label('sk-setting.turnstile.site_key_label'),
                 FB.password()
                     .key('secret_key')
@@ -247,7 +255,31 @@
 
         <!-- Body: auth + password share one form (single endpoint); Turnstile its own -->
         <SkForm v-show="activeSec !== 'turnstile'" ref="authFormRef" :config="authFormConfig" />
-        <SkForm v-show="activeSec === 'turnstile'" ref="turnstileFormRef" :config="turnstileFormConfig" />
+
+        <!-- Turnstile: ONE framed provider block. The header toggle owns the
+             frame; the key form lives inside the same frame and appears only
+             when the provider is enabled. (Later: Google reCAPTCHA, hCaptcha…) -->
+        <div
+            v-show="activeSec === 'turnstile'"
+            class="overflow-hidden rounded-md border border-surface-200 dark:border-surface-700"
+        >
+            <label class="sk-fb__secrow !rounded-none !border-0" for="turnstile-enabled">
+                <span class="sk-fb__secrow-icon"><i class="pi pi-cloud" /></span>
+                <span class="sk-fb__secrow-body">
+                    <span class="sk-fb__secrow-title">{{ $t('sk-setting.turnstile.title') }}</span>
+                    <span class="sk-fb__secrow-desc">{{ $t('sk-setting.turnstile.enabled_hint') }}</span>
+                </span>
+                <span class="sk-fb__secrow-control">
+                    <ToggleSwitch input-id="turnstile-enabled" v-model="turnstileEnabled" />
+                </span>
+            </label>
+            <div
+                v-show="turnstileEnabled"
+                class="border-t border-surface-200 px-[1.125rem] pb-[1.125rem] pt-5 dark:border-surface-700"
+            >
+                <SkForm ref="turnstileFormRef" :config="turnstileFormConfig" />
+            </div>
+        </div>
 
         <!-- Edge-to-edge card footer drives the active form -->
         <template #footer>
