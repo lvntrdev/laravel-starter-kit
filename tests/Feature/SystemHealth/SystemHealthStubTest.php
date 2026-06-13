@@ -149,14 +149,14 @@ it('Türkçe ve İngilizce lang dosyaları aynı anahtar setine sahip', function
 
 it('SystemHealthTab.vue stub mevcut', function (): void {
     $path = dirname(__DIR__, 3)
-        .'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue';
+        .'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue';
 
     expect(is_file($path))->toBeTrue("Stub bulunamadı: {$path}");
 });
 
 it('SystemHealthTab.vue stub DoctorReport interface içeriyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
+        dirname(__DIR__, 3).'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
     );
 
     expect($contents)
@@ -168,7 +168,7 @@ it('SystemHealthTab.vue stub DoctorReport interface içeriyor', function (): voi
 
 it('SystemHealthTab.vue stub system-health.run çağrısı yapıyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
+        dirname(__DIR__, 3).'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
     );
 
     expect($contents)->toContain('system-health.run');
@@ -176,7 +176,7 @@ it('SystemHealthTab.vue stub system-health.run çağrısı yapıyor', function (
 
 it('SystemHealthTab.vue stub status badge stilleri tanımlı', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
+        dirname(__DIR__, 3).'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
     );
 
     expect($contents)
@@ -187,7 +187,7 @@ it('SystemHealthTab.vue stub status badge stilleri tanımlı', function (): void
 
 it('SystemHealthTab.vue stub text-sm kullanmıyor (kit kuralı: text-base minimum)', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
+        dirname(__DIR__, 3).'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
     );
 
     expect($contents)->not->toContain('text-sm');
@@ -209,7 +209,7 @@ it('permission-resources config system.health.view custom_permissions içinde', 
 
 it('SystemHealthTab.vue system-health.run.url() kullanıyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
+        dirname(__DIR__, 3).'/resources/js/pages/Admin/Settings/components/SystemHealthTab.vue'
     );
 
     expect($contents)

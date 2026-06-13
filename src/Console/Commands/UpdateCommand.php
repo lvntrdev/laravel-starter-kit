@@ -61,10 +61,13 @@ class UpdateCommand extends Command
         // (encryption/cache core), Actions, settings DTOs and SettingsDefaultsQuery.
         // Only the pure-runtime Domain/Setting/ subtree is vendor-resident; the
         // Setting MODEL (app/Models/Setting.php, static facade), SettingPolicy,
-        // SettingsController, Settings FormRequests, config/settings.php and the
-        // _03_SettingSeeder stay app-owned. Existing app copies of Domain/Setting/
-        // are reported here only — never force-deleted (they may be customized, and
-        // any app copy keeps WINNING via the alias-skip override invariant).
+        // config/settings.php and the _03_SettingSeeder stay app-owned. Existing app
+        // copies of Domain/Setting/ are reported here only — never force-deleted (they
+        // may be customized, and any app copy keeps WINNING via the alias-skip override
+        // invariant).
+        // v13.6.0: SettingsController + Settings FormRequests ALSO moved to vendor
+        // (Lvntr\StarterKit\Http\...); they are migrated via VENDOR_MIGRATED_PATHS
+        // (hash-guarded removal), not reported here.
         'app/Domain/Setting/',
         // v16.x (Faz 6): User + Role runtime moved to vendor — Actions, DTOs, Events,
         // Listeners and Queries (incl. rank-hierarchy queries and the audit
@@ -267,6 +270,127 @@ class UpdateCommand extends Command
         ],
     ];
 
+    /**
+     * v13.6.0 — behavior-module HTTP + UI layers (Files, Logs, ActivityLogs,
+     * ApiRoutes, Settings) moved vendor-first. Their controllers + FormRequests
+     * now live in Lvntr\StarterKit\Http\... and their Vue pages under the package
+     * resources/js/pages/Admin/... (resolved via app.ts app-first / vendor-fallback);
+     * sk:install no longer copies them. Existing consumers may still hold the old
+     * published copies, so these are migrated under a hash-guard: a copy whose
+     * on-disk content matches the hash recorded for it at install/update time is
+     * provably unmodified and removed (the vendor copy then takes over — the
+     * controller/request via the file_exists-guarded alias in
+     * StarterKitServiceProvider::backwardCompatAliasPlan(), the Vue page via the
+     * app.ts vendor fallback). A copy with no record, or one that differs from its
+     * record, is treated as user-customized.
+     *
+     * Removal is decided per MODULE GROUP, not per file (see
+     * VENDOR_MIGRATED_MODULES — the source of truth for the migration logic). This
+     * flat list is the union of every path the grouped manifest covers, kept as a
+     * stable single-array surface for callers/tests that just need "every covered
+     * path". A sync test guards the two against drift.
+     *
+     * Unlike DEPRECATED_MODIFIABLE_PATHS (single files with fixed stock-hash lists),
+     * these are whole directory trees with per-version, per-consumer-variable
+     * content, so the registry-recorded hash is the ONLY safe unmodified signal —
+     * there is no stock-hash list to compare against. Directory entries (trailing
+     * "/") are walked recursively; bare files are matched directly.
+     *
+     * @var list<string>
+     */
+    private const VENDOR_MIGRATED_PATHS = [
+        // Vue pages (Task 1 — moved to package resources/js/pages/Admin/...).
+        'resources/js/pages/Admin/Files/',
+        'resources/js/pages/Admin/Logs/',
+        'resources/js/pages/Admin/ActivityLogs/',
+        'resources/js/pages/Admin/ApiRoutes/',
+        'resources/js/pages/Admin/Settings/',
+        // Controllers + FormRequests (Task 2 — moved to src/Http/...).
+        'app/Http/Controllers/Admin/LogController.php',
+        'app/Http/Controllers/Admin/ActivityLogController.php',
+        'app/Http/Controllers/Admin/ApiRouteController.php',
+        'app/Http/Controllers/Admin/SettingsController.php',
+        'app/Http/Requests/Admin/Log/',
+        'app/Http/Requests/Admin/Settings/',
+    ];
+
+    /**
+     * v13.6.0 — the vendor-first behavior modules, grouped by module and split
+     * into two INDEPENDENT removal layers:
+     *
+     *   - `php`: the controller + FormRequest directory tree. These resolve via
+     *     the server-side alias bridge (backwardCompatAliasPlan), so removing the
+     *     consumer copy is safe regardless of app.ts state.
+     *   - `vue`: the Inertia page tree. These resolve only via the app.ts
+     *     vendor-fallback ('@lvntr/pages' glob) — a guard checks app.ts ships that
+     *     fallback before any Vue group is removed (see removeVendorMigratedPaths).
+     *
+     * Removal is decided per LAYER GROUP, atomically: if even ONE file in a
+     * module's layer is preserved (user-modified or untracked), the WHOLE layer is
+     * preserved. This prevents a half-deleted module — e.g. a consumer who edited
+     * only one Settings FormRequest must keep the matching SettingsController too,
+     * because the vendor controller type-hints its requests by vendor FQCN and
+     * would never call the consumer's hardened (validation/authorize) request; and
+     * a half-deleted Vue tree would break the consumer build, since vendor pages
+     * import their sibling components by relative path. The php and vue layers of
+     * the same module are evaluated independently of each other.
+     *
+     * @var array<string, array{php: list<string>, vue: list<string>}>
+     */
+    private const VENDOR_MIGRATED_MODULES = [
+        'Files' => [
+            // Files is a Vue-only module (its backend is the vendor FileManager
+            // runtime — no app-owned controller/request tree was ever published).
+            'php' => [],
+            'vue' => [
+                'resources/js/pages/Admin/Files/',
+            ],
+        ],
+        'Logs' => [
+            'php' => [
+                'app/Http/Controllers/Admin/LogController.php',
+                'app/Http/Requests/Admin/Log/',
+            ],
+            'vue' => [
+                'resources/js/pages/Admin/Logs/',
+            ],
+        ],
+        'ActivityLogs' => [
+            'php' => [
+                'app/Http/Controllers/Admin/ActivityLogController.php',
+            ],
+            'vue' => [
+                'resources/js/pages/Admin/ActivityLogs/',
+            ],
+        ],
+        'ApiRoutes' => [
+            'php' => [
+                'app/Http/Controllers/Admin/ApiRouteController.php',
+            ],
+            'vue' => [
+                'resources/js/pages/Admin/ApiRoutes/',
+            ],
+        ],
+        'Settings' => [
+            'php' => [
+                'app/Http/Controllers/Admin/SettingsController.php',
+                'app/Http/Requests/Admin/Settings/',
+            ],
+            'vue' => [
+                'resources/js/pages/Admin/Settings/',
+            ],
+        ],
+    ];
+
+    /**
+     * The app.ts marker proving the consumer's resolver ships the vendor page
+     * fallback. Vue groups are only ever removed when this string is present in
+     * resources/js/app.ts; otherwise the deleted pages would have no resolver and
+     * the 5 screens would fail to build. The PHP layer is unaffected by this (its
+     * alias bridge is server-side).
+     */
+    private const APP_TS_VENDOR_PAGE_MARKER = '@lvntr/pages';
+
     /** @var list<string> */
     private array $updated = [];
 
@@ -308,6 +432,12 @@ class UpdateCommand extends Command
         // 1c. Remove deprecated-but-possibly-modified files (hash-guarded so user
         // edits are never silently destroyed).
         $this->removeDeprecatedModifiablePaths($dryRun);
+
+        // 1d. Migrate behavior-module HTTP + UI to vendor (v13.6.0): remove the old
+        // published copies of controllers/requests/Vue pages, but only the ones the
+        // user has not modified (registry-hash guarded). Modified copies are left in
+        // place and reported — they keep winning over the vendor copy.
+        $this->removeVendorMigratedPaths($dryRun);
 
         // 2. Update user-modifiable files only if not modified
         $this->updateModifiableFiles($force, $dryRun);
@@ -530,6 +660,318 @@ class UpdateCommand extends Command
         }
 
         return $recordedHash !== null && $recordedHash === $currentHash;
+    }
+
+    /**
+     * Migrate the v13.6.0 vendor-first behavior modules: delete the consumer's old
+     * published controller/request/Vue copies, but decide removal per MODULE LAYER
+     * GROUP — never per individual file. A layer is removed only when EVERY file in
+     * it is provably unmodified (its on-disk hash equals the hash recorded for it in
+     * the registry). If even one file is preserved (user-modified, untracked, or
+     * sentinel-guarded), the ENTIRE layer is preserved.
+     *
+     * Why group-atomic:
+     *   - PHP layer: the vendor controller type-hints its FormRequests by vendor
+     *     FQCN. Deleting an unmodified controller while a customized request stays
+     *     on disk would route to the vendor controller, which never calls the
+     *     consumer's hardened (validation/authorize) request — a one-way alias
+     *     bridge (App→vendor) with no vendor→App path. So a single preserved file
+     *     pins the whole controller+request group.
+     *   - Vue layer: vendor pages import sibling components by relative path; a
+     *     partial deletion breaks the consumer build. The tree is all-or-nothing.
+     *
+     * The php and vue layers of the same module are evaluated INDEPENDENTLY.
+     *
+     * Vue groups carry an extra precondition: the consumer's resources/js/app.ts
+     * must ship the '@lvntr/pages' vendor-fallback resolver. Without it the deleted
+     * pages have no resolver and 5 screens fail to build, so when the marker is
+     * absent ALL Vue groups are preserved and an actionable warning is printed. The
+     * PHP layer is never affected by app.ts (its alias bridge is server-side).
+     *
+     * A removed file's registry entry becomes a '__deleted__' sentinel so a later
+     * sk:install / sk:update never restores it (these no longer ship from stubs, so
+     * the sentinel keeps the deletion durable across a cleared storage/). A
+     * preserved file is reported so the user keeps WINNING — the controller/request
+     * via the file_exists-guarded alias (backwardCompatAliasPlan), the Vue page via
+     * the app.ts vendor fallback. `--force` removes regardless of modification,
+     * mirroring the override semantics used elsewhere; it does NOT bypass the
+     * '__ejected__' guard or the app.ts Vue precondition.
+     */
+    private function removeVendorMigratedPaths(bool $dryRun): void
+    {
+        $force = (bool) $this->option('force');
+        $hashes = $this->loadHashRegistry();
+        $registryDirty = false;
+
+        $appTsHasVendorFallback = $this->appTsShipsVendorPageFallback();
+
+        foreach (self::VENDOR_MIGRATED_MODULES as $layers) {
+            foreach (['php', 'vue'] as $layer) {
+                $entries = $layers[$layer] ?? [];
+
+                if ($entries === []) {
+                    continue;
+                }
+
+                // Vue pages resolve only via the app.ts vendor fallback. Without
+                // that resolver, deleting them would break the build — preserve the
+                // whole group (and let the one-time warning below explain why).
+                if ($layer === 'vue' && ! $appTsHasVendorFallback) {
+                    foreach ($this->vendorMigratedLayerFiles($entries) as $relativePath) {
+                        $this->preservedDeprecated[] = $relativePath;
+                    }
+
+                    continue;
+                }
+
+                $registryDirty = $this->processVendorMigratedLayer(
+                    $entries,
+                    $hashes,
+                    $force,
+                    $dryRun,
+                ) || $registryDirty;
+            }
+        }
+
+        if ($registryDirty && ! $dryRun) {
+            $this->saveHashRegistry($hashes);
+        }
+
+        if (! $appTsHasVendorFallback && $this->vendorMigratedModulesHaveVuePages()) {
+            $this->warnAppTsVendorFallbackMissing();
+        }
+    }
+
+    /**
+     * Evaluate a single module layer (php or vue) as one atomic unit. Removal is
+     * all-or-nothing: the layer is deleted only if EVERY file in it is removable
+     * (unmodified vs. its registry record, or --force). If any file is preserved
+     * the whole layer is preserved. Sentinel-recorded files ('__deleted__' /
+     * '__skipped__' / '__ejected__') are treated as already-resolved: they neither
+     * block the group nor get re-stamped — the prior decision stands.
+     *
+     * Returns whether the hash registry was mutated (so the caller can persist it).
+     *
+     * @param  list<string>  $entries  the layer's path entries (dirs and/or files)
+     * @param  array<string, string>  $hashes  by-reference registry
+     */
+    private function processVendorMigratedLayer(array $entries, array &$hashes, bool $force, bool $dryRun): bool
+    {
+        $present = [];   // [relativePath => currentHash] for files we may delete
+        $blocked = false;
+
+        foreach ($this->vendorMigratedLayerFiles($entries) as $relativePath) {
+            $target = base_path($relativePath);
+
+            if (! $this->files->exists($target)) {
+                continue;
+            }
+
+            $recordedHash = $hashes[$relativePath] ?? null;
+
+            // Sentinels are already-resolved decisions: skip without touching and
+            // without letting them block the rest of the group. The '__ejected__'
+            // guard sits BEFORE the --force path on purpose — this sweep removes
+            // OLD published copies, never the user's own ejected module, so even
+            // --force must leave an ejected copy alone (the consumer revokes it by
+            // deleting the file, not via sk:update).
+            if ($recordedHash === '__deleted__' || $recordedHash === '__skipped__' || $recordedHash === '__ejected__') {
+                continue;
+            }
+
+            $currentHash = md5_file($target);
+
+            if (! $this->vendorMigratedCopyIsRemovable($currentHash, $recordedHash, $force)) {
+                // No record (untracked) or content differs → user-customized. One
+                // preserved file pins the WHOLE group (atomicity).
+                $blocked = true;
+
+                continue;
+            }
+
+            $present[$relativePath] = $currentHash;
+        }
+
+        if ($blocked) {
+            // Atomic preserve: report every still-present file in the group so the
+            // user sees the complete set their edit is keeping consumer-owned.
+            foreach ($this->vendorMigratedLayerFiles($entries) as $relativePath) {
+                if ($this->files->exists(base_path($relativePath))) {
+                    $this->preservedDeprecated[] = $relativePath;
+                }
+            }
+
+            return false;
+        }
+
+        if ($present === []) {
+            return false;
+        }
+
+        $registryDirty = false;
+
+        foreach ($present as $relativePath => $_currentHash) {
+            $target = base_path($relativePath);
+
+            if (! $dryRun) {
+                $this->files->delete($target);
+                $this->pruneEmptyAncestors(dirname($target));
+
+                // Persist the deletion so install/update never restore it.
+                $hashes[$relativePath] = '__deleted__';
+                $registryDirty = true;
+            }
+
+            $this->removed[] = $relativePath;
+        }
+
+        return $registryDirty;
+    }
+
+    /**
+     * Expand a layer's path entries into the concrete relative file paths they
+     * cover (directories walked recursively, bare files passed through).
+     *
+     * @param  list<string>  $entries
+     * @return list<string>
+     */
+    private function vendorMigratedLayerFiles(array $entries): array
+    {
+        $files = [];
+
+        foreach ($entries as $entry) {
+            foreach ($this->vendorMigratedRelativeFiles($entry) as $relativePath) {
+                $files[] = $relativePath;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * Whether the consumer's resources/js/app.ts ships the vendor page fallback
+     * resolver ('@lvntr/pages' glob). True when the marker is present. When app.ts
+     * is absent we return false (no resolver guarantee → preserve Vue, warn).
+     */
+    private function appTsShipsVendorPageFallback(): bool
+    {
+        $appTs = base_path('resources/js/app.ts');
+
+        if (! $this->files->exists($appTs)) {
+            return false;
+        }
+
+        return str_contains($this->files->get($appTs), self::APP_TS_VENDOR_PAGE_MARKER);
+    }
+
+    /**
+     * Whether any vendor-migrated module still has Vue page files on disk. Used to
+     * suppress the app.ts warning when there is nothing to migrate anyway.
+     */
+    private function vendorMigratedModulesHaveVuePages(): bool
+    {
+        foreach (self::VENDOR_MIGRATED_MODULES as $layers) {
+            foreach ($this->vendorMigratedLayerFiles($layers['vue'] ?? []) as $relativePath) {
+                if ($this->files->exists(base_path($relativePath))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Warn that Vue groups were preserved because app.ts lacks the vendor page
+     * fallback, with the concrete remediation steps.
+     */
+    private function warnAppTsVendorFallbackMissing(): void
+    {
+        $this->newLine();
+        $this->components->warn('resources/js/app.ts has no vendor page fallback — the 5 behavior-module Vue trees were left in place.');
+        $this->line('  <fg=gray>The migrated pages resolve through the \'@lvntr/pages\' fallback in app.ts, which your</>');
+        $this->line('  <fg=gray>copy does not ship yet. Deleting them now would leave the screens unresolvable at build.</>');
+        $this->line('  <fg=gray>Update app.ts first (sk:update can refresh it if your copy is unmodified), then re-run</>');
+        $this->line('  <fg=gray>sk:update to migrate the Vue trees. Controllers/requests were unaffected (server-side alias).</>');
+        $this->newLine();
+    }
+
+    /**
+     * Decide whether a vendor-migrated app copy may be safely deleted. Unlike the
+     * theme-script rule there is NO stock-hash list — the only safe unmodified signal
+     * is an exact match against the hash recorded for the file at install/update time.
+     * A file with no record (untracked) or one whose content differs from its record
+     * is treated as user-customized and preserved. `--force` removes it regardless.
+     *
+     * Pure hash-in / bool-out so the destructive decision can be unit tested without
+     * filesystem access (mirrors deprecatedCopyIsUnmodified). Sentinel records
+     * ('__deleted__'/'__skipped__') are filtered by the caller before this is reached.
+     */
+    private function vendorMigratedCopyIsRemovable(string $currentHash, ?string $recordedHash, bool $force): bool
+    {
+        if ($force) {
+            return true;
+        }
+
+        return $recordedHash !== null && $recordedHash === $currentHash;
+    }
+
+    /**
+     * Expand a VENDOR_MIGRATED_PATHS entry into the concrete relative file paths it
+     * covers. A directory entry (trailing "/") yields every file under it (only
+     * those that still exist on disk); a bare file yields itself.
+     *
+     * @return list<string>
+     */
+    private function vendorMigratedRelativeFiles(string $path): array
+    {
+        if (! str_ends_with($path, '/')) {
+            return [$path];
+        }
+
+        $dir = base_path($path);
+
+        if (! $this->files->isDirectory($dir)) {
+            return [];
+        }
+
+        $files = [];
+        foreach ($this->files->allFiles($dir, true) as $file) {
+            $files[] = $path.str_replace('\\', '/', $file->getRelativePathname());
+        }
+
+        return $files;
+    }
+
+    /**
+     * Remove now-empty directories left behind after deleting a migrated file,
+     * walking up toward base_path() but never deleting base_path() itself or any
+     * directory that still has contents. Keeps the consumer tree tidy after the
+     * controller/request/Vue copies are migrated to vendor.
+     */
+    private function pruneEmptyAncestors(string $dir): void
+    {
+        $base = rtrim(base_path(), DIRECTORY_SEPARATOR);
+
+        while (true) {
+            $normalized = rtrim($dir, DIRECTORY_SEPARATOR);
+
+            if ($normalized === $base || $normalized === '' || ! str_starts_with($normalized, $base.DIRECTORY_SEPARATOR)) {
+                return;
+            }
+
+            if (! $this->files->isDirectory($dir)) {
+                return;
+            }
+
+            // Stop at the first non-empty directory (files OR subdirectories).
+            if ($this->files->files($dir) !== [] || $this->files->directories($dir) !== []) {
+                return;
+            }
+
+            $this->files->deleteDirectory($dir);
+            $dir = dirname($dir);
+        }
     }
 
     /**
@@ -1331,12 +1773,18 @@ PHP;
 
         if (! empty($this->preservedDeprecated)) {
             $this->newLine();
-            $this->components->warn('These obsolete files were customized and left in place — migrate your edits, then delete them manually:');
+            $this->components->warn('These files now ship from vendor but were left in place as consumer-owned (their module group was preserved):');
             foreach ($this->preservedDeprecated as $path) {
                 $this->line("  <fg=yellow>!</> {$path}");
             }
             $this->newLine();
-            $this->line('  <fg=gray>The theme build tooling now ships from vendor (resources/js/theme/). Use --force to remove these copies.</>');
+            $this->line('  <fg=gray>A module is migrated as one group: if any file in it was customized (or is untracked), the WHOLE group stays</>');
+            $this->line('  <fg=gray>consumer-owned — including files you did NOT change. This is required because the vendor controller calls its</>');
+            $this->line('  <fg=gray>own (vendor) FormRequests and vendor Vue pages import sibling components by relative path, so a half-migrated</>');
+            $this->line('  <fg=gray>module would skip your hardened request or break the build. For a customized controller/Vue page your copy still</>');
+            $this->line('  <fg=gray>wins (alias skip / app.ts app-first); a preserved-but-unchanged file is just held with its group, not "winning".</>');
+            $this->line('  <fg=gray>Run `sk:eject <module>` to own the module cleanly, or migrate your edits and delete the copies. The theme build</>');
+            $this->line('  <fg=gray>tooling now also ships from vendor (resources/js/theme/). Use --force to remove these copies regardless of edits.</>');
         }
 
         // Show untracked files (dry-run: not yet resolved; normal: already resolved into updated/skipped)

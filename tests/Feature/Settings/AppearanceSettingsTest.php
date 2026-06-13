@@ -206,12 +206,12 @@ it('writeMarker(DEFAULT_THEME) resets the marker to main', function (): void {
     expect(ThemeResolver::readMarker())->toBe('main');
 });
 
-it('SettingsController stub branches the marker write on isRuntimeTheme', function (): void {
-    // Stub controller testbench'te HTTP ile exercise edilemez (consumer'a
-    // kopyalanır); ternary'nin varlığını stub içeriği üzerinden guard'la:
+it('SettingsController branches the marker write on isRuntimeTheme', function (): void {
+    // v13.6.0: SettingsController vendor'a taşındı (Lvntr\StarterKit\Http\...).
+    // Ternary'nin varlığını controller içeriği üzerinden guard'la:
     // runtime tema → DEFAULT_THEME, custom tema → kendi adı.
     $stub = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/SettingsController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/SettingsController.php'
     );
 
     expect($stub)->toContain('ThemeResolver::isRuntimeTheme(')

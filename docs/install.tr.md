@@ -167,7 +167,32 @@ Kurulumdan sonra şu alanları kontrol edin:
 - dosya yöneticisi
 - `/api/v1/auth/login` ve `/api/v1/auth/me`
 
-## 6. İsteğe Bağlı Yayınlama
+## 6. Kurulum Sonrası Modül Sahipliği
+
+`sk:install` yalnızca kurulumdan itibaren özelleştirmeniz beklenen modülleri kopyalar. Mantığı proje özelinde değişme olasılığı düşük olan davranış modülleri, vendor paketinden çalışır — uygulamanıza herhangi bir dosya üretmezler.
+
+| Modül | Uygulamanıza kurulan dosyalar | Vendor'da çalışır (uygulama kopyası yok) |
+|---|---|---|
+| Users, Roles | Controller, FormRequest, Vue sayfaları, route'lar, Model'lar, Policy'ler | — |
+| Dashboard, Auth ekranları, Profile | Controller, FormRequest, Vue sayfaları, route'lar | — |
+| Files (Dosya Yöneticisi) | — | Vue sayfaları + controller |
+| Logs | — | Vue sayfaları + controller |
+| Activity Logs | — | Vue sayfaları + controller |
+| API Routes | — | Vue sayfaları + controller |
+| Settings | — | Vue sayfaları + controller |
+
+**Vendor'da çalışan modüller**, `app.ts` vendor-fallback sayfa yükleyicisi tarafından çözülür — uygulamanızda herhangi bir dosya bulunmasına gerek yoktur. Derin özelleştirme için bir vendor-first modülün tam sahipliğini almak üzere `sk:eject` çalıştırın:
+
+```bash
+php artisan sk:eject Logs             # controller + FormRequests + Vue sayfalarını uygulamanıza kopyalar
+php artisan sk:eject Logs --dry-run   # önce önizleyin
+php artisan sk:eject Logs --no-vue    # yalnızca backend
+php artisan sk:eject Files            # yalnızca Vue sayfaları (Files backend her zaman vendor'da kalır)
+```
+
+Eject sonrası modülün dosyaları uygulamanızda bulunur ve `sk:update` bunları sizin dosyalarınız olarak işler — upstream güncellemeler artık otomatik ulaşmaz.
+
+## 7. İsteğe Bağlı Yayınlama
 
 Paket birçok varlığı varsayılan olarak kendi içinde tutar. Proje seviyesinde özelleştirme gerektiğinde yayınlayın:
 

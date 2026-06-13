@@ -53,3 +53,6 @@ uses(TestCase::class)->in('Feature/Eject');
 
 // Install testleri: pure unit (isolated string/reflection), DB gerektirmiyor
 uses(TestCase::class)->in('Feature/Install');
+
+// VendorFirst testleri: Task 6 — install/update/eject/alias-bridge senaryoları, DB gerektirmiyor
+uses(TestCase::class)->in('Feature/VendorFirst');

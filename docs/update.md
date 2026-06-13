@@ -40,12 +40,51 @@ php artisan sk:update
 
 - runtime code (`Domain/Shared/`, Traits, Middleware, helpers, `ApiResponse`, FileManager layer) lives in `vendor/` since v13.5.0 — `composer update` is sufficient, `sk:update` does not copy these
 - removes deprecated app-side files that have been moved to vendor
+- migrates vendor-first behavior modules (Files/Logs/ActivityLogs/ApiRoutes/Settings) — see below
 - notifies of hash-tracked stub changes (auth/layout Vue components, user/role/settings skeleton); applies them only when the local hash still matches
 - updates user-modifiable files only if they were not changed locally
 - asks how to handle untracked files
 - adds new files introduced by the package
 - injects missing filesystem and media library config pieces
 - can optionally run newly added migrations
+
+### Vendor-first behavior module migration (v13.6.0+)
+
+Five behavior modules — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — run their controllers, FormRequests, and Vue admin pages from the vendor package. `sk:update` migrates existing app copies under a hash guard and an `app.ts` guard.
+
+**Removal is decided per module group, in two independent layers (PHP and Vue):**
+
+- `php` layer — the controller + FormRequest directory tree. Resolved via the server-side alias bridge; can migrate regardless of `app.ts` state.
+- `vue` layer — the Inertia page tree. Requires `app.ts` to contain the `@lvntr/pages` vendor-fallback glob. If the marker is absent, the Vue groups are left in place with a warning until you update `app.ts` and re-run `sk:update`.
+
+**Group atomicity:** if even one file in a module's layer is user-modified or untracked, the entire layer for that module is preserved. A half-deleted module is never produced.
+
+#### Scenario A — unmodified install
+
+All five modules migrate automatically:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+#### Scenario B — modified file(s) in one or more modules
+
+`sk:update` reports preserved modules. Your customised files keep working unchanged. To explicitly take ownership of a module that has migrated to vendor, run `sk:eject`:
+
+```bash
+php artisan sk:eject Logs             # copies controller + FormRequests + Vue pages into your app
+php artisan sk:eject Logs --dry-run   # preview first
+php artisan sk:eject Logs --no-vue    # backend only
+php artisan sk:eject Files            # Vue pages only (Files backend always stays vendor)
+```
+
+After ejection `sk:update` treats those files as consumer-owned and never removes them.
+
+#### Scenario C — fresh install from v13.6.0+
+
+No action required. `sk:install` does not copy the five vendor-first modules. They run from vendor from day one.
 
 ## 4. Force Mode
 

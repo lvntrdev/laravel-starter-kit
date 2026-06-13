@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ActivityLogController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\ActivityLogController;
 
 Route::prefix('activity-logs')
     ->name('activity-logs.')

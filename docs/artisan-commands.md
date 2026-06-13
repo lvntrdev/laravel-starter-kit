@@ -124,7 +124,7 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 
 ### Ejectable domains
 
-Nine domains can be ejected. Domains not in this list are already app-owned and do not need ejecting.
+Ten domains can be ejected. Domains not in this list are already app-owned and do not need ejecting.
 
 | Domain        | Backend classes | Vue pages | Event bindings injected |
 | ------------- | --------------- | --------- | ----------------------- |
@@ -135,10 +135,13 @@ Nine domains can be ejected. Domains not in this list are already app-owned and 
 | `ActivityLog` | yes             | yes       | —                       |
 | `ApiClient`   | yes             | —         | —                       |
 | `ApiRoute`    | yes             | yes       | —                       |
+| `Files`       | no (Vue only)   | yes       | —                       |
 | `Session`     | yes             | —         | —                       |
 | `Media`       | yes             | —         | —                       |
 
-**Why Auth, Helpers, and FileManager are not ejectable:** Auth screens are already 100% app-owned — `sk:update` keeps them fresh without any eject. The `sk-helpers.php` global helpers ship as a single overridable file; consumers delete what they do not need. FileManager has its own facade and route-registry infrastructure and is handled separately.
+**Why Auth and Helpers are not ejectable:** Auth screens are already 100% app-owned — `sk:update` keeps them fresh without any eject. The `sk-helpers.php` global helpers ship as a single overridable file; consumers delete what they do not need.
+
+**`Files` is Vue-only:** the FileManager backend (controller, FormRequests, route-registry infrastructure) stays vendor-managed after ejecting `Files`. Only the admin Vue pages (`resources/js/pages/Admin/Files/`) are copied into your app so the UI can be customised while the backend continues to receive kit updates. To revert, delete the copied `resources/js/pages/Admin/Files/` directory — the vendor pages take over via `app.ts` fallback.
 
 ### What the namespace rewrite covers
 

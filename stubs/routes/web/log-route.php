@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\LogController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\LogController;
 
 Route::middleware('role:system_admin')
     ->prefix('logs')

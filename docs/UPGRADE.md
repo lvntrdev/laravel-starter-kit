@@ -93,6 +93,110 @@ The `class_alias` entries in `StarterKitServiceProvider` resume resolving `App\D
 
 ---
 
+### Behavior-module HTTP + Vue layers moved to vendor (v13.6.0)
+
+Five behavior modules — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — have had their HTTP layer (controllers + FormRequests) and Vue admin pages moved from your app into the vendor package. On a fresh install these files are no longer copied into `app/`. On an existing install `sk:update` migrates them automatically under a hash guard (see below).
+
+#### What changed per module
+
+| Module | Was in your app | Now vendor-resident |
+|---|---|---|
+| Files (File Manager) | `resources/js/pages/Admin/Files/` (Vue only — backend was already vendor) | Vue pages served from package via `app.ts` fallback |
+| Logs | `app/Http/Controllers/Admin/LogController.php`, `app/Http/Requests/Admin/Log/`, `resources/js/pages/Admin/Logs/` | controller + requests + Vue pages |
+| Activity Logs | `app/Http/Controllers/Admin/ActivityLogController.php`, `resources/js/pages/Admin/ActivityLogs/` | controller + Vue pages |
+| API Routes | `app/Http/Controllers/Admin/ApiRouteController.php`, `resources/js/pages/Admin/ApiRoutes/` | controller + Vue pages |
+| Settings | `app/Http/Controllers/Admin/SettingsController.php`, `app/Http/Requests/Admin/Settings/`, `resources/js/pages/Admin/Settings/` | controller + requests + Vue pages |
+
+#### How vendor resolution works
+
+- **Controllers + FormRequests** resolve via `StarterKitServiceProvider::backwardCompatAliasPlan()`: `App\Http\Controllers\Admin\SettingsController` (and the other four) are aliased to their `Lvntr\StarterKit\Http\...` counterparts. The alias is disabled as soon as an `app/Http/Controllers/Admin/SettingsController.php` file exists — so any existing app copy keeps winning without any import changes.
+- **Vue pages** resolve via the `app.ts` vendor-fallback loader: `import.meta.glob('@lvntr/pages/...')` is checked after the local `resources/js/pages/` glob. The app-first glob always wins when a local file exists.
+
+#### `app.ts` vendor-page fallback requirement
+
+The Vue migration depends on `resources/js/app.ts` containing the `@lvntr/pages` vendor glob. `sk:update` checks for this marker before removing any vendor-migrated Vue files; if it is absent, the Vue groups are left in place with a warning:
+
+```
+ WARN  app.ts does not contain the @lvntr/pages vendor fallback — Vue migration skipped.
+       Run `php artisan sk:update` after updating app.ts to complete the migration.
+```
+
+If you see this warning, add the vendor-page resolver to your `app.ts`. The updated stub is delivered by `sk:update` itself — apply the hash-tracked change to `app.ts` and run `sk:update` again.
+
+#### Existing installs — what `sk:update` does
+
+`sk:update` migrates the files per **module group**, in two independent layers (PHP and Vue):
+
+- **Unmodified copies** (on-disk hash matches the registry record): deleted. The vendor copy takes over — controller via the alias bridge, Vue pages via `app.ts` fallback.
+- **Modified copies** (hash differs, or no registry record): kept in place, reported as preserved. Your customised file continues to win over the vendor copy.
+- **Group atomicity**: if even one file in a module's PHP layer is modified, the entire PHP layer for that module is preserved (e.g. a customised `SettingsController.php` keeps its matching `app/Http/Requests/Admin/Settings/` directory). The PHP and Vue layers are evaluated independently.
+
+After `sk:update`, run:
+
+```bash
+npm run build
+```
+
+No migration, no route change, no permission change is needed.
+
+#### Three common scenarios
+
+**Scenario A — unmodified install (standard case)**
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # hash-guarded removal — all five modules migrate automatically
+npm run build
+```
+
+`sk:update` removes the unmodified app copies and vendor takes over. No further action needed.
+
+**Scenario B — modified file(s) in one or more modules**
+
+`sk:update` reports each preserved module group:
+
+```
+ WARN  Vendor-migrated paths preserved (user-modified or untracked):
+  • app/Http/Controllers/Admin/SettingsController.php (modified)
+  • app/Http/Requests/Admin/Settings/ (preserved with controller)
+  • resources/js/pages/Admin/Settings/ (modified)
+```
+
+Your customised files keep working — no action required until you choose to migrate them. To take full ownership of the customised module explicitly:
+
+```bash
+php artisan sk:eject Setting   # copies vendor controller + requests + Vue into your app with App\ namespace
+```
+
+**Scenario C — fresh install from v13.6.0+**
+
+No action required. `sk:install` does not copy any of the five modules. They run from vendor from day one.
+
+#### Taking full ownership of a vendor-resident module
+
+To customise a module's backend (controller, FormRequests) or Vue pages after they have migrated to vendor, use `sk:eject`:
+
+```bash
+php artisan sk:eject Logs             # backend + Vue pages
+php artisan sk:eject Logs --no-vue    # backend only
+php artisan sk:eject Logs --dry-run   # preview first
+php artisan sk:eject Files            # Vue pages only (Files backend always stays vendor)
+```
+
+After ejection `sk:update` treats those files as consumer-owned and never removes them. See [artisan-commands.md](./artisan-commands.md) for the full `sk:eject` flag reference and update-loss trade-off.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| Route files (`routes/web/*-route.php`) | Unchanged — remain in your app |
+| `App\Http\Controllers\Admin\*` imports in your route files | Keep working — the alias bridge or ejected copy resolves them |
+| Permission keys, route names | Unchanged |
+| `config/permission-resources.php` | Unchanged — sanctuary, never overwritten |
+| User / Role / Dashboard / Auth / Profile modules | Unchanged — remain fully app-owned |
+
+---
+
 ### Domain runtime layers moved to vendor (Phase 6)
 
 Five domain modules have had their **runtime layer** (Actions, DTOs, Queries, Events, Listeners, and the Setting service) moved from `stubs/app/Domain/` into the package (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`). The consumer-facing surface — Controllers, FormRequests, Models, Vue pages, route files, Policies, and `config/settings.php` — stays in your app and is **not affected**.

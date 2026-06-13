@@ -167,7 +167,31 @@ After installation, confirm these areas work:
 - file manager
 - `/api/v1/auth/login` and `/api/v1/auth/me`
 
-## 6. Optional Publishing
+## 6. Module Ownership After Install
+
+`sk:install` copies only the modules you are expected to customise from day one. Behaviour modules whose logic is unlikely to need project-specific changes run entirely from the vendor package — they do not produce files in your app.
+
+| Module | Files installed into your app | Vendor-resident (no app copy) |
+|---|---|---|
+| Users, Roles | Controllers, FormRequests, Vue pages, routes, Models, Policies | — |
+| Dashboard, Auth screens, Profile | Controllers, FormRequests, Vue pages, routes | — |
+| Files (File Manager) | — | Vue pages + controller |
+| Logs | — | Vue pages + controller |
+| Activity Logs | — | Vue pages + controller |
+| API Routes | — | Vue pages + controller |
+| Settings | — | Vue pages + controller |
+
+**Vendor-resident modules** are resolved by the `app.ts` vendor-fallback page loader — no file in your app is needed. To take full ownership of a vendor-resident module (for deep customisation), run `sk:eject`:
+
+```bash
+php artisan sk:eject Logs             # copies controller + FormRequests + Vue pages into your app
+php artisan sk:eject Logs --dry-run   # preview first
+php artisan sk:eject Logs --no-vue    # backend only
+```
+
+Once ejected, the module's files live in your app and `sk:update` treats them as yours — upstream updates no longer reach them automatically.
+
+## 7. Optional Publishing
 
 The package keeps many assets inside the package by default. Publish them only when you need project-level customization:
 

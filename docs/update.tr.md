@@ -40,12 +40,51 @@ php artisan sk:update
 
 - runtime kod (`Domain/Shared/`, Trait'ler, Middleware, helper'lar, `ApiResponse`, FileManager katmanı) v13.5.0'dan itibaren `vendor/` altında çalışıyor — `composer update` yeterli, `sk:update` bu dosyaları kopyalamıyor
 - vendor'a taşınan eski app-tarafı dosyaları kaldırır
+- vendor-first davranış modüllerini (Files/Logs/ActivityLogs/ApiRoutes/Settings) göç ettirir — aşağıya bakın
 - hash takipli stub değişikliklerini bildirir (auth/layout Vue bileşenleri, user/rol/ayar domain iskeleti); lokal hash hâlâ eşleşiyorsa uygular
 - kullanıcı tarafından değiştirilebilen dosyaları yalnızca lokal olarak değiştirilmemişse günceller
 - izlenmeyen dosyalar için nasıl davranılacağını sorar
 - paketle gelen yeni dosyaları ekler
 - eksik filesystem ve media library config parçalarını enjekte eder
 - yeni migration'ları isteğe bağlı olarak çalıştırabilir
+
+### Vendor-first davranış modülü göçü (v13.6.0+)
+
+Beş davranış modülü — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — controller'larını, FormRequest'lerini ve Vue admin sayfalarını vendor paketinden çalıştırır. `sk:update`, mevcut uygulama kopyalarını hash koruması ve `app.ts` koruması altında göç ettirir.
+
+**Kaldırma kararı modül grubu başına, iki bağımsız katmanda verilir:**
+
+- `php` katmanı — controller + FormRequest dizin ağacı. Sunucu tarafı alias bridge üzerinden çözülür; `app.ts` durumundan bağımsız olarak göç edebilir.
+- `vue` katmanı — Inertia sayfa ağacı. `app.ts`'in `@lvntr/pages` vendor-fallback glob'unu içermesini gerektirir. Marker yoksa, siz `app.ts`'i güncelleyip `sk:update`'i yeniden çalıştırana dek Vue grupları uyarıyla yerinde bırakılır.
+
+**Grup atomikliği:** bir modülün katmanındaki herhangi bir dosya kullanıcı tarafından değiştirilmişse veya izlenmiyorsa, o modülün tüm katmanı korunur. Yarım silinmiş modül hiçbir zaman oluşturulmaz.
+
+#### Senaryo A — değiştirilmemiş kurulum
+
+Beş modülün tamamı otomatik olarak göç eder:
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update
+npm run build
+```
+
+#### Senaryo B — bir veya daha fazla modülde değiştirilmiş dosya
+
+`sk:update` korunan modülleri raporlar. Özelleştirilmiş dosyalarınız değişmeden çalışmaya devam eder. Vendor'a göç etmiş bir modülün açıkça sahipliğini almak için `sk:eject` çalıştırın:
+
+```bash
+php artisan sk:eject Logs             # controller + FormRequests + Vue sayfalarını uygulamanıza kopyalar
+php artisan sk:eject Logs --dry-run   # önce önizleyin
+php artisan sk:eject Logs --no-vue    # yalnızca backend
+php artisan sk:eject Files            # yalnızca Vue sayfaları (Files backend her zaman vendor'da kalır)
+```
+
+Eject sonrası `sk:update` bu dosyaları consumer'a ait olarak işaretler ve bir daha kaldırmaz.
+
+#### Senaryo C — v13.6.0+ ile sıfır kurulum
+
+Hiçbir işlem gerekmez. `sk:install` beş vendor-first modülü kopyalamaz. Bunlar kurulumdan itibaren vendor'dan çalışır.
 
 ## 4. Zorlayıcı Mod
 

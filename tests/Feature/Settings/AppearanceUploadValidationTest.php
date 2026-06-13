@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest;
-use App\Http\Requests\Admin\Settings\UploadFaviconRequest;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Foundation\Auth\Access\Authorizable as AuthorizableTrait;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest;
+use Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadFaviconRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,14 +18,12 @@ use Illuminate\Support\Facades\Validator;
 | (regresyonla svg allowlist'e geri eklenirse test kırmızı yanar) ve
 | route middleware'ine ek olarak `authorize()` permission katmanı ekler.
 |
-| Stub FormRequest'ler App\ namespace'inde autoload edilmez — dosyalar
-| doğrudan require edilir (ContentLanguageTest / AuthSettingsTest deseni).
+| v13.6.0: Settings FormRequest'leri vendor'a taşındı (Lvntr\StarterKit\Http\
+| Requests\Admin\Settings\...) ve PSR-4 ile autoload ediliyor — eski stub
+| require_once'una gerek yok. Eski consumer'ların App\ import'u alias köprüsüyle
+| yine bu sınıflara çözülür.
 |
 */
-
-$stubs = dirname(__DIR__, 3).'/stubs';
-require_once $stubs.'/app/Http/Requests/Admin/Settings/UploadAppearanceLogoRequest.php';
-require_once $stubs.'/app/Http/Requests/Admin/Settings/UploadFaviconRequest.php';
 
 /**
  * Minimal authorizable actor whose `can()` resolves against an explicit

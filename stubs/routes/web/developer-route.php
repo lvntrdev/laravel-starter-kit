@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ApiRouteController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\ApiRouteController;
 
 Route::prefix('api-routes')
     ->name('api-routes.')

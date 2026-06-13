@@ -21,12 +21,13 @@
 // 1. Stub sınıfının rules() şemasını doğrula
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('stub UpdateFileManagerSettingsRequest includes storage_quota_gb validation rules', function (): void {
+it('UpdateFileManagerSettingsRequest includes storage_quota_gb validation rules', function (): void {
+    // v13.6.0: Settings FormRequest'leri vendor'a taşındı (src/Http/Requests/Admin/...).
     $stubPath = dirname(__DIR__, 3)
-        .'/stubs/app/Http/Requests/Admin/Settings/UpdateFileManagerSettingsRequest.php';
+        .'/src/Http/Requests/Admin/Settings/UpdateFileManagerSettingsRequest.php';
 
     expect(is_file($stubPath))->toBeTrue(
-        "Stub dosyası bulunamadı: {$stubPath}"
+        "Request dosyası bulunamadı: {$stubPath}"
     );
 
     $contents = file_get_contents($stubPath);
@@ -95,9 +96,9 @@ it('runtime config exposes storage_quota_gb', function (): void {
 // 5. Çöp Kutusu (trash) ayarları — enable_trash + trash_retention_days
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('stub UpdateFileManagerSettingsRequest includes trash validation rules', function (): void {
+it('UpdateFileManagerSettingsRequest includes trash validation rules', function (): void {
     $contents = file_get_contents(dirname(__DIR__, 3)
-        .'/stubs/app/Http/Requests/Admin/Settings/UpdateFileManagerSettingsRequest.php');
+        .'/src/Http/Requests/Admin/Settings/UpdateFileManagerSettingsRequest.php');
 
     expect($contents)->toContain("'enable_trash'");
     expect($contents)->toContain("'trash_retention_days'");

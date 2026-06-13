@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
 use App\Models\Setting;
 use App\Providers\SettingsServiceProvider;
 use Illuminate\Support\Facades\Validator;
@@ -8,6 +7,7 @@ use Lvntr\StarterKit\Domain\Setting\Actions\UpdateAuthSettingsAction;
 use Lvntr\StarterKit\Domain\Setting\DTOs\AuthSettingsDTO;
 use Lvntr\StarterKit\Domain\Setting\Queries\SettingsDefaultsQuery;
 use Lvntr\StarterKit\Domain\Setting\SettingService;
+use Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
 use Lvntr\StarterKit\Tests\Stubs\TestSetting;
 
 /*
@@ -45,8 +45,9 @@ if (! class_exists(Setting::class)) {
     class_alias(TestSetting::class, Setting::class);
 }
 
-// Stub sınıfları App\ namespace'inde autoload edilmez — dosyalar doğrudan yüklenir.
-require_once dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/Settings/UpdateAuthSettingsRequest.php';
+// v13.6.0: UpdateAuthSettingsRequest vendor'a taşındı (PSR-4 autoload). Eski
+// consumer'ların App\ import'u alias köprüsüyle bu sınıfa çözülür. SettingsServiceProvider
+// hâlâ stub'da (kapsam dışı) — App\ namespace'inde autoload edilmediğinden doğrudan yüklenir.
 require_once dirname(__DIR__, 3).'/stubs/app/Providers/SettingsServiceProvider.php';
 
 function legacyAuthPayload(): array

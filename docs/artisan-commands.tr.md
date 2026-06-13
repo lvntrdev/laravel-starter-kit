@@ -124,7 +124,7 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 
 ### Eject edilebilir domain'ler
 
-Dokuz domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama sahipli olduğundan eject gerektirmez.
+On domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama sahipli olduğundan eject gerektirmez.
 
 | Domain        | Backend sınıflar | Vue sayfaları | Enjekte edilen event binding'ler    |
 | ------------- | ---------------- | ------------- | ----------------------------------- |
@@ -135,10 +135,13 @@ Dokuz domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama 
 | `ActivityLog` | evet             | evet          | —                                   |
 | `ApiClient`   | evet             | —             | —                                   |
 | `ApiRoute`    | evet             | evet          | —                                   |
+| `Files`       | hayır (yalnızca Vue) | evet     | —                                   |
 | `Session`     | evet             | —             | —                                   |
 | `Media`       | evet             | —             | —                                   |
 
-**Auth, Helper'lar ve FileManager neden eject edilemiyor:** Auth ekranları zaten %100 uygulama sahipli — `sk:update` onları güncel tutar, eject gerekmez. `sk-helpers.php` global helper'ları tek bir override edilebilir dosya olarak gelir; ihtiyaç duyulmayan kısımlar silinir. FileManager'ın kendi facade ve route-registry altyapısı vardır; ayrı ele alınır.
+**Auth ve Helper'lar neden eject edilemiyor:** Auth ekranları zaten %100 uygulama sahipli — `sk:update` onları güncel tutar, eject gerekmez. `sk-helpers.php` global helper'ları tek bir override edilebilir dosya olarak gelir; ihtiyaç duyulmayan kısımlar silinir.
+
+**`Files` yalnızca Vue'dur:** `Files` eject ettikten sonra FileManager backend'i (controller, FormRequests, route-registry altyapısı) vendor'da yönetilmeye devam eder. Yalnızca admin Vue sayfaları (`resources/js/pages/Admin/Files/`) uygulamanıza kopyalanır; bu sayede kullanıcı arayüzü özelleştirilebilirken backend kit güncellemelerini almayı sürdürür. Geri almak için kopyalanan `resources/js/pages/Admin/Files/` dizinini silin — `app.ts` fallback mekanizması vendor sayfaları devreye sokar.
 
 ### Namespace yeniden yazımının kapsamı
 

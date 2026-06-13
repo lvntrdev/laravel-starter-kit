@@ -375,6 +375,34 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Support\MediaPathGenerator' => MediaPathGenerator::class,
             'App\Support\Scramble\ApiResponseExtension' => ApiResponseExtension::class,
             'App\Domain\FileManager\Support\ContextRegistry' => ContextRegistry::class,
+            // v13.6.0 — behavior-module HTTP layer moved vendor-first. The
+            // Log/ActivityLog/ApiRoute/Settings controllers + their FormRequests
+            // now live in Lvntr\StarterKit\Http\...; these aliases keep an older
+            // consumer's `App\Http\Controllers\Admin\X` / `App\Http\Requests\Admin\X`
+            // imports (and any route file still referencing the App\ FQCN)
+            // resolving to the vendor classes. Overridable: the file_exists guard
+            // skips the alias when the consumer still ships its own copy (an
+            // unmodified copy is removed by sk:update, a modified one keeps
+            // winning), and `sk:eject` re-homes them under App\ so the override
+            // wins again. FQ string literals (not ::class) so no import churn.
+            'App\Http\Controllers\Admin\LogController' => 'Lvntr\StarterKit\Http\Controllers\Admin\LogController',
+            'App\Http\Controllers\Admin\ActivityLogController' => 'Lvntr\StarterKit\Http\Controllers\Admin\ActivityLogController',
+            'App\Http\Controllers\Admin\ApiRouteController' => 'Lvntr\StarterKit\Http\Controllers\Admin\ApiRouteController',
+            'App\Http\Controllers\Admin\SettingsController' => 'Lvntr\StarterKit\Http\Controllers\Admin\SettingsController',
+            'App\Http\Requests\Admin\Log\DeleteLogFilesRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Log\DeleteLogFilesRequest',
+            'App\Http\Requests\Admin\Log\EntryFilterRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Log\EntryFilterRequest',
+            'App\Http\Requests\Admin\Settings\SendTestMailRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\SendTestMailRequest',
+            'App\Http\Requests\Admin\Settings\UpdateApidogSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateApidogSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateAppearanceSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateAppearanceSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateFileManagerSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateFileManagerSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateMailSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateMailSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdatePostmanSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdatePostmanSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest',
+            'App\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest',
+            'App\Http\Requests\Admin\Settings\UploadFaviconRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadFaviconRequest',
         ];
 
         foreach ($overridable as $appClass => $vendorClass) {

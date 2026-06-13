@@ -2,6 +2,28 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-13 — v13.6.0 (continued)
+
+### Behavior-module HTTP + Vue layers moved to vendor; `sk:eject` supports `Files`
+
+Five built-in admin modules — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — now run their controllers, FormRequests, and Vue admin pages entirely from the vendor package. Fresh installs receive no app copies of these modules. Existing installs are migrated by `sk:update` under a hash guard (unmodified copies removed; modified copies preserved and reported). Vue migration additionally requires the `@lvntr/pages` vendor-fallback glob in `app.ts`.
+
+#### Added
+
+- **`sk:eject Files`** — ejects the FileManager admin Vue pages (`resources/js/pages/Admin/Files/`) into your app for UI customisation. The FileManager backend (controller, FormRequests, route-registry infrastructure) always stays vendor-managed; only the Vue layer is copied. Reverting deletes the copied pages and the vendor copy resumes via `app.ts` fallback.
+- **Vendor-first HTTP layer for Logs, ActivityLogs, ApiRoutes, Settings** — controllers and FormRequests now live in `Lvntr\StarterKit\Http\...` and are aliased back to `App\Http\Controllers\Admin\*` for backward compatibility. An `app/Http/Controllers/Admin/SomeController.php` file in your app disables the alias automatically so your copy continues to win.
+- **Group-atomic migration in `sk:update`** — vendor-first modules are migrated per layer (PHP and Vue independently). If any file in a layer is modified, the entire layer is preserved. No half-deleted module is ever produced.
+
+#### Changed
+
+- **`sk:eject` manifest extended** — `Files` domain added (Vue-only: `backend: ''`). The available domain list in the command signature now includes `Files`.
+
+#### Migration
+
+Run `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm run build`. For a customised module, `sk:update` preserves it and reports it; run `sk:eject <Module>` to take full explicit ownership. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0, "Behavior-module HTTP + Vue layers moved to vendor") for the three-scenario guide.
+
+---
+
 ## 2026-06-11 — v13.6.0 (continued)
 
 ### Install-time domain eject for User + Role

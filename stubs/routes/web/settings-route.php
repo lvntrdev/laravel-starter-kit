@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\SettingsController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\SettingsController;
 
 Route::prefix('settings')
     ->name('settings.')

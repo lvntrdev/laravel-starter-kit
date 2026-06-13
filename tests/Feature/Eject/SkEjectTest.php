@@ -27,6 +27,15 @@
 | 14. --skip-autoload skips the dump and still returns SUCCESS (even broken phar)
 | 15. --force over a stub-published BulkActions-only dir: runtime copied,
 |     pre-existing BulkActions file left byte-for-byte intact (install path)
+| 16. Ejected controller own-domain rewrite: Logs controller binds to
+|     App\Domain\Logs\ (not vendor) — no dead-code app/Domain after eject
+| 17. Cross-domain reference stays vendor: ejecting ApiRoute leaves the
+|     controller's Domain\Setting\SettingService pointing at vendor (scoped rewrite)
+| 18. Skipped pre-existing file still stamped __ejected__ in the hash registry
+|     (sk:update must not later delete an owned, ejected module copy)
+| 19. Legacy v1 registry (no _format) is NOT upgraded to v2 on eject — sentinels
+|     added but format left intact so sk:update's v1→v2 re-derivation still runs
+| 20. A fresh (no prior) registry IS stamped _format=v2 on eject
 |
 */
 
@@ -291,6 +300,14 @@ it('every manifest backend path exists as a real directory in the package', func
     $manifest = $manifestProp->getValue();
 
     foreach ($manifest as $domain => $descriptor) {
+        // Vue-only descriptors (Files) carry backend === '' on purpose — the backend
+        // stays vendor and is never ejected. basePath('') would resolve to the package
+        // root (a dir) and pass by accident, so skip them: there is no backend dir to
+        // assert. The descriptors that DO declare a backend must resolve to a real dir.
+        if ($descriptor['backend'] === '') {
+            continue;
+        }
+
         $path = StarterKitServiceProvider::basePath($descriptor['backend']);
         expect(is_dir($path))->toBeTrue(
             "DOMAIN_MANIFEST['$domain']['backend'] = '{$descriptor['backend']}' is not a real directory at: $path"
@@ -444,4 +461,174 @@ it('--force ejects runtime over a pre-existing BulkActions dir without clobberin
     // 2. The pre-existing BulkActions file is byte-for-byte unchanged — vendor
     //    ships no BulkActions, so there is nothing to overwrite it with.
     expect(file_get_contents($bulkFile))->toBe('<?php // CONSUMER BULK DELETE — must survive eject');
+});
+
+// ── Test 16: ejected controller wires to the ejected app/Domain, not vendor ───
+// Regression guard: ejecting a vendor-first behavior module (Logs) that ALSO ejects
+// its backend must rewrite the controller's own domain segment to App\, otherwise
+// the App controller keeps importing the VENDOR action and app/Domain/Logs is dead
+// code (and the injected App event binding never fires).
+
+it('rewrites the ejected controller own-domain imports to App\\ (Logs)', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'Logs',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    $controllerPath = $dest.'/app/Http/Controllers/Admin/LogController.php';
+    expect(file_exists($controllerPath))->toBeTrue();
+
+    $contents = file_get_contents($controllerPath);
+
+    // Own HTTP namespace flipped to App\.
+    expect($contents)->toContain('namespace App\\Http\\Controllers\\Admin;');
+    // Own FormRequest imports flipped to App\.
+    expect($contents)->toContain('use App\\Http\\Requests\\Admin\\Log\\DeleteLogFilesRequest;');
+    // Own DOMAIN imports flipped to App\ — the controller now binds to app/Domain/Logs.
+    expect($contents)->toContain('use App\\Domain\\Logs\\Actions\\DeleteLogFilesAction;');
+    expect($contents)->toContain('use App\\Domain\\Logs\\Queries\\LogFileQuery;');
+
+    // No vendor Domain\Logs reference may survive — that would be the dead-code bug.
+    expect($contents)->not->toContain('Lvntr\\StarterKit\\Domain\\Logs\\');
+
+    // The ejected FormRequest directory is likewise own-domain rewritten.
+    expect(file_exists($dest.'/app/Http/Requests/Admin/Log/DeleteLogFilesRequest.php'))->toBeTrue();
+});
+
+// ── Test 17: a cross-domain reference stays vendor on eject (ApiRoute → Setting) ─
+// The own-domain rewrite must be SCOPED: ejecting ApiRoute (Setting NOT ejected)
+// flips Domain\ApiRoute\ to App\ but leaves the ApiRouteController's cross-domain
+// Domain\Setting\SettingService pointing at vendor.
+
+it('keeps a cross-domain reference vendor when ejecting ApiRoute (SettingService)', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'ApiRoute',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    $controllerPath = $dest.'/app/Http/Controllers/Admin/ApiRouteController.php';
+    expect(file_exists($controllerPath))->toBeTrue();
+
+    $contents = file_get_contents($controllerPath);
+
+    // The ejected domain's own imports flip to App\.
+    expect($contents)->toContain('use App\\Domain\\ApiRoute\\Queries\\ApiRouteListQuery;');
+    expect($contents)->not->toContain('Lvntr\\StarterKit\\Domain\\ApiRoute\\');
+
+    // The cross-domain Setting service MUST remain vendor — Setting is not ejected here.
+    expect($contents)->toContain('use Lvntr\\StarterKit\\Domain\\Setting\\SettingService;');
+});
+
+// ── Test 18: a skipped (pre-existing) controller is still stamped __ejected__ ──
+// Eject is an ownership declaration: a file already present without --force is left
+// untouched but must be stamped '__ejected__' in the hash registry, or a later
+// sk:update would see an "unmodified vendor-migrated copy" and delete it.
+
+it('stamps a skipped pre-existing controller as __ejected__ in the hash registry', function () use (&$tempDest): void {
+    $dest = $tempDest;
+    $fs = new Filesystem;
+
+    // The consumer already has the (old, published) controller copy in place.
+    $controllerDir = $dest.'/app/Http/Controllers/Admin';
+    $fs->makeDirectory($controllerDir, 0755, true);
+    $controllerPath = $controllerDir.'/LogController.php';
+    $fs->put($controllerPath, '<?php // PRE-EXISTING LOG CONTROLLER');
+
+    // Eject WITHOUT --force: app/Domain/Logs does not exist, so the command proceeds
+    // into the HTTP step, where the existing controller is preserved (skipped).
+    $this->artisan('sk:eject', [
+        'domain' => 'Logs',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    // The pre-existing file is byte-for-byte intact — no silent overwrite.
+    expect(file_get_contents($controllerPath))->toBe('<?php // PRE-EXISTING LOG CONTROLLER');
+
+    // ...AND it is stamped '__ejected__' so sk:update keeps it (never removes it).
+    $hashFile = $dest.'/storage/starter-kit/hashes.json';
+    expect(file_exists($hashFile))->toBeTrue();
+
+    /** @var array<string, string> $hashes */
+    $hashes = json_decode(file_get_contents($hashFile), true);
+    expect($hashes['app/Http/Controllers/Admin/LogController.php'] ?? null)->toBe('__ejected__');
+});
+
+// ── Test 19: eject must NOT upgrade a v1 (legacy) registry to _format=v2 ───────
+// A consumer who installed before v13.5 (or never ran sk:update) still has a v1
+// registry: entries are TARGET hashes with no '_format' key. Stamping it 'v2'
+// would make UpdateCommand::loadHashRegistry() skip the v1→v2 re-derivation and
+// read v1 target-hashes as v2 stub-hashes, corrupting later remove/preserve
+// decisions. Eject must add the '__ejected__' sentinels but leave the format as-is.
+
+it('does not upgrade a legacy (v1, no _format) registry to v2 on eject', function () use (&$tempDest): void {
+    $dest = $tempDest;
+    $fs = new Filesystem;
+
+    // Pre-existing v1 registry: TARGET hashes, no '_format' key.
+    $hashDir = $dest.'/storage/starter-kit';
+    $fs->makeDirectory($hashDir, 0755, true);
+    $hashFile = $hashDir.'/hashes.json';
+    $fs->put($hashFile, json_encode([
+        'app/Http/Controllers/Admin/LogController.php' => 'deadbeefdeadbeefdeadbeefdeadbeef',
+        'config/settings.php' => 'cafef00dcafef00dcafef00dcafef00d',
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    // Pre-existing controller so the HTTP step skips-and-stamps (Test 18 path).
+    $controllerDir = $dest.'/app/Http/Controllers/Admin';
+    $fs->makeDirectory($controllerDir, 0755, true);
+    $fs->put($controllerDir.'/LogController.php', '<?php // PRE-EXISTING LOG CONTROLLER');
+
+    $this->artisan('sk:eject', [
+        'domain' => 'Logs',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    /** @var array<string, string> $hashes */
+    $hashes = json_decode(file_get_contents($hashFile), true);
+
+    // Format NOT upgraded — the v1 registry stays v1 so the next sk:update migrates it.
+    expect(array_key_exists('_format', $hashes))->toBeFalse();
+
+    // The '__ejected__' sentinel is still written (format-agnostic ownership stamp).
+    expect($hashes['app/Http/Controllers/Admin/LogController.php'] ?? null)->toBe('__ejected__');
+
+    // The original v1 target-hash entries are left intact (not clobbered).
+    expect($hashes['config/settings.php'] ?? null)->toBe('cafef00dcafef00dcafef00dcafef00d');
+});
+
+// ── Test 20: a fresh (no prior) registry IS stamped _format=v2 ────────────────
+// When there is no registry yet, eject creates one and it must be v2 (the current
+// format) so sk:update reads the sentinels without an unnecessary migration pass.
+
+it('writes _format=v2 when creating a fresh hash registry on eject', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    // No storage/starter-kit/hashes.json exists beforehand.
+    $this->artisan('sk:eject', [
+        'domain' => 'Logs',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    $hashFile = $dest.'/storage/starter-kit/hashes.json';
+    expect(file_exists($hashFile))->toBeTrue();
+
+    /** @var array<string, string> $hashes */
+    $hashes = json_decode(file_get_contents($hashFile), true);
+
+    expect($hashes['_format'] ?? null)->toBe('v2');
+    expect($hashes['app/Http/Controllers/Admin/LogController.php'] ?? null)->toBe('__ejected__');
 });
