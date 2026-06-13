@@ -12,6 +12,7 @@ use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,7 +40,7 @@ class ProfileController extends Controller
             'twoFactorEnabled' => ! is_null($user->two_factor_secret),
             'twoFactorConfirmed' => ! is_null($user->two_factor_confirmed_at),
             'twoFactorConfirmedAt' => $user->two_factor_confirmed_at
-                ? \Illuminate\Support\Carbon::parse($user->two_factor_confirmed_at)->toIso8601String()
+                ? Carbon::parse($user->two_factor_confirmed_at)->toIso8601String()
                 : null,
         ]);
     }
