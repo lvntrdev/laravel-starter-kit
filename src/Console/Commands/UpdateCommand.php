@@ -243,6 +243,25 @@ class UpdateCommand extends Command
     ];
 
     /**
+     * Stale import specifiers from components that moved out of stubs into the
+     *
+     * @lvntr/components vendor library. sk:update force-deletes the old local copy
+     * (see DEPRECATED_PATHS), but consumer page files the user customized are NOT
+     * refreshed by the hash-tracked updater — they keep importing the deleted local
+     * path and the Vite build dies with an ENOENT load-fallback error. This map
+     * rewrites those stale specifiers to the vendor path so update is self-healing.
+     *
+     * v13.5.12+: TurnstileWidget moved to @lvntr/components/ui/TurnstileWidget.vue;
+     * the Auth pages (Login/Register/ForgotPassword) are user-owned, so their stale
+     * `@/components/Auth/TurnstileWidget.vue` import survives the move and breaks.
+     *
+     * @var array<string, string>
+     */
+    private const STALE_IMPORT_REWRITES = [
+        '@/components/Auth/TurnstileWidget.vue' => '@lvntr/components/ui/TurnstileWidget.vue',
+    ];
+
+    /**
      * Deprecated files that were previously copied into the app but may have been
      * edited by the user, so they are NOT force-deleted like DEPRECATED_PATHS.
      *
@@ -513,6 +532,12 @@ class UpdateCommand extends Command
         // user has not modified (registry-hash guarded). Modified copies are left in
         // place and reported — they keep winning over the vendor copy.
         $this->removeVendorMigratedPaths($dryRun);
+
+        // 1e. Rewrite stale import paths in user-owned files that reference a
+        // component which moved out of stubs into the @lvntr/components vendor
+        // library (its local copy was force-deleted above). Keeps the build from
+        // dying with an ENOENT load-fallback on the deleted path.
+        $this->migrateStaleImports($dryRun);
 
         // 2. Update user-modifiable files only if not modified
         $this->updateModifiableFiles($force, $dryRun);
@@ -1695,6 +1720,47 @@ PHP;
 
         $this->files->put($targetPath, $rendered);
         $this->updated[] = 'package.json (merged stub dependencies — run npm install)';
+    }
+
+    /**
+     * Rewrite stale import specifiers (see STALE_IMPORT_REWRITES) in consumer
+     * Vue/TS/JS files under resources/js. Touches only files that actually contain
+     * a stale path, and only the specifier substring — user code is otherwise left
+     * untouched. Idempotent: a file already on the vendor path is skipped.
+     */
+    private function migrateStaleImports(bool $dryRun): void
+    {
+        $root = base_path('resources/js');
+
+        if (! $this->files->isDirectory($root)) {
+            return;
+        }
+
+        foreach ($this->files->allFiles($root) as $file) {
+            if (! in_array($file->getExtension(), ['vue', 'ts', 'js'], true)) {
+                continue;
+            }
+
+            $path = $file->getPathname();
+            $content = $this->files->get($path);
+            $rewritten = $content;
+
+            foreach (self::STALE_IMPORT_REWRITES as $old => $new) {
+                if (str_contains($rewritten, $old)) {
+                    $rewritten = str_replace($old, $new, $rewritten);
+                }
+            }
+
+            if ($rewritten === $content) {
+                continue;
+            }
+
+            if (! $dryRun) {
+                $this->files->put($path, $rewritten);
+            }
+
+            $this->updated[] = str_replace(base_path().'/', '', $path).' (rewrote stale import path)';
+        }
     }
 
     private function rewriteHelpersAutoload(): void

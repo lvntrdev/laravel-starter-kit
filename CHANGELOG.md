@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Trade-off:** ejected domains no longer receive upstream security or bug-fix updates via `composer update`. The command output and documentation call this out explicitly.
   - Reverting is manual in v1: delete `app/Domain/{Name}/`, remove the injected `Event::listen` lines from `DomainServiceProvider`, and run `composer dump-autoload`. A `--revert` flag is planned for a future release.
 
+### Fixed
+
+- **`sk:update` self-heals stale imports of vendor-moved components** — when a component moves out of stubs into `@lvntr/components` its old local copy is force-deleted, but user-customized pages that still import the deleted local path were left untouched and broke the Vite build with an `ENOENT` load-fallback error (`@/components/Auth/TurnstileWidget.vue`). `sk:update` now rewrites such stale import specifiers to the vendor path (`@lvntr/components/ui/TurnstileWidget.vue`) across `resources/js`, so the migration that started in v13.6.0 completes on existing consumers' customized Auth pages (`Login`, `Register`, `ForgotPassword`).
+
 ## [13.6.0] - 2026-06-07
 
 This release bundles every published-file change since v13.5.11 into one version. It completes the vendor-runtime migration (composables, backend helpers/middleware, three third-party configs, five domain modules, kit migrations, kit translations) and introduces the structured theme/layout/CSS system. **No visual change** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. See `docs/UPGRADE.md` (`v13.5.11 → v13.6.0`) for the full migration guide.
