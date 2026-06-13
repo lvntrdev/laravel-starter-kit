@@ -530,7 +530,7 @@ Her admin kullanıcısına açık header popover, aynı renk ızgarasını ve bi
 - **`main`:** `--admin-sidebar-bg` (koyu sidebar yüzeyi).
 - **`aura`:** `--p-surface-900` (aydınlık) / `--p-surface-950` (koyu) — `aura`'nın `--admin-sidebar-bg`'si şeffaf olduğundan nötr koyu yüzey kullanılır.
 
-Stiller `components/page-loader.css` tema slotunda yaşar (custom tema ile override edilebilir). Overlay SSR-güvenlidir ve `prefers-reduced-motion`'ı destekler.
+Stiller `components/page-loader.css` tema slotunda yaşar (custom tema ile override edilebilir). Overlay SSR-güvenlidir ve `prefers-reduced-motion`'ı destekler. **Opt-in'dir** — açmak için `AdminLayout` overlays slot'una `<SkPageLoader/>` ekleyin (bkz. [ui-components.tr.md](./ui-components.tr.md) — SkPageLoader).
 
 ---
 

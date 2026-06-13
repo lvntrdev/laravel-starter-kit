@@ -93,6 +93,167 @@ composer dump-autoload
 
 ---
 
+### Davranış-modülü HTTP + Vue katmanları vendor'a taşındı (v13.6.0)
+
+Beş davranış modülünün — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — HTTP katmanı (controller'lar + FormRequest'ler) ve Vue admin sayfaları uygulamanızdan vendor paketine taşındı. Fresh install'da bu dosyalar artık `app/`'e kopyalanmıyor. Mevcut kurulumda `sk:update` bunları hash guard altında otomatik olarak migrate eder (aşağıya bakın).
+
+#### Modül bazında ne değişti
+
+| Modül | Uygulamanızdaydı | Artık vendor-resident |
+|---|---|---|
+| Files (File Manager) | `resources/js/pages/Admin/Files/` (yalnızca Vue — backend zaten vendor'daydı) | Vue sayfaları `app.ts` fallback aracılığıyla paketten sunulur |
+| Logs | `app/Http/Controllers/Admin/LogController.php`, `app/Http/Requests/Admin/Log/`, `resources/js/pages/Admin/Logs/` | controller + request'ler + Vue sayfaları |
+| Activity Logs | `app/Http/Controllers/Admin/ActivityLogController.php`, `resources/js/pages/Admin/ActivityLogs/` | controller + Vue sayfaları |
+| API Routes | `app/Http/Controllers/Admin/ApiRouteController.php`, `resources/js/pages/Admin/ApiRoutes/` | controller + Vue sayfaları |
+| Settings | `app/Http/Controllers/Admin/SettingsController.php`, `app/Http/Requests/Admin/Settings/`, `resources/js/pages/Admin/Settings/` | controller + request'ler + Vue sayfaları |
+
+#### Vendor çözümlemesi nasıl çalışır
+
+- **Controller'lar + FormRequest'ler**, `StarterKitServiceProvider::backwardCompatAliasPlan()` aracılığıyla çözülür: `App\Http\Controllers\Admin\SettingsController` (ve diğer dördü) `Lvntr\StarterKit\Http\...` karşılıklarına alias'lanır. Bir `app/Http/Controllers/Admin/SettingsController.php` dosyası var olduğu anda alias devre dışı kalır — böylece mevcut herhangi bir app kopyası hiçbir import değişikliği olmadan kazanmaya devam eder.
+- **Vue sayfaları**, `app.ts` vendor-fallback loader'ı aracılığıyla çözülür: `import.meta.glob('@lvntr/pages/...')`, yerel `resources/js/pages/` glob'undan sonra kontrol edilir. Yerel bir dosya mevcut olduğunda app-önce glob her zaman kazanır.
+
+#### `app.ts` vendor-sayfa fallback gerekliliği
+
+Vue migrasyonu, `resources/js/app.ts`'in `@lvntr/pages` vendor glob'unu içermesine bağlıdır. `sk:update`, vendor-migrate edilmiş herhangi bir Vue dosyasını kaldırmadan önce bu marker'ı kontrol eder; yoksa Vue grupları bir uyarıyla yerinde bırakılır:
+
+```
+ WARN  app.ts does not contain the @lvntr/pages vendor fallback — Vue migration skipped.
+       Run `php artisan sk:update` after updating app.ts to complete the migration.
+```
+
+Bu uyarıyı görürseniz, `app.ts`'inize vendor-sayfa resolver'ını ekleyin. Güncellenmiş stub `sk:update` tarafından sağlanır — hash-tracked değişikliği `app.ts`'e uygulayın ve `sk:update`'i tekrar çalıştırın.
+
+#### Mevcut kurulumlar — `sk:update` ne yapar
+
+`sk:update`, dosyaları **modül grubu** bazında, iki bağımsız katmanda (PHP ve Vue) migrate eder:
+
+- **Değiştirilmemiş kopyalar** (disk üzerindeki hash registry kaydıyla eşleşir): silinir. Vendor kopyası devralır — controller alias köprüsü aracılığıyla, Vue sayfaları `app.ts` fallback aracılığıyla.
+- **Değiştirilmiş kopyalar** (hash farklı ya da registry kaydı yok): yerinde tutulur, korunmuş olarak raporlanır. Özelleştirilmiş dosyanız vendor kopyasını kazanmaya devam eder.
+- **Grup atomikliği**: bir modülün PHP katmanındaki tek bir dosya bile değiştirilmişse, o modülün tüm PHP katmanı korunur (ör. özelleştirilmiş bir `SettingsController.php`, eşleşen `app/Http/Requests/Admin/Settings/` dizinini de korur). PHP ve Vue katmanları bağımsız olarak değerlendirilir.
+
+`sk:update` sonrasında çalıştırın:
+
+```bash
+npm run build
+```
+
+Migration, route değişikliği veya permission değişikliği gerekmez.
+
+#### Üç yaygın senaryo
+
+**Senaryo A — değiştirilmemiş kurulum (standart durum)**
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # hash-korumalı kaldırma — beş modülün tümü otomatik migrate olur
+npm run build
+```
+
+`sk:update`, değiştirilmemiş app kopyalarını kaldırır ve vendor devralır. Başka işlem gerekmez.
+
+**Senaryo B — bir veya birden fazla modülde değiştirilmiş dosya(lar)**
+
+`sk:update`, korunan her modül grubunu raporlar:
+
+```
+ WARN  Vendor-migrated paths preserved (user-modified or untracked):
+  • app/Http/Controllers/Admin/SettingsController.php (modified)
+  • app/Http/Requests/Admin/Settings/ (preserved with controller)
+  • resources/js/pages/Admin/Settings/ (modified)
+```
+
+Özelleştirilmiş dosyalarınız çalışmaya devam eder — siz migrate etmeyi seçene kadar işlem gerekmez. Özelleştirilmiş modülün tam sahipliğini açıkça almak için:
+
+```bash
+php artisan sk:eject Setting   # vendor controller + request'leri + Vue'yu App\ namespace'iyle uygulamanıza kopyalar
+```
+
+**Senaryo C — v13.6.0+'tan fresh install**
+
+İşlem gerekmez. `sk:install`, beş modülün hiçbirini kopyalamaz. İlk günden itibaren vendor'dan çalışırlar.
+
+#### Vendor-resident bir modülün tam sahipliğini alma
+
+Bir modülün backend'ini (controller, FormRequest'ler) veya Vue sayfalarını vendor'a migrate olduktan sonra özelleştirmek için `sk:eject` kullanın:
+
+```bash
+php artisan sk:eject Logs             # backend + Vue sayfaları
+php artisan sk:eject Logs --no-vue    # yalnızca backend
+php artisan sk:eject Logs --dry-run   # önce önizleme
+php artisan sk:eject Files            # yalnızca Vue sayfaları (Files backend'i her zaman vendor'da kalır)
+```
+
+Eject sonrasında `sk:update`, bu dosyaları consumer-owned olarak değerlendirir ve asla kaldırmaz. Tam `sk:eject` flag referansı ve güncelleme-kaybı takası için [artisan-commands.tr.md](./artisan-commands.tr.md)'ye bakın.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Route dosyaları (`routes/web/*-route.php`) | Değişmez — uygulamanızda kalır |
+| Route dosyalarınızdaki `App\Http\Controllers\Admin\*` import'ları | Çalışmaya devam eder — alias köprüsü ya da ejected kopya bunları çözer |
+| Permission key'leri, route isimleri | Değişmez |
+| `config/permission-resources.php` | Değişmez — sanctuary, asla üzerine yazılmaz |
+| User / Role / Dashboard / Auth / Profile modülleri | Değişmez — tamamen app-owned kalır |
+
+---
+
+### Davranış-modülü HTTP katmanı vendor'a taşındı — Faz 2 (v13.6.0)
+
+Faz 1 (yukarıda), Files / Logs / ActivityLogs / ApiRoutes / Settings controller'larını ve Vue sayfalarını vendor'a taşıdı. Faz 2, **vendor Settings sekmelerini besleyen kalan controller'ları** ve zaten vendor servislerini saran iki API/Service controller'ını taşıyarak tabloyu tamamlar. Vue ve migration'lar zaten vendor'daydı (Faz 1'de sağlandı); Faz 2, **yalnızca PHP katmanı** taşımasıdır.
+
+#### Modül bazında ne değişti
+
+| Modül | Uygulamanızdaydı | Artık vendor-resident |
+|---|---|---|
+| API Clients | `app/Http/Controllers/Admin/ApiClientController.php`, `app/Http/Requests/Admin/ApiClient/`, `app/Http/Resources/Admin/ApiClient/` | controller + request'ler + resource |
+| API Tokens | `app/Http/Controllers/Admin/ApiTokenController.php`, `app/Http/Requests/Admin/ApiToken/`, `app/Http/Resources/Admin/ApiToken/` | controller + request + resource |
+| System Health | `app/Http/Controllers/Admin/SystemHealthController.php` | controller (domain / request / resource yok) |
+| Definitions (API + Service) | `app/Http/Controllers/Api/DefinitionController.php`, `app/Http/Controllers/Service/DefinitionServiceController.php` | her iki controller (vendor `DefinitionService` zaten vendor'daydı) |
+| Media upload/delete | `app/Http/Controllers/Api/MediaUploadController.php` | controller |
+| Content Languages | `app/Domain/ContentLanguage/` (Actions/DTOs/Queries), `app/Http/Controllers/Admin/ContentLanguageController.php`, `app/Http/Requests/Admin/ContentLanguage/`, `app/Http/Resources/Admin/ContentLanguage/` | domain runtime + controller + request'ler + resource |
+
+#### Vendor çözümlemesi nasıl çalışır
+
+Faz 1 ile aynıdır: taşınan her controller / FormRequest / Resource, `StarterKitServiceProvider::backwardCompatAliasPlan()` tarafından `App\Http\...` FQCN'inden `Lvntr\StarterKit\Http\...` karşılığına, bir `file_exists` guard'ı altında alias'lanır — bir `app/Http/Controllers/Admin/ApiClientController.php` (ya da başka herhangi biri) dosyası var olduğu anda alias kenara çekilir ve sizin kopyanız kazanır. `App\Domain\ContentLanguage\...` runtime sınıfları da aynı şekilde çözülür (`Lvntr\StarterKit\Domain\ContentLanguage\...`'a alias). Route dosyalarınız mevcut `App\Http\Controllers\...` import'larını değişmeden korur.
+
+#### Model'ler app-owned kalır
+
+`App\Models\ContentLanguage`, `App\Models\Media` ve `App\Models\Definition` vendor'a **taşınmaz** ve alias'lanmaz — bir model'i taşımak Laravel'in `XPolicy` keşfini ve route-model binding'ini kırardı. Vendor `ContentLanguageController`, `MediaUploadController` ve `DefinitionController` bu model'lere `App\` FQCN'leriyle referans verir; ejected `app/Domain/ContentLanguage` runtime'ı `App\Models\ContentLanguage` referansını değişmeden korur. `content_languages` ve `media` migration'ları zaten vendor'dadır (Faz 4) — Faz 2'de migration değişikliği yoktur.
+
+#### Mevcut kurulumlar — geçiş adımları
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # artık-vendor PHP kopyalarının hash-korumalı kaldırması
+```
+
+`sk:update`, Faz 2 PHP katmanının değiştirilmemiş app kopyalarını modül grubu bazında kaldırır (Faz 1 ile aynı grup-atomik kural: bir modülün PHP katmanındaki herhangi bir değiştirilmiş dosya tüm katmanı korur). Yalnızca Faz 2 için Vue yeniden build'i gerekmez — Vue Faz 1'de migrate olmuştu — ancak tam v13.6.0 geçişinden sonra `npm run build` çalıştırmak doğru tek adım olmaya devam eder.
+
+#### Tam sahipliği alma
+
+```bash
+php artisan sk:eject ApiClient          # ApiClient + ApiToken controller'ları + request'leri + resource'ları
+php artisan sk:eject ContentLanguage    # domain + controller + request + resource
+php artisan sk:eject SystemHealth       # yalnızca controller
+php artisan sk:eject Definitions        # Api + Service controller'ları (DefinitionService vendor'da kalır)
+php artisan sk:eject MediaUpload        # yalnızca controller (routes/web.php içindeki media.destroy route'u)
+```
+
+Eject sonrasında `sk:update`, bu dosyaları consumer-owned olarak değerlendirir ve asla kaldırmaz. Tam eject domain tablosu ve güncelleme-kaybı takası için [artisan-commands.tr.md](./artisan-commands.tr.md)'ye bakın.
+
+#### Değişmeyen alanlar
+
+| Alan | Durum |
+|---|---|
+| Route dosyaları (`routes/web/*-route.php`, `routes/web.php`, `routes/api/service-route.php`) | Değişmez — uygulamanızda kalır; yalnızca controller `use` import'u vendor'ı gösterir |
+| Permission key'leri, route isimleri | Değişmez — route isimleri `CheckResourcePermission`'ı sürer; hiçbir şey yeniden adlandırılmadı |
+| Passport client/token secret tek-sefer-gösterim | Değişmez — `ApiClientController` / `ApiTokenController` logic'i byte-identical, yalnızca dosya konumu taşındı |
+| `App\Models\{ContentLanguage,Media,Definition}` | Asla taşınmaz, asla alias'lanmaz — app-owned |
+| `RoleServiceController` | Değişmez — Role/Setting scaffold ekranlarını besler, app-owned kalır |
+| `LocaleController`, `Api/UserController`, `Api/Auth/*`, Dashboard / User / Role / Profile / Auth controller'ları | Değişmez — scaffold, tamamen app-owned |
+
+---
+
 ### Domain runtime katmanları vendor'a taşındı (Faz 6)
 
 Beş domain modülünün **runtime katmanı** (Actions, DTOs, Queries, Events, Listeners ve Setting servisi), `stubs/app/Domain/` yerine pakete (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`) taşındı. Tüketici yüzeyi — Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları, route dosyaları, Policy'ler ve `config/settings.php` — uygulamanızda kalmaya devam eder ve **etkilenmez**.
@@ -680,6 +841,30 @@ v13.5.0+: package runtime runs from vendor. The following files still exist in y
 #### Yeni kurulum (v13.6.0+)
 
 Sıfır bir `sk:install` artık bu yardımcı sınıfları, middleware'leri, trait'leri veya üç üçüncü-parti config'i `app/` / `config/`'e kopyalamaz. Bunlar `vendor/lvntr/laravel-starter-kit/src/` ile kit'in runtime config override'larından çalışır. Scaffold, üretilen domain kodunun tanıdık import'larını koruması için `DatatableQueryBuilder` ve iki validation Rule için ince `App\` shim'lerini hâlâ gönderir; trait yardımcıları (`HasTranslatableRules`) doğrudan vendor namespace'inden import edilir.
+
+---
+
+### Sayfa-geçiş yükleme overlay'i (opt-in)
+
+Bu sürüm `SkPageLoader`'ı ships eder — `@lvntr/components/ui/SkPageLoader.vue` konumunda animasyonlu tam-ekran sayfa-geçiş loader'ı; `usePageLoading` composable'ı (anti-flicker gecikmeli Inertia router olayları) tarafından sürülür ve `theme/main/components/page-loader.css` ile temalanır. Hem CSS slot'u hem composable `sk:update` ile gelir; CSS üretilen `_active.css`'e zaten import edilir. Marka sözcüğü harf-harf animasyon yapar ve aktif accent + temayı izler (bkz. [theme.tr.md](./theme.tr.md) — Accent renk sistemi).
+
+**Opt-in'dir — gelen scaffold onu mount etmez.** v13.6.0 scaffold'undaki hiçbir layout `<SkPageLoader/>` render etmez; siz wire edene kadar loader uykuda kalır (CSS'i de etkisiz). Upgrade'de otomatik davranış değişikliği yoktur.
+
+Açmak için bileşeni `AdminLayout.vue`'nun `overlays` slot'una, diğer global overlay'lerin yanına ekleyin:
+
+```vue
+import SkPageLoader from '@lvntr/components/ui/SkPageLoader.vue';
+
+<template #overlays>
+    <ConfirmDialogComponent />
+    <ToastComponent />
+    <AppDialog />
+    <ImageLightbox />
+    <SkPageLoader :delay="250" />
+</template>
+```
+
+Loader animasyonlu sözcüğü için `sk-layout.loading` çeviri anahtarını okur ve `prefers-reduced-motion`'ı dikkate alır. Kapatmak için satırı kaldırın.
 
 ---
 

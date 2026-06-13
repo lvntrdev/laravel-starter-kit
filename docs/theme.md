@@ -530,7 +530,7 @@ The header popover available to every admin user shows the same color grid plus 
 - **`main`:** `--admin-sidebar-bg` (the dark sidebar surface).
 - **`aura`:** `--p-surface-900` (light) / `--p-surface-950` (dark) — a neutral dark surface, because `aura`'s `--admin-sidebar-bg` is transparent.
 
-Styles live in the `components/page-loader.css` theme slot (overrideable via a custom theme). The overlay is SSR-safe and honors `prefers-reduced-motion`.
+Styles live in the `components/page-loader.css` theme slot (overrideable via a custom theme). The overlay is SSR-safe and honors `prefers-reduced-motion`. It is **opt-in** — mount `<SkPageLoader/>` in your `AdminLayout` overlays slot to enable it (see [ui-components.md](./ui-components.md) — SkPageLoader).
 
 ---
 

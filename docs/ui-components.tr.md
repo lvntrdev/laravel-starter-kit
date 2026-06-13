@@ -401,11 +401,18 @@ Toggle açık olduğunda kart kenarlığı ve arka planı primary-tonlu renge ge
 
 `SkPageLoader`, Inertia sayfa geçişleri sırasında görünen tam ekran animasyonlu bir loading overlay'idir. Varsayılan NProgress çubuğunun yerini animasyonlu radyal ızgara arka planı ve aşamalı harf-dalgası sözcüğüyle alır. Animasyon ve temalama `theme/main/components/page-loader.css` içinde tanımlıdır.
 
-`AdminLayout.vue` tarafından zaten mount edilir; ayrı sayfalara eklemenize gerek yoktur.
+**Opt-in'dir** — gelen scaffold onu mount etmez. Açmak için `AdminLayout.vue`'nun `overlays` slot'una, diğer global overlay'lerin yanına `<SkPageLoader/>` ekleyin ve bileşen kütüphanesinden import edin:
 
 ```vue
-<!-- AdminLayout.vue bunu zaten mount eder: -->
-<SkPageLoader :delay="250" />
+import SkPageLoader from '@lvntr/components/ui/SkPageLoader.vue';
+
+<template #overlays>
+    <ConfirmDialogComponent />
+    <ToastComponent />
+    <AppDialog />
+    <ImageLightbox />
+    <SkPageLoader :delay="250" />
+</template>
 ```
 
 Props:

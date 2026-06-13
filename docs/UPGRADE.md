@@ -839,6 +839,30 @@ If you already published any of these configs, your file wins and the runtime ov
 
 ---
 
+### Page-switch loading overlay (opt-in)
+
+This release ships `SkPageLoader` — an animated full-screen page-switch loader at `@lvntr/components/ui/SkPageLoader.vue`, driven by the `usePageLoading` composable (Inertia router events with an anti-flicker delay) and styled by `theme/main/components/page-loader.css`. Both the CSS slot and the composable are delivered by `sk:update`, and the CSS is already imported in the generated `_active.css`. The brand word animates letter-by-letter and follows the active accent + theme (see [theme.md](./theme.md) — Accent color system).
+
+**It is opt-in — the shipped scaffold does not mount it.** No layout in the v13.6.0 scaffold renders `<SkPageLoader/>`, so the loader stays dormant (and its CSS inert) until you wire it. There is no automatic behavior change on upgrade.
+
+To enable it, add the component to the `overlays` slot of your `AdminLayout.vue`, alongside the other global overlays:
+
+```vue
+import SkPageLoader from '@lvntr/components/ui/SkPageLoader.vue';
+
+<template #overlays>
+    <ConfirmDialogComponent />
+    <ToastComponent />
+    <AppDialog />
+    <ImageLightbox />
+    <SkPageLoader :delay="250" />
+</template>
+```
+
+The loader reads the `sk-layout.loading` translation key for its animated word and honors `prefers-reduced-motion`. Remove the line to turn it off.
+
+---
+
 ### Theme / CSS / layout reorganisation
 
 This release reorganises the admin-panel CSS and layout shell. The visual output is **unchanged** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11. All layout and component class names, token values, and the DOM structure are preserved. What changes is the file layout: styles that were in a monolithic `_admin.scss` and scattered `_*.scss` partials now live in a structured `themes/main/` directory tree, and the layout shell is split into a reusable `AppShell.vue` + a thin `AdminLayout.vue` composition.

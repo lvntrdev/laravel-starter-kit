@@ -401,11 +401,18 @@ The card border and background shift to a primary-tinted color when the toggle i
 
 `SkPageLoader` is a full-screen animated loading overlay that appears during Inertia page switches. It replaces the default NProgress top bar with an animated radial grid background and a staggered letter-wave word. The animation and theming are defined in `theme/main/components/page-loader.css`.
 
-It is already mounted by `AdminLayout.vue`; you do not need to add it to individual pages.
+It is **opt-in** — the shipped scaffold does not mount it. To enable it, add `<SkPageLoader/>` to the `overlays` slot of your `AdminLayout.vue`, alongside the other global overlays, and import it from the component library:
 
 ```vue
-<!-- AdminLayout.vue already mounts this: -->
-<SkPageLoader :delay="250" />
+import SkPageLoader from '@lvntr/components/ui/SkPageLoader.vue';
+
+<template #overlays>
+    <ConfirmDialogComponent />
+    <ToastComponent />
+    <AppDialog />
+    <ImageLightbox />
+    <SkPageLoader :delay="250" />
+</template>
 ```
 
 Props:
