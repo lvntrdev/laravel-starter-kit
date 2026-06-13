@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace Lvntr\StarterKit\Http\Controllers\Admin;
 
-use App\Domain\ContentLanguage\Actions\CreateContentLanguageAction;
-use App\Domain\ContentLanguage\Actions\DeleteContentLanguageAction;
-use App\Domain\ContentLanguage\Actions\UpdateContentLanguageAction;
-use App\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
-use App\Domain\ContentLanguage\Queries\ContentLanguageDatatableQuery;
-use App\Exceptions\ApiException;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest;
-use App\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest;
-use App\Http\Resources\Admin\ContentLanguage\ContentLanguageResource;
-use App\Http\Responses\ApiResponse;
 use App\Models\ContentLanguage;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\CreateContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\DeleteContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\UpdateContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
+use Lvntr\StarterKit\Domain\ContentLanguage\Queries\ContentLanguageDatatableQuery;
+use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest;
+use Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest;
+use Lvntr\StarterKit\Http\Resources\Admin\ContentLanguage\ContentLanguageResource;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 /**
  * Admin panel content-language management controller.

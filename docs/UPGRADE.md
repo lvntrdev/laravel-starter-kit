@@ -197,6 +197,63 @@ After ejection `sk:update` treats those files as consumer-owned and never remove
 
 ---
 
+### Behavior-module HTTP layer moved to vendor — Phase 2 (v13.6.0)
+
+Phase 1 (above) moved the Files / Logs / ActivityLogs / ApiRoutes / Settings controllers and Vue pages to vendor. Phase 2 completes the picture by moving the **remaining controllers that back the vendor Settings tabs** and two API/Service controllers that already wrap vendor services. The Vue and migrations were already vendor (delivered in Phase 1); Phase 2 is a **PHP-layer-only** move.
+
+#### What changed per module
+
+| Module | Was in your app | Now vendor-resident |
+|---|---|---|
+| API Clients | `app/Http/Controllers/Admin/ApiClientController.php`, `app/Http/Requests/Admin/ApiClient/`, `app/Http/Resources/Admin/ApiClient/` | controller + requests + resource |
+| API Tokens | `app/Http/Controllers/Admin/ApiTokenController.php`, `app/Http/Requests/Admin/ApiToken/`, `app/Http/Resources/Admin/ApiToken/` | controller + request + resource |
+| System Health | `app/Http/Controllers/Admin/SystemHealthController.php` | controller (no domain / request / resource) |
+| Definitions (API + Service) | `app/Http/Controllers/Api/DefinitionController.php`, `app/Http/Controllers/Service/DefinitionServiceController.php` | both controllers (the vendor `DefinitionService` was already vendor) |
+| Media upload/delete | `app/Http/Controllers/Api/MediaUploadController.php` | controller |
+| Content Languages | `app/Domain/ContentLanguage/` (Actions/DTOs/Queries), `app/Http/Controllers/Admin/ContentLanguageController.php`, `app/Http/Requests/Admin/ContentLanguage/`, `app/Http/Resources/Admin/ContentLanguage/` | domain runtime + controller + requests + resource |
+
+#### How vendor resolution works
+
+Identical to Phase 1: each moved controller / FormRequest / Resource is aliased from its `App\Http\...` FQCN to its `Lvntr\StarterKit\Http\...` counterpart by `StarterKitServiceProvider::backwardCompatAliasPlan()`, under a `file_exists` guard — the moment an `app/Http/Controllers/Admin/ApiClientController.php` (or any other) file exists, the alias steps aside and your copy wins. The `App\Domain\ContentLanguage\...` runtime classes resolve the same way (alias to `Lvntr\StarterKit\Domain\ContentLanguage\...`). Your route files keep their existing `App\Http\Controllers\...` imports unchanged.
+
+#### Models stay app-owned
+
+`App\Models\ContentLanguage`, `App\Models\Media`, and `App\Models\Definition` are **not** moved to vendor and **not** aliased — relocating a model would break Laravel's `XPolicy` discovery and route-model binding. The vendor `ContentLanguageController`, `MediaUploadController`, and `DefinitionController` reference these models by their `App\` FQCN; the ejected `app/Domain/ContentLanguage` runtime keeps its `App\Models\ContentLanguage` reference unchanged. `content_languages` and `media` migrations are already vendor (Phase 4) — no migration change in Phase 2.
+
+#### Existing installs — upgrade steps
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # hash-guarded removal of the now-vendor PHP copies
+```
+
+`sk:update` removes the unmodified app copies of the Phase 2 PHP layer per module group (same group-atomic rule as Phase 1: any modified file in a module's PHP layer preserves the whole layer). No Vue rebuild is required for Phase 2 alone — the Vue migrated in Phase 1 — but running `npm run build` after the full v13.6.0 upgrade remains the correct single step.
+
+#### Taking full ownership
+
+```bash
+php artisan sk:eject ApiClient          # ApiClient + ApiToken controllers + requests + resources
+php artisan sk:eject ContentLanguage    # domain + controller + request + resource
+php artisan sk:eject SystemHealth       # controller-only
+php artisan sk:eject Definitions        # Api + Service controllers (DefinitionService stays vendor)
+php artisan sk:eject MediaUpload        # controller-only (media.destroy route in routes/web.php)
+```
+
+After ejection `sk:update` treats those files as consumer-owned and never removes them. See [artisan-commands.md](./artisan-commands.md) for the full eject domain table and update-loss trade-off.
+
+#### What does not change
+
+| Area | Status |
+|---|---|
+| Route files (`routes/web/*-route.php`, `routes/web.php`, `routes/api/service-route.php`) | Unchanged — remain in your app; only the controller `use` import points at vendor |
+| Permission keys, route names | Unchanged — route names drive `CheckResourcePermission`; nothing renamed |
+| Passport client/token secret single-reveal | Unchanged — the `ApiClientController` / `ApiTokenController` logic is byte-identical, only the file location moved |
+| `App\Models\{ContentLanguage,Media,Definition}` | Never moved, never aliased — app-owned |
+| `RoleServiceController` | Unchanged — backs the Role/Setting scaffold screens, stays app-owned |
+| `LocaleController`, `Api/UserController`, `Api/Auth/*`, Dashboard / User / Role / Profile / Auth controllers | Unchanged — scaffold, fully app-owned |
+
+---
+
 ### Domain runtime layers moved to vendor (Phase 6)
 
 Five domain modules have had their **runtime layer** (Actions, DTOs, Queries, Events, Listeners, and the Setting service) moved from `stubs/app/Domain/` into the package (`src/Domain/`, PSR-4 `Lvntr\StarterKit\Domain\`). The consumer-facing surface — Controllers, FormRequests, Models, Vue pages, route files, Policies, and `config/settings.php` — stays in your app and is **not affected**.

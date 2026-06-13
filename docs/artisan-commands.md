@@ -112,6 +112,8 @@ php artisan sk:eject User --dry-run
 php artisan sk:eject User --force
 php artisan sk:eject User --no-vue
 php artisan sk:eject Role --destination=/tmp/eject-preview
+php artisan sk:eject ApiClient          # controllers + requests + resources (ApiClient + ApiToken)
+php artisan sk:eject ContentLanguage    # domain + controller + request + resource
 ```
 
 - `--dry-run` prints the copy/rewrite/injection plan without writing any files. Always run this first.
@@ -124,20 +126,30 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 
 ### Ejectable domains
 
-Ten domains can be ejected. Domains not in this list are already app-owned and do not need ejecting.
+Fourteen domains can be ejected. Domains not in this list are already app-owned and do not need ejecting.
 
-| Domain        | Backend classes | Vue pages | Event bindings injected |
-| ------------- | --------------- | --------- | ----------------------- |
-| `User`        | yes             | yes       | 3 (Created/Updated/Deleted) |
-| `Role`        | yes             | yes       | 3 (Created/Updated/Deleted) |
-| `Setting`     | yes             | yes       | —                       |
-| `Logs`        | yes             | yes       | 1 (FilesDeleted)        |
-| `ActivityLog` | yes             | yes       | —                       |
-| `ApiClient`   | yes             | —         | —                       |
-| `ApiRoute`    | yes             | yes       | —                       |
-| `Files`       | no (Vue only)   | yes       | —                       |
-| `Session`     | yes             | —         | —                       |
-| `Media`       | yes             | —         | —                       |
+| Domain            | Backend classes | Vue pages | HTTP layer ejected          | Event bindings injected |
+| ----------------- | --------------- | --------- | --------------------------- | ----------------------- |
+| `User`            | yes             | yes       | —                           | 3 (Created/Updated/Deleted) |
+| `Role`            | yes             | yes       | —                           | 3 (Created/Updated/Deleted) |
+| `Setting`         | yes             | yes       | controller + requests       | —                       |
+| `Logs`            | yes             | yes       | controller + requests       | 1 (FilesDeleted)        |
+| `ActivityLog`     | yes             | yes       | controller                  | —                       |
+| `ApiClient`       | yes             | —         | ApiClient + ApiToken controllers + requests + resources | — |
+| `ApiRoute`        | yes             | yes       | controller                  | —                       |
+| `ContentLanguage` | yes             | —         | controller + requests + resource | —                  |
+| `SystemHealth`    | no (controller-only) | —    | controller                  | —                       |
+| `Definitions`     | no (controller-only) | —    | API + Service controllers   | —                       |
+| `MediaUpload`     | no (controller-only) | —    | controller                  | —                       |
+| `Files`           | no (Vue only)   | yes       | —                           | —                       |
+| `Session`         | yes             | —         | —                           | —                       |
+| `Media`           | yes             | —         | —                           | —                       |
+
+**`ApiClient` ejects the API-token flow too:** the ApiClient domain owns both the OAuth client and the personal-access-token actions, so `sk:eject ApiClient` copies the `ApiClientController` **and** the `ApiTokenController` (plus their FormRequests and API Resources, and rewrites both `api-client-route.php` and `api-token-route.php` imports). The one-time Passport client-secret reveal stays byte-identical — eject moves the file, it does not change behavior.
+
+**`SystemHealth`, `Definitions`, and `MediaUpload` are controller-only:** they have no `app/Domain/{Name}` backend tree. `SystemHealth` drives Artisan + `Gate` directly from its controller; `Definitions` ejects both the `Api\DefinitionController` and the `Service\DefinitionServiceController` (which wrap the vendor `DefinitionService` — that service stays vendor); `MediaUpload` ejects the `Api\MediaUploadController` whose `media.destroy` route lives in the shared `routes/web.php`. None ship a FormRequest or `app/Domain` folder, so no autoload-affecting class is added unless a controller is copied.
+
+**Models stay app-owned — eject never relocates a Model.** `App\Models\{ContentLanguage,Media,Definition,...}` remain published in your app and are never aliased to vendor (an `App\Models\X` alias would break Laravel's `XPolicy` discovery and route-model binding). The vendor controllers/domains reference these models by their `App\` FQCN, and an ejected `app/Domain/ContentLanguage` keeps that `App\Models\ContentLanguage` reference unchanged.
 
 **Why Auth and Helpers are not ejectable:** Auth screens are already 100% app-owned — `sk:update` keeps them fresh without any eject. The `sk-helpers.php` global helpers ship as a single overridable file; consumers delete what they do not need.
 

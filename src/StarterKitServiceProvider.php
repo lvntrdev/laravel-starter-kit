@@ -403,6 +403,43 @@ class StarterKitServiceProvider extends ServiceProvider
             'App\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest',
             'App\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest',
             'App\Http\Requests\Admin\Settings\UploadFaviconRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadFaviconRequest',
+            // v13.6.0 Faz 2 — second wave of behavior-module HTTP-layer classes
+            // moved vendor-first: the Settings-tab handlers (ApiClient, ApiToken,
+            // SystemHealth, ContentLanguage) plus the Definitions/MediaUpload
+            // API/Service controllers. Same overridable contract as the Faz 1
+            // block above — the file_exists guard skips the alias when the
+            // consumer still ships its own copy, sk:update removes an unmodified
+            // copy, and sk:eject re-homes them under App\ so the override wins
+            // again. FQ string literals (not ::class) so no import churn.
+            //
+            // INVARIANT: NO App\Models\* alias here. The ContentLanguage / Media /
+            // Definition models stay app-owned (publish) so Laravel's
+            // App\Models\X → App\Policies\XPolicy auto-discovery and route-model
+            // binding keep working; the vendor classes reference them by App\ FQCN
+            // (see StarterKitServiceProvider Setting-model note above).
+            'App\Http\Controllers\Admin\ApiClientController' => 'Lvntr\StarterKit\Http\Controllers\Admin\ApiClientController',
+            'App\Http\Controllers\Admin\ApiTokenController' => 'Lvntr\StarterKit\Http\Controllers\Admin\ApiTokenController',
+            'App\Http\Controllers\Admin\SystemHealthController' => 'Lvntr\StarterKit\Http\Controllers\Admin\SystemHealthController',
+            'App\Http\Controllers\Admin\ContentLanguageController' => 'Lvntr\StarterKit\Http\Controllers\Admin\ContentLanguageController',
+            'App\Http\Controllers\Api\DefinitionController' => 'Lvntr\StarterKit\Http\Controllers\Api\DefinitionController',
+            'App\Http\Controllers\Api\MediaUploadController' => 'Lvntr\StarterKit\Http\Controllers\Api\MediaUploadController',
+            'App\Http\Controllers\Service\DefinitionServiceController' => 'Lvntr\StarterKit\Http\Controllers\Service\DefinitionServiceController',
+            'App\Http\Requests\Admin\ApiClient\StoreApiClientRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\ApiClient\StoreApiClientRequest',
+            'App\Http\Requests\Admin\ApiClient\UpdateApiClientRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\ApiClient\UpdateApiClientRequest',
+            'App\Http\Requests\Admin\ApiToken\StoreApiTokenRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\ApiToken\StoreApiTokenRequest',
+            'App\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest',
+            'App\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest' => 'Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest',
+            'App\Http\Resources\Admin\ApiClient\ApiClientResource' => 'Lvntr\StarterKit\Http\Resources\Admin\ApiClient\ApiClientResource',
+            'App\Http\Resources\Admin\ApiToken\ApiTokenResource' => 'Lvntr\StarterKit\Http\Resources\Admin\ApiToken\ApiTokenResource',
+            'App\Http\Resources\Admin\ContentLanguage\ContentLanguageResource' => 'Lvntr\StarterKit\Http\Resources\Admin\ContentLanguage\ContentLanguageResource',
+            // ContentLanguage domain (Actions/DTO/Query) — Tier 3 full vendorize.
+            // The App\Models\ContentLanguage model is NOT aliased (app-owned); the
+            // vendor domain references it by App\ FQCN.
+            'App\Domain\ContentLanguage\Actions\CreateContentLanguageAction' => 'Lvntr\StarterKit\Domain\ContentLanguage\Actions\CreateContentLanguageAction',
+            'App\Domain\ContentLanguage\Actions\UpdateContentLanguageAction' => 'Lvntr\StarterKit\Domain\ContentLanguage\Actions\UpdateContentLanguageAction',
+            'App\Domain\ContentLanguage\Actions\DeleteContentLanguageAction' => 'Lvntr\StarterKit\Domain\ContentLanguage\Actions\DeleteContentLanguageAction',
+            'App\Domain\ContentLanguage\DTOs\ContentLanguageDTO' => 'Lvntr\StarterKit\Domain\ContentLanguage\DTOs\ContentLanguageDTO',
+            'App\Domain\ContentLanguage\Queries\ContentLanguageDatatableQuery' => 'Lvntr\StarterKit\Domain\ContentLanguage\Queries\ContentLanguageDatatableQuery',
         ];
 
         foreach ($overridable as $appClass => $vendorClass) {

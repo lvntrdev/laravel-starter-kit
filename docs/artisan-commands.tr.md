@@ -112,6 +112,8 @@ php artisan sk:eject User --dry-run
 php artisan sk:eject User --force
 php artisan sk:eject User --no-vue
 php artisan sk:eject Role --destination=/tmp/eject-preview
+php artisan sk:eject ApiClient          # controller + request + resource (ApiClient + ApiToken)
+php artisan sk:eject ContentLanguage    # domain + controller + request + resource
 ```
 
 - `--dry-run` dosya yazmadan kopyalama/yeniden yazma/enjeksiyon planını ekranda gösterir. Her zaman önce bunu çalıştırın.
@@ -124,20 +126,30 @@ php artisan sk:eject Role --destination=/tmp/eject-preview
 
 ### Eject edilebilir domain'ler
 
-On domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama sahipli olduğundan eject gerektirmez.
+On dört domain eject edilebilir. Bu listede yer almayan domain'ler zaten uygulama sahipli olduğundan eject gerektirmez.
 
-| Domain        | Backend sınıflar | Vue sayfaları | Enjekte edilen event binding'ler    |
-| ------------- | ---------------- | ------------- | ----------------------------------- |
-| `User`        | evet             | evet          | 3 (Created/Updated/Deleted)         |
-| `Role`        | evet             | evet          | 3 (Created/Updated/Deleted)         |
-| `Setting`     | evet             | evet          | —                                   |
-| `Logs`        | evet             | evet          | 1 (FilesDeleted)                    |
-| `ActivityLog` | evet             | evet          | —                                   |
-| `ApiClient`   | evet             | —             | —                                   |
-| `ApiRoute`    | evet             | evet          | —                                   |
-| `Files`       | hayır (yalnızca Vue) | evet     | —                                   |
-| `Session`     | evet             | —             | —                                   |
-| `Media`       | evet             | —             | —                                   |
+| Domain            | Backend sınıflar      | Vue sayfaları | Eject edilen HTTP katmanı   | Enjekte edilen event binding'ler |
+| ----------------- | --------------------- | ------------- | --------------------------- | -------------------------------- |
+| `User`            | evet                  | evet          | —                           | 3 (Created/Updated/Deleted)      |
+| `Role`            | evet                  | evet          | —                           | 3 (Created/Updated/Deleted)      |
+| `Setting`         | evet                  | evet          | controller + request'ler    | —                                |
+| `Logs`            | evet                  | evet          | controller + request'ler    | 1 (FilesDeleted)                 |
+| `ActivityLog`     | evet                  | evet          | controller                  | —                                |
+| `ApiClient`       | evet                  | —             | ApiClient + ApiToken controller'ları + request'ler + resource'lar | — |
+| `ApiRoute`        | evet                  | evet          | controller                  | —                                |
+| `ContentLanguage` | evet                  | —             | controller + request'ler + resource | —                        |
+| `SystemHealth`    | hayır (yalnızca controller) | —       | controller                  | —                                |
+| `Definitions`     | hayır (yalnızca controller) | —       | API + Service controller'ları | —                              |
+| `MediaUpload`     | hayır (yalnızca controller) | —       | controller                  | —                                |
+| `Files`           | hayır (yalnızca Vue)  | evet          | —                           | —                                |
+| `Session`         | evet                  | —             | —                           | —                                |
+| `Media`           | evet                  | —             | —                           | —                                |
+
+**`ApiClient` API-token akışını da eject eder:** ApiClient domain'i hem OAuth client'ı hem de kişisel erişim token'ı action'larına sahiptir; bu yüzden `sk:eject ApiClient` hem `ApiClientController`'ı hem `ApiTokenController`'ı (FormRequest'leri ve API Resource'larıyla birlikte) kopyalar ve `api-client-route.php` ile `api-token-route.php` import'larını yeniden yazar. Tek seferlik Passport client-secret gösterimi birebir korunur — eject dosyayı taşır, davranışı değiştirmez.
+
+**`SystemHealth`, `Definitions` ve `MediaUpload` yalnızca controller'dır:** bunların `app/Domain/{Name}` backend ağacı yoktur. `SystemHealth` Artisan + `Gate`'i doğrudan controller'ından sürer; `Definitions` hem `Api\DefinitionController` hem `Service\DefinitionServiceController`'ı eject eder (ikisi de vendor `DefinitionService`'i sarar — servis vendor'da kalır); `MediaUpload` `media.destroy` route'u paylaşılan `routes/web.php`'de olan `Api\MediaUploadController`'ı eject eder. Hiçbiri FormRequest ya da `app/Domain` klasörü taşımaz; dolayısıyla bir controller kopyalanmadıkça autoload'u etkileyen sınıf eklenmez.
+
+**Model'ler uygulama sahipli kalır — eject hiçbir Model'i taşımaz.** `App\Models\{ContentLanguage,Media,Definition,...}` uygulamanızda publish kalır ve asla vendor'a alias'lanmaz (bir `App\Models\X` alias'ı Laravel'in `XPolicy` keşfini ve route-model binding'ini bozardı). Vendor controller/domain'ler bu modellere `App\` FQCN ile başvurur; eject edilen bir `app/Domain/ContentLanguage` da o `App\Models\ContentLanguage` referansını değiştirmeden korur.
 
 **Auth ve Helper'lar neden eject edilemiyor:** Auth ekranları zaten %100 uygulama sahipli — `sk:update` onları güncel tutar, eject gerekmez. `sk-helpers.php` global helper'ları tek bir override edilebilir dosya olarak gelir; ihtiyaç duyulmayan kısımlar silinir.
 

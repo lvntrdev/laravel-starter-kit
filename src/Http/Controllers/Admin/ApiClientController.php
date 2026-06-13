@@ -1,21 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace Lvntr\StarterKit\Http\Controllers\Admin;
 
-use App\Domain\ApiClient\Actions\CreateApiClientAction;
-use App\Domain\ApiClient\Actions\RevokeApiClientAction;
-use App\Domain\ApiClient\Actions\UpdateApiClientAction;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\ApiClient\StoreApiClientRequest;
-use App\Http\Requests\Admin\ApiClient\UpdateApiClientRequest;
-use App\Http\Resources\Admin\ApiClient\ApiClientResource;
-use App\Http\Responses\ApiResponse;
-use App\Http\Responses\DatatableQueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\CreateApiClientAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\RevokeApiClientAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\UpdateApiClientAction;
+use Lvntr\StarterKit\Http\Requests\Admin\ApiClient\StoreApiClientRequest;
+use Lvntr\StarterKit\Http\Requests\Admin\ApiClient\UpdateApiClientRequest;
+use Lvntr\StarterKit\Http\Resources\Admin\ApiClient\ApiClientResource;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Lvntr\StarterKit\Http\Responses\DatatableQueryBuilder;
 
 /**
  * Admin panelden Passport OAuth istemcisi yönetimi.

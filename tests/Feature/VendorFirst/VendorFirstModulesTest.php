@@ -639,3 +639,174 @@ it('Files domain in DOMAIN_MANIFEST has an empty backend string (Vue-only eject)
     expect(isset($manifest['Files']))->toBeTrue();
     expect($manifest['Files']['backend'])->toBe('', 'Files is a Vue-only eject — backend must be empty string.');
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// FAZ 2 (v13.6.0) — Settings-tab handlers + Definitions/MediaUpload + the
+// full ContentLanguage stack moved vendor-first. Same contract as Faz 1: the
+// php layer (controller/request/resource/domain) lives in Lvntr\StarterKit\...
+// and is NOT published; older consumers resolve via the file_exists-guarded
+// alias bridge. The App\Models\* classes stay app-owned — NO model is aliased.
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── sk:install does not ship any Faz 2 controller stub ──────────────────────
+
+it('stubs directory has no controller stub for any Faz 2 vendor-first module', function (string $controllerRelative): void {
+    $stubPath = vfmPkgRoot().'/stubs/app/Http/Controllers/'.$controllerRelative;
+    expect(file_exists($stubPath))->toBeFalse(
+        "{$stubPath} still exists in stubs — it must have been removed in Faz 2 (Task 1-4). ".
+        'sk:install must not publish this controller to consumers.'
+    );
+    // ...and the vendor copy must exist (it runs from src/).
+    $vendorPath = vfmPkgRoot().'/src/Http/Controllers/'.$controllerRelative;
+    expect(file_exists($vendorPath))->toBeTrue("Vendor controller missing at {$vendorPath}.");
+})->with([
+    'Admin/ApiClientController.php',
+    'Admin/ApiTokenController.php',
+    'Admin/SystemHealthController.php',
+    'Admin/ContentLanguageController.php',
+    'Api/DefinitionController.php',
+    'Api/MediaUploadController.php',
+    'Service/DefinitionServiceController.php',
+]);
+
+// ── sk:install does not ship the Faz 2 request/resource/domain trees ────────
+
+it('stubs directory has no request/resource/domain tree for any Faz 2 module', function (string $stubRelative): void {
+    $stubPath = vfmPkgRoot().'/stubs/'.$stubRelative;
+    expect(is_dir($stubPath))->toBeFalse(
+        "stubs/{$stubRelative} still exists — it must have been removed in Faz 2."
+    );
+})->with([
+    'app/Http/Requests/Admin/ApiClient',
+    'app/Http/Requests/Admin/ApiToken',
+    'app/Http/Requests/Admin/ContentLanguage',
+    'app/Http/Resources/Admin/ApiClient',
+    'app/Http/Resources/Admin/ApiToken',
+    'app/Http/Resources/Admin/ContentLanguage',
+    'app/Domain/ContentLanguage',
+]);
+
+// ── Faz 2 controller aliases resolve via backwardCompatAliasPlan() ──────────
+
+it('backwardCompatAliasPlan() aliases every Faz 2 controller to its vendor class', function (string $appClass, string $vendorClass) use (&$vfmTempDest): void {
+    $provider = new StarterKitServiceProvider(app());
+    $method = new ReflectionMethod($provider, 'backwardCompatAliasPlan');
+    $method->setAccessible(true);
+
+    $plan = $method->invoke($provider, $vfmTempDest); // no app copy → alias present
+
+    expect(array_key_exists($appClass, $plan))->toBeTrue("{$appClass} alias missing from plan.");
+    expect($plan[$appClass])->toBe($vendorClass);
+})->with([
+    ['App\\Http\\Controllers\\Admin\\ApiClientController', 'Lvntr\\StarterKit\\Http\\Controllers\\Admin\\ApiClientController'],
+    ['App\\Http\\Controllers\\Admin\\ApiTokenController', 'Lvntr\\StarterKit\\Http\\Controllers\\Admin\\ApiTokenController'],
+    ['App\\Http\\Controllers\\Admin\\SystemHealthController', 'Lvntr\\StarterKit\\Http\\Controllers\\Admin\\SystemHealthController'],
+    ['App\\Http\\Controllers\\Admin\\ContentLanguageController', 'Lvntr\\StarterKit\\Http\\Controllers\\Admin\\ContentLanguageController'],
+    ['App\\Http\\Controllers\\Api\\DefinitionController', 'Lvntr\\StarterKit\\Http\\Controllers\\Api\\DefinitionController'],
+    ['App\\Http\\Controllers\\Api\\MediaUploadController', 'Lvntr\\StarterKit\\Http\\Controllers\\Api\\MediaUploadController'],
+    ['App\\Http\\Controllers\\Service\\DefinitionServiceController', 'Lvntr\\StarterKit\\Http\\Controllers\\Service\\DefinitionServiceController'],
+]);
+
+// ── Faz 2 request/resource + ContentLanguage domain aliases present ─────────
+
+it('backwardCompatAliasPlan() aliases the Faz 2 request/resource/domain classes', function (string $appClass, string $vendorClass) use (&$vfmTempDest): void {
+    $provider = new StarterKitServiceProvider(app());
+    $method = new ReflectionMethod($provider, 'backwardCompatAliasPlan');
+    $method->setAccessible(true);
+
+    $plan = $method->invoke($provider, $vfmTempDest);
+
+    expect(array_key_exists($appClass, $plan))->toBeTrue("{$appClass} alias missing from plan.");
+    expect($plan[$appClass])->toBe($vendorClass);
+})->with([
+    ['App\\Http\\Requests\\Admin\\ApiClient\\StoreApiClientRequest', 'Lvntr\\StarterKit\\Http\\Requests\\Admin\\ApiClient\\StoreApiClientRequest'],
+    ['App\\Http\\Requests\\Admin\\ApiToken\\StoreApiTokenRequest', 'Lvntr\\StarterKit\\Http\\Requests\\Admin\\ApiToken\\StoreApiTokenRequest'],
+    ['App\\Http\\Requests\\Admin\\ContentLanguage\\StoreContentLanguageRequest', 'Lvntr\\StarterKit\\Http\\Requests\\Admin\\ContentLanguage\\StoreContentLanguageRequest'],
+    ['App\\Http\\Resources\\Admin\\ApiClient\\ApiClientResource', 'Lvntr\\StarterKit\\Http\\Resources\\Admin\\ApiClient\\ApiClientResource'],
+    ['App\\Http\\Resources\\Admin\\ContentLanguage\\ContentLanguageResource', 'Lvntr\\StarterKit\\Http\\Resources\\Admin\\ContentLanguage\\ContentLanguageResource'],
+    ['App\\Domain\\ContentLanguage\\Actions\\CreateContentLanguageAction', 'Lvntr\\StarterKit\\Domain\\ContentLanguage\\Actions\\CreateContentLanguageAction'],
+    ['App\\Domain\\ContentLanguage\\DTOs\\ContentLanguageDTO', 'Lvntr\\StarterKit\\Domain\\ContentLanguage\\DTOs\\ContentLanguageDTO'],
+    ['App\\Domain\\ContentLanguage\\Queries\\ContentLanguageDatatableQuery', 'Lvntr\\StarterKit\\Domain\\ContentLanguage\\Queries\\ContentLanguageDatatableQuery'],
+]);
+
+// ── INVARIANT: the alias plan NEVER aliases an App\Models\* class ───────────
+
+it('backwardCompatAliasPlan() contains NO App\\Models\\* alias (models stay app-owned)', function () use (&$vfmTempDest): void {
+    $provider = new StarterKitServiceProvider(app());
+    $method = new ReflectionMethod($provider, 'backwardCompatAliasPlan');
+    $method->setAccessible(true);
+
+    $plan = $method->invoke($provider, $vfmTempDest);
+
+    foreach (array_keys($plan) as $appClass) {
+        expect(str_starts_with($appClass, 'App\\Models\\'))->toBeFalse(
+            "backwardCompatAliasPlan() must NOT alias any App\\Models\\* class — found: {$appClass}. ".
+            'Aliasing a model breaks Laravel App\\Models\\X → App\\Policies\\XPolicy discovery + route-model binding.'
+        );
+    }
+
+    // Spot-check the three Faz 2 models that the vendor code references by FQCN.
+    expect(array_key_exists('App\\Models\\ContentLanguage', $plan))->toBeFalse();
+    expect(array_key_exists('App\\Models\\Media', $plan))->toBeFalse();
+    expect(array_key_exists('App\\Models\\Definition', $plan))->toBeFalse();
+});
+
+// ── The source file itself declares no App\Models\* alias (static guard) ────
+
+it('the backwardCompatAliasPlan source declares no App\\Models alias mapping', function (): void {
+    $source = file_get_contents(vfmPkgRoot().'/src/StarterKitServiceProvider.php');
+
+    // Isolate the method body so unrelated `use App\Models\User;` imports at the
+    // top of the file (the User model is referenced for type-hints, not aliased)
+    // do not produce a false positive.
+    $start = strpos($source, 'function backwardCompatAliasPlan');
+    expect($start)->not->toBeFalse();
+    $body = substr($source, (int) $start);
+
+    // An alias mapping would look like  'App\Models\X' => ...  — that must not exist.
+    expect($body)->not->toMatch("/'App\\\\Models\\\\[A-Za-z0-9_]+'\\s*=>/");
+});
+
+// ── Faz 2 alias is skipped when the consumer ships its own copy ─────────────
+
+it('backwardCompatAliasPlan() omits the ApiClientController alias when an app copy exists', function () use (&$vfmTempDest): void {
+    $dest = $vfmTempDest;
+    $fs = new Filesystem;
+
+    $consumerCtrl = $dest.'/app/Http/Controllers/Admin/ApiClientController.php';
+    $fs->makeDirectory(dirname($consumerCtrl), 0755, true);
+    $fs->put($consumerCtrl, '<?php // consumer-owned ApiClientController');
+
+    $provider = new StarterKitServiceProvider(app());
+    $method = new ReflectionMethod($provider, 'backwardCompatAliasPlan');
+    $method->setAccessible(true);
+
+    $plan = $method->invoke($provider, $dest);
+
+    expect(array_key_exists('App\\Http\\Controllers\\Admin\\ApiClientController', $plan))->toBeFalse(
+        'When a consumer copy exists the alias must be omitted so the App\\ class wins.'
+    );
+});
+
+// ── Faz 2 modules carry controller entries in DOMAIN_MANIFEST (ejectable) ───
+
+it('DOMAIN_MANIFEST declares the Faz 2 modules with controller sources that exist', function (string $module): void {
+    $manifestProp = new ReflectionClassConstant(EjectCommand::class, 'DOMAIN_MANIFEST');
+
+    /** @var array<string, array{controllers?: array<string, string>}> $manifest */
+    $manifest = $manifestProp->getValue();
+
+    expect(isset($manifest[$module]))->toBeTrue("DOMAIN_MANIFEST must declare the {$module} domain.");
+
+    $controllers = $manifest[$module]['controllers'] ?? [];
+    expect($controllers)->not->toBe([], "{$module} must declare at least one controller source.");
+
+    foreach ($controllers as $sourceRelative => $destRelative) {
+        $sourcePath = StarterKitServiceProvider::basePath($sourceRelative);
+        expect(file_exists($sourcePath))->toBeTrue(
+            "DOMAIN_MANIFEST['{$module}']['controllers'] source '{$sourceRelative}' must exist at: {$sourcePath}"
+        );
+        // Destination is an App\ path (re-homed on eject).
+        expect(str_starts_with($destRelative, 'app/Http/Controllers/'))->toBeTrue();
+    }
+})->with(['ApiClient', 'SystemHealth', 'ContentLanguage', 'Definitions', 'MediaUpload']);

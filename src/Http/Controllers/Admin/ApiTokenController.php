@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace Lvntr\StarterKit\Http\Controllers\Admin;
 
-use App\Domain\ApiClient\Actions\CreatePersonalAccessTokenAction;
-use App\Domain\ApiClient\Actions\RevokeApiTokenAction;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\ApiToken\StoreApiTokenRequest;
-use App\Http\Resources\Admin\ApiToken\ApiTokenResource;
-use App\Http\Responses\ApiResponse;
-use App\Http\Responses\DatatableQueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
 use Laravel\Passport\Token;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\CreatePersonalAccessTokenAction;
+use Lvntr\StarterKit\Domain\ApiClient\Actions\RevokeApiTokenAction;
+use Lvntr\StarterKit\Http\Requests\Admin\ApiToken\StoreApiTokenRequest;
+use Lvntr\StarterKit\Http\Resources\Admin\ApiToken\ApiTokenResource;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Lvntr\StarterKit\Http\Responses\DatatableQueryBuilder;
 
 /**
  * Admin panelden Personal Access Token (PAT) yönetimi.

@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Service;
+namespace Lvntr\StarterKit\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
-class DefinitionServiceController extends Controller
+class DefinitionController extends Controller
 {
     /**
-     * Get definitions filtered by keys, for use in forms.
+     * Get all definitions (enum + DB), optionally filtered by keys.
      *
-     * GET /definitions?keys=gender,system
+     * GET /api/v1/definitions
+     * GET /api/v1/definitions?keys=userStatus,identityType
      */
     public function index(Request $request, DefinitionService $service): ApiResponse
     {

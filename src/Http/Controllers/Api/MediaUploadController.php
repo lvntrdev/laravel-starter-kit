@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace Lvntr\StarterKit\Http\Controllers\Api;
 
-use App\Exceptions\ApiException;
-use App\Http\Controllers\Controller;
-use App\Http\Responses\ApiResponse;
 use App\Models\Media;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
+use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 class MediaUploadController extends Controller
 {

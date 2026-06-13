@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Admin\ApiToken;
+namespace Lvntr\StarterKit\Http\Requests\Admin\ApiToken;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;

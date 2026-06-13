@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Admin\ApiClient;
+namespace Lvntr\StarterKit\Http\Requests\Admin\ApiClient;
 
-use App\Rules\HttpsOrLocalhostUrl;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Lvntr\StarterKit\Rules\HttpsOrLocalhostUrl;
 
 /**
  * Validation rules for creating a new Passport OAuth client.

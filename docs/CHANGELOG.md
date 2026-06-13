@@ -4,6 +4,27 @@ Newly added features and improvements to the starter kit are listed here.
 
 ## 2026-06-13 — v13.6.0 (continued)
 
+### Vendor-first Phase 2 — Settings-tab controllers, Definitions/Media, ContentLanguage
+
+Phase 2 finishes the vendor-first move started in Phase 1 by relocating the remaining controllers that back the vendor Settings tabs plus two API/Service controllers, and fully vendorizing the ContentLanguage domain. The Vue and migrations were already vendor — this is a PHP-layer-only move. Fresh installs receive no app copies of these files; existing installs are migrated by `sk:update` under the same hash guard.
+
+#### Changed
+
+- **Vendor-first HTTP layer for ApiClient, ApiToken, SystemHealth, ContentLanguage, Definitions (Api + Service), and MediaUpload** — these controllers (plus their FormRequests / API Resources where present) now live in `Lvntr\StarterKit\Http\...` and are aliased back to their `App\Http\...` FQCNs for backward compatibility. An app copy disables the alias automatically so your customisation continues to win. Route names, permission keys, and the Passport secret single-reveal are unchanged.
+- **ContentLanguage domain vendorized** — `Actions` / `DTOs` / `Queries` moved to `Lvntr\StarterKit\Domain\ContentLanguage\`. The `App\Models\ContentLanguage` model stays app-owned (never aliased — keeps policy discovery + route-model binding intact); vendor code references it by `App\` FQCN.
+
+#### Added
+
+- **`sk:eject` gains five entries** — `SystemHealth`, `ContentLanguage`, `Definitions`, `MediaUpload`, and a full-HTTP-layer `ApiClient` (which also ejects the `ApiToken` controller/request/resource). The ejectable domain count rises from 10 to 14.
+
+#### Migration
+
+Run `composer update lvntr/laravel-starter-kit && php artisan sk:update`. See `docs/UPGRADE.md` (v13.5.11 → v13.6.0, "Behavior-module HTTP layer moved to vendor — Phase 2").
+
+---
+
+## 2026-06-13 — v13.6.0 (continued)
+
 ### Behavior-module HTTP + Vue layers moved to vendor; `sk:eject` supports `Files`
 
 Five built-in admin modules — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — now run their controllers, FormRequests, and Vue admin pages entirely from the vendor package. Fresh installs receive no app copies of these modules. Existing installs are migrated by `sk:update` under a hash guard (unmodified copies removed; modified copies preserved and reported). Vue migration additionally requires the `@lvntr/pages` vendor-fallback glob in `app.ts`.

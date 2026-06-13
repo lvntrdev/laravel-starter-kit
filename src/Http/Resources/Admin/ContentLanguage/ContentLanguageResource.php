@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Admin\ContentLanguage;
+namespace Lvntr\StarterKit\Http\Resources\Admin\ContentLanguage;
 
 use App\Models\ContentLanguage;
 use Illuminate\Http\Request;

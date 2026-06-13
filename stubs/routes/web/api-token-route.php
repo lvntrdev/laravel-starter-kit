@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ApiTokenController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\ApiTokenController;
 
 /*
 |--------------------------------------------------------------------------

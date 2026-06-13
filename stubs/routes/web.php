@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\MediaUploadController;
 use App\Http\Middleware\EnsurePasswordNotExpired;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Api\MediaUploadController;
 
 Route::redirect('/', '/dashboard');
 

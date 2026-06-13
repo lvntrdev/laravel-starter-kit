@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Domain\ContentLanguage\Actions;
+namespace Lvntr\StarterKit\Domain\ContentLanguage\Actions;
 
-use App\Exceptions\ApiException;
 use App\Models\ContentLanguage;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Exceptions\ApiException;
 
 /**
  * Action: Delete a content language.

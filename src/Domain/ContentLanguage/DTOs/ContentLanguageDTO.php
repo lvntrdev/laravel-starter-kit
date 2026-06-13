@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\ContentLanguage\DTOs;
+namespace Lvntr\StarterKit\Domain\ContentLanguage\DTOs;
 
 use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 

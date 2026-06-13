@@ -80,6 +80,9 @@ class EjectCommand extends Command
      *   - requests:    [vendorSourceDirRelative => appDestDirRelative] map of FormRequest
      *                  directories; copied recursively with the same namespace rewrite.
      *                  [] for domains with no vendor FormRequests.
+     *   - resources:   [vendorSourceDirRelative => appDestDirRelative] map of API Resource
+     *                  directories; copied recursively with the same namespace rewrite
+     *                  (v13.6.0 Faz 2). Omitted for domains with no vendor Resource.
      *   - route:       [relativeRouteFile => vendorControllerFqcn] map; after eject the
      *                  consumer's route file has `use {vendorFqcn};` rewritten back to the
      *                  App\ FQCN — but ONLY when that exact import line is present (a
@@ -92,6 +95,7 @@ class EjectCommand extends Command
      *   events: array<string, string>,
      *   controllers?: array<string, string>,
      *   requests?: array<string, string>,
+     *   resources?: array<string, string>,
      *   route?: array<string, string>,
      * }>
      */
@@ -156,10 +160,100 @@ class EjectCommand extends Command
             // ApiClient/ApiToken management Vue lives inside Settings tab components
             // (ApiClientsManageTab.vue, ApiTokensManageTab.vue), not a dedicated folder —
             // it travels with the Settings domain. No standalone ApiClient page set.
-            // The ApiClientController is intentionally NOT part of this eject (out of
-            // scope — Settings tabs call its routes by name; it stays app-owned).
             'vue' => [],
             'events' => [],
+            // v13.6.0 Faz 2 — the ApiClient + ApiToken HTTP layer is now vendor-first
+            // and fully ejectable. The ApiClient domain owns both the Client and the
+            // personal-access-token flows (the token actions live in
+            // src/Domain/ApiClient), so the ApiToken controller/request/resource +
+            // route eject together with it under this single domain entry.
+            'controllers' => [
+                'src/Http/Controllers/Admin/ApiClientController.php' => 'app/Http/Controllers/Admin/ApiClientController.php',
+                'src/Http/Controllers/Admin/ApiTokenController.php' => 'app/Http/Controllers/Admin/ApiTokenController.php',
+            ],
+            'requests' => [
+                'src/Http/Requests/Admin/ApiClient' => 'app/Http/Requests/Admin/ApiClient',
+                'src/Http/Requests/Admin/ApiToken' => 'app/Http/Requests/Admin/ApiToken',
+            ],
+            'resources' => [
+                'src/Http/Resources/Admin/ApiClient' => 'app/Http/Resources/Admin/ApiClient',
+                'src/Http/Resources/Admin/ApiToken' => 'app/Http/Resources/Admin/ApiToken',
+            ],
+            'route' => [
+                'routes/web/api-client-route.php' => 'Lvntr\StarterKit\Http\Controllers\Admin\ApiClientController',
+                'routes/web/api-token-route.php' => 'Lvntr\StarterKit\Http\Controllers\Admin\ApiTokenController',
+            ],
+        ],
+        'SystemHealth' => [
+            // Controller-only module — no domain (the controller drives Artisan +
+            // Gate directly), no FormRequest/Resource. Vue lives in the Settings
+            // SystemHealthTab. v13.6.0 Faz 2.
+            'backend' => '',
+            'vue' => [],
+            'events' => [],
+            'controllers' => [
+                'src/Http/Controllers/Admin/SystemHealthController.php' => 'app/Http/Controllers/Admin/SystemHealthController.php',
+            ],
+            'route' => [
+                'routes/web/system-health-route.php' => 'Lvntr\StarterKit\Http\Controllers\Admin\SystemHealthController',
+            ],
+        ],
+        'ContentLanguage' => [
+            // v13.6.0 Faz 2 — full Tier 3 vendorize: domain + controller + request +
+            // resource + route. The App\Models\ContentLanguage MODEL stays app-owned
+            // (publish), so it is intentionally NOT relocated by this eject; the
+            // ejected app/Domain/ContentLanguage runtime references it by App\ FQCN
+            // (already App\ — never rewritten). Vue lives in the Settings
+            // ContentLanguage tab.
+            'backend' => 'src/Domain/ContentLanguage',
+            'vue' => [],
+            'events' => [],
+            'controllers' => [
+                'src/Http/Controllers/Admin/ContentLanguageController.php' => 'app/Http/Controllers/Admin/ContentLanguageController.php',
+            ],
+            'requests' => [
+                'src/Http/Requests/Admin/ContentLanguage' => 'app/Http/Requests/Admin/ContentLanguage',
+            ],
+            'resources' => [
+                'src/Http/Resources/Admin/ContentLanguage' => 'app/Http/Resources/Admin/ContentLanguage',
+            ],
+            'route' => [
+                'routes/web/content-language-route.php' => 'Lvntr\StarterKit\Http\Controllers\Admin\ContentLanguageController',
+            ],
+        ],
+        'Definitions' => [
+            // v13.6.0 Faz 2 — controller-only (the Api + Service Definition
+            // controllers wrap the vendor DefinitionService, which stays vendor).
+            // No domain folder of its own (DefinitionService lives in Domain/Shared),
+            // no FormRequest/Resource. Definitions has no dedicated Vue page.
+            'backend' => '',
+            'vue' => [],
+            'events' => [],
+            'controllers' => [
+                'src/Http/Controllers/Api/DefinitionController.php' => 'app/Http/Controllers/Api/DefinitionController.php',
+                'src/Http/Controllers/Service/DefinitionServiceController.php' => 'app/Http/Controllers/Service/DefinitionServiceController.php',
+            ],
+            'route' => [
+                'routes/api/service-route.php' => 'Lvntr\StarterKit\Http\Controllers\Api\DefinitionController',
+                'routes/web/service-route.php' => 'Lvntr\StarterKit\Http\Controllers\Service\DefinitionServiceController',
+            ],
+        ],
+        'MediaUpload' => [
+            // v13.6.0 Faz 2 — controller-only. The controller references
+            // App\Models\Media by FQCN (model stays app-owned) and the existing
+            // vendor Media domain (Clear/UploadMediaAction) backs it via its own
+            // aliases. No FormRequest/Resource. The route lives in the shared
+            // routes/web.php (media.destroy); the conservative exact-match import
+            // rewrite flips only that one `use` line.
+            'backend' => '',
+            'vue' => [],
+            'events' => [],
+            'controllers' => [
+                'src/Http/Controllers/Api/MediaUploadController.php' => 'app/Http/Controllers/Api/MediaUploadController.php',
+            ],
+            'route' => [
+                'routes/web.php' => 'Lvntr\StarterKit\Http\Controllers\Api\MediaUploadController',
+            ],
         ],
         'ApiRoute' => [
             'backend' => 'src/Domain/ApiRoute',
@@ -312,7 +406,7 @@ class EjectCommand extends Command
         // A Vue-only eject (no backend domain, no PHP controller/request copied)
         // adds no new App\ classes, so the autoload map is unchanged — skip the
         // dump entirely (it would be pure wasted work on a real consumer).
-        $ejectedPhpClasses = $hasBackend || $httpResult['controllers'] > 0 || $httpResult['requests'] > 0;
+        $ejectedPhpClasses = $hasBackend || $httpResult['controllers'] > 0 || $httpResult['requests'] > 0 || $httpResult['resources'] > 0;
         $autoloadOk = true;
         if (! $dryRun && ! $skipAutoload && $ejectedPhpClasses) {
             $autoloadOk = $this->refreshAutoload();
@@ -412,6 +506,7 @@ class EjectCommand extends Command
     {
         $controllers = $descriptor['controllers'] ?? [];
         $requests = $descriptor['requests'] ?? [];
+        $resources = $descriptor['resources'] ?? [];
         $routes = $descriptor['route'] ?? [];
 
         // When this module also ejects its backend (descriptor.backend !== ''),
@@ -429,6 +524,7 @@ class EjectCommand extends Command
 
         $controllerCount = 0;
         $requestCount = 0;
+        $resourceCount = 0;
         $skipped = [];
         $routeRewritten = [];
         $routeSkipped = [];
@@ -447,7 +543,18 @@ class EjectCommand extends Command
             $skipped = [...$skipped, ...$result['skipped']];
         }
 
-        // 3. Route file controller-import rewrite (vendor FQCN → App\ FQCN).
+        // 3. API Resource directories — recursive, namespace-rewritten. Identical
+        // mechanics to FormRequests (Http\Resources\ flips to App\Http\Resources\
+        // under the same rewriteHttpNamespace pass); split out only so the summary
+        // can report resources distinctly. Added in v13.6.0 Faz 2 for the modules
+        // that ship a vendor Resource (ApiClient, ApiToken, ContentLanguage).
+        foreach ($resources as $sourceRelative => $destRelative) {
+            $result = $this->copyHttpDirectory($sourceRelative, $destRelative, $domain, $rewriteDomain, $force, $dryRun, $ejectedRelativePaths);
+            $resourceCount += $result['copied'];
+            $skipped = [...$skipped, ...$result['skipped']];
+        }
+
+        // 4. Route file controller-import rewrite (vendor FQCN → App\ FQCN).
         foreach ($routes as $routeRelative => $vendorFqcn) {
             $rewritten = $this->rewriteRouteControllerImport($routeRelative, $vendorFqcn, $dryRun);
             if ($rewritten) {
@@ -460,6 +567,7 @@ class EjectCommand extends Command
         return [
             'controllers' => $controllerCount,
             'requests' => $requestCount,
+            'resources' => $resourceCount,
             'skipped' => $skipped,
             'routeRewritten' => $routeRewritten,
             'routeSkipped' => $routeSkipped,
@@ -1145,11 +1253,13 @@ class EjectCommand extends Command
             $this->components->twoColumnDetail('<fg=gray>Backend</>', 'kept in vendor (Vue-only eject)');
         }
 
-        // v13.6.0 vendor-first HTTP layer summary (controllers + requests + route).
-        if ($httpResult['controllers'] > 0 || $httpResult['requests'] > 0) {
+        // v13.6.0 vendor-first HTTP layer summary (controllers + requests +
+        // resources + route).
+        $resourceCount = $httpResult['resources'] ?? 0;
+        if ($httpResult['controllers'] > 0 || $httpResult['requests'] > 0 || $resourceCount > 0) {
             $this->components->twoColumnDetail(
                 '<fg=green>HTTP files</>',
-                $httpResult['controllers'].' controller(s), '.$httpResult['requests'].' request(s) → app/Http'
+                $httpResult['controllers'].' controller(s), '.$httpResult['requests'].' request(s), '.$resourceCount.' resource(s) → app/Http'
             );
         }
 

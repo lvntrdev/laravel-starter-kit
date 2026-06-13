@@ -1,26 +1,25 @@
 <?php
 
-namespace App\Http\Requests\Admin\ContentLanguage;
+namespace Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage;
 
-use App\Models\ContentLanguage;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Validation rules for updating an existing content language.
+ * Validation rules for creating a new content language.
  *
- * Same shape as StoreContentLanguageRequest, with two differences:
- *   - the code uniqueness rule ignores the record being updated, so re-saving
- *     a row without changing its code does not collide with itself;
- *   - fallback_code may not point at the record itself (a language cannot fall
- *     back to itself).
+ * Content languages drive the locale tabs of translatable content fields — a
+ * separate concept from the admin UI locale (config('app.languages')). The
+ * record itself carries no translatable fields, so name/native_name are plain
+ * strings.
  *
  * Defense in depth: the route already carries check.permission:settings.update
- * (content languages are a setting — no dedicated permission resource); the
- * FormRequest enforces the permission directly as a second line.
+ * (content languages are a setting — no dedicated permission resource), but the
+ * FormRequest enforces the permission directly so the action stays protected
+ * even if the route were ever misconfigured.
  */
-class UpdateContentLanguageRequest extends FormRequest
+class StoreContentLanguageRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -28,7 +27,10 @@ class UpdateContentLanguageRequest extends FormRequest
     }
 
     /**
-     * Normalise the locale code before validation (see StoreContentLanguageRequest).
+     * Normalise the locale code before validation so the unique/format rules
+     * compare against a canonical value and the stored code is consistent
+     * (lowercase, region separator normalised to a hyphen — e.g. "EN_US" →
+     * "en-us").
      */
     protected function prepareForValidation(): void
     {
@@ -44,35 +46,24 @@ class UpdateContentLanguageRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var ContentLanguage $contentLanguage */
-        $contentLanguage = $this->route('contentLanguage');
-
         return [
             'code' => [
                 'required',
                 'string',
                 'max:35',
+                // Lowercase locale format: a primary subtag, optionally followed
+                // by hyphen-separated subtags (e.g. "en", "en-us", "zh-hant").
                 'regex:/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/',
-                Rule::unique('content_languages', 'code')->ignore($contentLanguage),
+                'unique:content_languages,code',
             ],
             'name' => ['required', 'string', 'max:255'],
             'native_name' => ['required', 'string', 'max:255'],
             'direction' => ['required', 'string', Rule::in(['ltr', 'rtl'])],
             'flag' => ['nullable', 'string', 'max:255'],
-            // Full-replace (PUT) semantics: these must be present so a partial
-            // payload can't let the DTO defaults (is_active=true, is_default=false,
-            // sort_order=0) silently overwrite the stored values.
-            'is_active' => ['required', 'boolean'],
-            'is_default' => ['required', 'boolean'],
-            'fallback_code' => [
-                'nullable',
-                'string',
-                'exists:content_languages,code',
-                // A language must not fall back to itself — that would create a
-                // one-node cycle in the (data-only) fallback chain.
-                Rule::notIn([$contentLanguage?->code]),
-            ],
-            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['boolean'],
+            'is_default' => ['boolean'],
+            'fallback_code' => ['nullable', 'string', 'exists:content_languages,code'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -91,16 +82,6 @@ class UpdateContentLanguageRequest extends FormRequest
             'is_default' => __('sk-content-languages.fields.is_default'),
             'fallback_code' => __('sk-content-languages.fields.fallback_code'),
             'sort_order' => __('sk-content-languages.fields.sort_order'),
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return [
-            'fallback_code.not_in' => __('sk-content-languages.errors.fallback_self'),
         ];
     }
 }

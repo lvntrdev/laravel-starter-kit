@@ -632,3 +632,150 @@ it('writes _format=v2 when creating a fresh hash registry on eject', function ()
     expect($hashes['_format'] ?? null)->toBe('v2');
     expect($hashes['app/Http/Controllers/Admin/LogController.php'] ?? null)->toBe('__ejected__');
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// Faz 2 (v13.6.0) — ApiClient + ContentLanguage eject round-trips
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Test 21: ApiClient eject re-homes controller + request + resource under App\
+// The ApiClient domain owns both Client + personal-access-token flows, so the
+// ApiClient AND ApiToken controllers/requests/resources eject together. The
+// App\ namespace flip is what makes the consumer's copy WIN over the vendor alias.
+
+it('sk:eject ApiClient re-homes the controller/request/resource trees under App\\', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'ApiClient',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    // Controllers copied + own HTTP namespace flipped to App\.
+    foreach (['ApiClientController', 'ApiTokenController'] as $ctrl) {
+        $path = $dest.'/app/Http/Controllers/Admin/'.$ctrl.'.php';
+        expect(file_exists($path))->toBeTrue("{$ctrl} must be ejected into app/Http/Controllers/Admin/.");
+
+        $contents = file_get_contents($path);
+        expect($contents)->toContain('namespace App\\Http\\Controllers\\Admin;');
+        expect($contents)->not->toContain('Lvntr\\StarterKit\\Http\\');
+    }
+
+    // Request + resource trees copied and namespace-rewritten.
+    $storeReq = $dest.'/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php';
+    expect(file_exists($storeReq))->toBeTrue();
+    expect(file_get_contents($storeReq))->toContain('namespace App\\Http\\Requests\\Admin\\ApiClient;');
+
+    $resource = $dest.'/app/Http/Resources/Admin/ApiClient/ApiClientResource.php';
+    expect(file_exists($resource))->toBeTrue();
+    expect(file_get_contents($resource))->toContain('namespace App\\Http\\Resources\\Admin\\ApiClient;');
+
+    // ApiClient backend (Passport secret/token Actions) also re-homed under App\.
+    $action = $dest.'/app/Domain/ApiClient/Actions/CreateApiClientAction.php';
+    expect(file_exists($action))->toBeTrue();
+    expect(file_get_contents($action))->toContain('namespace App\\Domain\\ApiClient\\Actions;');
+});
+
+// ── Test 22: ApiClient eject stamps the re-homed files __ejected__ ──────────
+
+it('sk:eject ApiClient stamps the ejected controller as __ejected__ so sk:update keeps it', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'ApiClient',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    $hashes = json_decode(file_get_contents($dest.'/storage/starter-kit/hashes.json'), true);
+
+    expect($hashes['app/Http/Controllers/Admin/ApiClientController.php'] ?? null)->toBe('__ejected__');
+    expect($hashes['app/Http/Controllers/Admin/ApiTokenController.php'] ?? null)->toBe('__ejected__');
+});
+
+// ── Test 23: ContentLanguage eject — full Tier 3 round-trip, MODEL stays App\
+// The controller/request/resource/domain flip to App\, BUT App\Models\
+// ContentLanguage is NEVER relocated (it is app-owned and already App\). This is
+// the critical "models stay app-owned" invariant for the eject path.
+
+it('sk:eject ContentLanguage re-homes the full stack but leaves App\\Models\\ContentLanguage untouched', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'ContentLanguage',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    // Controller: own HTTP + own DOMAIN segments flipped to App\.
+    $ctrlPath = $dest.'/app/Http/Controllers/Admin/ContentLanguageController.php';
+    expect(file_exists($ctrlPath))->toBeTrue();
+    $ctrl = file_get_contents($ctrlPath);
+
+    expect($ctrl)->toContain('namespace App\\Http\\Controllers\\Admin;');
+    expect($ctrl)->toContain('use App\\Domain\\ContentLanguage\\Actions\\CreateContentLanguageAction;');
+    expect($ctrl)->toContain('use App\\Http\\Requests\\Admin\\ContentLanguage\\StoreContentLanguageRequest;');
+    expect($ctrl)->toContain('use App\\Http\\Resources\\Admin\\ContentLanguage\\ContentLanguageResource;');
+
+    // No vendor own-domain / own-http reference may survive (would be dead code).
+    expect($ctrl)->not->toContain('Lvntr\\StarterKit\\Domain\\ContentLanguage\\');
+    expect($ctrl)->not->toContain('Lvntr\\StarterKit\\Http\\');
+
+    // INVARIANT: the MODEL stays App\Models\ContentLanguage — app-owned, NOT relocated.
+    expect($ctrl)->toContain('use App\\Models\\ContentLanguage;');
+    // The model file itself is never copied into the eject destination.
+    expect(file_exists($dest.'/app/Models/ContentLanguage.php'))->toBeFalse(
+        'sk:eject must NOT relocate App\\Models\\ContentLanguage — the model stays app-owned (publish).'
+    );
+
+    // Domain runtime re-homed under App\, and STILL references the model by App\ FQCN.
+    $domainAction = $dest.'/app/Domain/ContentLanguage/Actions/CreateContentLanguageAction.php';
+    expect(file_exists($domainAction))->toBeTrue();
+    $domain = file_get_contents($domainAction);
+    expect($domain)->toContain('namespace App\\Domain\\ContentLanguage\\Actions;');
+    expect($domain)->toContain('use App\\Models\\ContentLanguage;');
+    expect($domain)->not->toContain('Lvntr\\StarterKit\\Domain\\ContentLanguage\\Actions;');
+
+    // Request + resource trees copied + rewritten.
+    $req = $dest.'/app/Http/Requests/Admin/ContentLanguage/StoreContentLanguageRequest.php';
+    expect(file_exists($req))->toBeTrue();
+    expect(file_get_contents($req))->toContain('namespace App\\Http\\Requests\\Admin\\ContentLanguage;');
+
+    $res = $dest.'/app/Http/Resources/Admin/ContentLanguage/ContentLanguageResource.php';
+    expect(file_exists($res))->toBeTrue();
+    expect(file_get_contents($res))->toContain('namespace App\\Http\\Resources\\Admin\\ContentLanguage;');
+});
+
+// ── Test 24: after ContentLanguage eject, the alias plan omits the re-homed
+// controller AND still never aliases the model. The alias-skip override is the
+// mechanism that makes the ejected App\ controller win over the vendor copy.
+
+it('backwardCompatAliasPlan() omits ContentLanguageController after eject, and never aliases the model', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'ContentLanguage',
+        '--no-vue' => true,
+        '--skip-autoload' => true,
+        '--destination' => $dest,
+    ])->assertSuccessful();
+
+    $provider = new StarterKitServiceProvider(app());
+    $method = new ReflectionMethod($provider, 'backwardCompatAliasPlan');
+    $method->setAccessible(true);
+
+    /** @var array<class-string, class-string> $plan */
+    $plan = $method->invoke($provider, $dest);
+
+    // The ejected (now App\-owned) controller must NOT be aliased — the file_exists
+    // guard trips on the consumer copy, so the App\ class wins.
+    expect(array_key_exists('App\\Http\\Controllers\\Admin\\ContentLanguageController', $plan))->toBeFalse();
+    // The ejected domain Action is likewise no longer aliased.
+    expect(array_key_exists('App\\Domain\\ContentLanguage\\Actions\\CreateContentLanguageAction', $plan))->toBeFalse();
+
+    // The model was never aliased to begin with (app-owned invariant).
+    expect(array_key_exists('App\\Models\\ContentLanguage', $plan))->toBeFalse();
+});

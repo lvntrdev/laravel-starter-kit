@@ -180,6 +180,21 @@ function cleanupVendorMigrationFixtures(): void
         'app/Http/Controllers/Admin/SettingsController.php',
         'app/Http/Requests/Admin/Log',
         'app/Http/Requests/Admin/Settings',
+        // Faz 2 php-layer fixtures.
+        'app/Http/Controllers/Admin/ApiClientController.php',
+        'app/Http/Controllers/Admin/ApiTokenController.php',
+        'app/Http/Controllers/Admin/SystemHealthController.php',
+        'app/Http/Controllers/Admin/ContentLanguageController.php',
+        'app/Http/Controllers/Api/DefinitionController.php',
+        'app/Http/Controllers/Api/MediaUploadController.php',
+        'app/Http/Controllers/Service/DefinitionServiceController.php',
+        'app/Http/Requests/Admin/ApiClient',
+        'app/Http/Requests/Admin/ApiToken',
+        'app/Http/Requests/Admin/ContentLanguage',
+        'app/Http/Resources/Admin/ApiClient',
+        'app/Http/Resources/Admin/ApiToken',
+        'app/Http/Resources/Admin/ContentLanguage',
+        'app/Domain/ContentLanguage',
         'resources/js/pages/Admin/Files',
         'resources/js/pages/Admin/Logs',
         'resources/js/pages/Admin/ActivityLogs',
@@ -228,17 +243,57 @@ it('registers all five migrated behavior modules (Vue + controllers + requests)'
     );
 });
 
-it('does NOT migrate out-of-scope HTTP layers (ApiClient/ApiToken/ContentLanguage/SystemHealth stay app-owned)', function (): void {
+it('registers the Faz 2 php-layer modules (ApiClient/ApiToken/SystemHealth/Definitions/MediaUpload/ContentLanguage)', function (): void {
+    $paths = vendorMigratedPaths();
+
+    // Tier 1 + Tier 2 controllers.
+    expect($paths)->toContain(
+        'app/Http/Controllers/Admin/ApiClientController.php',
+        'app/Http/Controllers/Admin/ApiTokenController.php',
+        'app/Http/Controllers/Admin/SystemHealthController.php',
+        'app/Http/Controllers/Admin/ContentLanguageController.php',
+        'app/Http/Controllers/Api/DefinitionController.php',
+        'app/Http/Controllers/Api/MediaUploadController.php',
+        'app/Http/Controllers/Service/DefinitionServiceController.php',
+    );
+
+    // Faz 2 request + resource + domain trees.
+    expect($paths)->toContain(
+        'app/Http/Requests/Admin/ApiClient/',
+        'app/Http/Requests/Admin/ApiToken/',
+        'app/Http/Requests/Admin/ContentLanguage/',
+        'app/Http/Resources/Admin/ApiClient/',
+        'app/Http/Resources/Admin/ApiToken/',
+        'app/Http/Resources/Admin/ContentLanguage/',
+        'app/Domain/ContentLanguage/',
+    );
+});
+
+it('NEVER migrates an App\\Models\\* path (models stay app-owned)', function (): void {
+    $paths = vendorMigratedPaths();
+
+    foreach ($paths as $path) {
+        expect(str_starts_with($path, 'app/Models/'))->toBeFalse(
+            "VENDOR_MIGRATED_PATHS must not contain any app/Models/ path; found: {$path}"
+        );
+    }
+
+    // Spot-check the three models the Faz 2 vendor code references by FQCN.
+    expect($paths)->not->toContain(
+        'app/Models/ContentLanguage.php',
+        'app/Models/Media.php',
+        'app/Models/Definition.php',
+    );
+});
+
+it('does NOT migrate genuinely out-of-scope scaffold controllers (User/Role/Dashboard stay app-owned)', function (): void {
     $paths = vendorMigratedPaths();
 
     expect($paths)->not->toContain(
-        'app/Http/Controllers/Admin/ApiClientController.php',
-        'app/Http/Controllers/Admin/ApiTokenController.php',
-        'app/Http/Controllers/Admin/ContentLanguageController.php',
-        'app/Http/Controllers/Admin/SystemHealthController.php',
         'app/Http/Controllers/Admin/UserController.php',
         'app/Http/Controllers/Admin/RoleController.php',
         'app/Http/Controllers/Admin/DashboardController.php',
+        'app/Http/Controllers/Service/RoleServiceController.php',
     );
 });
 
@@ -270,7 +325,12 @@ it('removes any copy under --force regardless of modification', function (): voi
 it('groups every migrated path under a module split into php and vue layers', function (): void {
     $modules = vendorMigratedModules();
 
-    expect($modules)->toHaveKeys(['Files', 'Logs', 'ActivityLogs', 'ApiRoutes', 'Settings']);
+    expect($modules)->toHaveKeys([
+        // Faz 1.
+        'Files', 'Logs', 'ActivityLogs', 'ApiRoutes', 'Settings',
+        // Faz 2.
+        'ApiClient', 'ApiToken', 'SystemHealth', 'Definitions', 'MediaUpload', 'ContentLanguage',
+    ]);
 
     foreach ($modules as $module => $layers) {
         expect($layers)->toHaveKeys(['php', 'vue'], "module {$module} must declare php + vue layers");
@@ -288,6 +348,43 @@ it('groups every migrated path under a module split into php and vue layers', fu
     // Files is Vue-only (its backend is the vendor FileManager runtime).
     expect($modules['Files']['php'])->toBe([]);
     expect($modules['Files']['vue'])->toContain('resources/js/pages/Admin/Files/');
+
+    // Faz 2 groups carry an EMPTY vue layer — their Settings-tab Vue already shipped
+    // vendor-first under the 'Settings' group's vue layer (no duplicate tree).
+    foreach (['ApiClient', 'ApiToken', 'SystemHealth', 'Definitions', 'MediaUpload', 'ContentLanguage'] as $module) {
+        expect($modules[$module]['vue'])->toBe([], "Faz 2 module {$module} must carry an empty vue layer.");
+        expect($modules[$module]['php'])->not->toBe([], "Faz 2 module {$module} must declare a php layer.");
+    }
+
+    // ContentLanguage's php group bundles controller + request + resource + domain
+    // (Tier 3 full vendorize) — they live together so atomicity pins them as one.
+    expect($modules['ContentLanguage']['php'])->toContain(
+        'app/Http/Controllers/Admin/ContentLanguageController.php',
+        'app/Http/Requests/Admin/ContentLanguage/',
+        'app/Http/Resources/Admin/ContentLanguage/',
+        'app/Domain/ContentLanguage/',
+    );
+
+    // The ApiClient domain owns both Client + token flows: its php group bundles
+    // the ApiClient AND ApiToken controller/request/resource sets are split across
+    // two manifest groups (ApiClient / ApiToken) but each is fully self-contained.
+    expect($modules['ApiClient']['php'])->toContain(
+        'app/Http/Controllers/Admin/ApiClientController.php',
+        'app/Http/Requests/Admin/ApiClient/',
+        'app/Http/Resources/Admin/ApiClient/',
+    );
+});
+
+it('keeps NO App\\Models\\* path in any module layer (models stay app-owned)', function (): void {
+    foreach (vendorMigratedModules() as $module => $layers) {
+        foreach (['php', 'vue'] as $layer) {
+            foreach ($layers[$layer] as $path) {
+                expect(str_starts_with($path, 'app/Models/'))->toBeFalse(
+                    "module {$module} layer {$layer} must not migrate an app/Models/ path; found: {$path}"
+                );
+            }
+        }
+    }
 });
 
 it('keeps the flat VENDOR_MIGRATED_PATHS in sync with the grouped manifest (no drift)', function (): void {
@@ -448,4 +545,114 @@ it('migrates the PHP group even when the Vue group of the same module is preserv
 
     expect(file_exists(base_path($ctrlRel)))->toBeFalse();
     expect(file_exists(base_path($vueRel)))->toBeTrue();
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Faz 2 — php-layer group atomicity (controller + request + resource + domain)
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── ContentLanguage: one edited domain Action pins controller+request+resource
+
+it('preserves the whole ContentLanguage php group when one domain Action was modified', function (): void {
+    // Tier 3 group: controller + request + resource + domain travel as ONE atomic
+    // php unit. An UNMODIFIED controller alongside a MODIFIED domain Action.
+    $ctrlBody = '<?php // original ContentLanguageController shipped by the kit';
+    $ctrlRel = 'app/Http/Controllers/Admin/ContentLanguageController.php';
+    $actionRel = 'app/Domain/ContentLanguage/Actions/CreateContentLanguageAction.php';
+
+    seedAppFile($ctrlRel, $ctrlBody);
+    seedAppFile($actionRel, '<?php // CONSUMER customized create logic');
+
+    seedHashRegistry([
+        $ctrlRel => md5($ctrlBody),                              // unmodified on its own
+        $actionRel => md5('<?php // what the kit originally shipped'), // differs → modified
+    ]);
+
+    $result = runVendorMigration();
+
+    // Atomicity: the unmodified controller must NOT be deleted while the consumer's
+    // customized domain Action stays on disk — the vendor controller would bind the
+    // vendor Action (App→vendor alias) and never run the consumer's logic.
+    expect($result['removed'])->not->toContain($ctrlRel, $actionRel);
+    expect($result['preserved'])->toContain($ctrlRel, $actionRel);
+
+    expect(file_exists(base_path($ctrlRel)))->toBeTrue();
+    expect(file_exists(base_path($actionRel)))->toBeTrue();
+});
+
+// ── ContentLanguage: fully-unmodified php group is removed (control case) ─────
+
+it('removes the whole ContentLanguage php group when every file is unmodified', function (): void {
+    $ctrlBody = '<?php // original ContentLanguageController';
+    $ctrlRel = 'app/Http/Controllers/Admin/ContentLanguageController.php';
+    $reqBody = '<?php // original StoreContentLanguageRequest';
+    $reqRel = 'app/Http/Requests/Admin/ContentLanguage/StoreContentLanguageRequest.php';
+    $resBody = '<?php // original ContentLanguageResource';
+    $resRel = 'app/Http/Resources/Admin/ContentLanguage/ContentLanguageResource.php';
+    $domBody = '<?php // original ContentLanguageDTO';
+    $domRel = 'app/Domain/ContentLanguage/DTOs/ContentLanguageDTO.php';
+
+    seedAppFile($ctrlRel, $ctrlBody);
+    seedAppFile($reqRel, $reqBody);
+    seedAppFile($resRel, $resBody);
+    seedAppFile($domRel, $domBody);
+
+    seedHashRegistry([
+        $ctrlRel => md5($ctrlBody),
+        $reqRel => md5($reqBody),
+        $resRel => md5($resBody),
+        $domRel => md5($domBody),
+    ]);
+
+    $result = runVendorMigration();
+
+    expect($result['removed'])->toContain($ctrlRel, $reqRel, $resRel, $domRel);
+    expect($result['preserved'])->not->toContain($ctrlRel, $reqRel, $resRel, $domRel);
+
+    expect(file_exists(base_path($ctrlRel)))->toBeFalse();
+    expect(file_exists(base_path($reqRel)))->toBeFalse();
+    expect(file_exists(base_path($resRel)))->toBeFalse();
+    expect(file_exists(base_path($domRel)))->toBeFalse();
+});
+
+// ── Definitions: the Api + Service controllers form ONE atomic php group ──────
+
+it('preserves both Definition controllers when only one was modified (group atomicity)', function (): void {
+    $apiBody = '<?php // original Api/DefinitionController';
+    $apiRel = 'app/Http/Controllers/Api/DefinitionController.php';
+    $svcRel = 'app/Http/Controllers/Service/DefinitionServiceController.php';
+
+    seedAppFile($apiRel, $apiBody);
+    seedAppFile($svcRel, '<?php // CONSUMER customized service controller');
+
+    seedHashRegistry([
+        $apiRel => md5($apiBody),                                  // unmodified
+        $svcRel => md5('<?php // what the kit originally shipped'), // differs → modified
+    ]);
+
+    $result = runVendorMigration();
+
+    expect($result['removed'])->not->toContain($apiRel, $svcRel);
+    expect($result['preserved'])->toContain($apiRel, $svcRel);
+
+    expect(file_exists(base_path($apiRel)))->toBeTrue();
+    expect(file_exists(base_path($svcRel)))->toBeTrue();
+});
+
+// ── SystemHealth: controller-only php group still removed when unmodified ─────
+
+it('removes the SystemHealth controller-only php group when unmodified (no app.ts dependency)', function (): void {
+    $ctrlBody = '<?php // original SystemHealthController';
+    $ctrlRel = 'app/Http/Controllers/Admin/SystemHealthController.php';
+    seedAppFile($ctrlRel, $ctrlBody);
+
+    seedHashRegistry([$ctrlRel => md5($ctrlBody)]);
+
+    $result = runVendorMigration();
+
+    // Faz 2 modules carry an empty vue layer, so the app.ts vendor-fallback guard
+    // never applies — the php group resolves purely on the registry hash.
+    expect($result['removed'])->toContain($ctrlRel);
+    expect($result['preserved'])->not->toContain($ctrlRel);
+    expect(file_exists(base_path($ctrlRel)))->toBeFalse();
 });

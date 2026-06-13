@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace Lvntr\StarterKit\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Http\Responses\ApiResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 class SystemHealthController extends Controller
 {

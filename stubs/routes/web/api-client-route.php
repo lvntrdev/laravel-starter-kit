@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ApiClientController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\ApiClientController;
 
 /*
 |--------------------------------------------------------------------------

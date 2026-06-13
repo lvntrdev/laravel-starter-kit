@@ -1,11 +1,5 @@
 <?php
 
-use App\Domain\ContentLanguage\Actions\CreateContentLanguageAction;
-use App\Domain\ContentLanguage\Actions\DeleteContentLanguageAction;
-use App\Domain\ContentLanguage\Actions\UpdateContentLanguageAction;
-use App\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
-use App\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest;
-use App\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest;
 use App\Models\ContentLanguage;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +8,13 @@ use Illuminate\Foundation\Auth\Access\Authorizable as AuthorizableTrait;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\CreateContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\DeleteContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\Actions\UpdateContentLanguageAction;
+use Lvntr\StarterKit\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
 use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\StoreContentLanguageRequest;
+use Lvntr\StarterKit\Http\Requests\Admin\ContentLanguage\UpdateContentLanguageRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,8 +23,7 @@ use Lvntr\StarterKit\Exceptions\ApiException;
 |
 | İçerik dilleri, translatable içerik alanlarının (TranslatableInput) gezdiği
 | dilleri belirler — admin UI dilinden (config('app.languages')) ayrı bir
-| kavramdır. Bu test, plan Task 1-4'te kurulan domain/HTTP katmanının
-| sözleşmesini doğrular:
+| kavramdır. Bu test, domain/HTTP katmanının sözleşmesini doğrular:
 |
 |   1. CRUD — Create/Update/Delete Action'lar DTO üzerinden çalışır.
 |   2. Tek-default invariantı — aynı anda yalnız bir is_default = true; yeni
@@ -36,8 +35,10 @@ use Lvntr\StarterKit\Exceptions\ApiException;
 |   6. Permission gating — yetkisiz aktör FormRequest authorize() + controller
 |      abort_unless guard'larında reddedilir; yetkili aktör geçer.
 |
-| Stub sınıfları App\ namespace'inde autoload edilmez — dosyalar doğrudan
-| yüklenir (AuthSettingsTest / PasswordPolicyTest deseni). content_languages
+| v13.6.0 Faz 2: domain (Actions/DTO/Query), FormRequest'ler ve controller
+| vendor-first (Lvntr\StarterKit\... — PSR-4 autoload edilir, manuel require
+| gerekmez). App\Models\ContentLanguage MODEL'i app-owned kalır (publish) ve
+| testbench'te autoload edilmediği için doğrudan yüklenir. content_languages
 | tablosu beforeEach'te inline kurulur (BulkSelectionQueryTest deseni) —
 | paylaşılan DatabaseTestCase şemasına dokunulmaz.
 |
@@ -45,18 +46,12 @@ use Lvntr\StarterKit\Exceptions\ApiException;
 
 $stubs = dirname(__DIR__, 3).'/stubs';
 
-require_once $stubs.'/app/Exceptions/ApiException.php';
-
+// Only the MODEL stays app-owned (publish) and is not PSR-4 autoloaded under
+// testbench, so it is loaded directly. The domain Actions/DTO and FormRequests
+// are vendor-resident (Lvntr\StarterKit\...) and resolve via Composer autoload.
 if (! class_exists(ContentLanguage::class)) {
     require_once $stubs.'/app/Models/ContentLanguage.php';
 }
-
-require_once $stubs.'/app/Domain/ContentLanguage/DTOs/ContentLanguageDTO.php';
-require_once $stubs.'/app/Domain/ContentLanguage/Actions/CreateContentLanguageAction.php';
-require_once $stubs.'/app/Domain/ContentLanguage/Actions/UpdateContentLanguageAction.php';
-require_once $stubs.'/app/Domain/ContentLanguage/Actions/DeleteContentLanguageAction.php';
-require_once $stubs.'/app/Http/Requests/Admin/ContentLanguage/StoreContentLanguageRequest.php';
-require_once $stubs.'/app/Http/Requests/Admin/ContentLanguage/UpdateContentLanguageRequest.php';
 
 beforeEach(function (): void {
     Schema::create('content_languages', function (Blueprint $table): void {

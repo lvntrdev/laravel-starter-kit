@@ -125,11 +125,18 @@ The kit uses a "vendor-first" model for its built-in behaviour modules. Most mod
 | **Activity Logs** | vendor | vendor | `sk:eject ActivityLog` |
 | **API Routes** | vendor | vendor | `sk:eject ApiRoute` |
 | **Settings** | vendor | vendor | `sk:eject Setting` |
+| **API Clients & Tokens** | vendor (Settings tabs) | vendor | `sk:eject ApiClient` (ejects ApiToken too) |
+| **System Health** | vendor (Settings tab) | vendor (controller-only) | `sk:eject SystemHealth` |
+| **Content Languages** | vendor (Settings tab) | vendor | `sk:eject ContentLanguage` |
+| **Definitions** (API + Service) | — | vendor (controller-only) | `sk:eject Definitions` |
+| **Media upload/delete** | — | vendor (controller-only) | `sk:eject MediaUpload` |
 | **Users** | installed into app | app-owned | edit in place |
 | **Roles** | installed into app | app-owned | edit in place |
 | **Dashboard** | installed into app | app-owned | edit in place |
 | **Auth screens** | installed into app | app-owned | edit in place |
 | **Profile** | installed into app | app-owned | edit in place |
+
+> **Models stay app-owned.** Even for fully vendor-resident modules, the Eloquent models (`App\Models\ContentLanguage`, `App\Models\Media`, `App\Models\Definition`, …) remain published in your app and are never relocated to vendor — so Laravel's policy discovery and route-model binding keep working. Vendor controllers reference them by their `App\` FQCN.
 
 ## Commands
 
@@ -138,7 +145,7 @@ The kit uses a "vendor-first" model for its built-in behaviour modules. Most mod
 | `php artisan sk:install` | Full installation: migrations, seeders, Passport keys, admin user, frontend build. Ejects `User` + `Role` by default (`--without-eject` to skip) |
 | `php artisan sk:update` | Pull updated stubs (hash-tracked, preserves your edits); removes deprecated app copies of vendor-resident modules |
 | `php artisan sk:publish [--tag=...]` | Publish specific asset groups (components, composables, plugins, lang, config, helpers) |
-| `php artisan sk:eject <module>` | Copy a vendor-resident module (controller + FormRequests + Vue pages) into your app for full ownership. Supported: `Logs`, `ActivityLog`, `ApiRoute`, `Setting`, `Files` (Vue only), `User`, `Role`, `ApiClient`, `Session`, `Media` |
+| `php artisan sk:eject <module>` | Copy a vendor-resident module (controller + FormRequests + Resources + Vue pages) into your app for full ownership. Supported: `User`, `Role`, `Setting`, `Logs`, `ActivityLog`, `ApiClient` (ejects ApiToken too), `ApiRoute`, `ContentLanguage`, `SystemHealth`, `Definitions`, `MediaUpload`, `Files` (Vue only), `Session`, `Media` |
 | `php artisan make:sk-domain Foo` | Scaffold a new DDD domain |
 | `php artisan sk:doctor` | Run system health checks |
 

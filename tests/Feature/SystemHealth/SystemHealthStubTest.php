@@ -2,12 +2,17 @@
 
 /*
 |--------------------------------------------------------------------------
-| SystemHealth — Stub dosyası doğrulama testleri
+| SystemHealth — Controller + stub doğrulama testleri
 |--------------------------------------------------------------------------
 |
-| Bu testler stub dosyalarının varlığını ve temel içeriklerini doğrular:
-|   1. Controller stub — index/run metodları, Gate::authorize, Artisan::call
-|   2. Route stub — doğru prefix, route isimleri
+| v13.6.0 Faz 2: SystemHealthController vendor-first (src/Http/Controllers/
+| Admin/SystemHealthController.php, namespace Lvntr\StarterKit\...). Publish
+| edilmez; eski consumer'ların App\ referansı backward-compat alias ile çözülür.
+| Route/lang/permission/Vue katmanları app-owned kaldığı için stub'tan okunur.
+|
+| Bu testler doğrular:
+|   1. Controller — vendor'da, namespace doğru, run/Gate/Artisan mantığı korunmuş
+|   2. Route stub — doğru prefix, route isimleri, vendor FQCN import
 |   3. Lang stub — zorunlu anahtar varlığı (en ve tr)
 |   4. Vue sayfa stub — Props, router.post, status badge referansları
 |   5. Permission config — system.health.view custom_permissions içinde
@@ -16,19 +21,32 @@
 */
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 1. Controller stub
+// 1. Controller (vendor-first)
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('SystemHealthController stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3)
+it('SystemHealthController vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendorPath = dirname(__DIR__, 3)
+        .'/src/Http/Controllers/Admin/SystemHealthController.php';
+    $stubPath = dirname(__DIR__, 3)
         .'/stubs/app/Http/Controllers/Admin/SystemHealthController.php';
 
-    expect(is_file($path))->toBeTrue("Stub bulunamadı: {$path}");
+    expect(is_file($vendorPath))->toBeTrue("Vendor controller bulunamadı: {$vendorPath}");
+    expect(is_file($stubPath))->toBeFalse(
+        "SystemHealthController hala stub'ta — Faz 2'de vendor'a taşınmalıydı: {$stubPath}"
+    );
 });
 
-it('SystemHealthController stub run metodunu içeriyor', function (): void {
+it('SystemHealthController vendor namespace içeriyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/SystemHealthController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/SystemHealthController.php'
+    );
+
+    expect($contents)->toContain('namespace Lvntr\StarterKit\Http\Controllers\Admin;');
+});
+
+it('SystemHealthController run metodunu içeriyor', function (): void {
+    $contents = file_get_contents(
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/SystemHealthController.php'
     );
 
     expect($contents)
@@ -38,17 +56,17 @@ it('SystemHealthController stub run metodunu içeriyor', function (): void {
         ->toContain('--json');
 });
 
-it('SystemHealthController stub Gate::authorize system.health.view kullanıyor', function (): void {
+it('SystemHealthController Gate::authorize system.health.view kullanıyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/SystemHealthController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/SystemHealthController.php'
     );
 
     expect($contents)->toContain("Gate::authorize('system.health.view')");
 });
 
-it('SystemHealthController stub run metodu RedirectResponse döndürüyor', function (): void {
+it('SystemHealthController run metodu RedirectResponse döndürüyor', function (): void {
     $contents = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/SystemHealthController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/SystemHealthController.php'
     );
 
     expect($contents)
@@ -76,6 +94,16 @@ it('system-health-route stub doğru prefix ve route isimlerini içeriyor', funct
         ->toContain("name('system-health.')")
         ->toContain("name('run')")
         ->toContain('SystemHealthController');
+});
+
+it('system-health-route stub vendor FQCN import kullanıyor (route adı sabit)', function (): void {
+    $contents = file_get_contents(
+        dirname(__DIR__, 3).'/stubs/routes/web/system-health-route.php'
+    );
+
+    // Faz 2: import vendor FQCN'e döndü; route adı/prefix DEĞİŞMEDİ (permission haritası korunur).
+    expect($contents)->toContain('use Lvntr\StarterKit\Http\Controllers\Admin\SystemHealthController;');
+    expect($contents)->not->toContain('use App\Http\Controllers\Admin\SystemHealthController;');
 });
 
 it('system-health-route stub POST run route içeriyor', function (): void {

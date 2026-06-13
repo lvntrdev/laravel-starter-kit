@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Domain\ContentLanguage\Queries;
+namespace Lvntr\StarterKit\Domain\ContentLanguage\Queries;
 
-use App\Http\Resources\Admin\ContentLanguage\ContentLanguageResource;
-use App\Http\Responses\ApiResponse;
-use App\Http\Responses\DatatableQueryBuilder;
 use App\Models\ContentLanguage;
+use Lvntr\StarterKit\Http\Resources\Admin\ContentLanguage\ContentLanguageResource;
+use Lvntr\StarterKit\Http\Responses\ApiResponse;
+use Lvntr\StarterKit\Http\Responses\DatatableQueryBuilder;
 
 /**
  * Query: Build the content-language datatable response.

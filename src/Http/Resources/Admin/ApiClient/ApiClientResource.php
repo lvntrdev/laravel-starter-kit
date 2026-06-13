@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Admin\ApiClient;
+namespace Lvntr\StarterKit\Http\Resources\Admin\ApiClient;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Admin\ApiToken;
+namespace Lvntr\StarterKit\Http\Resources\Admin\ApiToken;
 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -24,6 +24,10 @@ use Laravel\Passport\Token;
  *     fırlatır. Bu yüzden `with(['user'])` kullanılamaz; `collection()` içinde
  *     user'lar tek query ile toplu önçekilip `setRelation('user', ...)` ile
  *     bağlanır.
+ *
+ * Model sahipliği: `App\Models\User` consumer app'te yaşar (kit Model'leri
+ * app-owned tutar — policy/route-binding nedeniyle). Vendor resource ona FQCN
+ * ile bakar; alias eklenmez.
  */
 class ApiTokenResource extends JsonResource
 {

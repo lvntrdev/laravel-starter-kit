@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Domain\ContentLanguage\Actions;
+namespace Lvntr\StarterKit\Domain\ContentLanguage\Actions;
 
-use App\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
-use App\Exceptions\ApiException;
 use App\Models\ContentLanguage;
 use Illuminate\Support\Facades\DB;
+use Lvntr\StarterKit\Domain\ContentLanguage\DTOs\ContentLanguageDTO;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Exceptions\ApiException;
 
 /**
  * Action: Update an existing content language.

@@ -312,6 +312,26 @@ class UpdateCommand extends Command
         'app/Http/Controllers/Admin/SettingsController.php',
         'app/Http/Requests/Admin/Log/',
         'app/Http/Requests/Admin/Settings/',
+        // v13.6.0 Faz 2 — Settings-tab handlers + Definitions/MediaUpload + the
+        // full ContentLanguage stack (controller/request/resource/domain). The Vue
+        // layer for these tabs already shipped vendor-first in Faz 1 (under
+        // resources/js/pages/Admin/Settings/), so this wave is php-only. The
+        // App\Models\* classes are intentionally NOT listed — the models stay
+        // app-owned (see backwardCompatAliasPlan invariant).
+        'app/Http/Controllers/Admin/ApiClientController.php',
+        'app/Http/Controllers/Admin/ApiTokenController.php',
+        'app/Http/Controllers/Admin/SystemHealthController.php',
+        'app/Http/Controllers/Admin/ContentLanguageController.php',
+        'app/Http/Controllers/Api/DefinitionController.php',
+        'app/Http/Controllers/Api/MediaUploadController.php',
+        'app/Http/Controllers/Service/DefinitionServiceController.php',
+        'app/Http/Requests/Admin/ApiClient/',
+        'app/Http/Requests/Admin/ApiToken/',
+        'app/Http/Requests/Admin/ContentLanguage/',
+        'app/Http/Resources/Admin/ApiClient/',
+        'app/Http/Resources/Admin/ApiToken/',
+        'app/Http/Resources/Admin/ContentLanguage/',
+        'app/Domain/ContentLanguage/',
     ];
 
     /**
@@ -379,6 +399,61 @@ class UpdateCommand extends Command
             'vue' => [
                 'resources/js/pages/Admin/Settings/',
             ],
+        ],
+        // v13.6.0 Faz 2 — php-only modules. The Settings-tab Vue (ApiClient,
+        // ApiToken, SystemHealth, ContentLanguage tabs) already shipped vendor-
+        // first in Faz 1 under the 'Settings' group's Vue layer above, so these
+        // groups carry an empty 'vue' layer — the flat-path drift-guard stays
+        // exact (no duplicate Settings tree). Each group is still removed
+        // atomically: a single user-modified file preserves the whole php layer
+        // (the vendor controller type-hints its sibling request/resource by vendor
+        // FQCN and would never call a half-removed consumer copy). No
+        // App\Models\* path appears in any layer — the models stay app-owned.
+        'ApiClient' => [
+            'php' => [
+                'app/Http/Controllers/Admin/ApiClientController.php',
+                'app/Http/Requests/Admin/ApiClient/',
+                'app/Http/Resources/Admin/ApiClient/',
+            ],
+            'vue' => [],
+        ],
+        'ApiToken' => [
+            'php' => [
+                'app/Http/Controllers/Admin/ApiTokenController.php',
+                'app/Http/Requests/Admin/ApiToken/',
+                'app/Http/Resources/Admin/ApiToken/',
+            ],
+            'vue' => [],
+        ],
+        'SystemHealth' => [
+            'php' => [
+                'app/Http/Controllers/Admin/SystemHealthController.php',
+            ],
+            'vue' => [],
+        ],
+        'Definitions' => [
+            'php' => [
+                'app/Http/Controllers/Api/DefinitionController.php',
+                'app/Http/Controllers/Service/DefinitionServiceController.php',
+            ],
+            'vue' => [],
+        ],
+        'MediaUpload' => [
+            'php' => [
+                'app/Http/Controllers/Api/MediaUploadController.php',
+            ],
+            'vue' => [],
+        ],
+        'ContentLanguage' => [
+            // Full Tier 3 stack: controller + request + resource + domain.
+            // The App\Models\ContentLanguage model is NOT here (app-owned).
+            'php' => [
+                'app/Http/Controllers/Admin/ContentLanguageController.php',
+                'app/Http/Requests/Admin/ContentLanguage/',
+                'app/Http/Resources/Admin/ContentLanguage/',
+                'app/Domain/ContentLanguage/',
+            ],
+            'vue' => [],
         ],
     ];
 

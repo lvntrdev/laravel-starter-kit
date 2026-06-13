@@ -2,65 +2,82 @@
 
 /*
 |--------------------------------------------------------------------------
-| API Client UI — Stub Dosya Yapısı Testleri
+| API Client UI — Vendor + Stub Dosya Yapısı Testleri
 |--------------------------------------------------------------------------
 |
-| Bu testler stub dosyalarının beklenen yolda ve doğru namespace'te
-| bulunduğunu doğrular. Stub'lar host uygulamaya publish edildiğinde
-| bu yapının bozulmamış olması zorunludur.
+| v13.6.0 Faz 2: ApiClient + ApiToken HTTP katmanı (controller/request/resource)
+| vendor-first (src/Http/..., namespace Lvntr\StarterKit\...). Publish edilmez;
+| eski consumer'ların App\ referansı backward-compat alias ile çözülür. Policy,
+| lang, route stub, permission-resources.php ve AppServiceProvider app-owned
+| kaldığı için stub/lang yolundan okunur. ApiClient domain Action'ları (Passport
+| secret/token üretimi) zaten vendor (src/Domain/ApiClient).
 |
 | Test senaryoları:
 |
-|   A) Stub dosyaları doğru yolda mevcut mu?
-|   B) Resource'lar doğru namespace'e sahip mi?
-|   C) Permission-resources.php api-clients/api-tokens içeriyor mu?
+|   A) Vendor controller/request/resource dosyaları doğru yolda; stub publish değil
+|   B) Resource'lar doğru (vendor) namespace'e sahip mi?
+|   C) Permission-resources.php api-clients/api-tokens içeriyor mu? (app-owned)
 |   D) Lang dosyaları doğru key'lere sahip mi?
-|   E) Route dosyaları doğru isimlendirme kullanıyor mu?
+|   E) Route dosyaları doğru isimlendirme + vendor FQCN import kullanıyor mu?
 |   F) AppServiceProvider Gate::before ve Passport::tokensCan içeriyor mu?
 |
 */
 
-use App\Http\Requests\Admin\ApiToken\StoreApiTokenRequest;
 use Illuminate\Validation\Validator;
+use Lvntr\StarterKit\Http\Requests\Admin\ApiToken\StoreApiTokenRequest;
 use Lvntr\StarterKit\Tests\TestCase;
 
 uses(TestCase::class);
 
-// ── A) Stub dosyaları ─────────────────────────────────────────────────────────
+// ── A) Vendor dosyaları (controller/request/resource) + stub publish edilmez ───
 
-test('ApiClientController stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiClientController.php';
-    expect(file_exists($path))->toBeTrue();
+test('ApiClientController vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiClientController.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiClientController.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse("ApiClientController hala stub'ta — Faz 2'de vendor'a taşınmalıydı.");
 });
 
-test('ApiTokenController stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiTokenController.php';
-    expect(file_exists($path))->toBeTrue();
+test('ApiTokenController vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiTokenController.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiTokenController.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse("ApiTokenController hala stub'ta — Faz 2'de vendor'a taşınmalıydı.");
 });
 
-test('StoreApiClientRequest stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php';
-    expect(file_exists($path))->toBeTrue();
+test('StoreApiClientRequest vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse();
 });
 
-test('UpdateApiClientRequest stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/UpdateApiClientRequest.php';
-    expect(file_exists($path))->toBeTrue();
+test('UpdateApiClientRequest vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/UpdateApiClientRequest.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/UpdateApiClientRequest.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse();
 });
 
-test('StoreApiTokenRequest stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php';
-    expect(file_exists($path))->toBeTrue();
+test('StoreApiTokenRequest vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse();
 });
 
-test('ApiClientResource stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiClient/ApiClientResource.php';
-    expect(file_exists($path))->toBeTrue();
+test('ApiClientResource vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiClient/ApiClientResource.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiClient/ApiClientResource.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse();
 });
 
-test('ApiTokenResource stub mevcut', function (): void {
-    $path = dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiToken/ApiTokenResource.php';
-    expect(file_exists($path))->toBeTrue();
+test('ApiTokenResource vendor src/ içinde, stub publish edilmez', function (): void {
+    $vendor = dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiToken/ApiTokenResource.php';
+    $stub = dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiToken/ApiTokenResource.php';
+    expect(file_exists($vendor))->toBeTrue();
+    expect(file_exists($stub))->toBeFalse();
 });
 
 test('ApiClientPolicy stub mevcut', function (): void {
@@ -103,22 +120,22 @@ test('Route stub dosyaları mevcut', function (): void {
     }
 });
 
-// ── B) Namespace doğruluğu ────────────────────────────────────────────────────
+// ── B) Namespace doğruluğu (vendor) ───────────────────────────────────────────
 
-test('ApiClientResource doğru namespace içeriyor', function (): void {
+test('ApiClientResource doğru vendor namespace içeriyor', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiClient/ApiClientResource.php'
+        dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiClient/ApiClientResource.php'
     );
 
-    expect($content)->toContain('namespace App\Http\Resources\Admin\ApiClient');
+    expect($content)->toContain('namespace Lvntr\StarterKit\Http\Resources\Admin\ApiClient');
 });
 
-test('ApiTokenResource doğru namespace içeriyor', function (): void {
+test('ApiTokenResource doğru vendor namespace içeriyor', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiToken/ApiTokenResource.php'
+        dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiToken/ApiTokenResource.php'
     );
 
-    expect($content)->toContain('namespace App\Http\Resources\Admin\ApiToken');
+    expect($content)->toContain('namespace Lvntr\StarterKit\Http\Resources\Admin\ApiToken');
 });
 
 // ── C) Permission-resources.php ───────────────────────────────────────────────
@@ -208,6 +225,16 @@ test('api-client-route.php doğru route isimleri içeriyor', function (): void {
     expect($content)->toContain("'destroy'");
 });
 
+test('api-client-route.php vendor FQCN import kullanıyor (route adı sabit)', function (): void {
+    $content = file_get_contents(
+        dirname(__DIR__, 3).'/stubs/routes/web/api-client-route.php'
+    );
+
+    // Faz 2: import vendor FQCN'e döndü; route adı/permission DEĞİŞMEDİ.
+    expect($content)->toContain('use Lvntr\StarterKit\Http\Controllers\Admin\ApiClientController;');
+    expect($content)->not->toContain('use App\Http\Controllers\Admin\ApiClientController;');
+});
+
 test('api-token-route.php doğru route isimleri içeriyor', function (): void {
     $content = file_get_contents(
         dirname(__DIR__, 3).'/stubs/routes/web/api-token-route.php'
@@ -219,11 +246,20 @@ test('api-token-route.php doğru route isimleri içeriyor', function (): void {
     expect($content)->toContain("'destroy'");
 });
 
+test('api-token-route.php vendor FQCN import kullanıyor (route adı sabit)', function (): void {
+    $content = file_get_contents(
+        dirname(__DIR__, 3).'/stubs/routes/web/api-token-route.php'
+    );
+
+    expect($content)->toContain('use Lvntr\StarterKit\Http\Controllers\Admin\ApiTokenController;');
+    expect($content)->not->toContain('use App\Http\Controllers\Admin\ApiTokenController;');
+});
+
 // ── F) Security: secret plaintext tek seferlik ───────────────────────────────
 
 test('ApiClientResource plain_secret alanı mevcut', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiClient/ApiClientResource.php'
+        dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiClient/ApiClientResource.php'
     );
 
     expect($content)->toContain('plain_secret');
@@ -232,7 +268,7 @@ test('ApiClientResource plain_secret alanı mevcut', function (): void {
 
 test('ApiTokenResource access_token alanı mevcut', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Resources/Admin/ApiToken/ApiTokenResource.php'
+        dirname(__DIR__, 3).'/src/Http/Resources/Admin/ApiToken/ApiTokenResource.php'
     );
 
     expect($content)->toContain('access_token');
@@ -241,7 +277,7 @@ test('ApiTokenResource access_token alanı mevcut', function (): void {
 
 test('ApiClientController secret response yalnızca store() içinde', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiClientController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiClientController.php'
     );
 
     // store() dışındaki metodlarda plain_secret dönmemeli
@@ -302,7 +338,7 @@ test('ApiClientPolicy doğru izinleri kontrol ediyor', function (): void {
 
 test('StoreApiTokenRequest user_id alanı içermiyor (K1 privilege escalation koruması)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php'
     );
 
     expect($content)->not->toContain("'user_id'");
@@ -311,7 +347,7 @@ test('StoreApiTokenRequest user_id alanı içermiyor (K1 privilege escalation ko
 
 test('ApiTokenController store() sadece $request->user() kullanıyor (K1)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiTokenController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiTokenController.php'
     );
 
     expect($content)->toContain('$request->user()');
@@ -325,7 +361,7 @@ test('ApiTokenController store() sadece $request->user() kullanıyor (K1)', func
 
 test('StoreApiTokenRequest scopes.* Rule::in allow-list kullanıyor', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php'
     );
 
     expect($content)->toContain('Rule::in')
@@ -336,15 +372,13 @@ test('StoreApiTokenRequest scopes.* Rule::in allow-list kullanıyor', function (
 });
 
 /**
- * Stub FormRequest'i behavioral test eder: stub testbench app'e route'lanmadığı
- * için rules() doğrudan Validator'a verilir. config('starter-kit.passport.scopes')
- * ServiceProvider merge'i ile testbench'te mevcuttur.
+ * Vendor FormRequest'i behavioral test eder: testbench app'e route'lanmadığı için
+ * rules() doğrudan Validator'a verilir. Sınıf vendor PSR-4 ile autoload edilir
+ * (Lvntr\StarterKit\Http\Requests\Admin\ApiToken\StoreApiTokenRequest).
+ * config('starter-kit.passport.scopes') ServiceProvider merge'i ile testbench'te mevcuttur.
  */
 function makeApiTokenScopeValidator(array $data): Validator
 {
-    require_once dirname(__DIR__, 3)
-        .'/stubs/app/Http/Requests/Admin/ApiToken/StoreApiTokenRequest.php';
-
     $rules = (new StoreApiTokenRequest)->rules();
 
     return Illuminate\Support\Facades\Validator::make($data, $rules);
@@ -424,7 +458,7 @@ test('HttpsOrLocalhostUrl Rule localhost http kabul ediyor', function (): void {
 
 test('StoreApiClientRequest HttpsOrLocalhostUrl kullanıyor (K2)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
     );
 
     expect($content)->toContain('HttpsOrLocalhostUrl');
@@ -434,7 +468,7 @@ test('StoreApiClientRequest HttpsOrLocalhostUrl kullanıyor (K2)', function (): 
 
 test('UpdateApiClientRequest HttpsOrLocalhostUrl kullanıyor (K2)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/UpdateApiClientRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/UpdateApiClientRequest.php'
     );
 
     expect($content)->toContain('HttpsOrLocalhostUrl');
@@ -445,7 +479,7 @@ test('UpdateApiClientRequest HttpsOrLocalhostUrl kullanıyor (K2)', function ():
 
 test('StoreApiClientRequest confidential alanını kabul etmiyor (K3)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
     );
 
     expect($content)->not->toContain("'confidential'");
@@ -465,7 +499,7 @@ test('CreateApiClientAction confidential parametresini kaldırdı (K3)', functio
 
 test('StoreApiClientRequest personal_access grant type içermiyor (O3)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
+        dirname(__DIR__, 3).'/src/Http/Requests/Admin/ApiClient/StoreApiClientRequest.php'
     );
 
     expect($content)->not->toContain("'personal_access'");
@@ -495,7 +529,7 @@ test('ApiTokenPolicy viewAny api-tokens.create iznini de kabul ediyor (K5)', fun
 
 test('ApiTokenController dtApi kullanıcı bazlı scope yapıyor (K5)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiTokenController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiTokenController.php'
     );
 
     expect($content)->toContain('api-tokens.read');
@@ -526,7 +560,7 @@ test('api-token-route.php throttle middleware içeriyor (O1)', function (): void
 
 test('ApiTokenController store() Cache-Control no-store header ekliyor (O4)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiTokenController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiTokenController.php'
     );
 
     expect($content)->toContain('Cache-Control');
@@ -535,7 +569,7 @@ test('ApiTokenController store() Cache-Control no-store header ekliyor (O4)', fu
 
 test('ApiClientController store() Cache-Control no-store header ekliyor (O4)', function (): void {
     $content = file_get_contents(
-        dirname(__DIR__, 3).'/stubs/app/Http/Controllers/Admin/ApiClientController.php'
+        dirname(__DIR__, 3).'/src/Http/Controllers/Admin/ApiClientController.php'
     );
 
     expect($content)->toContain('Cache-Control');

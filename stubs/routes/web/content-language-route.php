@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ContentLanguageController;
 use Illuminate\Support\Facades\Route;
+use Lvntr\StarterKit\Http\Controllers\Admin\ContentLanguageController;
 
 /*
 |--------------------------------------------------------------------------
