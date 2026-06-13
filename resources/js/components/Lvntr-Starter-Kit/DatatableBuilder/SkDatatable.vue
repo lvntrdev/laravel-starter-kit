@@ -862,16 +862,55 @@
 
     const openFilterKey = ref<string | null>(null);
 
-    function toggleFilterMenu(key: string): void {
-        openFilterKey.value = openFilterKey.value === key ? null : key;
+    // Inline-toolbar pill menus are teleported to <body> and positioned as a
+    // fixed overlay so a long option list is not clipped by the card / scroll
+    // container's `overflow` (the panel-popover variant rides PrimeVue's own
+    // overflow-visible portal and keeps its in-place menu). `openFilterObj` is
+    // set ONLY for inline keys; panel keys (`pp:`) leave it null and render
+    // their menu inside the popover untouched.
+    const openFilterObj = ref<FilterConfig | null>(null);
+    const menuTrigger = ref<HTMLElement | null>(null);
+    const menuPos = ref<{ top: number; left: number; minWidth: number }>({ top: 0, left: 0, minWidth: 0 });
+
+    function updateMenuPos(): void {
+        const el = menuTrigger.value;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        menuPos.value = { top: r.bottom + 6, left: r.left, minWidth: Math.max(234, r.width) };
     }
 
-    useEventListener(document, 'click', () => {
+    function closeFilterMenu(): void {
         openFilterKey.value = null;
-    });
+        openFilterObj.value = null;
+        menuTrigger.value = null;
+    }
+
+    function toggleFilterMenu(key: string, filter?: FilterConfig, el?: HTMLElement): void {
+        if (openFilterKey.value === key) {
+            closeFilterMenu();
+            return;
+        }
+        openFilterKey.value = key;
+        if (filter && el && !key.startsWith('pp:')) {
+            openFilterObj.value = filter;
+            menuTrigger.value = el;
+            nextTick(updateMenuPos);
+        } else {
+            openFilterObj.value = null;
+            menuTrigger.value = null;
+        }
+    }
+
+    useEventListener(document, 'click', closeFilterMenu);
     useEventListener(document, 'keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape') openFilterKey.value = null;
+        if (e.key === 'Escape') closeFilterMenu();
     });
+    // keep the teleported menu glued to its trigger while the page/container scrolls
+    useEventListener(window, 'scroll', () => openFilterObj.value && updateMenuPos(), {
+        capture: true,
+        passive: true,
+    });
+    useEventListener(window, 'resize', () => openFilterObj.value && updateMenuPos());
 
     /** Pill menu options — an "All" (null) entry followed by the filter's own options. */
     function pillOptions(filter: FilterConfig): FilterOption[] {
@@ -886,7 +925,7 @@
 
     function selectPillOption(filter: FilterConfig, option: FilterOption): void {
         activeFilters.value[filter.key] = option.value;
-        openFilterKey.value = null;
+        closeFilterMenu();
     }
 
     function isPillActive(filter: FilterConfig): boolean {
@@ -1098,7 +1137,7 @@
                                 'sk-dt-pill--open': openFilterKey === filter.key,
                                 'sk-dt-pill--active': isPillActive(filter),
                             }"
-                            @click="toggleFilterMenu(filter.key)"
+                            @click="toggleFilterMenu(filter.key, filter, $event.currentTarget as HTMLElement)"
                         >
                             <span class="sk-dt-pill__key">{{ resolveFilterLabel(filter) }}:</span>
                             <span class="sk-dt-pill__val">{{ pillValueLabel(filter) }}</span>
@@ -1116,39 +1155,8 @@
                                 :class="{ 'rotate-180': openFilterKey === filter.key }"
                             />
                         </button>
-                        <Transition name="sk-dt-dd">
-                            <div v-if="openFilterKey === filter.key" class="sk-dt-pillmenu">
-                                <button
-                                    v-for="opt in pillOptions(filter)"
-                                    :key="String(opt.value)"
-                                    type="button"
-                                    class="sk-dt-pillmenu__item"
-                                    :class="{ 'sk-dt-pillmenu__item--active': isPillOptionSelected(filter, opt) }"
-                                    @click="selectPillOption(filter, opt)"
-                                >
-                                    <span class="sk-dt-pillmenu__lead">
-                                        <i
-                                            v-if="isPillOptionSelected(filter, opt)"
-                                            class="pi pi-check sk-dt-pillmenu__check"
-                                        />
-                                        <span
-                                            v-else-if="opt.color"
-                                            class="sk-dt-pillmenu__dot"
-                                            :style="dotStyle(opt.color)"
-                                        />
-                                    </span>
-                                    <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
-                                    <span
-                                        v-if="opt.count !== undefined"
-                                        class="sk-dt-pillmenu__count"
-                                        :class="{
-                                            'sk-dt-pillmenu__count--active': isPillOptionSelected(filter, opt),
-                                        }"
-                                        >{{ opt.count }}</span
-                                    >
-                                </button>
-                            </div>
-                        </Transition>
+                        <!-- menu is teleported to <body> (see the Teleport at the end of
+                             the toolbar) so a long list escapes the card/scroll clip -->
                     </div>
 
                     <!-- Other inline filter types keep their PrimeVue inputs -->
@@ -1189,6 +1197,51 @@
                         />
                     </div>
                 </template>
+
+                <!-- Inline pill dropdown — teleported to <body> as a fixed overlay so a
+                     long option list is never clipped by the card / scroll container. -->
+                <Teleport to="body">
+                    <Transition name="sk-dt-dd">
+                        <div
+                            v-if="openFilterObj"
+                            class="sk-dt-pillmenu sk-dt-pillmenu--floating"
+                            :style="{
+                                top: `${menuPos.top}px`,
+                                left: `${menuPos.left}px`,
+                                minWidth: `${menuPos.minWidth}px`,
+                            }"
+                            @click.stop
+                        >
+                            <button
+                                v-for="opt in pillOptions(openFilterObj)"
+                                :key="String(opt.value)"
+                                type="button"
+                                class="sk-dt-pillmenu__item"
+                                :class="{ 'sk-dt-pillmenu__item--active': isPillOptionSelected(openFilterObj, opt) }"
+                                @click="selectPillOption(openFilterObj, opt)"
+                            >
+                                <span class="sk-dt-pillmenu__lead">
+                                    <i
+                                        v-if="isPillOptionSelected(openFilterObj, opt)"
+                                        class="pi pi-check sk-dt-pillmenu__check"
+                                    />
+                                    <span
+                                        v-else-if="opt.color"
+                                        class="sk-dt-pillmenu__dot"
+                                        :style="dotStyle(opt.color)"
+                                    />
+                                </span>
+                                <span class="sk-dt-pillmenu__label">{{ opt.label }}</span>
+                                <span
+                                    v-if="opt.count !== undefined"
+                                    class="sk-dt-pillmenu__count"
+                                    :class="{ 'sk-dt-pillmenu__count--active': isPillOptionSelected(openFilterObj, opt) }"
+                                    >{{ opt.count }}</span
+                                >
+                            </button>
+                        </div>
+                    </Transition>
+                </Teleport>
 
                 <!-- Right: Filter Popover, Columns, Actions -->
                 <div class="sk-dt-toolbar__right">

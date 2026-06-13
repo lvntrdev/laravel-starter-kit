@@ -174,10 +174,24 @@
     @apply text-[11px] text-slate-400 dark:text-slate-500 transition-transform duration-200;
 }
 
-/* Pill dropdown menu (design: .dt-menu) */
+/* Pill dropdown menu (design: .dt-menu).
+   Base (absolute) is used by the panel-popover variant, which rides PrimeVue's
+   overflow-visible z-1001 portal. The inline-toolbar variant adds
+   `--floating`: it is teleported to <body> and positioned (top/left via inline
+   style) so a long option list escapes the card / scroll-container `overflow`
+   clip instead of being cut off inside it. */
 .sk-dt-pillmenu {
-    @apply absolute left-0 top-[calc(100%+6px)] z-40 min-w-[234px] select-none rounded-md p-1.5;
+    @apply absolute left-0 top-[calc(100%+6px)] z-[1000] min-w-[234px] select-none rounded-md p-1.5;
     @apply bg-white border border-slate-200 shadow-lg dark:bg-slate-900 dark:border-slate-700;
+}
+
+/* Teleported inline-pill overlay: viewport-fixed, above the panel popover
+   (z-1001) and any app chrome (header z-30 / sidebar z-40). */
+.sk-dt-pillmenu--floating {
+    position: fixed;
+    z-index: 1100;
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
 }
 
 .sk-dt-pillmenu__item {
