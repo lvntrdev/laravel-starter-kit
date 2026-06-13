@@ -320,8 +320,8 @@ Backend pairing:
 
 - Store each attribute in a JSON column.
 - Add Spatie `HasTranslations` to the model and list the attributes in `$translatable`.
-- Use `App\Support\HasTranslatableRules` in FormRequests.
-- Use `App\Support\TranslatableQueryHelpers` for datatable search/sort and resource output.
+- Use `Lvntr\StarterKit\Support\HasTranslatableRules` in FormRequests (a trait — this trait has no `App\Support` back-compat alias, so import it from the vendor namespace).
+- Use `Lvntr\StarterKit\Support\TranslatableQueryHelpers` for datatable search/sort and resource output.
 
 See [Translatable Fields](./translatable-fields.md) for the complete backend and frontend guide.
 

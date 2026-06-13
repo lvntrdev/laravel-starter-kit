@@ -205,6 +205,105 @@ const filteredOptions = options('userStatus', { only: ['active', 'pending'] });
 const filteredOptions = options('userStatus', { except: ['archived'] });
 ```
 
+## DataTable Seçimi
+
+### useDatatableSelection()
+
+`SkDatatable` için satır seçimi ve toplu işlem (bulk action) gönderimini yönetir. Consumer sayfalar bunu doğrudan import eder — herhangi bir index ekranına onay kutusu ve toplu işlem eklemek için önerilen yol budur.
+
+**Dışa aktarılan tipler:**
+
+```ts
+type BulkSelectionMode = 'page' | 'all';
+
+interface BulkActionPayload {
+    action: string;
+    ids: (string | number)[];
+    select_all_filtered: boolean;
+    filter_snapshot: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
+interface BulkActionResult {
+    processed: number;
+    skipped: number;
+    failed: Array<{ id: number | string; reason: string }>;
+    message: string;
+}
+```
+
+**İmza:**
+
+```ts
+const selection = useDatatableSelection({
+    bulkUrl: string;        // Bulk endpoint'in mutlak URL'si (Wayfinder kullanın: users.bulk.url())
+    idKey?: string;         // Satır ID property'si — varsayılan: 'id'
+    onSuccess?: () => void; // Başarılı bulk işlem sonrası çağrılır (tabloyu yenilemek için)
+});
+```
+
+**Döndürdükleri:**
+
+| Özellik / Metod | Tip | Açıklama |
+|---|---|---|
+| `selectedIds` | `Ref<Set<string\|number>>` | Seçili satır ID'lerinin kümesi |
+| `selectionMode` | `Ref<BulkSelectionMode>` | `'page'` (geçerli sayfa) veya `'all'` (çapraz sayfa filtrelenmiş) |
+| `submitting` | `Ref<boolean>` | Bulk istek devam ederken true |
+| `selectedCount` | `ComputedRef<number>` | Seçili ID sayısı |
+| `hasSelection` | `ComputedRef<boolean>` | En az bir satır seçiliyse true |
+| `isAllFilteredMode` | `ComputedRef<boolean>` | Çapraz sayfa seçimi aktifse true |
+| `toggleRow(row)` | function | Bir satırı seç veya seçimi kaldır |
+| `isRowSelected(row)` | function | Satır seçiliyse true döner |
+| `togglePageSelection(rows, selected)` | function | Geçerli sayfadaki tüm satırları seç veya kaldır |
+| `isPageFullySelected(rows)` | function | Sayfadaki tüm satırlar seçiliyse true |
+| `isPagePartiallySelected(rows)` | function | Sayfadaki bazı (ama hepsi değil) satırlar seçiliyse true |
+| `selectAllFiltered()` | function | Çapraz sayfa modunu etkinleştir — backend filtreye göre yeniden hesaplar |
+| `clearSelection()` | function | Tüm seçimleri temizle ve page moduna geri dön |
+| `executeBulkAction(action, filterSnapshot?, overrideUrl?)` | function | Bulk payload'ı Inertia router ile gönder |
+
+**Kullanım:**
+
+```ts
+import { useDatatableSelection } from '@/composables/useDatatableSelection';
+import { useRefreshBus } from '@/composables/useRefreshBus';
+import users from '@/routes/users';
+
+const bus = useRefreshBus();
+
+const selection = useDatatableSelection({
+    bulkUrl: users.bulk.url(),
+    idKey: 'id',
+    onSuccess: () => bus.refresh('users-table'),
+});
+
+// SkDatatable'a bağlayın:
+// <SkDatatable :selection="selection" ...>
+
+// Aktif filtrelerle bulk delete tetikleyin:
+selection.executeBulkAction('delete', activeFilterSnapshot.value);
+```
+
+`selection` nesnesini `<SkDatatable :selection="selection">` ile bağlayın — bu onay kutusu sütununu oluşturur. Toplu işlem butonları `#bulk-actions` slot'una eklenir; satır seçiliyken `SkDatatable`, viewport'un altında kayan koyu bir işlem çubuğu gösterir. Backend'deki `BulkAction` arayüzü dahil tam toplu işlem deseni için `docs/datatable.md` belgesine bakın.
+
+## Dahili Composable'lar
+
+Aşağıdaki composable'lar vendor UI tarafından kullanılır ve consumer sayfalardan doğrudan çağrılmaları beklenmez. Referans amacıyla listelenmiştir.
+
+### useFileShare() — Dahili
+
+FileManager medyası için imzalı paylaşım linkleri oluşturmak ve iptal etmek amacıyla vendor `Files` modülü (`ShareLinkModal`, `MyShareLinksDrawer`) tarafından kullanılır. Consumer sayfalar bunu doğrudan çağırmaz — paylaşım linki işlemleri dahili Files arayüzü üzerinden sunulur. Paylaşım linki API'si için `docs/file-manager.md` belgesine bakın.
+
+- `createShare(mediaId: number, ttlHours: number): Promise<ShareLinkResult | null>` — imzalı paylaşım linki oluşturur (TTL: 1–720 saat); `{ url, expires_at, token_hash }` veya hata durumunda `null` döner
+- `revokeShare(mediaId: number, token: string): Promise<boolean>` — token hash ile mevcut bir linki iptal eder
+
+### useAccentColor() — Dahili
+
+Kullanıcı başına accent renk tercihini ve sidebar yüzeyini yönetmek için `AdminLayout` ve Appearance sekmesi tarafından kullanılır. Consumer'lar accent rengiyle header popover üzerinden etkileşime girer; bu composable'ı doğrudan çağırmaz. Accent renk sistemi için `docs/theme.md` belgesine bakın.
+
+### useAppearanceDefaults() — Dahili
+
+Her sayfa yüklenişinde Inertia shared props'tan global görünüm varsayılanlarını (accent renk, dark mode, sidebar stili, logo ve favicon URL'leri) okur. `useAccentColor`, `useDarkMode` ve layout'lar tarafından, kullanıcıya özgü herhangi bir override uygulanmadan önce başlangıç değerini belirlemek için kullanılır.
+
 ## Öneri
 
 Bir arayüz davranışı birden fazla sayfada görünmeye başladığında, aynı kodu tekrar etmek yerine bunu bir composable içine taşıyın.

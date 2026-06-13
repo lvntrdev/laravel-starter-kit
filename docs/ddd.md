@@ -41,7 +41,7 @@ The following domains have their **runtime layer** (Actions, DTOs, Queries, Even
 
 **Import compatibility:** controllers and providers that use `App\Domain\<Module>\...` import paths continue to work — `StarterKitServiceProvider` registers `class_alias` entries that resolve them to the vendor namespace. A local `app/Domain/<Module>/` copy, if present, always takes precedence (the guard skips the alias when the file exists on disk).
 
-**Consumer-facing surface stays in `app/`:** For user-facing modules, Controllers, FormRequests, Models, Vue pages, and route files are still scaffolded into your app. Only the runtime/business-logic layer is vendor-managed.
+**Surface ownership is split per module.** Models always stay app-owned (so policy discovery and route-model binding keep working). For **user-facing** modules (`User`, `Role`, Dashboard, Auth, Profile) the Controllers, FormRequests, Vue pages, and route files are scaffolded into your app. For **vendor-first behaviour** modules (Files, Logs, Activity Logs, API Routes, Settings, …) the entire HTTP + Vue surface runs from the package — only their Models live in `app/`; run `sk:eject <Module>` to take ownership. See the Module Ownership table in the [README](../README.md).
 
 **Existing app copies:** if your project was installed before a domain moved to vendor, your existing `app/Domain/<Module>/` files are preserved and continue to work. Removing them is optional — see [UPGRADE.md](./UPGRADE.md) for reconcile steps.
 

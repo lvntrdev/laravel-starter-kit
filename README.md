@@ -111,6 +111,7 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
 
+- [All documentation: docs/README.md](docs/README.md)
 - [Upgrading between versions](docs/UPGRADE.md)
 - [Changelog](./CHANGELOG.md)
 

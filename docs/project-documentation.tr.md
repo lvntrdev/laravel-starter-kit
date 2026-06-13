@@ -13,11 +13,11 @@ Bu döküman, kurulumdan sonra starter kit'in yüksek seviyeli haritasını veri
 
 ### Ana Domain Modülleri
 
-**Kurulum sonrası app-owned yüzey** — modül ihtiyaç duyuyorsa controller, FormRequest, model, route ve Vue sayfaları `app/` / `resources/` altına scaffold edilir. Domain runtime'ının kendisi modüle göre ayrılır:
+**Yüzey sahipliği modül bazında ayrılır** — Model'ler her zaman app-owned kalır; yüzeyin geri kalanı modüle bağlıdır. Domain runtime ve HTTP/Vue yüzeyi modüle göre ayrılır:
 
 - `Auth` tamamen app tarafındadır (`app/Domain/Auth`)
-- `User` ve `Role`, `app/Domain/...` altında yalnızca app-owned `BulkActions` dilimini tutar; ana runtime vendor-resident'tır
-- `Setting`, `ApiRoute` ve `ApiClient` gerektiği yerde app-owned HTTP/UI yüzeyi sağlar, fakat domain runtime vendor paketinden çalışır
+- `User` ve `Role` uygulamaya scaffold edilir (controller, FormRequest, Vue) ama `app/Domain/...` altında yalnızca app-owned `BulkActions` dilimini tutar; ana domain runtime vendor-resident'tır
+- `Setting`, `ApiRoute`, `Logs`, `ActivityLog` ve `Files` **vendor-first**'tür: controller, FormRequest ve Vue sayfalarının tümü paketten çalışır (yalnızca Model'leri `app/`'te kalır). Uygulamaya çekmek için `sk:eject <Module>` çalıştırın — Modül Sahipliği tablosu için [README](../README.md)'ye bakın
 
 **Vendor-resident runtime domain'leri (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — bu modüllerin Actions, DTOs, Queries, Events, Listeners ve Services katmanları paket içinden çalışır ve temiz kurulumda uygulamanıza kopyalanmaz. `App\Domain\<Module>\...` import'ları `class_alias` ile çalışmaya devam eder; eject ya da eski kurulumdan kalan yerel `app/Domain/<Module>/` kopyası varsa önceliklidir:
 

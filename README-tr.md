@@ -78,7 +78,7 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-Hepsi bu kadar. Kurulum sihirbazı migration, seeder, Passport anahtarları, varsayılan admin kullanıcısı ve frontend build işlemlerini otomatik yapar.
+Hepsi bu kadar. Kurulum sihirbazı migration, seeder, Passport anahtarları, varsayılan admin kullanıcısı ve frontend build işlemlerini otomatik yapar. Ayrıca `User` ve `Role` domain runtime sınıflarını `app/Domain/`'e eject eder, böylece anında proje-sahipli ve özelleştirmeye hazır olurlar. Bunun yerine vendor'da tutmak için `--without-eject` geçin.
 
 Detaylı adım adım rehber: [starter-kit.lvntr.dev/docs/install](https://starter-kit.lvntr.dev/docs/install)
 
@@ -110,16 +110,42 @@ Kurulum, güncelleme akışı, domain scaffolding, FormBuilder / DatatableBuilde
 
 **[starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)**
 
+- [Tüm dökümanlar: docs/README.tr.md](docs/README.tr.md)
 - [Sürümler arası yükseltme](docs/UPGRADE.tr.md)
 - [Changelog](./CHANGELOG.md)
+
+## Modül Sahipliği — Vendor'dan Ne Çalışır
+
+Kit, dahili davranış modülleri için "vendor-first" bir model kullanır. Çoğu modül tamamen paketten çalışır; yalnızca sahiplenmeyi seçtiğin şeye sahip olursun.
+
+| Modül | Vue sayfaları | Controller / Request | Tamamen sahiplenmek için |
+|---|---|---|---|
+| **Files** (Dosya Yöneticisi) | vendor | vendor | `sk:eject Files` (yalnızca Vue) |
+| **Logs** | vendor | vendor | `sk:eject Logs` |
+| **Activity Logs** | vendor | vendor | `sk:eject ActivityLog` |
+| **API Routes** | vendor | vendor | `sk:eject ApiRoute` |
+| **Settings** | vendor | vendor | `sk:eject Setting` |
+| **API Clients & Tokens** | vendor (Settings sekmeleri) | vendor | `sk:eject ApiClient` (ApiToken da eject edilir) |
+| **System Health** | vendor (Settings sekmesi) | vendor (yalnızca controller) | `sk:eject SystemHealth` |
+| **Content Languages** | vendor (Settings sekmesi) | vendor | `sk:eject ContentLanguage` |
+| **Definitions** (API + Service) | — | vendor (yalnızca controller) | `sk:eject Definitions` |
+| **Media upload/delete** | — | vendor (yalnızca controller) | `sk:eject MediaUpload` |
+| **Users** | app'e kurulur | app-owned | yerinde düzenle |
+| **Roles** | app'e kurulur | app-owned | yerinde düzenle |
+| **Dashboard** | app'e kurulur | app-owned | yerinde düzenle |
+| **Auth ekranları** | app'e kurulur | app-owned | yerinde düzenle |
+| **Profile** | app'e kurulur | app-owned | yerinde düzenle |
+
+> **Model'ler app-owned kalır.** Tamamen vendor-resident modüllerde bile Eloquent model'leri (`App\Models\ContentLanguage`, `App\Models\Media`, `App\Models\Definition`, …) uygulamanızda published kalır ve asla vendor'a taşınmaz — böylece Laravel'in policy discovery ve route-model binding'i çalışmaya devam eder. Vendor controller'ları onlara `App\` FQCN ile referans verir.
 
 ## Komutlar
 
 | Komut | Açıklama |
 |---|---|
-| `php artisan sk:install` | Tam kurulum: migration, seeder, Passport anahtarları, admin kullanıcısı, frontend build |
-| `php artisan sk:update` | Güncel stub'ları çek (hash tabanlı, kendi değişikliklerini korur) |
+| `php artisan sk:install` | Tam kurulum: migration, seeder, Passport anahtarları, admin kullanıcısı, frontend build. `User` + `Role`'ü varsayılan olarak eject eder (`--without-eject` ile atla) |
+| `php artisan sk:update` | Güncel stub'ları çek (hash tabanlı, kendi değişikliklerini korur); vendor-resident modüllerin app'teki eski kopyalarını kaldırır |
 | `php artisan sk:publish [--tag=...]` | Belirli asset gruplarını yayınla (component, composable, plugin, lang, config, helper) |
+| `php artisan sk:eject <module>` | Vendor-resident bir modülü (controller + FormRequest + Resource + Vue sayfaları) tam sahiplik için app'ine kopyala. Desteklenenler: `User`, `Role`, `Setting`, `Logs`, `ActivityLog`, `ApiClient` (ApiToken da), `ApiRoute`, `ContentLanguage`, `SystemHealth`, `Definitions`, `MediaUpload`, `Files` (yalnızca Vue), `Session`, `Media` |
 | `php artisan make:sk-domain Foo` | Yeni bir DDD domain iskeleti oluştur |
 | `php artisan sk:doctor` | Sistem sağlık kontrolü çalıştır |
 

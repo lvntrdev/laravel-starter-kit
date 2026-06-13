@@ -6,12 +6,19 @@ The starter kit includes a small set of reusable UI helpers built on top of Prim
 
 - `AppDialog`
 - `AvatarUpload`
+- `SkImageUpload`
 - `ImageLightbox`
 - `FilePreviewModal`
 - `SkCard`
 - PrimeVue `Tag` (SK-themed)
+- PrimeVue `Button` (SK-themed, extended severity)
+- PrimeVue `Message` / `InlineMessage` (SK-themed, extended severity)
+- `ToastComponent` (SK custom toast renderer)
 - `ConfirmDialogComponent`
-- `ToastComponent`
+- `MimePickerField`
+- `ToggleFeatureCard`
+- `SkPageLoader`
+- `TurnstileWidget`
 - skeleton helpers: `PageLoading`, `SkeletonBox`, `SkeletonCard`, `SkeletonTable`, `SkeletonText`
 - `FileManager` component for media-oriented flows
 
@@ -159,7 +166,128 @@ Variants — opt-in via `class`, since PrimeVue Tag has no variant prop:
 - `p-tag-sm` / `p-tag-lg` — sizes
 - `rounded` (native prop) — pill shape
 
-All variants are themed for light and dark mode. See the **Components → Tag** showcase page (`/components`) for every variant and color.
+All variants are themed for light and dark mode. See the **Components → Tag** showcase page (`/sk-components`) for every variant and color.
+
+## Button (PrimeVue)
+
+PrimeVue `Button` is auto-imported and its `severity` prop accepts the 8 built-in PrimeVue values plus any Tailwind color family or SK custom color — the same extended palette the Tag uses. The theme targets the `data-p-severity` attribute that PrimeVue emits on the button root.
+
+Built-in severities (8): `primary` (no prop, default), `secondary`, `success`, `info`, `warn`, `help`, `danger`, `contrast`.
+
+Extended color values (same Tailwind + SK families as Tag): `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, `gray`, `zinc`, `neutral`, `stone`, `mauve`, `olive`, `mist`, `taupe`.
+
+```vue
+<template>
+    <Button label="Save" />
+    <Button label="Delete" severity="danger" outlined />
+    <Button label="Approve" severity="emerald" />
+    <Button label="Tag" severity="indigo" rounded />
+    <Button icon="pi pi-cog" severity="secondary" text />
+</template>
+```
+
+Variants are the standard PrimeVue button props (`outlined`, `text`, `raised`, `rounded`, `size`, `loading`, `disabled`). No extra class is needed for color variants — severity alone drives the full color.
+
+Destructive actions must use `severity="danger"` (outlined or filled depending on prominence). See the **Components → Button** showcase page (`/sk-components`) for the full per-color matrix.
+
+## Message and InlineMessage (PrimeVue)
+
+PrimeVue `Message` and `InlineMessage` are auto-imported and repainted to the SK palette. Their `severity` accepts the same extended color set as Button and Tag. The theme targets the `data-p` attribute on `Message` and the `p-inlinemessage-<severity>` class on `InlineMessage`.
+
+Built-in severities (6): `success`, `info`, `warn`, `danger`, `secondary`, `contrast`.
+
+Extended color values: all Tailwind families and SK custom families (same list as Button/Tag above).
+
+`Message` supports four layout variants:
+
+- **accent** (default) — tinted left-border banner; use `:closable="false"` for persistent notices
+- **fill** — solid-color filled banner, opt in with `class="p-message-fill"`
+- **outlined** — border-only, opt in with `variant="outlined"`
+- **simple** — minimal, no border or background, opt in with `variant="simple"`
+
+```vue
+<template>
+    <!-- accent (default) -->
+    <Message severity="info" :closable="false">Your changes were saved.</Message>
+
+    <!-- fill variant -->
+    <Message severity="success" icon="pi pi-check-circle" class="p-message-fill">
+        <div class="font-semibold">Published</div>
+        <div class="text-[12.5px] opacity-80">All users can see this post.</div>
+    </Message>
+
+    <!-- outlined variant -->
+    <Message severity="warn" variant="outlined" :closable="false">Review required.</Message>
+
+    <!-- InlineMessage — inline, no dismiss -->
+    <InlineMessage severity="danger">Field is required.</InlineMessage>
+
+    <!-- Extended color -->
+    <Message severity="indigo">Custom severity.</Message>
+</template>
+```
+
+See the **Components → Message** showcase page (`/sk-components`) for every variant and color.
+
+## Toast (SK custom renderer)
+
+`ToastComponent` wraps PrimeVue's `<Toast>` with a fully custom `#container` template. Because the template is custom, PrimeVue's native severity markup does not apply — styling is driven entirely by `.sk-toast-<severity>` CSS classes in `theme/main/components/toast.css`. All `toast.add()` calls go through `useToast()` from PrimeVue.
+
+Built-in severities: `success`, `info`, `warn`, `error`, `secondary`, `contrast`.
+
+Extended color values: all Tailwind families and SK custom families (same list as Button/Tag above). Pass any family name as `severity` and the toast picks up the matching `sk-toast-<name>` color token.
+
+Variants (opt in via `styleClass`):
+
+- Default (accent) — tinted background, colored accent bar, progress bar
+- `sk-toast-outlined` — border-only shell
+- `sk-toast-solid` — fully filled, inverted text
+
+Extra options beyond the standard `ToastMessageOptions`:
+
+- `icon` — PrimeVue icon class (e.g. `'pi pi-check-circle'`); falls back to a per-severity default if omitted
+- `styleClass` — variant class (`'sk-toast-solid'` / `'sk-toast-outlined'`)
+- `actions` — pill-button array: `{ label: string; command?: () => void; primary?: boolean; dismiss?: boolean }`
+
+```ts
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
+
+// Simple info toast
+toast.add({
+    severity: 'info',
+    summary: 'Saved',
+    detail: 'Your changes have been applied.',
+    group: 'bc',
+    life: 4000,
+});
+
+// Custom icon + solid variant
+toast.add({
+    severity: 'success',
+    summary: 'Published',
+    icon: 'pi pi-globe',
+    styleClass: 'sk-toast-solid',
+    group: 'bc',
+    life: 3000,
+});
+
+// Action buttons (sticky — no life)
+toast.add({
+    severity: 'warn',
+    summary: 'Delete item?',
+    detail: 'This cannot be undone.',
+    icon: 'pi pi-exclamation-triangle',
+    group: 'bc',
+    actions: [
+        { label: 'Delete', primary: true, command: () => doDelete() },
+        { label: 'Cancel' },
+    ],
+});
+```
+
+`group: 'bc'` is required — `ToastComponent` is registered on the `bc` group. See the **Components → Toast** showcase page (`/sk-components`) for live examples.
 
 ## AvatarUpload
 
@@ -196,6 +324,116 @@ Other skeleton helpers available under `@lvntr/components/Skeleton/`:
 - `SkeletonCard` — card-shaped loading block
 - `SkeletonTable` — table-shaped loading block with configurable rows and columns
 - `SkeletonText` — text-line placeholders
+
+## SkImageUpload
+
+`SkImageUpload` is a generic image upload slot for settings-style brand assets (logo, favicon). It mirrors `AvatarUpload`'s optimistic-preview pattern — instant `FileReader` preview, `fetch` upload, and an Inertia partial reload on success — but is designed for rectangular/non-avatar contexts.
+
+```vue
+<SkImageUpload
+    :preview-url="settings.logo_url"
+    upload-url="/admin/settings/logo"
+    field-name="logo"
+    response-key="logo_url"
+    accept="image/png,image/svg+xml"
+    label="Light logo"
+    hint="Recommended: 300×80 px, PNG or SVG"
+    upload-label="Upload"
+    remove-label="Remove"
+    remove-confirm="Remove the logo?"
+    variant="logo-light"
+    layout="stacked"
+    :reload-only="['settings']"
+/>
+```
+
+Props:
+
+- `previewUrl?: string | null` — canonical server URL; `null` shows a placeholder icon
+- `uploadUrl: string` — endpoint for both POST (upload) and DELETE (remove)
+- `fieldName: string` — FormData key for the file (e.g. `logo`, `favicon`)
+- `responseKey: string` — key under `json.data` holding the new URL after upload
+- `accept: string` — passed to `<input accept>`
+- `label: string`, `hint: string` — already-translated display strings
+- `uploadLabel: string`, `removeLabel: string`, `removeConfirm: string` — already-translated button/confirm strings
+- `variant?: 'logo-light' | 'logo-dark' | 'favicon'` (default `'logo-light'`) — preview box style; `logo-dark` uses a dark backdrop; `favicon` renders a square box
+- `layout?: 'stacked' | 'row'` (default `'row'`) — `stacked` stacks preview + buttons vertically (used in logo grids); `row` puts everything inline
+- `reloadOnly?: string[]` (default `['settings']`) — Inertia partial-reload prop keys
+
+## MimePickerField
+
+`MimePickerField` is a checkbox-group MIME-type picker used in the File Manager settings. It renders categories (Images, Documents, Archive) of MIME options as labeled checkboxes and emits a `string[]` of selected MIME strings.
+
+```vue
+<MimePickerField v-model="settings.allowed_mimes" />
+```
+
+Props:
+
+- `modelValue?: string[] | null` — currently selected MIME types
+- `categories?: MimeCategory[]` — override the default category list (Images / Documents / Archive). Each entry: `{ titleKey: string; options: { label: string; value: string; icon: string }[] }`
+
+Default MIME groups: JPEG, PNG, GIF, WebP (images); PDF, DOC/DOCX, XLS/XLSX, plain text, CSV (documents); ZIP (archive).
+
+## ToggleFeatureCard
+
+`ToggleFeatureCard` is a styled card-row with an integrated toggle switch, used for feature-flag settings UIs (e.g. enabling/disabling File Manager modules).
+
+```vue
+<ToggleFeatureCard
+    v-model="settings.share_enabled"
+    label="Share links"
+    description="Allow users to generate public share links for files."
+    icon="pi-share-alt"
+/>
+```
+
+Props:
+
+- `modelValue?: boolean` (default `false`) — bound toggle state
+- `label: string` — feature name, rendered in bold
+- `description?: string` — secondary text below the label
+- `icon?: string` — PrimeVue icon name (without `pi ` prefix, e.g. `'pi-share-alt'`); renders a tinted icon badge on the left when provided
+
+The card border and background shift to a primary-tinted color when the toggle is on.
+
+## SkPageLoader
+
+`SkPageLoader` is a full-screen animated loading overlay that appears during Inertia page switches. It replaces the default NProgress top bar with an animated radial grid background and a staggered letter-wave word. The animation and theming are defined in `theme/main/components/page-loader.css`.
+
+It is already mounted by `AdminLayout.vue`; you do not need to add it to individual pages.
+
+```vue
+<!-- AdminLayout.vue already mounts this: -->
+<SkPageLoader :delay="250" />
+```
+
+Props:
+
+- `delay?: number` (default `250`) — milliseconds before the overlay appears; prevents flashing on instant navigations
+
+`SkPageLoader` uses `usePageLoading()` internally and reads the localized `sk-layout.loading` string for the animated word.
+
+## TurnstileWidget
+
+`TurnstileWidget` embeds a Cloudflare Turnstile challenge widget. It is used by the kit's auth pages (login, register, password reset) and can be placed in any form that needs bot protection.
+
+For full configuration and backend setup, see the [Authentication documentation](auth.md).
+
+```vue
+<TurnstileWidget v-model="form.turnstile_token" />
+```
+
+Props:
+
+- `modelValue: string` — the Turnstile token emitted after a successful challenge. Bind it to your form's token field and include it in the submit payload.
+
+Exposes (via `defineExpose`):
+
+- `reset()` — reset the widget (useful after a failed form submit)
+- `loadFailed: Ref<boolean>` — `true` if the Cloudflare script failed to load
+
+The widget only renders when `page.props.turnstile.enabled` is `true`. If Turnstile is disabled in the app settings, the component renders nothing. The Cloudflare script is loaded lazily on mount and is shared across widget instances on the same page.
 
 ## Recommendation
 

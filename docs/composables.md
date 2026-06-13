@@ -205,6 +205,105 @@ const filteredOptions = options('userStatus', { only: ['active', 'pending'] });
 const filteredOptions = options('userStatus', { except: ['archived'] });
 ```
 
+## DataTable Selection
+
+### useDatatableSelection()
+
+Manages row selection and bulk action submission for `SkDatatable`. Consumer pages import this directly — it is the recommended way to add checkboxes and bulk actions to any index screen.
+
+**Types exported:**
+
+```ts
+type BulkSelectionMode = 'page' | 'all';
+
+interface BulkActionPayload {
+    action: string;
+    ids: (string | number)[];
+    select_all_filtered: boolean;
+    filter_snapshot: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
+interface BulkActionResult {
+    processed: number;
+    skipped: number;
+    failed: Array<{ id: number | string; reason: string }>;
+    message: string;
+}
+```
+
+**Signature:**
+
+```ts
+const selection = useDatatableSelection({
+    bulkUrl: string;       // Absolute URL for the bulk endpoint (use Wayfinder: users.bulk.url())
+    idKey?: string;        // Row property used as ID — default: 'id'
+    onSuccess?: () => void; // Called after a successful bulk action (refresh the table here)
+});
+```
+
+**Returns:**
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `selectedIds` | `Ref<Set<string\|number>>` | Currently selected row IDs |
+| `selectionMode` | `Ref<BulkSelectionMode>` | `'page'` (current page) or `'all'` (cross-page filtered) |
+| `submitting` | `Ref<boolean>` | True while the bulk request is in flight |
+| `selectedCount` | `ComputedRef<number>` | Number of selected IDs |
+| `hasSelection` | `ComputedRef<boolean>` | True when at least one row is selected |
+| `isAllFilteredMode` | `ComputedRef<boolean>` | True when cross-page selection is active |
+| `toggleRow(row)` | function | Select or deselect one row |
+| `isRowSelected(row)` | function | Returns true if row is selected |
+| `togglePageSelection(rows, selected)` | function | Select or deselect all rows on the current page |
+| `isPageFullySelected(rows)` | function | True when every row on the page is selected |
+| `isPagePartiallySelected(rows)` | function | True when some (not all) rows on the page are selected |
+| `selectAllFiltered()` | function | Activate cross-page mode — backend recomputes from filters |
+| `clearSelection()` | function | Clear all selected IDs and reset to page mode |
+| `executeBulkAction(action, filterSnapshot?, overrideUrl?)` | function | Post the bulk payload via Inertia router |
+
+**Usage:**
+
+```ts
+import { useDatatableSelection } from '@/composables/useDatatableSelection';
+import { useRefreshBus } from '@/composables/useRefreshBus';
+import users from '@/routes/users';
+
+const bus = useRefreshBus();
+
+const selection = useDatatableSelection({
+    bulkUrl: users.bulk.url(),
+    idKey: 'id',
+    onSuccess: () => bus.refresh('users-table'),
+});
+
+// Bind to SkDatatable:
+// <SkDatatable :selection="selection" ...>
+
+// Trigger a bulk delete with current filters:
+selection.executeBulkAction('delete', activeFilterSnapshot.value);
+```
+
+Pass `selection` to `<SkDatatable :selection="selection">` — this renders the checkbox column. Bulk action buttons go in the `#bulk-actions` slot; while rows are selected, `SkDatatable` shows a floating dark action bar at the bottom of the viewport. See `docs/datatable.md` for the full bulk-action pattern including the backend `BulkAction` interface.
+
+## Internal Composables
+
+The composables below are used by vendor UI and are not intended to be called directly from consumer pages. They are listed for reference.
+
+### useFileShare() — Internal
+
+Used by the vendor `Files` module (`ShareLinkModal`, `MyShareLinksDrawer`) to create and revoke signed share links for FileManager media. Consumer pages do not call this directly — share link actions are available through the built-in Files UI. See `docs/file-manager.md` for the share link API.
+
+- `createShare(mediaId: number, ttlHours: number): Promise<ShareLinkResult | null>` — creates a signed share link (TTL: 1–720 hours); returns `{ url, expires_at, token_hash }` or `null` on error
+- `revokeShare(mediaId: number, token: string): Promise<boolean>` — revokes an existing link by token hash
+
+### useAccentColor() — Internal
+
+Used by `AdminLayout` and the Appearance tab to manage the per-user accent color preference and sidebar surface. Consumers interact with accent color through the header popover, not by calling this composable directly. See `docs/theme.md` for the accent color system.
+
+### useAppearanceDefaults() — Internal
+
+Reads the global appearance defaults (accent color, dark mode, sidebar style, logo and favicon URLs) from Inertia shared props on every page load. Used by `useAccentColor`, `useDarkMode`, and layouts to seed initial state before any per-user override is applied.
+
 ## Recommendation
 
 When a UI behavior appears in more than one page, move it into a composable before repeating it inline.

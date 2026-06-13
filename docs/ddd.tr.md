@@ -41,7 +41,7 @@ Aşağıdaki domain'lerin **runtime katmanı** (Actions, DTOs, Queries, Events, 
 
 **Import uyumluluğu:** `App\Domain\<Module>\...` import yollarını kullanan controller ve provider'lar çalışmaya devam eder — `StarterKitServiceProvider`, bunları vendor namespace'ine çözen `class_alias` girişlerini kaydeder. Yerel `app/Domain/<Module>/` kopyası varsa her zaman öncelik alır (dosya diskte varken guard alias'ı atlar).
 
-**Tüketici yüzeyi `app/`'te kalır:** Kullanıcıya dönük modüllerde Controller'lar, FormRequest'ler, Model'ler, Vue sayfaları ve route dosyaları hâlâ uygulamanıza scaffold edilir. Yalnızca runtime / iş-mantığı katmanı vendor tarafından yönetilir.
+**Yüzey sahipliği modül bazında ayrılır.** Model'ler her zaman app-owned kalır (policy discovery ve route-model binding çalışmaya devam etsin diye). **Kullanıcıya dönük** modüllerde (`User`, `Role`, Dashboard, Auth, Profile) Controller'lar, FormRequest'ler, Vue sayfaları ve route dosyaları uygulamanıza scaffold edilir. **Vendor-first davranış** modüllerinde (Files, Logs, Activity Logs, API Routes, Settings, …) HTTP + Vue yüzeyinin tamamı paketten çalışır — yalnızca Model'leri `app/`'te yaşar; sahiplenmek için `sk:eject <Module>` çalıştırın. Modül Sahipliği tablosu için [README](../README.md)'ye bakın.
 
 **Mevcut uygulama kopyaları:** projeniz bir domain vendor'a taşınmadan önce kurulduysa mevcut `app/Domain/<Module>/` dosyalarınız korunur ve çalışmaya devam eder. Bunları silmek isteğe bağlıdır — reconcile adımları için [UPGRADE.md](./UPGRADE.tr.md) belgelerine bakın.
 

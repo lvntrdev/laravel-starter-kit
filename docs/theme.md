@@ -227,7 +227,7 @@ To preview the resolved manifest without a full build, use the `theme:build` npm
 
 ```bash
 npm run theme:build
-# [sk-theme-build] → resources/css/theme/_active.css (24 slots, 1 override)
+# [sk-theme-build] → resources/css/theme/_active.css (25 slots, 1 override)
 ```
 
 Or invoke the vendor script directly:
@@ -349,6 +349,7 @@ Edit `custom/_auth.scss`. The `.scss` extension is required — the resolver and
 | layout/page-header | `layout/page-header.css` | `.admin-page-header*` |
 | layout/shell | `layout/shell.css` | `.admin-layout`, `.admin-main`, Vue transitions |
 | layout/sidebar | `layout/sidebar.css` | `.admin-sidebar*`, `.admin-overlay` |
+| components/button | `components/button.css` | Button severity palette (Tailwind colors) |
 | components/card | `components/card.css` | |
 | components/confirm | `components/confirm.css` | |
 | components/datatable | `components/datatable.css` | |
@@ -357,6 +358,7 @@ Edit `custom/_auth.scss`. The `.scss` extension is required — the resolver and
 | components/formbuilder | `components/formbuilder.css` | |
 | components/menus | `components/menus.css` | |
 | components/navigation | `components/navigation.css` | |
+| components/page-loader | `components/page-loader.css` | Full-screen page-switch loading overlay |
 | components/primevue | `components/primevue.css` | |
 | components/tabs | `components/tabs.css` | |
 | components/tag | `components/tag.css` | |
@@ -465,6 +467,70 @@ cp resources/css/theme/main/tokens.css \
 ```
 
 Then edit the `--admin-*` properties to reference your chosen `--p-*` tokens.
+
+---
+
+## Accent color system
+
+The admin panel supports a runtime accent color that repaints the PrimeVue primary palette and the sidebar surface without any rebuild. The system has two layers: an **admin global default** (set in Settings → Appearance) and an optional **per-user override** (set from the header popover). When a user has no personal override, the admin global default applies; when the admin global default is also `'default'`, the kit primary color is used (blue under `main`, indigo under `aura`).
+
+### How it works
+
+`useAccentColor` (vendor-resident composable, `resources/js/composables/useAccentColor.ts`) drives the accent. On `onMounted` and on watch it calls:
+
+1. **`updatePrimaryPalette(palette)`** — PrimeVue's runtime palette swap. Replaces the active `--p-primary-*` CSS custom properties with the chosen Tailwind v4 oklch scale; buttons, links, focus rings, active states, and every `--p-primary-color` reference update instantly with no rebuild.
+2. **`data-sk-accent` on `<html>`** — a marker used by `tokens.css` to apply the deep accent tint to the sidebar surface in light mode. In dark mode, the sidebar always stays the neutral dark surface; only active items and buttons carry the accent color. The marker is absent when the accent is `'default'`.
+
+The sidebar surface treatment is independent of the accent: the `sidebarStyle` value (`'colored'` | `'light'`) controls a `data-sk-sidebar` marker on `<html>`. When `data-sk-sidebar="light"` is present, the sidebar shows a white/light surface with dark text; when absent (the `'colored'` default), the deep accent tint (or neutral dark in dark mode) applies.
+
+### Available colors
+
+`ACCENT_COLORS` lists all 26 selectable names: the 22 standard Tailwind v4 palettes (`slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`) plus four custom muted tones (`taupe`, `mauve`, `mist`, `olive`). The special value `'default'` means "use the admin global default" (or fall back to the kit primary if the global is also `'default'`).
+
+All palette values are Tailwind v4 oklch scales inlined in the composable — they are not read from Tailwind's CSS variables at runtime, because Tailwind tree-shakes unused `--color-*` variables.
+
+### Persistence
+
+Both accent choice and sidebar style are persisted in `localStorage`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `admin-accent-color` | `'default'` | Per-user accent choice; `writeDefaults: false` (seed value is not written until the user makes an explicit pick) |
+| `admin-sidebar-style` | `'colored'` | Per-user sidebar surface treatment |
+
+The `writeDefaults: false` option means `localStorage` is empty for a first-time user, so the admin global default is always live until the user explicitly picks a color. One-time legacy storage cleanup (`migrateLegacyAppearanceStorage`) removes any stale `'default'` / `false` / `'colored'` seeds written by older builds that used eager `writeDefaults: true`.
+
+### Admin global default vs per-user override
+
+The `appearance` shared prop (provided by `HandleInertiaRequests` on every Inertia response) carries:
+
+| Field | Type | Description |
+|---|---|---|
+| `accent_color` | `string` | Admin global default accent name, or `'default'` |
+| `sidebar_style` | `'colored' \| 'light'` | Admin global default sidebar style |
+| `dark_mode_default` | `boolean` | Admin global dark mode default |
+| `theme` | `string` | Active runtime theme (`'main'` or `'aura'`) |
+
+`useAppearanceDefaults` reads this prop. `useAccentColor` consumes `defaultAccent` and `defaultSidebarStyle` from it to seed initial values when the user has made no personal choice.
+
+Configure the global default from **Settings → Appearance → Default Color**. The admin-side picker shows a live preview: selecting a swatch calls `applyAccent(color, { followGlobal: false })`, which treats `'default'` as the kit primary (because the admin is defining the default and must see what kit-blue looks like). On leaving the tab without saving, the user's own session accent is reinstated.
+
+The header popover available to every admin user shows the same color grid plus a "Default" swatch. Picking a color calls `setAccent(color)` which persists to `localStorage`; the watch on `accent` then calls `applyAccent` automatically. Choosing "Default" clears the personal override so the admin global default applies again.
+
+### Theme interaction
+
+- **`main` default accent:** blue (`{blue.x}` token references, resolved against the Material preset).
+- **`aura` default accent:** indigo (Tailwind v4 oklch scale). When the runtime theme switches between `main` and `aura`, `useAccentColor` re-applies the palette automatically (a `watch` on `appearance.theme` triggers `applyAccent`) so a `'default'` accent picks the correct signature color for the active theme.
+- The aura frame color (`--p-primary-800`) follows the active primary, so the accent picker recolors the entire frame under `aura`.
+
+### Page-loader accent
+
+`SkPageLoader` — the full-screen animated overlay shown during Inertia page switches — uses `--p-primary-color` for brand elements (rays, blobs, bouncing dots, wave-peak letter color). Because `updatePrimaryPalette` updates `--p-primary-color` at runtime, the page-loader automatically uses whatever accent is active. The overlay background is theme-driven:
+
+- **`main`:** `--admin-sidebar-bg` (the dark sidebar surface).
+- **`aura`:** `--p-surface-900` (light) / `--p-surface-950` (dark) — a neutral dark surface, because `aura`'s `--admin-sidebar-bg` is transparent.
+
+Styles live in the `components/page-loader.css` theme slot (overrideable via a custom theme). The overlay is SSR-safe and honors `prefers-reduced-motion`.
 
 ---
 

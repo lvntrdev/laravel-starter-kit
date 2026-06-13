@@ -13,11 +13,11 @@ This document gives the high-level map of the starter kit after installation. It
 
 ### Main Domain Modules
 
-**App-owned surface after install** — controllers, FormRequests, models, routes, and Vue pages are scaffolded into `app/` / `resources/` where the module needs them. The domain runtime itself is split by module:
+**Surface ownership is split per module** — Models always stay app-owned; the rest of the surface depends on the module. The domain runtime and HTTP/Vue surface split by module:
 
 - `Auth` is fully app-side (`app/Domain/Auth`)
-- `User` and `Role` keep only the app-owned `BulkActions` slice under `app/Domain/...`; the core runtime is vendor-resident
-- `Setting`, `ApiRoute`, and `ApiClient` expose app-owned HTTP/UI surface where applicable, but their domain runtime runs from the vendor package
+- `User` and `Role` are scaffolded into the app (controllers, FormRequests, Vue) but keep only the app-owned `BulkActions` slice under `app/Domain/...`; the core domain runtime is vendor-resident
+- `Setting`, `ApiRoute`, `Logs`, `ActivityLog`, and `Files` are **vendor-first**: their controllers, FormRequests, and Vue pages all run from the package (only their Models stay in `app/`). Run `sk:eject <Module>` to pull them into the app — see the Module Ownership table in the [README](../README.md)
 
 **Vendor-resident runtime domains (`src/Domain/`, `Lvntr\StarterKit\Domain\`)** — Actions, DTOs, Queries, Events, Listeners, and Services for these modules run from the package and are not copied into your app on a fresh install. `App\Domain\<Module>\...` imports stay working through `class_alias`; a local `app/Domain/<Module>/` copy from an eject or older install takes precedence:
 

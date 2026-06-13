@@ -320,8 +320,8 @@ Backend eşleşmesi:
 
 - Her attribute'u JSON kolonda saklayın.
 - Modele Spatie `HasTranslations` ekleyin ve attribute'ları `$translatable` içine yazın.
-- FormRequest'lerde `App\Support\HasTranslatableRules` kullanın.
-- Datatable arama/sıralama ve resource çıktısı için `App\Support\TranslatableQueryHelpers` kullanın.
+- FormRequest'lerde `Lvntr\StarterKit\Support\HasTranslatableRules` kullanın (bir trait — bu trait'in `App\Support` geriye-dönük alias'ı yoktur, vendor namespace'inden import edin).
+- Datatable arama/sıralama ve resource çıktısı için `Lvntr\StarterKit\Support\TranslatableQueryHelpers` kullanın.
 
 Tam backend ve frontend rehberi için [Çevrilebilir Alanlar](./translatable-fields.tr.md) dokümanına bakın.
 

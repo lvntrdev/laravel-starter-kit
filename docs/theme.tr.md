@@ -227,7 +227,7 @@ Tam build yapmadan çözümlenen manifesti önizlemek için `theme:build` npm sc
 
 ```bash
 npm run theme:build
-# [sk-theme-build] → resources/css/theme/_active.css (24 slot, 1 override)
+# [sk-theme-build] → resources/css/theme/_active.css (25 slot, 1 override)
 ```
 
 Ya da vendor script'ini doğrudan çağırın:
@@ -349,6 +349,7 @@ cp resources/css/theme/main/_auth.scss \
 | layout/page-header | `layout/page-header.css` | `.admin-page-header*` |
 | layout/shell | `layout/shell.css` | `.admin-layout`, `.admin-main`, Vue geçişleri |
 | layout/sidebar | `layout/sidebar.css` | `.admin-sidebar*`, `.admin-overlay` |
+| components/button | `components/button.css` | Button severity paleti (Tailwind renkleri) |
 | components/card | `components/card.css` | |
 | components/confirm | `components/confirm.css` | |
 | components/datatable | `components/datatable.css` | |
@@ -357,6 +358,7 @@ cp resources/css/theme/main/_auth.scss \
 | components/formbuilder | `components/formbuilder.css` | |
 | components/menus | `components/menus.css` | |
 | components/navigation | `components/navigation.css` | |
+| components/page-loader | `components/page-loader.css` | Tam ekran sayfa-geçiş yükleme overlay'i |
 | components/primevue | `components/primevue.css` | |
 | components/tabs | `components/tabs.css` | |
 | components/tag | `components/tag.css` | |
@@ -465,6 +467,70 @@ cp resources/css/theme/main/tokens.css \
 ```
 
 Ardından `--admin-*` property'lerini seçtiğiniz `--p-*` token'larına göre düzenleyin.
+
+---
+
+## Accent renk sistemi
+
+Admin paneli, PrimeVue birincil paletini ve sidebar yüzeyini derleme gerektirmeden çalışma zamanında yeniden boyayan bir accent rengi destekler. Sistem iki katmana sahiptir: **admin global varsayılanı** (Ayarlar → Görünüm'den ayarlanır) ve isteğe bağlı **kullanıcı başına override** (header popover'dan ayarlanır). Kullanıcının kişisel bir seçimi yoksa admin global varsayılanı uygulanır; admin global varsayılanı da `'default'` ise kit birincil rengi kullanılır (`main` altında mavi, `aura` altında indigo).
+
+### Nasıl çalışır
+
+`useAccentColor` (vendor-resident composable, `resources/js/composables/useAccentColor.ts`) accent rengini yönetir. `onMounted`'da ve watch içinde şunları çağırır:
+
+1. **`updatePrimaryPalette(palette)`** — PrimeVue'nun çalışma zamanı palet değişimi. Aktif `--p-primary-*` CSS custom property'lerini seçilen Tailwind v4 oklch ölçeğiyle değiştirir; düğmeler, bağlantılar, odak halkaları, aktif durumlar ve her `--p-primary-color` referansı derleme gerektirmeden anında güncellenir.
+2. **`<html>` üzerinde `data-sk-accent`** — `tokens.css` tarafından aydınlık modda sidebar yüzeyine derin accent tonunu uygulamak için kullanılan bir işaretçidir. Koyu modda sidebar her zaman nötr koyu yüzeyde kalır; yalnızca aktif öğeler ve düğmeler accent rengini taşır. Accent `'default'` olduğunda işaretçi yoktur.
+
+Sidebar yüzey işlemi accent'ten bağımsızdır: `sidebarStyle` değeri (`'colored'` | `'light'`), `<html>` üzerindeki `data-sk-sidebar` işaretçisini denetler. `data-sk-sidebar="light"` mevcutsa sidebar koyu metinle beyaz/açık yüzey gösterir; yoksa (varsayılan `'colored'`), derin accent tonu (koyu modda nötr koyu) uygulanır.
+
+### Mevcut renkler
+
+`ACCENT_COLORS`, seçilebilir 26 ismi listeler: 22 standart Tailwind v4 paleti (`slate`, `gray`, `zinc`, `neutral`, `stone`, `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`) ve dört özel sönük ton (`taupe`, `mauve`, `mist`, `olive`). `'default'` özel değeri "admin global varsayılanını kullan" (global da `'default'` ise kit primary'sine dön) anlamına gelir.
+
+Tüm palet değerleri composable içinde satır içi Tailwind v4 oklch ölçekleridir — Tailwind, kullanılmayan `--color-*` değişkenlerini tree-shake ettiğinden çalışma zamanında CSS değişkenlerinden okunmazlar.
+
+### Kalıcılık
+
+Hem accent seçimi hem de sidebar stili `localStorage`'a kaydedilir:
+
+| Anahtar | Varsayılan | Anlam |
+|---|---|---|
+| `admin-accent-color` | `'default'` | Kullanıcı başına accent seçimi; `writeDefaults: false` (kullanıcı açık bir seçim yapana kadar seed değer yazılmaz) |
+| `admin-sidebar-style` | `'colored'` | Kullanıcı başına sidebar yüzey işlemi |
+
+`writeDefaults: false` seçeneği, ilk kez giren kullanıcı için `localStorage`'ın boş kalmasını sağlar; böylece kullanıcı açıkça bir renk seçene kadar admin global varsayılanı her zaman geçerlidir. Tek seferlik eski storage temizliği (`migrateLegacyAppearanceStorage`), eski derlemelerdeki isteksiz `writeDefaults: true` tarafından yazılmış `'default'` / `false` / `'colored'` seed'leri kaldırır.
+
+### Admin global varsayılanı ve kullanıcı override'ı
+
+`appearance` paylaşılan prop'u (her Inertia yanıtında `HandleInertiaRequests` tarafından sağlanır) şunları taşır:
+
+| Alan | Tür | Açıklama |
+|---|---|---|
+| `accent_color` | `string` | Admin global varsayılan accent adı veya `'default'` |
+| `sidebar_style` | `'colored' \| 'light'` | Admin global varsayılan sidebar stili |
+| `dark_mode_default` | `boolean` | Admin global koyu mod varsayılanı |
+| `theme` | `string` | Aktif runtime teması (`'main'` veya `'aura'`) |
+
+`useAppearanceDefaults` bu prop'u okur. `useAccentColor`, kullanıcının kişisel seçimi olmadığında başlangıç değerlerini oluşturmak için `defaultAccent` ve `defaultSidebarStyle`'ı ondan alır.
+
+Global varsayılanı **Ayarlar → Görünüm → Varsayılan Renk**'ten yapılandırın. Admin tarafı seçici canlı önizleme gösterir: bir renk seçmek `applyAccent(color, { followGlobal: false })` çağırır; bu, `'default'`'u kit primary olarak değerlendirir (admin varsayılanı tanımladığı için kit mavisinin nasıl göründüğünü görmelidir). Sekmeden kaydetmeden çıkıldığında kullanıcının kendi oturum accent'i geri yüklenir.
+
+Her admin kullanıcısına açık header popover, aynı renk ızgarasını ve bir "Varsayılan" renk kutusu gösterir. Renk seçmek `setAccent(color)` çağırır ve `localStorage`'a kaydeder; `accent` üzerindeki watch otomatik olarak `applyAccent`'i tetikler. "Varsayılan"ı seçmek kişisel override'ı temizler ve admin global varsayılanı tekrar geçerli olur.
+
+### Tema etkileşimi
+
+- **`main` varsayılan accent:** mavi (`{blue.x}` token referansları, Material preset'e göre çözümlenir).
+- **`aura` varsayılan accent:** indigo (Tailwind v4 oklch ölçeği). Runtime tema `main` ve `aura` arasında geçiş yaptığında, `useAccentColor` paleti otomatik olarak yeniden uygular (`appearance.theme` üzerindeki `watch`, `applyAccent`'i tetikler); böylece `'default'` accent aktif tema için doğru imza rengini seçer.
+- Aura çerçeve rengi (`--p-primary-800`) aktif primary'yi takip eder; `aura` altında accent seçici tüm çerçeveyi yeniden renklendirir.
+
+### Sayfa yükleyici ve accent
+
+`SkPageLoader` — Inertia sayfa geçişlerinde gösterilen tam ekran animasyonlu overlay — marka öğeleri için `--p-primary-color` kullanır (ışınlar, damlacıklar, sekme noktaları, dalga tepesi harf rengi). `updatePrimaryPalette` çalışma zamanında `--p-primary-color`'ı güncellediğinden, sayfa yükleyici otomatik olarak aktif accent rengini kullanır. Overlay arka planı tema-güdümlüdür:
+
+- **`main`:** `--admin-sidebar-bg` (koyu sidebar yüzeyi).
+- **`aura`:** `--p-surface-900` (aydınlık) / `--p-surface-950` (koyu) — `aura`'nın `--admin-sidebar-bg`'si şeffaf olduğundan nötr koyu yüzey kullanılır.
+
+Stiller `components/page-loader.css` tema slotunda yaşar (custom tema ile override edilebilir). Overlay SSR-güvenlidir ve `prefers-reduced-motion`'ı destekler.
 
 ---
 
