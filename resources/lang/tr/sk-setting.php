@@ -80,7 +80,7 @@ return [
         'subtabs' => [
             'auth' => 'Kimlik Doğrulama',
             'password' => 'Parola Politikası',
-            'turnstile' => 'Cloudflare Turnstile',
+            'turnstile' => 'Bot Koruması',
         ],
     ],
 

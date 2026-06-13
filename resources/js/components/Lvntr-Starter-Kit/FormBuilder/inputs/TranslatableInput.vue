@@ -236,7 +236,7 @@
                         type="button"
                         role="tab"
                         :aria-selected="activeTab === loc.code"
-                        class="inline-flex cursor-pointer items-center gap-1 rounded-md border-none px-2.5 py-1 text-xs font-semibold transition-colors"
+                        class="inline-flex cursor-pointer items-center gap-1 rounded-md border-none px-2.5 py-0.5 text-xs font-semibold transition-colors"
                         :class="
                             activeTab === loc.code
                                 ? 'bg-white text-primary shadow-sm dark:bg-surface-700'

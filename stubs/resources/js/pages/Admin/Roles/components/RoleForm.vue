@@ -76,7 +76,7 @@
 
     const basicsConfig = FB.form()
         .layout('vertical')
-        .cols(1)
+        .cols(3)
         .isCard(false)
         .addFields(
             FB.inputText()
@@ -297,7 +297,7 @@
             </template>
         </SkCard>
 
-        <SkCard :title="trans('sk-role.permissions')" :subtitle="trans('sk-role.permissions_description')">
+        <SkCard :title="trans('sk-role.permissions')" :subtitle="trans('sk-role.permissions_description')" flush>
             <template #title-end>
                 <span class="text-xs font-medium text-surface-400 dark:text-surface-500 whitespace-nowrap">
                     {{
@@ -447,12 +447,12 @@
                         </table>
                     </div>
 
-                    <small v-if="form.errors.permissions" class="text-red-500 mt-1 block">
+                    <small v-if="form.errors.permissions" class="text-red-500 mt-1 block px-6 pb-2">
                         {{ form.errors.permissions }}
                     </small>
                 </div>
 
-                <Message v-else severity="info" :closable="false">
+                <Message v-else severity="info" :closable="false" class="m-6">
                     {{ trans('sk-role.no_permissions_available') }}
                 </Message>
             </template>
