@@ -6,9 +6,11 @@
     import { useApi } from '@/composables/useApi';
     import { useCan } from '@/composables/useCan';
     import { useDialog } from '@/composables/useDialog';
+    import { useTheme } from '@/composables/useTheme';
     import apiRoutes from '@/routes/api-routes';
     import { useToast } from 'primevue/usetoast';
     import ApiIntegrationsDialog from './components/ApiIntegrationsDialog.vue';
+    import ApiRoutesActions from './components/ApiRoutesActions.vue';
 
     interface RouteItem {
         method: string;
@@ -41,6 +43,12 @@
     const toast = useToast();
     const dialog = useDialog();
     const { can } = useCan();
+    const { theme } = useTheme();
+
+    // Aura, sayfa başlığını topbar'a taşıyıp AdminPageHeader bloğunu gizlediği
+    // için aksiyonlar (#page-actions) bağlamsız kalır; bu sayfada içerik-içi bir
+    // header kartı render edip aksiyonları onun içine alıyoruz.
+    const isAura = computed(() => theme.value === 'aura');
 
     const regenerating = ref(false);
     const syncingPostman = ref(false);
@@ -226,53 +234,48 @@
 
     <AdminLayout :title="$t('sk-api-route.title')" :subtitle="$t('sk-api-route.subtitle')">
         <template #page-actions>
-            <div class="flex flex-wrap items-center gap-2">
-                <Button
-                    v-if="can('settings.update')"
-                    :label="$t('sk-api-route.settings')"
-                    icon="pi pi-cog"
-                    severity="secondary"
-                    outlined
-                    @click="openIntegrations"
-                />
-                <span
-                    v-if="can('settings.update')"
-                    class="mx-1 h-6 w-px self-center bg-surface-200 dark:bg-surface-700"
-                />
-                <Button
-                    :label="$t('sk-api-route.regenerate_docs')"
-                    icon="pi pi-sync"
-                    severity="amber"
-                    outlined
-                    :loading="regenerating"
-                    @click="regenerateDocs"
-                />
-                <Button
-                    :label="$t('sk-api-route.sync_postman')"
-                    icon="pi pi-send"
-                    severity="sky"
-                    outlined
-                    :loading="syncingPostman"
-                    @click="syncPostman"
-                />
-                <Button
-                    :label="$t('sk-api-route.sync_apidog')"
-                    icon="pi pi-share-alt"
-                    severity="violet"
-                    outlined
-                    :loading="syncingApidog"
-                    @click="syncApidog"
-                />
-                <a href="/docs/api" target="_blank" rel="noopener noreferrer">
-                    <Button
-                        :label="$t('sk-api-route.open_api_docs')"
-                        icon="pi pi-book"
-                        severity="blue"
-                        outlined
-                    />
-                </a>
-            </div>
+            <ApiRoutesActions
+                :regenerating="regenerating"
+                :syncing-postman="syncingPostman"
+                :syncing-apidog="syncingApidog"
+                @settings="openIntegrations"
+                @regenerate="regenerateDocs"
+                @sync-postman="syncPostman"
+                @sync-apidog="syncApidog"
+            />
         </template>
+
+        <!-- Aura: AdminPageHeader gizli olduğundan başlık+aksiyonlar için
+             içerik-içi header kartı (diğer temalarda AdminPageHeader gösterir). -->
+        <div
+            v-if="isAura"
+            class="mb-4 flex flex-wrap items-center gap-4 rounded border border-surface-200 bg-surface-0 px-5 py-4 dark:border-surface-700 dark:bg-surface-900"
+        >
+            <span
+                class="inline-grid size-11 shrink-0 place-items-center rounded-lg bg-surface-100 text-[var(--p-primary-color)] dark:bg-surface-800"
+            >
+                <i class="pi pi-share-alt text-lg" />
+            </span>
+            <div class="min-w-0">
+                <h1 class="text-base font-semibold text-surface-900 dark:text-surface-0">
+                    {{ $t('sk-api-route.title') }}
+                </h1>
+                <p class="text-[13px] text-surface-500 dark:text-surface-400">
+                    {{ $t('sk-api-route.subtitle') }}
+                </p>
+            </div>
+            <div class="ml-auto">
+                <ApiRoutesActions
+                    :regenerating="regenerating"
+                    :syncing-postman="syncingPostman"
+                    :syncing-apidog="syncingApidog"
+                    @settings="openIntegrations"
+                    @regenerate="regenerateDocs"
+                    @sync-postman="syncPostman"
+                    @sync-apidog="syncApidog"
+                />
+            </div>
+        </div>
 
         <div
             class="overflow-hidden rounded border border-surface-200 bg-surface-0 dark:border-surface-700 dark:bg-surface-900"
