@@ -147,9 +147,16 @@ html[data-sk-theme='aura'] .admin-sidebar__nav::-webkit-scrollbar-thumb {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 /* Pill card — status dot + app name (left) and version (right) on one row.
-   The boxed icon becomes a small green status dot; the pi-box glyph is hidden. */
+   The boxed icon becomes a small green status dot; the pi-box glyph is hidden.
+
+   Geometry is matched to the main panel's white footer so the two read as a
+   pair: height = --footer-h, bottom inset = --sk-aura-gap (the frame gutter the
+   white footer also sits on, since the sidebar is pulled flush to the bottom
+   edge). Horizontally the pill is balanced inside the purple band — ml = gap so
+   the screen-edge gap equals the gap to the white panel (sidebar right edge sits
+   --sk-aura-gap from the panel, so me-0 leaves exactly that gap on the right). */
 html[data-sk-theme='aura'] .admin-sidebar__footer {
-    @apply mx-3 mb-3 flex shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-3 py-2.5;
+    @apply mb-[var(--sk-aura-gap)] ml-[var(--sk-aura-gap)] mr-0 flex h-[var(--footer-h)] shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-3;
     background: var(--sk-aura-chip-bg);
     border: 0;
 }
