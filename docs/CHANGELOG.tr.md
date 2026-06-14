@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-14 — v13.6.5
+
+### Çeviri bundle'ı artık paketle birlikte geliyor
+
+Paketleme düzeltmesi — API veya kurulum değişikliği yok.
+
+#### Düzeltildi
+
+- **Taze kurulumlar artık ham çeviri anahtarı göstermiyor** — önceden derlenmiş kit çeviri bundle'ları (`resources/js/lang/php_{en,tr}.json`) `.gitignore`'daydı; bu yüzden hiç Git'e girmiyor ve Composer dist'inde (yalnızca tracked dosyaların `git archive`'ı) bulunmuyordu. Taze kurulan bir uygulama bundle'ları değil yalnızca build script'ini alıyordu; sonuçta tüm kit i18n anahtarları (`sk-menu.*`, `sk-setting.*`, …) çevrilmiş etiket yerine ham anahtar olarak render ediliyordu. İki bundle artık tracked ve shipped. Consumer paketi build etmediği için — consumer-build theme bundle'ının aksine — bunların `vendor/`'a ulaşması için commit edilmesi gerekir; build script'in kendi dökümanı zaten "COMMITTED and shipped" diyordu.
+
 ## 2026-06-14 — v13.6.4
 
 ### Datatable inline filtre dropdown düzeltmesi

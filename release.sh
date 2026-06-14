@@ -108,17 +108,24 @@ extract_changelog() {
 
     local escaped="${version//./\\.}"
     awk "/^## \[?${escaped}\]?/{found=1; next} found && /^## /{exit} found && /^---[[:space:]]*$/{next} found{print}" "${changelog}" \
-        | sed -e 's/[[:space:]]*$//' | sed -e '/./,$!d' | sed -e ':a;N;$!ba;s/\n[[:space:]]*$//'
+        | sed -e 's/[[:space:]]*$//' \
+        | sed -e '/./,$!d' \
+        | awk 'NF{last=NR} {line[NR]=$0} END{for(i=1;i<=last;i++) print line[i]}'
 }
 
 CHANGELOG_BODY=$(extract_changelog "${CLEAN_VERSION}")
 
-if [[ -n "${CHANGELOG_BODY}" ]]; then
+if [[ -z "${CHANGELOG_BODY}" ]]; then
+    echo ""
+    warn "CHANGELOG.md içinde ${CLEAN_VERSION} girişi bulunamadı."
+    read -rp "  CHANGELOG olmadan ${VERSION} etiketi oluşturulsun mu? [e/H]: " CL_CONFIRM
+    CL_CONFIRM="${CL_CONFIRM:-H}"
+    [[ "${CL_CONFIRM}" =~ ^[EeYy]$ ]] || { warn "Yayın iptal edildi."; exit 0; }
+    git -C "${DIR}" tag -a "${VERSION}" -m "Release ${VERSION}"
+    detail "${VERSION} etiketi" "${YELLOW}OLUŞTURULDU${NC} ${GRAY}(CHANGELOG'suz)${NC}"
+else
     git -C "${DIR}" tag -a "${VERSION}" -m "Release ${VERSION}" -m "${CHANGELOG_BODY}"
     detail "${VERSION} etiketi" "${GREEN}OLUŞTURULDU${NC} ${GRAY}(CHANGELOG'dan dolduruldu)${NC}"
-else
-    git -C "${DIR}" tag -a "${VERSION}" -m "Release ${VERSION}"
-    detail "${VERSION} etiketi" "${YELLOW}OLUŞTURULDU${NC} ${GRAY}(CHANGELOG'da ${CLEAN_VERSION} bulunamadı)${NC}"
 fi
 
 echo -e "  ${GRAY}→${NC} Remote'a gönderiliyor (${CURRENT_BRANCH})..."

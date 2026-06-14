@@ -25,10 +25,6 @@ composer.lock
 package-audit-notes/
 /package-promo
 
-# Generated translation cache (compiled by js-php-i18n, not hand-edited)
-/resources/js/lang/php_en.json
-/resources/js/lang/php_tr.json
-
 # AI tooling (local, not shipped to package consumers)
 /plan-docs/
 /PROJECT_MAP.md

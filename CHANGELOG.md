@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.5] - 2026-06-14
+
+### Fixed
+
+- **Translation bundles ship with the package** — the pre-compiled kit translation bundles (`resources/js/lang/php_{en,tr}.json`) were listed in `.gitignore`, so they never entered Git and were absent from the Composer dist (which is a `git archive` of tracked files only). A freshly installed app received only the build script, not the bundles, so every kit i18n key (`sk-menu.*`, `sk-setting.*`, …) rendered as its raw key instead of the translated label. The two bundles are now tracked and shipped. The consumer does not build the package, so — unlike the consumer-built theme bundle — these must be committed to reach `vendor/`; the build script's own docs already specified "COMMITTED and shipped".
+
 ## [13.6.3] - 2026-06-13
 
 ### Changed

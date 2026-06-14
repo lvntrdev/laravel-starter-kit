@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-14 — v13.6.5
+
+### Translation bundle now ships with the package
+
+A packaging fix — no API or setup change.
+
+#### Fixed
+
+- **Fresh installs no longer show raw translation keys** — the pre-compiled kit translation bundles (`resources/js/lang/php_{en,tr}.json`) were listed in `.gitignore`, so they never entered Git and were absent from the Composer dist (which is a `git archive` of tracked files only). A freshly installed app received only the build script, not the bundles, so every kit i18n key (`sk-menu.*`, `sk-setting.*`, …) rendered as its raw key instead of the translated label. The two bundles are now tracked and shipped. The consumer does not build the package, so — unlike the consumer-built theme bundle — these must be committed to reach `vendor/`; the build script's own docs already specified "COMMITTED and shipped".
+
 ## 2026-06-14 — v13.6.4
 
 ### Datatable inline filter dropdown fix
