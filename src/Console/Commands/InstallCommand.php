@@ -548,6 +548,42 @@ class InstallCommand extends Command
         }
 
         $this->ensureAppKey($envPath);
+        $this->ensureCachePrefix($envPath);
+    }
+
+    /**
+     * Give this install a unique CACHE_PREFIX so two kit apps that share one
+     * Redis never collide on cache keys.
+     *
+     * The kit ships an identical default APP_NAME and a commented CACHE_PREFIX.
+     * Laravel derives the redis cache prefix from APP_NAME when CACHE_PREFIX is
+     * blank, so two installs left at the defaults produce the SAME prefix and
+     * stomp each other's cached `settings`, definitions, sessions, etc. We seed
+     * a per-install prefix (only when the user has not set one) to break that.
+     */
+    private function ensureCachePrefix(string $envPath): void
+    {
+        $content = $this->files->get($envPath);
+
+        // An uncommented, non-empty CACHE_PREFIX is already set — respect it.
+        if (preg_match('/^CACHE_PREFIX=.+$/m', $content)) {
+            return;
+        }
+
+        $slug = Str::slug(basename(base_path()), '_') ?: 'app';
+        $prefix = 'sk_'.$slug.'_'.Str::lower(Str::random(6)).'_cache';
+
+        // Replace the commented placeholder from .env.example if present,
+        // otherwise an empty key, otherwise append.
+        if (preg_match('/^#\s*CACHE_PREFIX=.*$/m', $content)) {
+            $content = preg_replace('/^#\s*CACHE_PREFIX=.*$/m', "CACHE_PREFIX={$prefix}", $content, 1);
+        } elseif (preg_match('/^CACHE_PREFIX=.*$/m', $content)) {
+            $content = preg_replace('/^CACHE_PREFIX=.*$/m', "CACHE_PREFIX={$prefix}", $content, 1);
+        } else {
+            $content = rtrim($content, "\n")."\nCACHE_PREFIX={$prefix}\n";
+        }
+
+        $this->files->put($envPath, $content);
     }
 
     /**
