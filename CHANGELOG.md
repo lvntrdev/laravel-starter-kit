@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.6] - 2026-06-20
+
+### Fixed
+
+- **Activity log accepts both uuid and bigint subjects** — `create_activity_log_table` used `nullableUuidMorphs`, producing native `uuid` columns for `subject_id`/`causer_id`. The kit logs activity on `User` (uuid key) **and** on the Spatie `Permission`/`Role` models (default bigint keys), so seeding permissions crashed with `SQLSTATE[HY000] 4078: Cannot cast 'bigint' as 'uuid'`. A new migration widens both polymorphic id columns to `char(36)`, which holds a 36-char uuid and any numeric id alike — one polymorphic column now works for every audited model. The migration converges every prior state (native uuid, legacy bigint, legacy char(36)) to `char(36)`; existing apps pick up the fix on the next `php artisan migrate`.
+
 ## [13.6.5] - 2026-06-14
 
 ### Fixed

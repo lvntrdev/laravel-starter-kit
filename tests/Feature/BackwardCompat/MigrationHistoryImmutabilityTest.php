@@ -91,6 +91,11 @@ it('does not contain unexpected migration files in the vendor directory', functi
         // field locale tabs (distinct from the admin UI locale). Additive create
         // only; no edit of a committed migration.
         '2026_06_11_100000_create_content_languages_table.php',
+        // v13.6.6: activity_log subject/causer id columns widened from native
+        // uuid to char(36) so a single polymorphic column holds both User (uuid)
+        // and Spatie Permission/Role (bigint) keys. Additive convert; no edit of
+        // a committed migration.
+        '2026_06_20_000000_widen_activity_log_morphs_to_string.php',
     ];
 
     $actual = collect(scandir($migrationDir))
