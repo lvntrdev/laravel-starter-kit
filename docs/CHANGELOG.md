@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-06-20 — v13.6.6
+
+### Activity log accepts UUID and numeric subjects
+
+A single targeted database fix — no API or setup change.
+
+#### Fixed
+
+- **`sk:seed-permissions` no longer crashes with a uuid cast error** — the activity-log table created its polymorphic `subject_id` / `causer_id` columns as native `uuid`. But the kit logs activity on `User` (uuid key) **and** on the Spatie `Permission` / `Role` models (numeric/bigint keys), so seeding permissions failed with `SQLSTATE[HY000] 4078: Cannot cast 'bigint' as 'uuid'`. A new migration widens both id columns to `char(36)`, which stores a 36-char uuid and any numeric id alike — one polymorphic column now fits every audited model. The migration converges every prior state (native uuid, legacy bigint, legacy char(36)) to `char(36)`; existing apps pick up the fix on the next `php artisan migrate`.
+
 ## 2026-06-14 — v13.6.5
 
 ### Translation bundle now ships with the package

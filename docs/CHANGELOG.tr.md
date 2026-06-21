@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-06-20 — v13.6.6
+
+### Activity log artık UUID ve sayısal subject'leri birlikte kabul ediyor
+
+Tek hedefli bir veritabanı düzeltmesi — API veya kurulum değişikliği yok.
+
+#### Düzeltildi
+
+- **`sk:seed-permissions` artık uuid cast hatasıyla çökmüyor** — activity-log tablosu polimorfik `subject_id` / `causer_id` kolonlarını native `uuid` olarak oluşturuyordu. Ama kit aktiviteyi hem `User` (uuid anahtar) hem de Spatie `Permission` / `Role` modelleri (sayısal/bigint anahtar) üzerinde logluyor; bu yüzden permission seed'i `SQLSTATE[HY000] 4078: Cannot cast 'bigint' as 'uuid'` hatasıyla başarısız oluyordu. Yeni bir migration her iki id kolonunu `char(36)`'ya genişletiyor; bu hem 36 karakterlik uuid'yi hem de herhangi bir sayısal id'yi saklar — tek polimorfik kolon artık her denetlenen modele uyuyor. Migration önceki tüm durumları (native uuid, legacy bigint, legacy char(36)) `char(36)`'ya yakınsıyor; mevcut uygulamalar düzeltmeyi bir sonraki `php artisan migrate`'te alır.
+
 ## 2026-06-14 — v13.6.5
 
 ### Çeviri bundle'ı artık paketle birlikte geliyor
