@@ -55,11 +55,11 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-rte__body {
-    @apply overflow-y-auto px-4 py-3;
+    @apply flex flex-col overflow-y-auto px-4 py-3;
 }
 
 .sk-rte__body .ProseMirror {
-    @apply h-full outline-none;
+    @apply flex-1 outline-none;
 }
 
 .sk-rte__body .ProseMirror:focus {
