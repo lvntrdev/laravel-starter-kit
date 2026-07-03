@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-07-03 — v13.6.7
+
+### Rich-text editor'daki boş alan artık tıklanabiliyor
+
+Tek hedefli bir CSS düzeltmesi — API veya kurulum değişikliği yok.
+
+#### Düzeltildi
+
+- **Rich-text editor'da son metin satırının altına tıklamak hiçbir şey yapmıyordu** — `EditorInput.vue` `minHeight`'ı editor sarmalayıcısına inline `min-height` olarak veriyordu, ama içteki ProseMirror elemanı `height: 100%` kullanıyordu. Yüzde yükseklikler yalnız kesin yüksekliği olan bir ebeveyne karşı çözülür; bu yüzden ProseMirror yalnız kendi içeriği kadar büyüyordu — görsel olarak uzun kutunun geri kalanı gerçek `contenteditable` bölgesinin dışında kalıyor, oraya tıklama/yazma yok sayılıyordu. Sarmalayıcı artık flex column, ProseMirror da `height: 100%` yerine `flex-1` kullanıyor; böylece düzenlenebilir alan tüm yapılandırılmış yüksekliği dolduruyor.
+
 ## 2026-06-20 — v13.6.6
 
 ### Activity log artık UUID ve sayısal subject'leri birlikte kabul ediyor

@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.7] - 2026-07-03
+
+### Fixed
+
+- **Rich-text editor body was only clickable/editable where text already existed** — `EditorInput.vue` applies its `minHeight` prop as inline `min-height` on the `.sk-rte__body` wrapper, but the inner ProseMirror element used `height: 100%`. A percentage height only resolves against a parent with a definite (non-`min-`) height, so the ProseMirror node grew only to fit its own content, leaving the rest of the visually-tall box outside the actual `contenteditable` region — clicking or typing there did nothing. `.sk-rte__body` is now a flex column and `.ProseMirror` uses `flex-1` instead of `height: 100%`, so the real editable area fills the full configured height.
+
 ## [13.6.6] - 2026-06-20
 
 ### Fixed

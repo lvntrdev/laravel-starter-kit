@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-07-03 — v13.6.7
+
+### Rich-text editor's empty area is now clickable
+
+A single targeted CSS fix — no API or setup change.
+
+#### Fixed
+
+- **Clicking below the last line of text in the rich-text editor did nothing** — `EditorInput.vue` sets `minHeight` as inline `min-height` on the editor's wrapper, but the inner ProseMirror element used `height: 100%`. Percentage heights only resolve against a parent with a definite height, so ProseMirror only grew to fit its own content — the rest of the visually-tall box sat outside the real `contenteditable` region, so clicking or typing there was ignored. The wrapper is now a flex column and ProseMirror uses `flex-1` instead, so the editable area fills the whole configured height.
+
 ## 2026-06-20 — v13.6.6
 
 ### Activity log accepts UUID and numeric subjects
