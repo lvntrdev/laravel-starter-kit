@@ -1062,6 +1062,15 @@ export class FormBuilder {
         return this;
     }
 
+    /**
+     * Warn before navigating away while the form is dirty (internal mode only).
+     * Pass `false` to opt out. Default behavior (no call) is enabled.
+     */
+    confirmLeave(enabled = true): this {
+        this.config.confirmLeave = enabled;
+        return this;
+    }
+
     addFields(...fields: BaseFieldBuilder<FieldConfig>[]): this {
         this.config.fields.push(...fields.map((f) => f.build()));
         return this;

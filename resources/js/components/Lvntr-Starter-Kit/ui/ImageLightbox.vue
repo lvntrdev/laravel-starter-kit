@@ -34,8 +34,15 @@
     }
 
     function onKeydown(event: KeyboardEvent): void {
-        if (event.key === 'Escape' && lightbox.state.visible) {
+        if (!lightbox.state.visible) return;
+        if (event.key === 'Escape') {
             lightbox.close();
+            return;
+        }
+        if (event.key === 'ArrowRight') {
+            lightbox.next();
+        } else if (event.key === 'ArrowLeft') {
+            lightbox.prev();
         }
     }
 

@@ -4,8 +4,8 @@ namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -18,7 +18,7 @@ class DeleteFolderAction extends FileManagerAction
     public function execute(FileManagerContextDTO $context, Model $folder): void
     {
         if ($folder->getAttribute('owner_type') !== $context->ownerType || (string) $folder->getAttribute('owner_id') !== $context->ownerId) {
-            throw new LogicException(__('sk-file-manager.errors.folder_out_of_context'));
+            throw new DomainRuleException(__('sk-file-manager.errors.folder_out_of_context'));
         }
 
         /** @var class-string<Model> $folderModel */

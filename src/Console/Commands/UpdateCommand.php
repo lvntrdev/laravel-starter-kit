@@ -49,7 +49,7 @@ class UpdateCommand extends Command
         'app/Domain/Logs/',
         'app/Domain/Session/',
         'app/Domain/Media/',
-        // v16.x (Faz 6): ApiClient + ApiRoute runtime moved to vendor. Only the
+        // v13.6.0: ApiClient + ApiRoute runtime moved to vendor. Only the
         // pure-runtime Domain/ subtrees are vendor-resident; the HTTP layer
         // (controllers/requests/resources/policies) and Postman/Apidog console
         // commands stay app-owned. Existing app copies of these Domain/ dirs are
@@ -57,7 +57,7 @@ class UpdateCommand extends Command
         // any app copy keeps WINNING via the alias-skip override invariant).
         'app/Domain/ApiClient/',
         'app/Domain/ApiRoute/',
-        // v16.x (Faz 6): Setting runtime moved to vendor — SettingService
+        // v13.6.0: Setting runtime moved to vendor — SettingService
         // (encryption/cache core), Actions, settings DTOs and SettingsDefaultsQuery.
         // Only the pure-runtime Domain/Setting/ subtree is vendor-resident; the
         // Setting MODEL (app/Models/Setting.php, static facade), SettingPolicy,
@@ -69,7 +69,7 @@ class UpdateCommand extends Command
         // (Lvntr\StarterKit\Http\...); they are migrated via VENDOR_MIGRATED_PATHS
         // (hash-guarded removal), not reported here.
         'app/Domain/Setting/',
-        // v16.x (Faz 6): User + Role runtime moved to vendor — Actions, DTOs, Events,
+        // v13.6.0: User + Role runtime moved to vendor — Actions, DTOs, Events,
         // Listeners and Queries (incl. rank-hierarchy queries and the audit
         // event/listener pairs). Only these pure-runtime subtrees are vendor-resident;
         // the User/Role MODELS (Spatie HasRoles + Fortify / extends Spatie Role),
@@ -126,7 +126,7 @@ class UpdateCommand extends Command
         'config/media-library.php',
         'config/activitylog.php',
         'config/inertia.php',
-        // v15.x+ (Faz 5): the kit's `sk-*` UI translations are now vendor-resident
+        // v13.6.0: the kit's `sk-*` UI translations are now vendor-resident
         // (vendor/lvntr/laravel-starter-kit/resources/lang/{en,tr}/sk-*.php) and the
         // install bulk-copy was removed. The vendor copies resolve namespace-less at
         // runtime (StarterKitServiceProvider::registerNamespacelessKitTranslations)
@@ -191,7 +191,7 @@ class UpdateCommand extends Command
      */
     private const NEVER_UPDATE_PATHS = [
         'config/permission-resources.php',
-        // v16.x (Faz 6): the sensitive-keys whitelist. Setting runtime (SettingService)
+        // v13.6.0: the sensitive-keys whitelist. Setting runtime (SettingService)
         // is now vendor-resident and reads config('settings.sensitive_keys') at runtime,
         // but the whitelist itself is consumer-owned — consumers add their own sensitive
         // keys (and other settings) here. Never overwrite it on update, or a consumer's
@@ -226,7 +226,7 @@ class UpdateCommand extends Command
         'resources/js/pages/Admin/Settings/components/AuthTab.vue',
         'resources/js/pages/Admin/Settings/components/TurnstileTab.vue',
         'resources/js/components/Auth/TurnstileWidget.vue',
-        // v15.9.0+: kit-specific migrations moved from stubs into the package
+        // v13.6.0: kit-specific migrations moved from stubs into the package
         // (vendor-resident database/migrations/, auto-loaded via loadMigrationsFrom
         // + config('starter-kit.run_migrations')). Old app copies are force-deleted
         // here; this is safe because each basename is already recorded in the

@@ -27,7 +27,7 @@ Bu rehber, sıfır bir proje için önerilen kurulum akışını anlatır.
 | ---------- | --------------- |
 | PHP        | 8.4+            |
 | Laravel    | 13              |
-| Node.js    | 18+             |
+| Node.js    | 20.19+             |
 | Veritabanı | MySQL / MariaDB |
 
 ## 1. Projeyi Hazırlayın
@@ -84,24 +84,28 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-Sihirbaz her adımda sizinle interaktif olarak ilerler:
+Herhangi bir dosyaya dokunmadan önce installer bir **preflight** kontrolü çalıştırır (Node.js sürümü — Node eksikse ya da 18'den eskiyse uyarı verir ve npm adımının kendi kendine düşmesine izin verir; asla hard-fail olmaz) ve önceki yarıda kalmış bir çalışmadan **checkpoint** varsa yükler (`storage/starter-kit/install-progress.json`). Bir adım hata fırlatırsa installer ham stack trace yerine somut bir mesajla durur ("Step failed: `<adım>` — sorunu düzelt, sonra `sk:install --resume` çalıştır"); tamamlanmış adımlar checkpoint'e yazıldığından `--resume` onları atlayıp kaldığı yerden devam eder. Kurulum başarıyla bitince progress dosyası otomatik silinir.
+
+Sihirbaz ardından her adımda sizinle interaktif olarak ilerler:
 
 | Adım | Ne yapar                                                                                             |
 | ---- | ---------------------------------------------------------------------------------------------------- |
-| 1    | Veritabanı bağlantısını yapılandırır (sürücü, host, port, veritabanı, kimlik bilgileri)              |
-| 2    | Uygulama iskeletini yayınlar (Controller, Model, Route, Vue sayfaları, Enum, Provider, vb.)          |
-| 3    | `User` + `Role` domain runtime'ını `app/Domain/` altına eject eder (`--without-eject` verildiğinde ya da `storage/starter-kit/hashes.json` zaten mevcutsa atlanır) |
-| 4    | `package.json` bağımlılıklarını birleştirir                                                          |
+| 1    | Uygulama iskeletini yayınlar (Controller, Model, Route, Vue sayfaları, Enum, Provider, vb.)          |
+| 2    | `package.json` bağımlılıklarını birleştirir                                                          |
+| 3    | Taze yayınlanan `.env.example`'dan `.env` dosyasını doldurur, sonra boşsa `APP_KEY` üretir            |
+| 4    | Veritabanı bağlantısını yapılandırır (sürücü, host, port, veritabanı, kimlik bilgileri) — `--no-interaction`'da atlanır |
 | 5    | Çakışan varsayılan Laravel dosyalarını siler (`vite.config.js`, `welcome.blade.php`, vb.)            |
-| 6    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, `media-library.php`)      |
-| 7    | Uygulama ayarlarını, filesystem disk'lerini, media library'yi ve `bootstrap/app.php`'yi yapılandırır |
-| 8    | Service provider'ları kaydeder                                                                       |
+| 6    | Kit'in `.gitignore` girdilerini projenin mevcut dosyasıyla birleştirir                                |
+| 7    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, Turnstile için `services.php`, `media-library.php`), `bootstrap/app.php`'yi bağlar, service provider'ları kaydeder ve custom-helpers autoload girdisini ekler |
+| 8    | `User` + `Role` domain runtime'ını `app/Domain/` altına eject eder (`--without-eject` verildiğinde ya da `storage/starter-kit/hashes.json` zaten mevcutsa atlanır) |
 | 9    | Composer autoload'u yeniden oluşturur                                                                |
-| 10   | Veritabanı migration'larını çalıştırır                                                               |
+| 10   | Veritabanı migration'larını çalıştırır — veritabanına ulaşılamıyorsa uyarıyla atlanır; bağlantıyı düzelt, `--resume` ile tekrar çalıştır |
 | 11   | Seeder'ları çalıştırır (Roller, Yetkiler, Tanımlar, Ayarlar)                                         |
-| 12   | Passport şifreleme anahtarlarını oluşturur                                                           |
-| 13   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / `password`)                               |
-| 14   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
+| 12   | `config/permission-resources.php`'den yetkileri seed eder                                            |
+| 13   | Passport şifreleme anahtarlarını oluşturur                                                           |
+| 14   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / sonunda ekrana basılan rastgele parola)   |
+| 15   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
+| 16   | Uygulama anahtarını sonlandırır ve `sk:update` takibi için stub hash'lerini kaydeder                 |
 
 ### Varsayılan domain eject'i (User + Role)
 
@@ -132,12 +136,14 @@ php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
 php artisan sk:install --without-eject
+php artisan sk:install --resume
 ```
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
-- `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder
+- `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder; admin parolası, girecek bir operatör olmadığından her zaman taze bir rastgele değerdir (sonunda ekrana basılır)
 - `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
 - `--without-eject` varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür
+- `--resume` yarıda kalmış bir kurulumu kaldığı yerden devam ettirir: `storage/starter-kit/install-progress.json`'a checkpoint'lenmiş adımlar atlanır, çalışma başarısız olan adımdan devam eder. Önceden bir checkpoint yoksa uyarıyla birlikte tam bir kurulum çalıştırır.
 
 ## 4. Frontend Asset'lerini Derleyin
 
@@ -158,7 +164,7 @@ composer dev
 
 Kurulumdan sonra şu alanları kontrol edin:
 
-- web giriş ekranı (`admin@lvntr.dev` / `password` ile giriş yapın)
+- web giriş ekranı (`admin@lvntr.dev` ve installer'ın bastığı parola, ya da interaktif kurulumda girdiğiniz bilgilerle giriş yapın)
 - register ve forgot-password sayfaları; etkinse Turnstile widget'ı
 - dashboard erişimi
 - kullanıcı ve rol yönetimi sayfaları

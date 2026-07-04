@@ -55,7 +55,7 @@ Setting `auth.password_expiry_days` to a value greater than `0` enables the `Ens
 ## Runtime Rules
 
 - inactive users cannot start a web session; the Fortify login pipeline blocks accounts whose status is not `active`
-- login is rate-limited by IP and by email/IP combinations when `auth.login_throttle = '1'` (the default); setting it to `'0'` in Settings → Security disables the Fortify rate limiter
+- login is rate-limited by IP and by email/IP combinations when `auth.login_throttle = '1'` (the default, strict limiter); setting it to `'0'` in Settings → Security swaps in a more generous `login-relaxed` floor instead of removing the limiter entirely — no admin setting can leave web login unthrottled. The API auth routes carry their own hardcoded `throttle:5,1` middleware, unaffected by this setting.
 - the two-factor challenge flow has its own limiter
 - the two-factor challenge is **single-use** — any wrong code, empty submit, or invalid recovery code immediately invalidates the challenge id; the client must re-login to obtain a fresh one
 - the forgot-password POST route receives Turnstile middleware dynamically when the route is matched

@@ -19,6 +19,14 @@ class UserUpdated
         public readonly User $user,
         /** @var array<string> */
         public readonly array $changedFields = [],
+        /**
+         * Event-time role snapshot (sorted names). Captured at dispatch so a
+         * queued audit listener records THIS update's role set, not whatever
+         * the user holds when the job later runs.
+         *
+         * @var array<string>
+         */
+        public readonly array $roles = [],
         public readonly int|string|null $performedBy = null,
     ) {}
 }

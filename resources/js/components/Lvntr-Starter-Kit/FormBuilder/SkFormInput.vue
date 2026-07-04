@@ -85,8 +85,15 @@
     const asFileUpload = computed(() => props.field as FileUploadFieldConfig);
     const asColorSelector = computed(() => props.field as ColorSelectorFieldConfig);
 
-    /** Extra props passed to the underlying PrimeVue component via .props({...}). */
-    const extraProps = computed(() => props.field.componentProps ?? {});
+    /**
+     * Extra props passed to the underlying PrimeVue component via .props({...}).
+     * Required fields get `aria-required="true"` (screen-reader semantics) unless
+     * the consumer overrides it explicitly through componentProps.
+     */
+    const extraProps = computed(() => {
+        const base = props.field.componentProps ?? {};
+        return props.field.required ? { 'aria-required': 'true', ...base } : base;
+    });
 
     /** Translate option labels (and optional descriptions) via trans() so consumers can pass translation keys. */
     const translatedOptions = computed(() =>

@@ -328,7 +328,9 @@
 }
 
 .sk-dt-toolbar__search-clear {
-    @apply cursor-pointer opacity-50 transition-opacity duration-150;
+    /* Real <button> under the hood (keyboard-focusable clear action) — reset
+       native button chrome so it stays visually identical to the old icon-only span. */
+    @apply cursor-pointer appearance-none border-0 bg-transparent p-0 opacity-50 transition-opacity duration-150;
 
     &:hover {
         @apply opacity-100;
@@ -527,7 +529,9 @@
    font-glyph metrics are not pixel-centerable across sizes, but two absolutely
    positioned bars are. Both pseudo-elements override the PrimeIcons content. */
 .sk-dt-tags__tag-remove {
-    @apply relative grid size-5 shrink-0 cursor-pointer rounded-full text-blue-500/70 transition-colors duration-150 dark:text-blue-300/70;
+    /* Real <button> under the hood (keyboard-focusable filter removal) — reset
+       native button chrome so it stays visually identical to the old icon-only span. */
+    @apply relative grid size-5 shrink-0 cursor-pointer appearance-none border-0 bg-transparent p-0 rounded-full text-blue-500/70 transition-colors duration-150 dark:text-blue-300/70;
 
     &::before,
     &::after {

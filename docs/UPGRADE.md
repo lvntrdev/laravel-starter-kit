@@ -4,6 +4,41 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v13.6.7 → v13.7.0
+
+### Summary
+
+A quality/UX pass across several published stub files. The headline change is a security fix: `auth.login_throttle = '0'` no longer disables the web login rate limiter entirely — it now swaps in a deliberately generous floor limiter instead. Everything else in this release (audit-log expansion, `sk:install`/`sk:doctor`/`sk:eject` DX, form/datatable accessibility) lives in `src/` (vendor runtime) and needs only `composer update` — see `CHANGELOG.md` for the full list. Run the steps below once; the sections after are reference detail.
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # delivers the updated SettingsServiceProvider/FortifyServiceProvider, eslint.config.js, vitest.config.ts, Definition model, datatable.css
+npm run build
+```
+
+### `login_throttle = '0'` no longer fully disables the web login limiter
+
+**Before:** setting `auth.login_throttle` to `'0'` in Settings → Security nulled Fortify's `login` rate limiter entirely — a `0` value on this one setting made web login accept unlimited attempts.
+
+**After:** `stubs/app/Providers/SettingsServiceProvider.php` now swaps the strict `login` limiter for a new `login-relaxed` limiter (defined in `stubs/app/Providers/FortifyServiceProvider.php`) instead of nulling it. Web login can be loosened by an administrator, but never fully unthrottled. The API auth routes are unaffected either way — they carry their own hardcoded `throttle:5,1` middleware.
+
+**If you have not customised `SettingsServiceProvider.php` or `FortifyServiceProvider.php`:** `sk:update` delivers both changes automatically; no action needed beyond the standard upgrade steps above.
+
+**If you customised either file:** `sk:update` preserves your version and reports a hash difference. Apply the two changes manually:
+- Add a `login-relaxed` `RateLimiter::for(...)` definition to `FortifyServiceProvider::boot()` (see the vendor stub for the exact limits).
+- In `SettingsServiceProvider`, change `config(['fortify.limiters.login' => null])` to `config(['fortify.limiters.login' => 'login-relaxed'])` when `auth.login_throttle === '0'`.
+
+If you have your own project-specific reason to allow a fully unthrottled login limiter, you can still set `config(['fortify.limiters.login' => null])` directly in your own copy — this is no longer the kit's default behavior.
+
+### Related smaller changes
+
+- **`stubs/eslint.config.js` ruleset raised** — `pluginVue` flat config moved from `essential` to `strongly-recommended`. `sk:update` delivers the new file; if you have not customised it, `npm run lint` may report new (pre-existing) Vue style warnings the first time you run it after updating. Fix them at your own pace or pin the rule back to `warn` in your own copy.
+- **Vitest config split out of `vite.config.ts`** — the inline `test: {...}` block moved to a new `stubs/vitest.config.ts`. `sk:update` delivers both files together; if you customised `vite.config.ts`, add the new `vitest.config.ts` alongside it manually (see the vendor stub for the `environment`/`globals` defaults it carries).
+- **`Definition` model gained a cache-flush observer** — `app/Models/Definition.php` now flushes the definition cache on every write path (`saved`/`deleted`/`restored`/`forceDeleted`), fixing a bug where writing a Definition through anything other than the seeder could leave stale cached values for up to the ~1h TTL. No visible change unless you were relying on the old (buggy) staleness.
+- **Datatable inline search-clear / filter-remove markup** — `stubs/resources/css/theme/main/components/datatable.css` swapped the underlying icon-only `<span>` for a real `<button>` for keyboard accessibility; the CSS reset keeps it visually identical. No action needed beyond the standard `sk:update && npm run build`.
+
+---
+
 ## v13.5.11 → v13.6.0
 
 ### Summary
@@ -2499,6 +2534,32 @@ Do not commit until everything turns green. If a test breaks, isolate and hot-fi
 ---
 
 ## Troubleshooting
+
+### General
+
+**Missing classes after `sk:update`:**
+
+```bash
+composer dump-autoload
+```
+
+**Vite manifest error after `sk:update`:**
+
+```bash
+npm run build
+# or start the dev server
+npm run dev
+```
+
+**Migration error after `sk:update`:**
+
+Do not reach for `migrate:fresh` / `migrate:refresh` — this project's migrations are additive and can be run incrementally. Fix the failing migration (or roll it back with `php artisan migrate:rollback --step=1`) and re-run `php artisan migrate`.
+
+**Passport keys missing after upgrading:**
+
+```bash
+php artisan passport:keys --force
+```
 
 ### "422 Unprocessable Content" — new FormRequest authorize
 The new `authorize()` check is strict. Make sure the permission is actually assigned to the user: run `php artisan sk:seed-permissions --fresh`.

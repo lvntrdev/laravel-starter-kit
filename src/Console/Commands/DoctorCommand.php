@@ -11,10 +11,12 @@ use Lvntr\StarterKit\Console\Doctor\Checks\FileManagerDiskCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\LogChannelCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\LogStackCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\MailDriverCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\NodeVersionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\NpmBuildArtifactsCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\PassportKeysCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\PhpExtensionsCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\QueueDriverCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\QueueWorkerCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\RedisConnectionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\StorageSymlinkCheck;
@@ -24,6 +26,7 @@ use Lvntr\StarterKit\Console\Doctor\DoctorCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorReport;
 use Lvntr\StarterKit\Console\Doctor\DoctorStatus;
 use Symfony\Component\Console\Helper\TableStyle;
+use Throwable;
 
 class DoctorCommand extends Command
 {
@@ -46,6 +49,14 @@ class DoctorCommand extends Command
 
     private const EXIT_FAIL = 2;
 
+    /**
+     * Check başına sert zaman sınırı (saniye). Tek bir asılı DB/Redis/SMTP
+     * kontrolünün doctor'ı süresiz kilitlemesini önler. Bireysel check'ler
+     * ~2sn içinde dönmeyi hedefler (DoctorCheck arayüzü); sınır, iki ardışık
+     * 2sn socket işlemine pay bırakacak şekilde 5sn'dir.
+     */
+    private const CHECK_TIMEOUT = 5;
+
     public function handle(): int
     {
         $checks = $this->buildChecks();
@@ -63,6 +74,7 @@ class DoctorCommand extends Command
     {
         $all = [
             new PhpExtensionsCheck,
+            new NodeVersionCheck,
             new DatabaseConnectionCheck,
             new RedisConnectionCheck,
             new PassportKeysCheck,
@@ -71,6 +83,7 @@ class DoctorCommand extends Command
             new LogChannelCheck,
             new LogStackCheck,
             new QueueDriverCheck,
+            new QueueWorkerCheck,
             new ScheduleConfiguredCheck,
             new MailDriverCheck,
             new NpmBuildArtifactsCheck,
@@ -106,10 +119,88 @@ class DoctorCommand extends Command
         $reports = [];
 
         foreach ($checks as $check) {
-            $reports[] = $check->run();
+            $reports[] = $this->runGuarded($check);
         }
 
         return $reports;
+    }
+
+    /**
+     * Tek bir check'i zaman sınırı ve hata koruması altında çalıştırır.
+     *
+     * pcntl varsa: SIGALRM ile CHECK_TIMEOUT saniyede sert kesme — asılı bir
+     * check aborte edilip warn olarak raporlanır (doctor kilitlenmez).
+     * pcntl yoksa (graceful degrade): süre ölçülür; check sınırı aşarsa
+     * sonucun mesajına süre notu eklenir (en azından aşım raporlanır).
+     */
+    private function runGuarded(DoctorCheck $check): DoctorReport
+    {
+        $canInterrupt = function_exists('pcntl_async_signals')
+            && function_exists('pcntl_alarm')
+            && function_exists('pcntl_signal');
+
+        $start = microtime(true);
+
+        if ($canInterrupt) {
+            return $this->runWithHardTimeout($check);
+        }
+
+        try {
+            $report = $check->run();
+        } catch (Throwable $e) {
+            return DoctorReport::warn(
+                $check->name(),
+                'Check failed with an unexpected error: '.$e->getMessage(),
+                'This may indicate an environment problem; re-run after checking the service.'
+            );
+        }
+
+        $elapsed = microtime(true) - $start;
+
+        if ($elapsed > self::CHECK_TIMEOUT) {
+            return new DoctorReport(
+                $report->name,
+                $report->status,
+                $report->message.sprintf(' (slow: took %.1fs, over the %ds budget)', $elapsed, self::CHECK_TIMEOUT),
+                $report->hint,
+            );
+        }
+
+        return $report;
+    }
+
+    private function runWithHardTimeout(DoctorCheck $check): DoctorReport
+    {
+        $previousAsync = pcntl_async_signals(true);
+        $previousHandler = pcntl_signal_get_handler(SIGALRM);
+
+        pcntl_signal(SIGALRM, static function (): void {
+            throw new \RuntimeException('__doctor_check_timeout__');
+        });
+
+        pcntl_alarm(self::CHECK_TIMEOUT);
+
+        try {
+            return $check->run();
+        } catch (Throwable $e) {
+            if ($e->getMessage() === '__doctor_check_timeout__') {
+                return DoctorReport::warn(
+                    $check->name(),
+                    sprintf('Check exceeded the %ds timeout and was aborted.', self::CHECK_TIMEOUT),
+                    'The underlying service (DB/Redis/SMTP) may be unreachable or hung.'
+                );
+            }
+
+            return DoctorReport::warn(
+                $check->name(),
+                'Check failed with an unexpected error: '.$e->getMessage(),
+                'This may indicate an environment problem; re-run after checking the service.'
+            );
+        } finally {
+            pcntl_alarm(0);
+            pcntl_signal(SIGALRM, is_callable($previousHandler) ? $previousHandler : SIG_DFL);
+            pcntl_async_signals($previousAsync);
+        }
     }
 
     /**

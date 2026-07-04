@@ -427,7 +427,14 @@
 
     function openPreview(file: FileItem): void {
         if (file.mime_type.startsWith('image/')) {
-            lightbox.open(file.url, file.file_name);
+            const gallery = searchFilteredFiles.value.filter((f) => f.mime_type.startsWith('image/'));
+            const index = gallery.findIndex((f) => f.id === file.id);
+            lightbox.open(
+                file.url,
+                file.file_name,
+                gallery.map((f) => ({ url: f.url, name: f.file_name })),
+                index >= 0 ? index : 0,
+            );
             return;
         }
         const width = suggestedPreviewWidth(file.mime_type);
@@ -1152,7 +1159,7 @@
                 severity: 'info',
                 summary: '',
                 group: 'bc',
-                detail: trans('sk-file-manager.coming_soon'),
+                detail: trans('sk-file-manager.no_files_selected'),
                 life: 2500,
             });
             return;
@@ -1271,6 +1278,21 @@
 
                         <span class="whitespace-nowrap text-[12.5px] text-surface-400 dark:text-surface-500">
                             · {{ headCount }}
+                        </span>
+
+                        <!-- Toplu yükleme ilerlemesi -->
+                        <span
+                            v-if="fm.pendingUploads.value.length > 1"
+                            class="flex items-center gap-1.5 whitespace-nowrap rounded-[5px] border border-surface-200 bg-surface-50 px-2 py-1 text-[11.5px] text-surface-500 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-400"
+                        >
+                            <i class="pi pi-spin pi-spinner text-primary-500" style="font-size: 0.7rem" />
+                            {{
+                                trans('sk-file-manager.labels.uploading_progress', {
+                                    done: String(fm.uploadProgress.value.completed),
+                                    total: String(fm.uploadProgress.value.total),
+                                    percent: String(fm.uploadProgress.value.percent),
+                                })
+                            }}
                         </span>
                     </div>
 

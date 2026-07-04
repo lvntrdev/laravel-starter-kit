@@ -25,6 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Lvntr\StarterKit\Exceptions\ApiException;
 use Lvntr\StarterKit\Http\Bulk\BulkActionDispatcher;
 
 /**
@@ -100,7 +101,7 @@ class RoleController extends Controller
     public function data(Role $role, CanManageRoleQuery $canManageQuery): ApiResponse
     {
         if (! $canManageQuery->check(Auth::user(), $role)) {
-            abort(403);
+            throw ApiException::forbidden();
         }
 
         $role->load('permissions');

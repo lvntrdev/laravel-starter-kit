@@ -2,9 +2,9 @@
 
 namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class RenameFileAction extends FileManagerAction
@@ -19,7 +19,7 @@ class RenameFileAction extends FileManagerAction
             $media->model_type !== $context->ownerType ||
             (string) $media->model_id !== $context->ownerId
         ) {
-            throw new LogicException(__('sk-file-manager.errors.file_out_of_context'));
+            throw new DomainRuleException(__('sk-file-manager.errors.file_out_of_context'));
         }
 
         $exists = $this->mediaModel()::query()
@@ -31,7 +31,7 @@ class RenameFileAction extends FileManagerAction
             ->exists();
 
         if ($exists) {
-            throw new LogicException(__('sk-file-manager.errors.duplicate_file'));
+            throw new DomainRuleException(__('sk-file-manager.errors.duplicate_file'));
         }
 
         $media->file_name = $newName;

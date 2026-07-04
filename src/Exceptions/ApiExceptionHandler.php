@@ -136,6 +136,17 @@ class ApiExceptionHandler
                 $e->getMessage(),
             ],
 
+            // Domain rule / business-guard violation thrown by Actions. The
+            // request is well-formed but violates a business invariant, so it
+            // maps to 422 with the curated domain message. This is a narrow
+            // subclass of LogicException — unrelated framework LogicExceptions
+            // (BadMethodCallException, InvalidArgumentException, …) are NOT
+            // matched here and still fall through to the 500 default.
+            $e instanceof DomainRuleException => [
+                422,
+                $e->getMessage(),
+            ],
+
             // Model not found (findOrFail, firstOrFail)
             $e instanceof ModelNotFoundException => [
                 404,

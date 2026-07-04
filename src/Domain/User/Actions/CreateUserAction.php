@@ -34,7 +34,11 @@ class CreateUserAction extends BaseAction
             return $user;
         });
 
-        UserCreated::dispatch($user, Auth::id());
+        // Snapshot the assigned roles HERE (synchronous, correct) so a queued
+        // audit listener does not re-read a later pivot state.
+        $roles = $user->roles()->pluck('name')->sort()->values()->all();
+
+        UserCreated::dispatch($user, $roles, Auth::id());
 
         return $user;
     }

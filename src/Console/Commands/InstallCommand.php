@@ -30,7 +30,8 @@ class InstallCommand extends Command
     protected $signature = 'sk:install
         {--force : Overwrite existing files}
         {--without-ai-skill : Skip stubs/.claude/skills/ AI skill files}
-        {--without-eject : Keep User/Role runtime in vendor (skip default domain eject)}';
+        {--without-eject : Keep User/Role runtime in vendor (skip default domain eject)}
+        {--resume : Resume a previously interrupted install, skipping already-completed steps}';
 
     protected $description = 'Install the Lvntr Starter Kit application skeleton (v13.5.0+: package runtime runs from vendor; User + Role are ejected into app/Domain on first install)';
 
@@ -63,6 +64,38 @@ class InstallCommand extends Command
     private array $ejectedDomains = [];
 
     /**
+     * Labels of the `step()` calls that have finished successfully. Loaded from
+     * the on-disk progress checkpoint at the start of handle() and appended to
+     * as each step completes, so an interrupted install can be resumed with
+     * `--resume` without redoing finished work.
+     *
+     * @var list<string>
+     */
+    private array $completedSteps = [];
+
+    /**
+     * Cross-run metadata persisted alongside the completed-step list (currently
+     * the original first-install decision, so a resumed run keeps ejecting the
+     * default domains it started with instead of re-deciding mid-way).
+     *
+     * @var array<string, mixed>
+     */
+    private array $progressMeta = [];
+
+    /**
+     * The step currently executing — surfaced in the failure message so the
+     * operator knows exactly which step to fix before `sk:install --resume`.
+     */
+    private ?string $currentStep = null;
+
+    /**
+     * Whether a progress checkpoint file already existed when this run started.
+     * True means this is a resumed/re-run of a half-finished install, which must
+     * NOT take the pristine first-install force-overwrite path.
+     */
+    private bool $progressExisted = false;
+
+    /**
      * Default Laravel files that conflict with Starter Kit stubs.
      *
      * @var list<string>
@@ -80,7 +113,7 @@ class InstallCommand extends Command
      * Paths that may be skipped if they already exist (user-customizable on re-install).
      * Everything NOT in this list will always be overwritten, even without --force.
      *
-     * v15.x+ (Faz 5): the kit's `sk-*` UI translations are no longer shipped under
+     * v13.6.0: the kit's `sk-*` UI translations are no longer shipped under
      * stubs/lang — they are vendor-resident (resources/lang/{en,tr}/sk-*.php) and
      * resolved namespace-less at runtime, so publishDirectory never copies them.
      * `lang/` is still preservable because stubs/lang/{en,tr}/validation.php (the
@@ -182,195 +215,243 @@ class InstallCommand extends Command
         $this->components->info('Installing Lvntr Starter Kit...');
         $this->newLine();
 
+        // Preflight: surface a too-old / missing Node toolchain up front so the
+        // operator is not blindsided at the npm step. Never hard-fails — the
+        // frontend step degrades gracefully on its own.
+        $this->preflight();
+
+        // Load any checkpoint left by a previous interrupted run BEFORE deciding
+        // whether this is a pristine first install.
+        $this->progressExisted = $this->files->exists($this->progressFilePath());
+        $this->loadProgress();
+
+        if ($this->option('resume') && ! $this->progressExisted) {
+            $this->components->warn('No interrupted install found — running a full install.');
+            $this->newLine();
+        }
+
         // 1. Publish stubs first so the kit's .env.example, package.json, and
         // scaffolding are in place before any .env / database wiring runs.
-        // On first install (no hash registry), force-copy so preservable paths
-        // like lang/ are populated from stubs.
-        $isFirstInstall = $this->isFirstInstall();
+        // On a pristine first install (no hash registry AND no partial progress)
+        // force-copy so preservable paths like lang/ are populated from stubs.
+        // A resumed/re-run install ($progressExisted) must NOT force — the prior
+        // attempt already published files the operator may have edited.
+        $isFirstInstall = $this->computeFirstInstall(
+            $this->progressExisted,
+            $this->progressMeta,
+            $this->isFirstInstall(),
+        );
+        $this->progressMeta['first_install'] = $isFirstInstall;
+        $this->persistProgress();
 
-        $this->step('Publishing application scaffolding', function () use ($isFirstInstall) {
-            $stubsPath = StarterKitServiceProvider::stubsPath();
-            $this->publishDirectory(
-                $stubsPath,
-                base_path(),
-                $this->option('force') || $isFirstInstall,
-            );
-        });
+        try {
+            $this->step('Publishing application scaffolding', function () use ($isFirstInstall) {
+                $stubsPath = StarterKitServiceProvider::stubsPath();
+                $this->publishDirectory(
+                    $stubsPath,
+                    base_path(),
+                    $this->shouldForceOverwrite($isFirstInstall, $this->progressExisted, (bool) $this->option('force')),
+                );
+            });
 
-        // 1b. Merge package.json (stub wins for shared deps, user extras preserved)
-        $this->step('Merging package.json', function () {
-            $this->mergePackageJson();
-        });
+            // 1b. Merge package.json (stub wins for shared deps, user extras preserved)
+            $this->step('Merging package.json', function () {
+                $this->mergePackageJson();
+            });
 
-        // 1c. Seed .env from the freshly published .env.example so consumers
-        // get every kit key without copying by hand, then generate APP_KEY
-        // when it is blank. Runs before the database step so DB_* values are
-        // written into an already-seeded .env.
-        $this->step('Ensuring .env file', function () use ($isFirstInstall) {
-            $this->ensureEnvFile($isFirstInstall);
-        });
+            // 1c. Seed .env from the freshly published .env.example so consumers
+            // get every kit key without copying by hand, then generate APP_KEY
+            // when it is blank. Runs before the database step so DB_* values are
+            // written into an already-seeded .env.
+            $this->step('Ensuring .env file', function () use ($isFirstInstall) {
+                $this->ensureEnvFile($isFirstInstall);
+            });
 
-        // 2. Database configuration (writes DB_* into the now-seeded .env)
-        $this->configureDatabaseStep();
+            // 2. Database configuration (writes DB_* into the now-seeded .env)
+            $this->configureDatabaseStep();
 
-        // 3. Remove conflicting default Laravel files
-        $this->step('Removing conflicting default files', function () {
-            foreach ($this->conflictingFiles as $file) {
-                $path = base_path($file);
-                if ($this->files->exists($path)) {
-                    $this->files->delete($path);
+            // 3. Remove conflicting default Laravel files
+            $this->step('Removing conflicting default files', function () {
+                foreach ($this->conflictingFiles as $file) {
+                    $path = base_path($file);
+                    if ($this->files->exists($path)) {
+                        $this->files->delete($path);
+                    }
                 }
+            });
+
+            // 3b. Ensure .gitignore entries — merge the kit's ignore set into the
+            // project's existing .gitignore without dropping any current lines.
+            $this->step('Ensuring .gitignore entries', function () {
+                $this->ensureGitignore();
+            });
+
+            // 4. Publish config
+            $this->step('Publishing configuration', function () {
+                // Core starter-kit config
+                $this->callSilently('vendor:publish', [
+                    '--tag' => 'starter-kit-config',
+                    '--force' => $this->option('force'),
+                ]);
+
+                // FileManager config — vendor runtime reads its defaults from here.
+                // Published separately so users can override file-manager.php settings
+                // (allowed mime types, max size, model bindings) without touching vendor code.
+                $this->callSilently('vendor:publish', [
+                    '--tag' => 'starter-kit-file-manager-config',
+                    '--force' => $this->option('force'),
+                ]);
+            });
+
+            // 4b. Inject required config keys into config/app.php
+            $this->step('Configuring application settings', function () {
+                $this->injectAppConfig();
+            });
+
+            // 4c. Inject DigitalOcean Spaces disk into config/filesystems.php
+            $this->step('Configuring filesystem disks', function () {
+                $this->injectFilesystemsConfig();
+            });
+
+            // 4c-2. Inject Turnstile keys into config/services.php so the kit's
+            // CAPTCHA code (middleware, Fortify action, validation rule) can read
+            // services.turnstile.* from the TURNSTILE_* env vars.
+            $this->step('Configuring third-party services', function () {
+                $this->injectServicesConfig();
+            });
+
+            // 4d. Wire starter kit bootstrap hooks into bootstrap/app.php
+            $this->step('Configuring bootstrap/app.php', function () {
+                $this->injectBootstrapApp();
+            });
+
+            // 4f. Register starter kit service providers in bootstrap/providers.php
+            $this->step('Registering service providers', function () {
+                $this->injectBootstrapProviders();
+            });
+
+            // 4g. Register custom helpers autoload entry in composer.json
+            $this->step('Registering custom helpers autoload', function () {
+                $this->injectHelpersAutoload();
+            });
+
+            // 4h. Default domain eject (User + Role) on first install only.
+            //
+            // Ordering rationale:
+            //  - AFTER stub publish + provider injection (4f) so DomainServiceProvider
+            //    already exists on disk — it is the target the eject injects App-FQCN
+            //    Event::listen bindings into.
+            //  - BEFORE the autoload regeneration (step 6) so the install's own single
+            //    `composer dump-autoload` also picks up the freshly ejected
+            //    app/Domain/{User,Role} classes — that is why each eject is invoked with
+            //    --skip-autoload (the per-domain dump would be redundant work).
+            //  - --no-vue because the Users/Roles Vue pages were already copied by the
+            //    stub publish step; eject only needs to relocate the vendor runtime.
+            if ($this->shouldEjectDefaultDomains($isFirstInstall)) {
+                $this->step('Ejecting default domains (User, Role) to app/Domain', function () {
+                    $this->ejectDefaultDomains();
+                });
             }
-        });
 
-        // 3b. Ensure .gitignore entries — merge the kit's ignore set into the
-        // project's existing .gitignore without dropping any current lines.
-        $this->step('Ensuring .gitignore entries', function () {
-            $this->ensureGitignore();
-        });
+            // 5. Create hash registry directory
+            $dir = storage_path('starter-kit');
+            if (! $this->files->isDirectory($dir)) {
+                $this->files->makeDirectory($dir, 0755, true);
+            }
 
-        // 4. Publish config
-        $this->step('Publishing configuration', function () {
-            // Core starter-kit config
-            $this->callSilently('vendor:publish', [
-                '--tag' => 'starter-kit-config',
-                '--force' => $this->option('force'),
-            ]);
+            // 6. Regenerate autoload so published classes are available for migrations/seeders
+            $this->step('Regenerating autoload', function () {
+                $composer = $this->findComposerBinary();
+                $process = new Process([...$composer, 'dump-autoload', '-q'], base_path(), null, null, 120);
+                $process->run();
 
-            // FileManager config — vendor runtime reads its defaults from here.
-            // Published separately so users can override file-manager.php settings
-            // (allowed mime types, max size, model bindings) without touching vendor code.
-            $this->callSilently('vendor:publish', [
-                '--tag' => 'starter-kit-file-manager-config',
-                '--force' => $this->option('force'),
-            ]);
-        });
-
-        // 4b. Inject required config keys into config/app.php
-        $this->step('Configuring application settings', function () {
-            $this->injectAppConfig();
-        });
-
-        // 4c. Inject DigitalOcean Spaces disk into config/filesystems.php
-        $this->step('Configuring filesystem disks', function () {
-            $this->injectFilesystemsConfig();
-        });
-
-        // 4c-2. Inject Turnstile keys into config/services.php so the kit's
-        // CAPTCHA code (middleware, Fortify action, validation rule) can read
-        // services.turnstile.* from the TURNSTILE_* env vars.
-        $this->step('Configuring third-party services', function () {
-            $this->injectServicesConfig();
-        });
-
-        // 4d. Wire starter kit bootstrap hooks into bootstrap/app.php
-        $this->step('Configuring bootstrap/app.php', function () {
-            $this->injectBootstrapApp();
-        });
-
-        // 4f. Register starter kit service providers in bootstrap/providers.php
-        $this->step('Registering service providers', function () {
-            $this->injectBootstrapProviders();
-        });
-
-        // 4g. Register custom helpers autoload entry in composer.json
-        $this->step('Registering custom helpers autoload', function () {
-            $this->injectHelpersAutoload();
-        });
-
-        // 4h. Default domain eject (User + Role) on first install only.
-        //
-        // Ordering rationale:
-        //  - AFTER stub publish + provider injection (4f) so DomainServiceProvider
-        //    already exists on disk — it is the target the eject injects App-FQCN
-        //    Event::listen bindings into.
-        //  - BEFORE the autoload regeneration (step 6) so the install's own single
-        //    `composer dump-autoload` also picks up the freshly ejected
-        //    app/Domain/{User,Role} classes — that is why each eject is invoked with
-        //    --skip-autoload (the per-domain dump would be redundant work).
-        //  - --no-vue because the Users/Roles Vue pages were already copied by the
-        //    stub publish step; eject only needs to relocate the vendor runtime.
-        if ($this->shouldEjectDefaultDomains($isFirstInstall)) {
-            $this->step('Ejecting default domains (User, Role) to app/Domain', function () {
-                $this->ejectDefaultDomains();
-            });
-        }
-
-        // 5. Create hash registry directory
-        $dir = storage_path('starter-kit');
-        if (! $this->files->isDirectory($dir)) {
-            $this->files->makeDirectory($dir, 0755, true);
-        }
-
-        // 6. Regenerate autoload so published classes are available for migrations/seeders
-        $this->step('Regenerating autoload', function () {
-            $composer = $this->findComposerBinary();
-            $process = new Process([...$composer, 'dump-autoload', '-q'], base_path(), null, null, 120);
-            $process->run();
-
-            // Reload the in-process autoloader so newly published classes (e.g. App\Enums\RoleEnum)
-            // are discoverable during the seeder step that runs in the same PHP process.
-            $this->refreshAutoloader();
-        });
-
-        // 7. Run migrations
-        if ($this->confirmStep('Run database migrations?')) {
-            $this->runMigrations();
-        }
-
-        // 8. Run seeders
-        if ($this->confirmStep('Run database seeders?')) {
-            $this->runSeeders();
-        }
-
-        // 9. Seed permissions (config-driven, vendor runtime reads from permission-resources.php)
-        if ($this->confirmStep('Seed permissions from config/permission-resources.php?')) {
-            $this->step('Seeding permissions', function () {
-                $this->callSilently('sk:seed-permissions', ['--fresh' => true]);
-            });
-        }
-
-        // 10. Passport keys + personal access client
-        if ($this->confirmStep('Generate Passport encryption keys?')) {
-            $this->step('Generating Passport keys', function () {
-                $this->callSilently('passport:keys', ['--force' => true]);
-            });
-            $this->step('Creating Passport personal access client', function () {
-                $this->callSilently('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
+                // Reload the in-process autoloader so newly published classes (e.g. App\Enums\RoleEnum)
+                // are discoverable during the seeder step that runs in the same PHP process.
+                $this->refreshAutoloader();
             });
 
-            // ROOT CAUSE FIX: passport:client is invoked with --no-interaction,
-            // whose configurePrompts() flips the GLOBAL static
-            // Laravel\Prompts\Prompt::$interactive to false. Laravel's
-            // restorePrompts() only restores the output stream, NOT that flag, so
-            // it leaks into every later step — the "Create admin user?" /
-            // "Install npm?" confirms would silently auto-accept their default
-            // (never asking the operator) and the required admin-detail prompts
-            // would throw NonInteractiveValidationException. Re-assert this
-            // command's own prompt interactivity before any further prompting.
-            $this->configurePrompts($this->input);
+            // 7-9. Database-dependent steps (migrations, seeders, permissions).
+            // A soft reachability probe replaces a hard crash when the DB is down:
+            // the operator can create/fix the connection and `sk:install --resume`
+            // to pick these up without redoing the earlier filesystem steps.
+            if ($this->databaseReachable()) {
+                // 7. Run migrations
+                if ($this->confirmStep('Run database migrations?')) {
+                    $this->runMigrations();
+                }
+
+                // 8. Run seeders
+                if ($this->confirmStep('Run database seeders?')) {
+                    $this->runSeeders();
+                }
+
+                // 9. Seed permissions (config-driven, vendor runtime reads from permission-resources.php)
+                if ($this->confirmStep('Seed permissions from config/permission-resources.php?')) {
+                    $this->step('Seeding permissions', function () {
+                        $this->callSilently('sk:seed-permissions', ['--fresh' => true]);
+                    });
+                }
+            } else {
+                $this->newLine();
+                $this->components->warn('Database is not reachable — skipping migrations, seeders, and permission seeding.');
+                $this->line('  <fg=gray>Create/fix the database connection, then run: php artisan sk:install --resume</>');
+                $this->newLine();
+            }
+
+            // 10. Passport keys + personal access client
+            if ($this->confirmStep('Generate Passport encryption keys?')) {
+                $this->step('Generating Passport keys', function () {
+                    $this->callSilently('passport:keys', ['--force' => true]);
+                });
+                $this->step('Creating Passport personal access client', function () {
+                    $this->callSilently('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
+                });
+
+                // ROOT CAUSE FIX: passport:client is invoked with --no-interaction,
+                // whose configurePrompts() flips the GLOBAL static
+                // Laravel\Prompts\Prompt::$interactive to false. Laravel's
+                // restorePrompts() only restores the output stream, NOT that flag, so
+                // it leaks into every later step — the "Create admin user?" /
+                // "Install npm?" confirms would silently auto-accept their default
+                // (never asking the operator) and the required admin-detail prompts
+                // would throw NonInteractiveValidationException. Re-assert this
+                // command's own prompt interactivity before any further prompting.
+                $this->configurePrompts($this->input);
+            }
+
+            // 11. Create admin user
+            if ($this->confirmStep('Create default admin user?')) {
+                $this->createAdminUser();
+            }
+
+            // 12. Install npm dependencies
+            if ($this->confirmStep('Install npm dependencies and build assets?')) {
+                $this->installFrontend();
+            }
+
+            // 12b. Finalize the application key as the last setup action. ensureAppKey
+            // is guarded — it generates APP_KEY only when the .env value is blank, so
+            // an existing key (e.g. on re-install) is preserved and already-encrypted
+            // data / sessions stay decryptable.
+            $this->step('Finalizing application key', function () {
+                $this->ensureAppKey(base_path('.env'));
+            });
+
+            // 13. Save stub hashes for update tracking
+            $this->saveStubHashes();
+
+        } catch (\Throwable $e) {
+            // Progress is checkpointed after every completed step, so it is
+            // already on disk here. Surface a concise, actionable message
+            // instead of a raw stack trace and let the operator resume.
+            $this->renderStepFailure($e);
+
+            return self::FAILURE;
         }
 
-        // 11. Create admin user
-        if ($this->confirmStep('Create default admin user?')) {
-            $this->createAdminUser();
-        }
-
-        // 12. Install npm dependencies
-        if ($this->confirmStep('Install npm dependencies and build assets?')) {
-            $this->installFrontend();
-        }
-
-        // 12b. Finalize the application key as the last setup action. ensureAppKey
-        // is guarded — it generates APP_KEY only when the .env value is blank, so
-        // an existing key (e.g. on re-install) is preserved and already-encrypted
-        // data / sessions stay decryptable.
-        $this->step('Finalizing application key', function () {
-            $this->ensureAppKey(base_path('.env'));
-        });
-
-        // 13. Save stub hashes for update tracking
-        $this->saveStubHashes();
+        // Install completed end-to-end — drop the checkpoint so the next run is
+        // treated as a clean re-install, not a resume.
+        $this->clearProgress();
 
         // Summary
         $this->newLine();
@@ -413,9 +494,235 @@ class InstallCommand extends Command
      */
     private function step(string $label, callable $callback): void
     {
+        if ($this->stepAlreadyCompleted($label, (bool) $this->option('resume'), $this->completedSteps)) {
+            $this->components->twoColumnDetail($label, '<fg=gray>SKIPPED (resume)</>');
+
+            return;
+        }
+
+        $this->currentStep = $label;
         $this->line("  <fg=gray>→</> {$label}...");
         $callback();
         $this->components->twoColumnDetail($label, '<fg=green>DONE</>');
+
+        $this->markStepComplete($label);
+        $this->currentStep = null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // PREFLIGHT + CHECKPOINT / RESUME
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Warn-only environment checks run before any file is touched. Never
+     * hard-fails: a too-old / missing Node toolchain only affects the optional
+     * npm step, which degrades on its own, so blocking the whole install here
+     * would be worse than proceeding.
+     */
+    private function preflight(): void
+    {
+        $node = $this->detectNodeMajorVersion();
+
+        if ($node === null) {
+            $this->components->warn('Node.js was not found on PATH — the npm install/build step will be skipped. Install Node 20.19+ (Vite 7 engine floor) to build assets.');
+            $this->newLine();
+
+            return;
+        }
+
+        // Vite 7 needs Node ^20.19 || >=22.12; a bare major floor of 20 is the
+        // coarse preflight gate (warn-only). The precise floor lives in the
+        // NodeVersionCheck doctor check.
+        if ($node < 20) {
+            $this->components->warn("Node.js v{$node} detected, but the kit's frontend toolchain (Vite 7) needs Node 20.19+. The npm install/build step will be skipped — upgrade Node, then run: npm install && npm run build");
+            $this->newLine();
+        }
+    }
+
+    /**
+     * Detect the major version of the `node` binary, or null when Node is not
+     * installed / not on PATH. Pure execution wrapper around the pure parser so
+     * the parsing logic stays unit-testable.
+     */
+    private function detectNodeMajorVersion(): ?int
+    {
+        try {
+            $process = new Process(['node', '-v'], base_path(), null, null, 10);
+            $process->run();
+
+            if (! $process->isSuccessful()) {
+                return null;
+            }
+
+            return $this->parseNodeMajorVersion($process->getOutput());
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Parse `node -v` output (e.g. "v18.17.0\n") into its major version number,
+     * or null when the string is not a recognizable version. Pure — unit tested.
+     */
+    private function parseNodeMajorVersion(string $raw): ?int
+    {
+        if (preg_match('/v?(\d+)\./', trim($raw), $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether the configured database connection currently accepts a PDO
+     * handle. Used to skip (rather than crash on) the migration/seeder/permission
+     * steps when the DB is unreachable.
+     */
+    private function databaseReachable(): bool
+    {
+        try {
+            DB::connection()->getPdo();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Absolute path to the resume checkpoint file.
+     */
+    private function progressFilePath(): string
+    {
+        return storage_path('starter-kit/install-progress.json');
+    }
+
+    /**
+     * Load the completed-step list + metadata from a prior interrupted run.
+     * Absent / malformed file leaves the in-memory state empty (clean start).
+     */
+    private function loadProgress(): void
+    {
+        $path = $this->progressFilePath();
+
+        if (! $this->files->exists($path)) {
+            return;
+        }
+
+        $data = json_decode($this->files->get($path), true);
+
+        if (! is_array($data)) {
+            return;
+        }
+
+        $this->completedSteps = array_values(array_filter(
+            $data['completed'] ?? [],
+            'is_string',
+        ));
+        $this->progressMeta = is_array($data['meta'] ?? null) ? $data['meta'] : [];
+    }
+
+    /**
+     * Record a step as completed and flush the checkpoint to disk so an
+     * interruption on the NEXT step still leaves this one marked done.
+     */
+    private function markStepComplete(string $label): void
+    {
+        if (! in_array($label, $this->completedSteps, true)) {
+            $this->completedSteps[] = $label;
+        }
+
+        $this->persistProgress();
+    }
+
+    /**
+     * Write the current checkpoint (completed steps + metadata) to disk,
+     * creating the storage/starter-kit directory on demand.
+     */
+    private function persistProgress(): void
+    {
+        $dir = dirname($this->progressFilePath());
+
+        if (! $this->files->isDirectory($dir)) {
+            $this->files->makeDirectory($dir, 0755, true);
+        }
+
+        $this->files->put($this->progressFilePath(), json_encode([
+            'completed' => $this->completedSteps,
+            'meta' => $this->progressMeta,
+            'updated_at' => date('c'),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * Remove the checkpoint after a fully successful install so the next run is
+     * a clean re-install rather than a resume.
+     */
+    private function clearProgress(): void
+    {
+        $path = $this->progressFilePath();
+
+        if ($this->files->exists($path)) {
+            $this->files->delete($path);
+        }
+    }
+
+    /**
+     * Pure decision: has this step already finished in a prior run we are now
+     * resuming? Kept side-effect free so it is unit testable in isolation.
+     *
+     * @param  list<string>  $completed
+     */
+    private function stepAlreadyCompleted(string $label, bool $resuming, array $completed): bool
+    {
+        return $resuming && in_array($label, $completed, true);
+    }
+
+    /**
+     * Pure decision: is this a first install? A resumed/re-run install (progress
+     * checkpoint present) inherits the ORIGINAL decision from the checkpoint so
+     * it keeps ejecting the default domains it started with; a clean run falls
+     * back to the absence of the hash registry.
+     *
+     * @param  array<string, mixed>  $meta
+     */
+    private function computeFirstInstall(bool $progressExisted, array $meta, bool $noHashRegistry): bool
+    {
+        if ($progressExisted) {
+            return (bool) ($meta['first_install'] ?? false);
+        }
+
+        return $noHashRegistry;
+    }
+
+    /**
+     * Pure decision: should the stub publish force-overwrite existing files?
+     * Only on an explicit --force OR a PRISTINE first install (no checkpoint).
+     * A resumed/re-run install ($progressExisted) never force-overwrites, so a
+     * half-finished first install cannot clobber files the operator edited
+     * between attempts.
+     */
+    private function shouldForceOverwrite(bool $isFirstInstall, bool $progressExisted, bool $forceOption): bool
+    {
+        return $forceOption || ($isFirstInstall && ! $progressExisted);
+    }
+
+    /**
+     * Render a concise, actionable failure message (no raw stack trace) telling
+     * the operator which step failed and how to resume.
+     */
+    private function renderStepFailure(\Throwable $e): void
+    {
+        $step = $this->currentStep ?? 'setup';
+
+        $this->newLine();
+        $this->components->error("Step failed: {$step}");
+        $this->line('  <fg=red>'.$e->getMessage().'</>');
+        $this->newLine();
+        $this->line('  <fg=yellow>Fix the issue above, then resume the install with:</>');
+        $this->line('  <fg=cyan>php artisan sk:install --resume</>');
+        $this->line('  <fg=gray>Completed steps are checkpointed and will be skipped on resume.</>');
+        $this->newLine();
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -1401,15 +1708,18 @@ class InstallCommand extends Command
      * pre-filled default — the password is masked and confirmed by re-entry.
      * When it cannot prompt (--no-interaction, or any TTY-less session such as
      * CI / Herd / piped stdin / site:install automation), there is no human to
-     * prompt, so the documented fallback credentials are used so the flow still
-     * produces a working admin instead of crashing on a required prompt.
+     * prompt, so a fixed email + a freshly generated random password are used
+     * so the flow still produces a working admin instead of crashing on a
+     * required prompt. The generated password is printed once at the end.
      */
     private function createAdminUser(): void
     {
         $firstName = 'Admin';
         $lastName = 'User';
         $email = 'admin@lvntr.dev';
-        $password = 'password';
+        // A fresh random password every run — a fixed fallback would be a known,
+        // guessable credential in every non-interactive (CI/automation) install.
+        $password = Str::password(16);
         $usedDefaults = true;
 
         if ($this->canPrompt()) {
@@ -1423,7 +1733,7 @@ class InstallCommand extends Command
                 required: true,
                 validate: fn (string $value): ?string => filter_var($value, FILTER_VALIDATE_EMAIL)
                     ? null
-                    : 'Geçerli bir e-posta adresi girin.',
+                    : 'Enter a valid email address.',
             );
 
             $password = password(
@@ -1431,7 +1741,7 @@ class InstallCommand extends Command
                 required: true,
                 validate: fn (string $value): ?string => strlen($value) >= 8
                     ? null
-                    : 'Şifre en az 8 karakter olmalı.',
+                    : 'Password must be at least 8 characters.',
             );
 
             // Re-entry only validates against $password; the value itself is discarded.
@@ -1440,7 +1750,7 @@ class InstallCommand extends Command
                 required: true,
                 validate: fn (string $value): ?string => $value === $password
                     ? null
-                    : 'Şifreler eşleşmiyor.',
+                    : 'Passwords do not match.',
             );
         }
 
@@ -1478,7 +1788,7 @@ class InstallCommand extends Command
         $this->components->twoColumnDetail('<fg=green>Admin Email</>', $email);
 
         // Never echo a password the operator typed into their terminal. Only the
-        // documented --no-interaction fallback password is surfaced, because
+        // freshly generated --no-interaction fallback password is surfaced, because
         // automation has no other way to learn the generated credentials.
         $this->components->twoColumnDetail(
             '<fg=green>Admin Password</>',
@@ -1495,6 +1805,23 @@ class InstallCommand extends Command
      */
     private function installFrontend(): void
     {
+        // Guard the npm work behind a Node preflight so an old / missing Node
+        // toolchain produces a clear skip + follow-up instructions instead of a
+        // cryptic process failure mid-install.
+        $node = $this->detectNodeMajorVersion();
+
+        if ($node === null) {
+            $this->components->warn('Node.js was not found on PATH — skipping npm install/build. Install Node 18+, then run: npm install && npm run build');
+
+            return;
+        }
+
+        if ($node < 18) {
+            $this->components->warn("Node.js v{$node} is too old (need 18+) — skipping npm install/build. Upgrade Node, then run: npm install && npm run build");
+
+            return;
+        }
+
         // Remove old node_modules and lock file to ensure clean install with new package.json
         $nodeModules = base_path('node_modules');
         $lockFile = base_path('package-lock.json');
@@ -1837,7 +2164,7 @@ class InstallCommand extends Command
             return;
         }
 
-        $this->modifyPhpFileAst($path, function (array $stmts): bool {
+        $injected = $this->modifyPhpFileAst($path, function (array $stmts): bool {
             $return = null;
             foreach ($stmts as $stmt) {
                 if ($stmt instanceof Stmt\Return_) {
@@ -1867,6 +2194,28 @@ class InstallCommand extends Command
 
             return $changed;
         });
+
+        // A false return here (the idempotency guard above already ruled out the
+        // "already wired" case) means the AST edit could not find the expected
+        // application-builder chain. Don't fail silently — tell the operator the
+        // exact lines to add so bootstrap wiring is never quietly missing.
+        if (! $injected) {
+            $this->warnBootstrapManualWiring();
+        }
+    }
+
+    /**
+     * Emit the manual bootstrap/app.php wiring instructions when the automatic
+     * AST injection could not be applied.
+     */
+    private function warnBootstrapManualWiring(): void
+    {
+        $this->newLine();
+        $this->components->warn('Could not automatically wire bootstrap/app.php — add these manually:');
+        $this->line("  <fg=cyan>->withRouting(api: __DIR__.'/../routes/api.php', /* keep existing args */)</>");
+        $this->line('  <fg=cyan>->withMiddleware(function ($middleware) { \\Lvntr\\StarterKit\\Bootstrap::middleware($middleware); })</>');
+        $this->line('  <fg=cyan>->withExceptions(function ($exceptions) { \\Lvntr\\StarterKit\\Bootstrap::exceptions($exceptions); })</>');
+        $this->newLine();
     }
 
     /**
@@ -2160,6 +2509,16 @@ class InstallCommand extends Command
     // ══════════════════════════════════════════════════════════════════════
 
     /**
+     * Render an absolute path relative to the app base for user-facing messages.
+     */
+    private function relativePath(string $path): string
+    {
+        $base = base_path().DIRECTORY_SEPARATOR;
+
+        return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
+    }
+
+    /**
      * Parse a PHP file, invoke the mutator with the clone-traversed statement
      * list, and write the file back with format-preserving pretty printing
      * only when the mutator reports a change.
@@ -2178,11 +2537,15 @@ class InstallCommand extends Command
 
         try {
             $oldStmts = $parser->parse($code);
-        } catch (Error) {
+        } catch (Error $e) {
+            $this->components->warn('Could not parse '.$this->relativePath($path).' — automatic edit skipped. ('.$e->getMessage().')');
+
             return false;
         }
 
         if ($oldStmts === null) {
+            $this->components->warn('Could not parse '.$this->relativePath($path).' — automatic edit skipped.');
+
             return false;
         }
 

@@ -86,7 +86,7 @@ Full step-by-step guide: [starter-kit.lvntr.dev/docs/install](https://starter-ki
 
 - PHP 8.4+
 - Laravel 13
-- Node.js 18+
+- Node.js 20.19+ (or 22.12+) — Vite 7 engine floor
 - MySQL or MariaDB
 
 ## Compatibility & Versioning

@@ -15,6 +15,7 @@ return [
     'last_page' => 'Last page',
     'loading' => 'Loading...',
     'no_records' => 'No records found.',
+    'no_results_filtered' => 'No results match your filters.',
     'per_page' => 'Per page',
 
     /*

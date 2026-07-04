@@ -2,6 +2,32 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-07-04 — v13.7.0
+
+### Kalite ve UX sprint'i
+
+Geniş kapsamlı bir kalite-kontrol turu: audit-log kapsamı, kurulum/yükseltme DX'i, erişilebilirlik ve bir login-throttle güvenlik düzeltmesi. `sk:update` gerektiren tek publish edilmiş dosya değişikliği var — bkz. [UPGRADE.md](./UPGRADE.tr.md).
+
+#### Güvenlik
+
+- **`login_throttle = '0'` artık web login rate limiter'ını tamamen devre dışı bırakmıyor** — throttle'ı tamamen kaldırmak yerine bilinçli olarak gevşek bir taban limiter'a geçiyor; böylece hiçbir admin ayarı web login'i tamamen limitsiz bırakamaz.
+
+#### Eklendi
+
+- **Audit log artık rol/yetki değişikliklerini, Ayarlar'ı, API Client/Token'ları, paylaşım linklerini ve İçerik Dillerini kapsıyor** — bunlar önceden bir log dosyasının dışında görünmüyordu (ya da hiç loglanmıyordu); artık ActivityLog yönetim ekranında görünüyorlar. Ayar değerleri asla loglanmıyor, yalnızca hangi anahtarların değiştiği kaydediliyor.
+- **`sk:install` bir hatadan sonra devam edebiliyor** — `php artisan sk:install --resume`, yarıda kalmış bir kurulumu tam olarak kaldığı yerden sürdürüyor; başarısız bir adım artık ham stack trace yerine net bir mesaj basıyor. Baştan bir Node.js sürüm kontrolü çalışıyor; eski/eksik Node artık kurulum ortasında kriptik bir çökme yerine uyarı üretiyor.
+- **`sk:doctor` Node.js sürümünü ve bir queue worker'ın fiilen çalışıp çalışmadığını kontrol ediyor**, cron heartbeat'i tespit edemediğinde artık sessizce "OK" demiyor. Tekil kontroller artık tüm komutu asılı bırakmak yerine zaman aşımına uğruyor.
+- **`sk:eject` artık bir domain'i eject etmeden önce onay istiyor** (`--force`/`--dry-run`/`--no-interaction` verilmediği sürece) — eject etmek domain'in kit güncellemelerini almayı bırakması demek; artık sessiz, tek yönlü bir kapı değil.
+- **Datatable klavyeyle erişilebilir** — sıralanabilir başlıklar, arama-temizle butonu ve filtre-kaldırma butonları artık Tab + Enter/Space ile çalışıyor; boş bir tablo, hiç veri olmadığı için mi yoksa filtrenizin hiçbir sonuç bulamadığı için mi boş olduğunu söylüyor (tek tıkla "filtreleri temizle" ile).
+- **Formlar daha güvenli** — çift gönderim artık imkânsız, kaydedilmemiş değişiklikli bir formdan çıkmak onay istiyor, başarısız bir veri/seçenek yüklemesi sessizce başarısız olmak yerine yeniden deneme seçeneği gösteriyor, zorunlu alanlar screen reader'lara bildiriliyor.
+- **FileManager, birden çok eşzamanlı yükleme genelinde toplam ilerleme gösteriyor**, görsel lightbox'ı da ok tuşlarıyla görseller arası gezinmeyi destekliyor.
+
+#### Değiştirildi
+
+- CI artık lint hatalarında build'i sadece uyarmak yerine başarısız kılıyor.
+- `--no-interaction` kurulumları artık eski sabit `password` yerine taze, rastgele bir admin parolası alıyor (sonunda ekrana basılır).
+- Görünür davranış değişikliği olmayan birkaç backend tutarlılık temizliği (merkezi 422 hata maplemesi, paylaşılan definition-controller mantığı, birleştirilmiş definition cache invalidation).
+
 ## 2026-07-03 — v13.6.7
 
 ### Rich-text editor'daki boş alan artık tıklanabiliyor

@@ -134,6 +134,20 @@ class FortifyServiceProvider extends ServiceProvider
             ];
         });
 
+        // Relaxed floor used when an admin turns the login-throttle setting OFF
+        // (auth.login_throttle = '0'). SettingsServiceProvider swaps the strict
+        // 'login' limiter above for this one instead of nulling it, so no
+        // settings combination can leave web login fully unlimited (brute-force
+        // red line). It is a deliberate downgrade from 10/5/3 to a single
+        // generous 30/min-per-IP cap: light enough to barely touch a legitimate
+        // user who fat-fingers a password, tight enough to stop a machine
+        // hammering thousands of guesses per minute. Kept intentionally looser
+        // than the API auth routes' fixed `throttle:5,1`
+        // (stubs/routes/api/public-api.php), which this setting never relaxes.
+        RateLimiter::for('login-relaxed', function (Request $request) {
+            return Limit::perMinute(30)->by('ip:'.(string) $request->ip());
+        });
+
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });

@@ -7,6 +7,8 @@ use Illuminate\Filesystem\Filesystem;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use Symfony\Component\Process\Process;
 
+use function Laravel\Prompts\confirm;
+
 /**
  * Eject a kit domain into the consumer app — the inverse of vendor-first
  * relocation. Copies the domain's vendor runtime (Action/DTO/Query/Event/
@@ -344,6 +346,26 @@ class EjectCommand extends Command
 
             if (! $force && $this->files->isDirectory($appDomainDir)) {
                 $this->components->warn("app/Domain/{$domain} already exists — pass --force to overwrite, or remove it first.");
+
+                return self::SUCCESS;
+            }
+        }
+
+        // Ownership consent gate: ejecting is a one-way trade-off (see class
+        // docblock) — once ejected the domain stops receiving kit runtime
+        // updates via composer update. Ask before doing any work, unless the
+        // caller already expressed explicit intent (--force, e.g. sk:install's
+        // internal default-domain eject) or cannot be prompted (--no-interaction,
+        // e.g. CI/scripted eject) — --dry-run also skips it since nothing is
+        // written.
+        if (! $force && ! $dryRun && ! $this->option('no-interaction')) {
+            $confirmed = confirm(
+                label: "Ejecting {$domain} makes it app-owned: you will maintain it yourself and no longer receive kit runtime updates for it. Continue?",
+                default: false,
+            );
+
+            if (! $confirmed) {
+                $this->components->warn('Eject cancelled.');
 
                 return self::SUCCESS;
             }

@@ -23,4 +23,5 @@ return [
     'filter' => 'Filtrele',
     'reset' => 'Sıfırla',
     'refresh' => 'Yenile',
+    'retry' => 'Tekrar dene',
 ];

@@ -34,6 +34,10 @@ return [
     'characters_count' => ':count karakter',
     'error' => 'Hata',
     'unsaved' => 'Kaydedilmemiş değişiklikler var.',
+    'required' => 'zorunlu',
+    'confirm_leave' => 'Kaydedilmemiş değişiklikler var. Bu sayfadan ayrılmak istediğinize emin misiniz?',
+    'data_load_error' => 'Veri yüklenemedi. Lütfen tekrar deneyin.',
+    'options_load_error' => 'Seçenekler yüklenemedi.',
 
     'confirmation' => 'Onay',
     'confirm_delete_header' => 'Silme Onayı',

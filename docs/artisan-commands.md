@@ -106,6 +106,8 @@ php artisan sk:publish --tag=helpers
 
 Use this when you need to fully customize a domain whose runtime currently runs from the vendor package. Ejecting copies the domain's backend classes into `app/Domain/{Name}/`, rewrites their namespaces to `App\Domain\{Name}\`, refreshes the domain's Vue pages, and wires any event/listener bindings into `app/Providers/DomainServiceProvider.php` so the audit log keeps firing. Run `--dry-run` first to preview what will change.
 
+Unless `--force`, `--dry-run`, or `--no-interaction` is passed, the command asks for confirmation before doing any work — ejecting is a one-way trade-off (the domain stops receiving kit runtime updates via `composer update`). `sk:install`'s own internal default-domain eject always passes `--force`, so the fresh-install flow is not interrupted by this prompt.
+
 ```bash
 php artisan sk:eject User
 php artisan sk:eject User --dry-run

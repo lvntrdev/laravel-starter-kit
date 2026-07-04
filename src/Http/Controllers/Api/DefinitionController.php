@@ -5,10 +5,13 @@ namespace Lvntr\StarterKit\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
+use Lvntr\StarterKit\Http\Controllers\Concerns\ListsDefinitions;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;
 
 class DefinitionController extends Controller
 {
+    use ListsDefinitions;
+
     /**
      * Get all definitions (enum + DB), optionally filtered by keys.
      *
@@ -17,10 +20,6 @@ class DefinitionController extends Controller
      */
     public function index(Request $request, DefinitionService $service): ApiResponse
     {
-        $keys = $request->has('keys')
-            ? array_filter(explode(',', $request->input('keys')))
-            : null;
-
-        return to_api($service->all($keys));
+        return $this->listDefinitions($request, $service);
     }
 }

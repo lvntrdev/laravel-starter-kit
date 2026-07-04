@@ -18,7 +18,7 @@ export default tseslint.config(
     },
     js.configs.recommended,
     ...tseslint.configs.recommended,
-    ...pluginVue.configs['flat/essential'],
+    ...pluginVue.configs['flat/strongly-recommended'],
     {
         // Globals injected at build time by `unplugin-auto-import` (vue +
         // @vueuse/core, see vite.config.ts) plus standard browser/DOM APIs, so

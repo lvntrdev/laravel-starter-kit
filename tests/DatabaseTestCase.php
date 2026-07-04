@@ -122,6 +122,36 @@ abstract class DatabaseTestCase extends Orchestra
         // loadMigrationsFrom() kullanılmaz — bu yaklaşım Testbench-core'un
         // fixture migration'larının (dedupe_receipts vb.) migrate:fresh
         // sırasında çalışmasını önler.
+        //
+        // ┌─ ŞEMA KOPYASI — DEĞİŞTİRİRSEN İKİSİNİ BİRDEN GÜNCELLE ─────────────┐
+        // │ Aşağıdaki tablolar şu package migration'larının birebir kopyasıdır. │
+        // │ Bir migration'a kolon ekler/çıkarırsan buradaki inline bloğu da    │
+        // │ güncelle — aksi halde tests/Feature/SchemaDrift/InlineSchemaDrift-  │
+        // │ Test.php kolon seti sapmasını yakalar ve KIRMIZI yanar.            │
+        // │                                                                    │
+        // │   settings                       → database/migrations/            │
+        // │       2026_03_14_080933_create_settings_table.php                  │
+        // │   media                          → database/migrations/            │
+        // │       2026_03_08_205445_create_media_table.php                     │
+        // │       2026_04_13_100200_add_folder_id_to_media_table.php           │
+        // │       2026_05_02_094121_add_soft_deletes_to_media_table.php        │
+        // │   global_file_buckets            → database/migrations/            │
+        // │       2026_04_13_100000_create_global_file_buckets_table.php       │
+        // │   file_folders                   → database/migrations/            │
+        // │       2026_04_13_100100_create_file_folders_table.php              │
+        // │   file_favorites                 → database/migrations/            │
+        // │       2026_05_02_092853_create_file_favorites_table.php            │
+        // │   file_manager_share_revocations → database/migrations/            │
+        // │       2026_05_06_100000_create_file_manager_share_revocations…php   │
+        // │                                                                    │
+        // │ İSTİSNA: `users` bir migration KOPYASI DEĞİL — kasıtlı minimal     │
+        // │ shim'dir (gerçek stub users migration'ı UUID-anahtarlı ve çok daha │
+        // │ geniştir). Yalnız FK/testlerin ihtiyaç duyduğu kolonları taşır;    │
+        // │ drift testi onu kolon-seti karşılaştırmasından hariç tutar, yalnız │
+        // │ kritik kolonların (id/email/password/password_changed_at) varlığını │
+        // │ doğrular. Yalnız TESPİT eklenir — test DB kurulumu migration       │
+        // │ koşumuna çevrilmez (Testbench dedupe_receipts sorunu, bkz. yukarı).│
+        // └────────────────────────────────────────────────────────────────────┘
 
         // 1. settings tablosu
         Schema::create('settings', function (Blueprint $table): void {

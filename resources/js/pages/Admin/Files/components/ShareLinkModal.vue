@@ -215,7 +215,7 @@
                         :value="generatedLink.url"
                         readonly
                         class="min-w-0 flex-1 rounded border border-surface-200 bg-surface-0 px-3 py-2 font-mono text-base text-surface-700 focus:outline-none dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200"
-                        aria-label="Paylaşım linki"
+                        :aria-label="trans('sk-file-manager.share.link_aria_label')"
                         @focus="($event.target as HTMLInputElement).select()"
                     >
                     <Button

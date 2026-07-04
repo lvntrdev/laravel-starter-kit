@@ -15,6 +15,7 @@ return [
     'last_page' => 'Son sayfa',
     'loading' => 'Yükleniyor...',
     'no_records' => 'Kayıt bulunamadı.',
+    'no_results_filtered' => 'Filtrelerinize uyan sonuç bulunamadı.',
     'per_page' => 'Sayfa başına',
 
     /*

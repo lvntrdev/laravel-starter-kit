@@ -28,7 +28,11 @@ class CreateRoleAction extends BaseAction
             return $role;
         });
 
-        RoleCreated::dispatch($role, Auth::id());
+        // Snapshot the granted permissions HERE (synchronous, correct) so a
+        // queued audit listener does not re-read a later pivot state.
+        $permissions = $role->permissions()->pluck('name')->sort()->values()->all();
+
+        RoleCreated::dispatch($role, $permissions, Auth::id());
 
         return $role;
     }

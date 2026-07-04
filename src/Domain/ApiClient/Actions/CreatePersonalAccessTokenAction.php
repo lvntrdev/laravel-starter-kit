@@ -3,7 +3,6 @@
 namespace Lvntr\StarterKit\Domain\ApiClient\Actions;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 use Laravel\Passport\PersonalAccessTokenResult;
 
 /**
@@ -11,7 +10,8 @@ use Laravel\Passport\PersonalAccessTokenResult;
  *
  * Secret handling: `accessToken` değeri yalnızca bu action'ın döndürdüğü
  * `PersonalAccessTokenResult`'ta bulunur. DB'de hashlenmiş olarak saklanır.
- * Log'a, session'a veya response dışı herhangi bir alana yazılmamalıdır.
+ * Log'a, activity properties'e, session'a veya response dışı herhangi bir
+ * alana yazılmamalıdır.
  */
 class CreatePersonalAccessTokenAction
 {
@@ -22,13 +22,26 @@ class CreatePersonalAccessTokenAction
     {
         $result = $user->createToken($name, $scopes);
 
-        // access token kasıtlı olarak loglanmıyor
-        Log::info('Personal access token oluşturuldu.', [
-            'token_id' => $result->token->id,
-            'user_id' => $user->id,
-            'name' => $name,
-            'scopes' => $scopes,
-        ]);
+        // Audit sink (Task 8): oluşturulan token admin ActivityLog UI'ında
+        // görünür. accessToken KASITLI olarak properties'e alınmaz. Kayıt
+        // yalnız kimliği doğrulanmış aktör varken atılır.
+        //
+        // Token subject OLARAK kullanılmaz: oauth_access_tokens.id char(80) iken
+        // activity_log.subject_id char(36). performedOn($token) strict SQL'de
+        // truncation/hata verir (token zaten üretildikten SONRA → 500 + tek-
+        // seferlik plaintext token kaybı). Kimlik properties.token_id'de tutulur.
+        if (auth()->check()) {
+            activity('audit')
+                ->causedBy($user)
+                ->event('created')
+                ->withProperties([
+                    'token_id' => $result->token->id,
+                    'user_id' => $user->id,
+                    'name' => $name,
+                    'scopes' => $scopes,
+                ])
+                ->log('Personal access token created');
+        }
 
         return $result;
     }

@@ -2,6 +2,32 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-07-04 — v13.7.0
+
+### Quality & UX sprint
+
+A broad quality-control pass: audit-log coverage, install/upgrade DX, accessibility, and a login-throttle security fix. One published-file change needs `sk:update` — see [UPGRADE.md](./UPGRADE.md).
+
+#### Security
+
+- **`login_throttle = '0'` no longer fully disables the web login rate limiter** — it now swaps to a deliberately generous floor limiter instead of removing throttling entirely, so no admin setting can leave web login unthrottled.
+
+#### Added
+
+- **Audit log now covers role/permission changes, Settings, API Clients/Tokens, share links, and Content Languages** — these were previously invisible outside a log file (or not logged at all); they now show up in the ActivityLog admin screen. Setting values are never logged, only which keys changed.
+- **`sk:install` can resume after a failure** — `php artisan sk:install --resume` picks up exactly where an interrupted install left off, and a failed step now prints a clear message instead of a raw stack trace. A Node.js version check runs up front so an old/missing Node produces a warning, not a cryptic crash mid-install.
+- **`sk:doctor` checks Node.js version and whether a queue worker is actually running**, and no longer silently reports "OK" when it can't detect a cron heartbeat. Individual checks now time out instead of being able to hang the whole command.
+- **`sk:eject` now asks for confirmation** before ejecting a domain (unless you pass `--force`/`--dry-run`/`--no-interaction`) — ejecting means the domain stops receiving kit updates, so it's no longer a silent one-way door.
+- **Datatable is keyboard-accessible** — sortable headers, the search-clear button, and filter-remove buttons all work with Tab + Enter/Space now, and an empty table tells you whether that's because there's no data or because your filter matched nothing (with a one-click "clear filters").
+- **Forms are safer to use** — double-submitting is now impossible, leaving a form with unsaved changes prompts a confirmation, a failed data/option load shows a retry option instead of failing silently, and required fields are announced to screen readers.
+- **FileManager shows overall upload progress** across multiple simultaneous uploads, and the image lightbox supports arrow-key navigation between images.
+
+#### Changed
+
+- CI now fails the build on lint errors instead of only warning.
+- `--no-interaction` installs get a fresh random admin password (printed at the end) instead of the old fixed `password`.
+- A handful of backend consistency cleanups (centralised 422 error mapping, shared definition-controller logic, unified definition cache invalidation) with no visible behavior change.
+
 ## 2026-07-03 — v13.6.7
 
 ### Rich-text editor's empty area is now clickable

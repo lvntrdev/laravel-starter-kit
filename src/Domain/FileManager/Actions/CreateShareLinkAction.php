@@ -49,6 +49,23 @@ class CreateShareLinkAction extends FileManagerAction
         // Bu hash, revocation tablosunda lookup key olarak kullanılır.
         $tokenHash = $this->extractTokenHash($url);
 
+        // Audit sink (Task 8): üretilen paylaşım linki admin ActivityLog
+        // UI'ında görünür. İmzalı URL ve signature/token hash KASITLI olarak
+        // properties'e alınmaz — bunlar paylaşımın secret'ıdır. Kayıt yalnız
+        // kimliği doğrulanmış aktör varken atılır (auto-resolved causer).
+        if (auth()->check()) {
+            activity('audit')
+                ->performedOn($dto->media)
+                ->event('created')
+                ->withProperties([
+                    'media_id' => $dto->media->getKey(),
+                    'owner_type' => $dto->ownerType,
+                    'owner_id' => $dto->ownerId,
+                    'expires_at' => $expiresAt->toIso8601String(),
+                ])
+                ->log('Share link created');
+        }
+
         return new ShareLinkResultDTO(
             url: $url,
             expiresAt: $expiresAt,

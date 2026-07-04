@@ -74,8 +74,22 @@ class SettingsServiceProvider extends ServiceProvider
         // read this key: the route-level `throttle:login` middleware (bound
         // at Fortify route registration) and the EnsureLoginIsNotThrottled
         // step in FortifyServiceProvider's authenticateThrough pipeline.
+        //
+        // "Disabled" does NOT mean unlimited. Nulling the limiter would strip
+        // the route middleware AND drop EnsureLoginIsNotThrottled, leaving web
+        // login wide open to brute-force — no admin setting may do that
+        // (auth red line). Instead we swap the strict 'login' limiter (10/5/3
+        // per minute) for the deliberately generous 'login-relaxed' floor
+        // defined in FortifyServiceProvider: it honors the admin's intent to
+        // loosen the limit while still capping automated attempts. The limiter
+        // key stays non-null so Fortify keeps both throttle layers wired.
+        //
+        // Note the asymmetry: this key only governs the WEB (Fortify) login.
+        // The API auth routes carry a hardcoded `throttle:5,1` middleware
+        // (stubs/routes/api/public-api.php) that this setting never touches —
+        // the API stays throttled regardless of this toggle.
         if (($auth['login_throttle'] ?? '1') === '0') {
-            config(['fortify.limiters.login' => null]);
+            config(['fortify.limiters.login' => 'login-relaxed']);
         }
 
         // Password policy bridge — read by the PasswordValidationRules

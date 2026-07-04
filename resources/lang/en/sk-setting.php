@@ -98,7 +98,7 @@ return [
         'two_factor_disable_title' => 'Disable two-factor authentication?',
         'two_factor_disable_warning' => 'Turning this off removes the extra login check for everyone. Existing 2FA secrets will be cleared and affected users will have to re-enroll if you enable it again later.',
         'login_throttle_label' => 'Login attempt limit',
-        'login_throttle_hint' => 'Temporarily slows down sign-in after repeated failed attempts to deter brute-force attacks.',
+        'login_throttle_hint' => 'Temporarily slows down sign-in after repeated failed attempts to deter brute-force attacks. Turning it off keeps a relaxed safety limit — sign-in is never left completely unlimited.',
         'password_min_length_label' => 'Minimum Characters',
         'password_min_length_hint' => 'Minimum number of characters a password must contain (6–128).',
         'password_expiry_days_label' => 'Password Validity (days)',

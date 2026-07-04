@@ -106,6 +106,8 @@ php artisan sk:publish --tag=helpers
 
 Runtime'ı vendor paketinden çalışan bir domain'i tamamen özelleştirmek istediğinizde kullanılır. Eject, domain'in backend sınıflarını `app/Domain/{Name}/` altına kopyalar, namespace'lerini `App\Domain\{Name}\` olarak yeniden yazar, domain'e ait Vue sayfalarını tazeler ve event/listener binding'lerini `app/Providers/DomainServiceProvider.php` dosyasına ekleyerek audit log'un kesintisiz çalışmasını sağlar. Önce `--dry-run` ile neyin değişeceğini önizleyin.
 
+`--force`, `--dry-run` veya `--no-interaction` verilmediği sürece komut, herhangi bir işlem yapmadan önce onay ister — eject tek yönlü bir takastır (domain, `composer update` ile kit runtime güncellemesi almayı bırakır). `sk:install`'in kendi dahili varsayılan-domain eject'i her zaman `--force` geçer; bu yüzden taze kurulum akışı bu onay istemiyle kesintiye uğramaz.
+
 ```bash
 php artisan sk:eject User
 php artisan sk:eject User --dry-run

@@ -28,7 +28,7 @@ This starter kit is an admin-first Laravel 13 package that gives a new project a
 
 - PHP `8.4+`
 - Composer
-- Node.js `18+`
+- Node.js `20.19+`
 - npm
 - MySQL or MariaDB
 - A fresh Laravel 13 project or a project aligned with this starter kit structure

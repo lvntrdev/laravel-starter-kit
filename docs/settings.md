@@ -60,7 +60,7 @@ The admin module exposes routes such as:
 - logo upload/remove now use the standard `ApiResponse` envelope
 - disabling two-factor in the Auth tab shows a confirmation before the admin submits the change because it affects user security posture
 - the Security tab is divided into three sub-tabs: **Authentication** (registration, email verification, password reset, two-factor, login throttle), **Password Policy** (minimum length, expiry days, complexity toggles), and **Cloudflare Turnstile**
-- `auth.login_throttle = '0'` disables the Fortify login rate limiter; default is `'1'` (throttle active); disabling is a deliberate security downgrade exposed only to administrators
+- `auth.login_throttle = '0'` does **not** disable the Fortify login rate limiter — no admin setting is allowed to leave web login unthrottled. It swaps the strict `login` limiter for the more generous `login-relaxed` floor (defined in `stubs/app/Providers/FortifyServiceProvider.php`); default is `'1'` (strict limiter). This key only governs the **web** (Fortify) login — the API auth routes carry a hardcoded `throttle:5,1` middleware that this setting never touches.
 - password policy settings (`password_min_length`, `password_require_mixed_case`, `password_require_numbers`, `password_require_symbols`) are applied to every new password via `PasswordValidationRules`; existing passwords are never invalidated
 - `auth.password_expiry_days > 0` enables the `EnsurePasswordNotExpired` middleware; users whose `password_changed_at` is older than the configured number of days are redirected to a dedicated, guest-style password-expired screen (route `password.expired`) until they update their password; setting `0` disables expiry
 - password expiry exempt routes: the password-expired page (`password.expired`), logout, two-factor challenge, Fortify password endpoints — redirect loop is not possible
@@ -86,7 +86,7 @@ The `auth` group exposes the following keys. Two default values are relevant for
 | `password_reset` | boolean | `'1'` | `'1'` | Allow email-based password reset |
 | `email_verification` | boolean | `'0'` | `'1'` | Require email verification before login |
 | `two_factor` | boolean | `'0'` | `'1'` | Enable two-factor authentication |
-| `login_throttle` | boolean | `'1'` | `'1'` | Enable Fortify login rate limiter |
+| `login_throttle` | boolean | `'1'` | `'1'` | `'1'` = strict Fortify `login` limiter; `'0'` = relaxed `login-relaxed` floor (never fully disabled) |
 | `password_min_length` | integer (string) | `'10'` | `10` | Minimum password length |
 | `password_expiry_days` | integer (string) | `'0'` | `0` | Days before a password expires; `0` = no expiry |
 | `password_require_mixed_case` | boolean | `'1'` | `'1'` | Require upper and lower case in passwords |

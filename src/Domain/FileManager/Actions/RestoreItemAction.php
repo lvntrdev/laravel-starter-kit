@@ -4,8 +4,8 @@ namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -23,7 +23,7 @@ class RestoreItemAction extends FileManagerAction
     public function execute(FileManagerContextDTO $context, string $itemType, string $itemId): void
     {
         if (! in_array($itemType, ['folder', 'file'], true)) {
-            throw new LogicException(__('sk-file-manager.errors.invalid_trash_item_type'));
+            throw new DomainRuleException(__('sk-file-manager.errors.invalid_trash_item_type'));
         }
 
         match ($itemType) {
@@ -45,7 +45,7 @@ class RestoreItemAction extends FileManagerAction
             ->first();
 
         if ($folder === null) {
-            throw new LogicException(__('sk-file-manager.errors.trash_item_not_found'));
+            throw new DomainRuleException(__('sk-file-manager.errors.trash_item_not_found'));
         }
 
         if ($folder->getAttribute('parent_id') !== null) {
@@ -60,7 +60,7 @@ class RestoreItemAction extends FileManagerAction
                 // Parent permanently deleted — move to root to avoid orphan parent_id.
                 $folder->setAttribute('parent_id', null);
             } elseif ($parent->trashed()) {
-                throw new LogicException(__('sk-file-manager.errors.restore_parent_trashed'));
+                throw new DomainRuleException(__('sk-file-manager.errors.restore_parent_trashed'));
             }
         }
 
@@ -83,7 +83,7 @@ class RestoreItemAction extends FileManagerAction
             ->first();
 
         if ($media === null) {
-            throw new LogicException(__('sk-file-manager.errors.trash_item_not_found'));
+            throw new DomainRuleException(__('sk-file-manager.errors.trash_item_not_found'));
         }
 
         if ($media->folder_id !== null) {
@@ -99,7 +99,7 @@ class RestoreItemAction extends FileManagerAction
                 // orphan folder_id reference (silent data loss otherwise).
                 $media->folder_id = null;
             } elseif ($parent->trashed()) {
-                throw new LogicException(__('sk-file-manager.errors.restore_parent_trashed'));
+                throw new DomainRuleException(__('sk-file-manager.errors.restore_parent_trashed'));
             }
         }
 

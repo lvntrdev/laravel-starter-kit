@@ -26,6 +26,7 @@ return [
     'trash_notice_sub' => ':count öğe geri yüklenebilir. Kalıcı silme geri alınamaz.',
     'link_copied' => 'Bağlantı panoya kopyalandı.',
     'coming_soon' => 'Bu özellik yakında eklenecek.',
+    'no_files_selected' => 'Dosya seçilmedi.',
 
     'labels' => [
         'root' => 'Ana Dizin',
@@ -59,6 +60,7 @@ return [
         'select_all' => 'Tümünü Seç',
         'refresh' => 'Yenile',
         'uploading' => 'Yükleniyor',
+        'uploading_progress' => ':done/:total yükleniyor · %:percent',
         'upload_failed' => 'Yükleme başarısız',
         'dismiss' => 'Kapat',
         'no_preview' => 'Bu dosya tipi için önizleme yok.',
@@ -138,6 +140,7 @@ return [
         'revoking' => 'İptal ediliyor…',
         'revoked' => 'Paylaşım linki iptal edildi.',
         'copy' => 'Kopyala',
+        'link_aria_label' => 'Paylaşım linki',
         'link_copied' => 'Paylaşım linki panoya kopyalandı.',
         'copy_failed_manual' => 'Otomatik kopyalanamadı. Lütfen linki elle kopyalayın.',
         'expires_at' => 'Son geçerlilik: :date',
@@ -185,6 +188,9 @@ return [
         'upload_invalid_file' => ':attribute yüklenemedi: geçersiz dosya.',
         'quota_exceeded' => 'Yükleme reddedildi: depolama kotası aşıldı (kullanılan: :used MB, gelen: :incoming MB, kota: :quota MB).',
         'too_large' => 'Dosya çok büyük — sunucu yükleme limitini aşıyor.',
+        'upload_failed' => 'Yükleme başarısız oldu.',
+        'upload_failed_status' => 'Yükleme başarısız oldu (:status).',
+        'network_error' => 'Ağ hatası.',
         'copy_failed' => 'Dosya çoğaltılamadı.',
         'invalid_favoritable_type' => 'Geçersiz favori öğe tipi.',
         'favoritable_not_found' => 'Favoriye eklenecek öğe bulunamadı.',

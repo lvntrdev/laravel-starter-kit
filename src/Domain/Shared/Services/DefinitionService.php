@@ -11,24 +11,35 @@ class DefinitionService
     private const CACHE_TTL = 3600;
 
     /**
+     * Single cache key holding every locale's grouped definitions. Shared with
+     * App\Models\Definition::booted() so the reader and the invalidator can
+     * never drift over a per-locale key list. Previously the read path keyed
+     * by App::getLocale() while clearCache() looped config('app.languages')
+     * (mutated at runtime by SettingsServiceProvider) — the two desynced and
+     * left stale, locale-specific cache after a definition changed.
+     */
+    public const CACHE_KEY = 'definitions';
+
+    /**
      * Get all definition items for a specific key in the current locale.
      *
      * @return list<array<string, mixed>>
      */
     public function get(string $key): array
     {
-        return $this->loadGrouped(App::getLocale())[$key] ?? [];
+        return $this->loadAll()[App::getLocale()][$key] ?? [];
     }
 
     /**
-     * Get all definitions grouped by key, optionally filtered by keys.
+     * Get all definitions grouped by key for the current locale, optionally
+     * filtered by keys.
      *
      * @param  list<string>|null  $keys
      * @return array<string, list<array<string, mixed>>>
      */
     public function all(?array $keys = null): array
     {
-        $grouped = $this->loadGrouped(App::getLocale());
+        $grouped = $this->loadAll()[App::getLocale()] ?? [];
 
         if ($keys === null) {
             return $grouped;
@@ -39,32 +50,36 @@ class DefinitionService
 
     public function clearCache(): void
     {
-        foreach (array_keys(config('app.languages', [App::getLocale() => true])) as $locale) {
-            Cache::forget("definitions:{$locale}");
-        }
+        Cache::forget(self::CACHE_KEY);
     }
 
     /**
-     * @return array<string, list<array<string, mixed>>>
+     * Load every active definition under one cache entry, grouped
+     * locale => key => items. Filtering by the current locale happens in
+     * memory so a single flush invalidates all locales at once.
+     *
+     * @return array<string, array<string, list<array<string, mixed>>>>
      */
-    private function loadGrouped(string $locale): array
+    private function loadAll(): array
     {
-        return Cache::remember("definitions:{$locale}", self::CACHE_TTL, function () use ($locale) {
+        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
             return Definition::query()
                 ->where('is_active', true)
-                ->where('lang', $locale)
                 ->orderBy('order')
                 ->get()
-                ->groupBy('key')
-                ->map(fn ($items) => $items->map(fn ($d) => [
-                    'value' => $d->value,
-                    'label' => $d->label,
-                    'order' => $d->order,
-                    'severity' => $d->severity,
-                    'icon' => $d->icon,
-                    'explanation' => $d->explanation,
-                    'visibility' => $d->visibility,
-                ])->values()->all())
+                ->groupBy('lang')
+                ->map(fn ($localeItems) => $localeItems
+                    ->groupBy('key')
+                    ->map(fn ($items) => $items->map(fn ($d) => [
+                        'value' => $d->value,
+                        'label' => $d->label,
+                        'order' => $d->order,
+                        'severity' => $d->severity,
+                        'icon' => $d->icon,
+                        'explanation' => $d->explanation,
+                        'visibility' => $d->visibility,
+                    ])->values()->all())
+                    ->all())
                 ->all();
         });
     }

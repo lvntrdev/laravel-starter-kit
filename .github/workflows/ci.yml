@@ -128,7 +128,6 @@ jobs:
       - name: Lint (ESLint)
         working-directory: stubs
         run: npm run lint --if-present
-        continue-on-error: true
 
       - name: Test (Vitest)
         working-directory: stubs

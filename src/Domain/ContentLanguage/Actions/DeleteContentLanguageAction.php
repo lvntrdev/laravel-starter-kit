@@ -27,6 +27,19 @@ class DeleteContentLanguageAction extends BaseAction
             );
         }
 
-        return (bool) $contentLanguage->delete();
+        $deleted = (bool) $contentLanguage->delete();
+
+        // Audit sink (Task 8): see CreateContentLanguageAction. The model's
+        // attributes are still in memory after delete(), so the subject
+        // association + code/name are recorded even though the row is gone.
+        if ($deleted && auth()->check()) {
+            activity('audit')
+                ->performedOn($contentLanguage)
+                ->event('deleted')
+                ->withProperties(['code' => $contentLanguage->code, 'name' => $contentLanguage->name])
+                ->log('Content language deleted');
+        }
+
+        return $deleted;
     }
 }

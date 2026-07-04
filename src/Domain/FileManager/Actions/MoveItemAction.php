@@ -5,8 +5,8 @@ namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 
 /**
  * Move a folder or a file to another (or root) folder within the same context.
@@ -30,7 +30,7 @@ class MoveItemAction extends FileManagerAction
         match ($itemType) {
             'folder' => $this->moveFolder($context, $itemId, $targetFolderId, $folderModel),
             'file' => $this->moveFile($context, $itemId, $targetFolderId, $folderModel),
-            default => throw new LogicException("Unsupported item type: {$itemType}"),
+            default => throw new DomainRuleException("Unsupported item type: {$itemType}"),
         };
     }
 
@@ -48,7 +48,7 @@ class MoveItemAction extends FileManagerAction
             ->exists();
 
         if (! $exists) {
-            throw new LogicException(__('sk-file-manager.errors.target_missing'));
+            throw new DomainRuleException(__('sk-file-manager.errors.target_missing'));
         }
     }
 
@@ -62,7 +62,7 @@ class MoveItemAction extends FileManagerAction
             ->firstOrFail();
 
         if ($targetFolderId !== null && $this->wouldCreateCycle($context, $folder, $targetFolderId, $folderModel)) {
-            throw new LogicException(__('sk-file-manager.errors.move_cycle'));
+            throw new DomainRuleException(__('sk-file-manager.errors.move_cycle'));
         }
 
         // Pre-check handles parent_id=NULL where the unique index does not
@@ -76,14 +76,14 @@ class MoveItemAction extends FileManagerAction
             ->exists();
 
         if ($duplicate) {
-            throw new LogicException(__('sk-file-manager.errors.duplicate_folder'));
+            throw new DomainRuleException(__('sk-file-manager.errors.duplicate_folder'));
         }
 
         try {
             $folder->update(['parent_id' => $targetFolderId]);
         } catch (QueryException $e) {
             if ($this->isUniqueViolation($e)) {
-                throw new LogicException(__('sk-file-manager.errors.duplicate_folder'));
+                throw new DomainRuleException(__('sk-file-manager.errors.duplicate_folder'));
             }
 
             throw $e;

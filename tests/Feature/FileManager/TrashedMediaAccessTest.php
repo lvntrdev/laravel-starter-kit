@@ -206,6 +206,12 @@ it('returns 404 when creating a new share link for trashed media', function (): 
 // ──────────────────────────────────────────────────────────────────────────────
 
 it('allows revoking a share link while the media is trashed and keeps it dead after restore', function (): void {
+    // RevokeShareLinkAction writes an `audit` activity row on an authenticated
+    // revoke (Task 8). This test drives that path over HTTP (actingAs) but has
+    // no activity_log table, so disable the logger here — the audit behaviour
+    // itself is covered by tests/Feature/Logs/ShareLinkAuditTest.php.
+    config(['activitylog.enabled' => false]);
+
     Storage::fake('public');
 
     $actor = trashedGuardActor('owner-trash-revoke');

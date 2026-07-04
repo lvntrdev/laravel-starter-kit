@@ -26,6 +26,7 @@ return [
     'trash_notice_sub' => ':count items can be restored. Permanent deletion cannot be undone.',
     'link_copied' => 'Link copied to clipboard.',
     'coming_soon' => 'This feature is coming soon.',
+    'no_files_selected' => 'No files selected.',
 
     'labels' => [
         'root' => 'Home',
@@ -59,6 +60,7 @@ return [
         'select_all' => 'Select All',
         'refresh' => 'Refresh',
         'uploading' => 'Uploading',
+        'uploading_progress' => 'Uploading :done/:total · :percent%',
         'upload_failed' => 'Upload failed',
         'dismiss' => 'Dismiss',
         'no_preview' => 'No preview available for this file type.',
@@ -138,6 +140,7 @@ return [
         'revoking' => 'Revoking…',
         'revoked' => 'Share link revoked.',
         'copy' => 'Copy',
+        'link_aria_label' => 'Share link',
         'link_copied' => 'Share link copied to clipboard.',
         'copy_failed_manual' => 'Could not copy automatically. Please copy the link manually.',
         'expires_at' => 'Expires: :date',
@@ -185,6 +188,9 @@ return [
         'upload_invalid_file' => ':attribute could not be uploaded: invalid file.',
         'quota_exceeded' => 'Upload rejected: storage quota exceeded (used: :used MB, incoming: :incoming MB, quota: :quota MB).',
         'too_large' => 'File is too large — it exceeds the server upload limit.',
+        'upload_failed' => 'Upload failed.',
+        'upload_failed_status' => 'Upload failed (:status).',
+        'network_error' => 'Network error.',
         'copy_failed' => 'Failed to duplicate file.',
         'invalid_favoritable_type' => 'Invalid favorite item type.',
         'favoritable_not_found' => 'The item to favorite was not found.',

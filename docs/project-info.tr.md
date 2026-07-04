@@ -28,7 +28,7 @@ Bu starter kit, boş bir panel yerine üretime yakın bir temel sunan, admin oda
 
 - PHP `8.4+`
 - Composer
-- Node.js `18+`
+- Node.js `20.19+`
 - npm
 - MySQL veya MariaDB
 - Taze bir Laravel 13 projesi ya da bu starter kit yapısına uyumlu bir proje

@@ -2,7 +2,6 @@
 
 namespace Lvntr\StarterKit\Domain\ApiClient\Actions;
 
-use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Client;
 
 /**
@@ -24,9 +23,17 @@ class RevokeApiClientAction
         // İstemciyi revoke et
         $client->forceFill(['revoked' => true])->save();
 
-        Log::info('OAuth istemcisi revoke edildi.', [
-            'client_id' => $client->id,
-            'name' => $client->name,
-        ]);
+        // Audit sink (Task 8): revoke edilen istemci admin ActivityLog UI'ında
+        // görünür. Yalnız kimliği doğrulanmış aktör varken kaydedilir.
+        if (auth()->check()) {
+            activity('audit')
+                ->performedOn($client)
+                ->event('deleted')
+                ->withProperties([
+                    'client_id' => $client->id,
+                    'name' => $client->name,
+                ])
+                ->log('OAuth client revoked');
+        }
     }
 }

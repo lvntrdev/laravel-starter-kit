@@ -1,5 +1,6 @@
 <script setup lang="ts">
-    import { useForm, usePage } from '@inertiajs/vue3';
+    import { router, useForm, usePage } from '@inertiajs/vue3';
+    import { useToast } from 'primevue/usetoast';
     import type {
         DatePickerFieldConfig,
         ExistingMedia,
@@ -86,6 +87,7 @@
     }
 
     const api = useApi();
+    const toast = useToast();
     const { can } = useCan();
     const { options: definitionOptions, load: loadDefinitions } = useDefinition();
 
@@ -99,18 +101,29 @@
     // ── Remote data loading ─────────────────────────────────────────────────────
     const restoringDefaults = ref(false);
     const dataLoading = ref(false);
+    const dataError = ref(false);
     const remoteData = ref<Record<string, unknown> | null>(null);
 
     async function fetchRemoteData(): Promise<void> {
         if (!props.config.dataUrl) return;
         dataLoading.value = true;
+        dataError.value = false;
         try {
             const response = await api.get<Record<string, unknown>>(props.config.dataUrl);
             remoteData.value = props.config.dataKey
                 ? (response[props.config.dataKey] as Record<string, unknown>)
                 : response;
-        } catch (e) {
-            console.error('[SkForm] Failed to fetch remote data:', e);
+        } catch {
+            // Surface the failure instead of swallowing it: flag an in-form retry
+            // state and notify the user via a toast.
+            dataError.value = true;
+            toast.add({
+                severity: 'error',
+                summary: trans('sk-common.error'),
+                detail: trans('sk-common.data_load_error'),
+                group: 'bc',
+                life: 4000,
+            });
         } finally {
             dataLoading.value = false;
         }
@@ -370,8 +383,58 @@
     /** Check if the form contains any file upload fields (including section-nested). */
     const hasFileFields = computed(() => flatFields.value.some((f) => f.type === 'file-upload'));
 
+    // ── Dirty-form leave guard ────────────────────────────────────────────────────
+    /**
+     * Set true while this form drives its own Inertia submit so the leave guard
+     * does not prompt on the form's own navigation.
+     */
+    const selfSubmitting = ref(false);
+
+    /** Opt-out prop: `confirmLeave: false` disables the dirty-navigation prompt. */
+    const confirmLeaveEnabled = computed(() => props.config.confirmLeave !== false && isInternalMode.value);
+
+    /**
+     * True only when THIS form instance holds unsaved edits and should block
+     * navigation. Multiple SkForms can coexist on one page — each registers its
+     * own listener and guards only when its own internalForm is dirty.
+     */
+    function shouldGuardLeave(): boolean {
+        return confirmLeaveEnabled.value && internalForm.isDirty && !isReadOnly.value && !selfSubmitting.value;
+    }
+
+    function handleBeforeUnload(e: BeforeUnloadEvent): void {
+        if (!shouldGuardLeave()) return;
+        e.preventDefault();
+        // Legacy browsers require returnValue to be set to trigger the prompt.
+        e.returnValue = '';
+    }
+
+    let removeInertiaBefore: (() => void) | undefined;
+
+    onMounted(() => {
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        // Inertia SPA navigation: cancel the visit (return false) when the user
+        // declines the confirm on a dirty form.
+        removeInertiaBefore = router.on('before', () => {
+            if (!shouldGuardLeave()) return;
+            // eslint-disable-next-line no-alert
+            if (!window.confirm(trans('sk-common.confirm_leave'))) {
+                return false;
+            }
+        });
+    });
+
+    onBeforeUnmount(() => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        removeInertiaBefore?.();
+    });
+
     function handleSubmit(): void {
         if (!props.config.submit || isReadOnly.value) {
+            return;
+        }
+        // Double-submit guard: ignore re-entrant submits while a request is in flight.
+        if (internalForm.processing) {
             return;
         }
         const { url, method, preserveScroll = true } = props.config.submit;
@@ -384,6 +447,7 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
+        selfSubmitting.value = true;
         internalForm
             .transform((data: Record<string, unknown>) => {
                 if (dateOnlyFields.length === 0) return data;
@@ -402,6 +466,9 @@
                 preserveScroll,
                 forceFormData: hasFileFields.value,
                 onSuccess: () => emit('success'),
+                onFinish: () => {
+                    selfSubmitting.value = false;
+                },
             });
     }
 
@@ -428,6 +495,7 @@
 
     const dynamicOptions = ref<Record<string, SelectOption[]>>({});
     const loadingOptions = ref<Set<string>>(new Set());
+    const optionErrors = ref<Set<string>>(new Set());
     const lastOptionUrl = ref<Record<string, string | null>>({});
 
     const dynamicSelectFields = computed<SelectFieldConfig[]>(() =>
@@ -443,8 +511,22 @@
         try {
             const options = await api.get<SelectOption[]>(url);
             dynamicOptions.value = { ...dynamicOptions.value, [field.key]: options };
+            if (optionErrors.value.has(field.key)) {
+                const cleared = new Set(optionErrors.value);
+                cleared.delete(field.key);
+                optionErrors.value = cleared;
+            }
         } catch {
+            // Field-level error indicator + toast instead of a silent empty list.
             dynamicOptions.value = { ...dynamicOptions.value, [field.key]: [] };
+            optionErrors.value = new Set([...optionErrors.value, field.key]);
+            toast.add({
+                severity: 'error',
+                summary: trans('sk-common.error'),
+                detail: trans('sk-common.options_load_error'),
+                group: 'bc',
+                life: 4000,
+            });
         } finally {
             const next = new Set(loadingOptions.value);
             next.delete(field.key);
@@ -537,6 +619,10 @@
         return loadingOptions.value.has(field.key);
     }
 
+    function optionError(field: FieldConfig): boolean {
+        return optionErrors.value.has(field.key);
+    }
+
     function hasInlineLabel(field: FieldConfig): boolean {
         return INLINE_LABEL_TYPES.has(field.type);
     }
@@ -619,6 +705,7 @@
         isVisible,
         isDisabled,
         isLoading,
+        optionError,
         hasInlineLabel,
         hasInlineFieldLabel,
         isControlRight,
@@ -655,6 +742,24 @@
                         <div class="h-10 rounded bg-surface-200 dark:bg-surface-700 animate-pulse" />
                     </div>
                 </div>
+            </div>
+
+            <!-- ── Data load error (dataUrl fetch failed) — in-form retry ──────────── -->
+            <div
+                v-else-if="dataError"
+                class="sk-fb__data-error flex flex-col items-center gap-3 py-8 text-center"
+                :class="config.cssClass"
+            >
+                <i class="pi pi-exclamation-triangle text-2xl text-red-500" />
+                <p class="text-surface-600 dark:text-surface-300">{{ $t('sk-common.data_load_error') }}</p>
+                <Button
+                    :label="$t('sk-button.retry')"
+                    icon="pi pi-refresh"
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    @click="fetchRemoteData"
+                />
             </div>
 
             <!--

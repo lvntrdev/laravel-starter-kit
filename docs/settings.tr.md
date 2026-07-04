@@ -60,7 +60,7 @@ Admin modülü şu route'ları sunar:
 - logo yükleme/silme uçları artık standart `ApiResponse` zarfını kullanır
 - Auth sekmesinde iki faktörü kapatmak, değişiklik gönderilmeden önce yöneticiye onay sorar; çünkü kullanıcı güvenliğini etkiler
 - Güvenlik sekmesi üç alt sekmeye bölünmüştür: **Kimlik Doğrulama** (kayıt, e-posta doğrulama, şifre sıfırlama, iki faktör, giriş denemesi limiti), **Parola Politikası** (minimum uzunluk, geçerlilik süresi gün sayısı, karmaşıklık toggle'ları) ve **Cloudflare Turnstile**
-- `auth.login_throttle = '0'` Fortify giriş rate limiter'ını devre dışı bırakır; varsayılan `'1'`'dir (throttle aktif); kapatmak yalnızca yöneticilere sunulan bilinçli bir güvenlik düşürümüdür
+- `auth.login_throttle = '0'` Fortify giriş rate limiter'ını **devre dışı bırakmaz** — hiçbir admin ayarı web login'ini tamamen limitsiz bırakamaz. Bunun yerine sert `login` limiter'ını daha gevşek `login-relaxed` tabanına çevirir (`stubs/app/Providers/FortifyServiceProvider.php`'de tanımlı); varsayılan `'1'`'dir (sert limiter). Bu anahtar yalnızca **web** (Fortify) login'ini yönetir — API auth route'ları bu ayardan bağımsız sabit `throttle:5,1` middleware'i taşır.
 - parola politikası ayarları (`password_min_length`, `password_require_mixed_case`, `password_require_numbers`, `password_require_symbols`) `PasswordValidationRules` aracılığıyla her yeni parolaya uygulanır; mevcut parolalar hiçbir zaman geçersiz olmaz
 - `auth.password_expiry_days > 0` `EnsurePasswordNotExpired` middleware'ini etkinleştirir; `password_changed_at` değeri yapılandırılan gün sayısından daha eski olan kullanıcılar, parolalarını güncelleyene kadar adanmış, guest tarzı bir parola-süresi-doldu ekranına (`password.expired` rotası) yönlendirilir; `0` ayarı geçerlilik süresini devre dışı bırakır
 - parola geçerlilik süresi muaf rotalar: parola-süresi-doldu sayfası (`password.expired`), çıkış, iki faktör challenge, Fortify parola uç noktaları — redirect döngüsü oluşamaz
@@ -86,7 +86,7 @@ Admin modülü şu route'ları sunar:
 | `password_reset` | boolean | `'1'` | `'1'` | E-posta tabanlı şifre sıfırlamaya izin ver |
 | `email_verification` | boolean | `'0'` | `'1'` | Giriş öncesi e-posta doğrulama zorunlu |
 | `two_factor` | boolean | `'0'` | `'1'` | İki faktörlü kimlik doğrulamayı etkinleştir |
-| `login_throttle` | boolean | `'1'` | `'1'` | Fortify giriş rate limiter'ını etkinleştir |
+| `login_throttle` | boolean | `'1'` | `'1'` | `'1'` = sert Fortify `login` limiter; `'0'` = gevşek `login-relaxed` tabanı (asla tamamen kapanmaz) |
 | `password_min_length` | integer (string) | `'10'` | `10` | Minimum parola uzunluğu |
 | `password_expiry_days` | integer (string) | `'0'` | `0` | Parolanın geçerlilik süresi (gün); `0` = sınırsız |
 | `password_require_mixed_case` | boolean | `'1'` | `'1'` | Parolada büyük ve küçük harf zorunlu |

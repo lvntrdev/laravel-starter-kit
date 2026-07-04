@@ -5,6 +5,42 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.0] - 2026-07-04
+
+A quality-control and UX sprint applying the findings of an internal audit report: security-test coverage, audit-log completeness, backend convention cleanup, accessibility/UX gaps, and install/upgrade DX. See [UPGRADE.md](docs/UPGRADE.md) for the one published-file behavior change (`login_throttle`) that needs `sk:update`; everything else here ships via `composer update` alone.
+
+### Security
+
+- **`auth.login_throttle = '0'` no longer fully disables the web login rate limiter.** Previously this setting nulled Fortify's `login` limiter entirely, so an administrator toggling it off left web login unthrottled. `SettingsServiceProvider` now swaps in a deliberately generous `login-relaxed` floor limiter instead — no admin setting can leave web login fully unthrottled. The API auth routes are unaffected (they already carry a hardcoded `throttle:5,1`). Published-file change — see [UPGRADE.md](docs/UPGRADE.md).
+
+### Added
+
+- **Audit log now covers role/permission changes, Settings, ApiClient/ApiToken, share links, and Content Languages.** Role↔permission pivot changes are recorded on a dedicated `audit` activity channel (attribute-only changes stay on the existing `HasActivityLogging` trait channel — no double-logging). `SettingService::setValue()`/`setGroup()` record which setting *keys* changed (never the values — secrets are never written to the log). ApiClient/ApiToken create/revoke, share-link create/revoke, and ContentLanguage CRUD are all now visible in the ActivityLog admin screen.
+- **`sk:install` preflight + checkpoint/resume.** A Node.js version check runs before any file is touched (warns and lets the npm step degrade gracefully instead of a cryptic failure). Progress is checkpointed after every step to `storage/starter-kit/install-progress.json`; a failed step prints an actionable message instead of a raw stack trace, and `php artisan sk:install --resume` picks up exactly where it left off without redoing completed work.
+- **`sk:doctor` gained `NodeVersionCheck` and `QueueWorkerCheck`,** and `ScheduleConfiguredCheck` now warns (instead of silently reporting OK) when no cron heartbeat is detected. Every check now runs under a timeout guard so one hung DB/Redis/SMTP check can no longer stall the whole command.
+- **`sk:eject` asks for confirmation before ejecting**, unless `--force`, `--dry-run`, or `--no-interaction` is passed — ejecting is a one-way trade-off (the domain stops receiving kit runtime updates). `sk:install`'s own internal default-domain eject always passes `--force`, so fresh installs are unaffected.
+- **Datatable keyboard accessibility.** Sortable column headers are keyboard-operable (`tabindex`, Enter/Space, `aria-sort`); the search-clear and filter-remove controls are real `<button>` elements instead of icon `<span>`s (visual output unchanged).
+- **Datatable empty state distinguishes "no results for your filter" from "no records at all"**, with a "Clear filters" action when a search/filter is active.
+- **`SkForm` gained several safety guards:** a double-submit guard (re-entrant submits while a request is in flight are ignored), a dirty-form navigation warning (both Inertia SPA navigation and browser `beforeunload`; opt out per-form with `confirmLeave: false`), a toast + in-form retry state when a form's remote data or field options fail to load (previously a silent `console.error`), and `aria-required` + a screen-reader-only "required" hint on required fields.
+- **FileManager gained an aggregate upload-progress indicator** across concurrent uploads (in addition to the existing per-file progress), and `ImageLightbox` supports ←/→ arrow-key gallery navigation alongside the existing Escape-to-close.
+- New feature-test coverage: `CheckResourcePermission` middleware scenarios, `ActionPipeline` transaction/rollback behavior, and a `DatabaseTestCase` schema-drift detector that fails loudly if the inline test schema diverges from the real migrations.
+- **`release.sh` runs a pre-tag quality gate** (`composer lint && composer test && composer security`) before tagging a release; `--skip-checks` opts out.
+
+### Changed
+
+- CI's ESLint step is now blocking (`continue-on-error` removed); the Vue lint ruleset was raised from `flat/essential` to `flat/strongly-recommended` in the published `eslint.config.js` (may surface new pre-existing style warnings on the first `npm run lint` after `sk:update`).
+- `LogicException` is now mapped to a 422 response centrally in `ApiExceptionHandler`; the ~12 repetitive `try/catch (LogicException)` blocks in `FileManagerController` were removed (response shape unchanged).
+- Backend convention cleanup: a dedicated `UploadLogoRequest` (matching the existing `UploadFaviconRequest` pattern), `abort()`/`abort_unless()` replaced with `ApiException::*` in a few JSON-only controller methods, and the twin `Api\DefinitionController` / `Service\DefinitionServiceController` now share a common private method instead of duplicating it.
+- `DefinitionService` cache invalidation was unified onto a single locale-keying strategy and wired to the `Definition` model's save/delete/restore events, so definition edits are reflected immediately instead of waiting out the ~1h cache TTL.
+- `--no-interaction` installs now generate and print a fresh random admin password instead of a fixed, guessable `password`.
+- `UpgradeCommand`'s PHP-version assertion was raised from 8.3 to 8.4, matching the package's actual `composer.json` requirement.
+- `env:sync` no longer stacks a new `# Auto-added keys` comment block on every re-run; a new `pint.json` pins the previously-implicit `laravel` preset explicitly (no formatting change).
+
+### Fixed
+
+- Vitest configuration was extracted from `vite.config.ts` into its own `vitest.config.ts`, and FormBuilder/DatatableBuilder/TabBuilder gained baseline builder-chain unit tests.
+- FileManager upload-error messages and the share-link modal's `aria-label` were moved from hardcoded strings into the kit's i18n bundles (EN + TR); an empty file selection now shows a clear "no file selected" message instead of a stray "coming soon" placeholder.
+
 ## [13.6.7] - 2026-07-03
 
 ### Fixed

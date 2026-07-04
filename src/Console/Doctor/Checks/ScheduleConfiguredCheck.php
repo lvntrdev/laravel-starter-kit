@@ -16,6 +16,9 @@ use Throwable;
  */
 class ScheduleConfiguredCheck implements DoctorCheck
 {
+    /** schedule:run heartbeat bu süreden (saniye) eskiyse cron durmuş olabilir. */
+    private const STALE_THRESHOLD = 300;
+
     public function name(): string
     {
         return 'Schedule Configured';
@@ -37,19 +40,34 @@ class ScheduleConfiguredCheck implements DoctorCheck
                 );
             }
 
-            // Cron kaydı varlığını kontrol et
+            // Cron canlılığı: schedule:run her dakika bu dosyaya heartbeat yazar
+            // (StarterKitServiceProvider CommandFinished listener). Dosya yoksa
+            // schedule:run hiç çalışmamış → cron kurulu olmayabilir.
             $lastRunFile = storage_path('framework/.schedule-last-run');
-            $lastRunInfo = '';
 
-            if (file_exists($lastRunFile)) {
-                $timestamp = (int) file_get_contents($lastRunFile);
-                $diff = now()->diffForHumans(Carbon::createFromTimestamp($timestamp));
-                $lastRunInfo = " Last run: {$diff}.";
+            if (! file_exists($lastRunFile)) {
+                return DoctorReport::warn(
+                    $this->name(),
+                    "{$count} scheduled task(s) defined, but schedule:run has never been recorded.",
+                    'The system cron entry may be missing. Add: * * * * * php artisan schedule:run >> /dev/null 2>&1'
+                );
+            }
+
+            $timestamp = (int) file_get_contents($lastRunFile);
+            $secondsAgo = now()->getTimestamp() - $timestamp;
+            $diff = now()->diffForHumans(Carbon::createFromTimestamp($timestamp));
+
+            if ($secondsAgo >= self::STALE_THRESHOLD) {
+                return DoctorReport::warn(
+                    $this->name(),
+                    "{$count} scheduled task(s) defined, but the last schedule:run was {$diff}.",
+                    'The cron may have stopped. Verify the crontab entry runs schedule:run every minute.'
+                );
             }
 
             return DoctorReport::ok(
                 $this->name(),
-                "{$count} scheduled task(s) defined.{$lastRunInfo}"
+                "{$count} scheduled task(s) defined. Last run: {$diff}."
             );
         } catch (Throwable $e) {
             return DoctorReport::warn(

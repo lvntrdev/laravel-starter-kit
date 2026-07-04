@@ -1,4 +1,5 @@
 import { useApi } from '@/composables/useApi';
+import { trans } from 'laravel-vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import type {
     FileItem,
@@ -69,6 +70,18 @@ export function useFileManager(options: Options) {
 
     const pendingUploads = ref<PendingUpload[]>([]);
     const favoritePending = ref<Set<string>>(new Set());
+
+    /** Aggregate progress across all in-flight uploads, derived from pendingUploads (errored items excluded from the average). */
+    const uploadProgress = computed(() => {
+        const items = pendingUploads.value.filter((p) => !p.error);
+        const total = items.length;
+        if (total === 0) {
+            return { total: 0, completed: 0, percent: 0 };
+        }
+        const completed = items.filter((p) => p.progress >= 100).length;
+        const percent = Math.round(items.reduce((sum, p) => sum + p.progress, 0) / total);
+        return { total, completed, percent };
+    });
 
     const contextQuery = computed(() => {
         const params = new URLSearchParams({ context: options.context });
@@ -470,7 +483,7 @@ export function useFileManager(options: Options) {
 
             xhr.onload = () => {
                 if (xhr.status === 413) {
-                    reject(new Error('sk-file-manager.errors.too_large'));
+                    reject(new Error(trans('sk-file-manager.errors.too_large')));
                     return;
                 }
                 try {
@@ -482,15 +495,21 @@ export function useFileManager(options: Options) {
                             new Error(
                                 extractValidationMessage(envelope) ??
                                     envelope?.message ??
-                                    `Upload failed (${xhr.status})`,
+                                    trans('sk-file-manager.errors.upload_failed_status', { status: String(xhr.status) }),
                             ),
                         );
                     }
                 } catch {
-                    reject(new Error(xhr.status === 0 ? 'Network error' : `Upload failed (${xhr.status})`));
+                    reject(
+                        new Error(
+                            xhr.status === 0
+                                ? trans('sk-file-manager.errors.network_error')
+                                : trans('sk-file-manager.errors.upload_failed_status', { status: String(xhr.status) }),
+                        ),
+                    );
                 }
             };
-            xhr.onerror = () => reject(new Error('Network error'));
+            xhr.onerror = () => reject(new Error(trans('sk-file-manager.errors.network_error')));
             xhr.send(formData);
         });
     }
@@ -523,7 +542,7 @@ export function useFileManager(options: Options) {
                 updatePending(tempId, { progress: 100 });
                 uploaded.push(...result);
             } catch (err) {
-                const message = (err as Error).message ?? 'Upload failed';
+                const message = (err as Error).message ?? trans('sk-file-manager.errors.upload_failed');
                 updatePending(tempId, { error: message });
                 errors.push(message);
             }
@@ -555,6 +574,7 @@ export function useFileManager(options: Options) {
         selectedItems,
         pendingUploads,
         favoritePending,
+        uploadProgress,
         loadTree,
         loadContents,
         loadFavorites,

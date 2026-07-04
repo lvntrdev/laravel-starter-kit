@@ -11,6 +11,13 @@ NC='\033[0m'
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+SKIP_CHECKS=0
+for arg in "$@"; do
+    case "${arg}" in
+        --skip-checks) SKIP_CHECKS=1 ;;
+    esac
+done
+
 info()   { echo -e "  ${GREEN}INFO${NC}    ${1}"; }
 error()  { echo -e "  ${RED}ERROR${NC}   ${1}"; exit 1; }
 warn()   { echo -e "  ${YELLOW}WARN${NC}    ${1}"; }
@@ -100,6 +107,20 @@ echo ""
 read -rp "  ${VERSION} yayınlansın mı? [E/h]: " CONFIRM
 CONFIRM="${CONFIRM:-E}"
 [[ "${CONFIRM}" =~ ^[EeYy]$ ]] || { warn "Yayın iptal edildi."; exit 0; }
+
+if [[ "${SKIP_CHECKS}" -eq 1 ]]; then
+    warn "Kalite kapısı atlandı (--skip-checks)."
+else
+    echo ""
+    echo -e "  ${GRAY}→${NC} Kalite kapısı çalıştırılıyor (composer lint && composer test && composer security)..."
+    composer --working-dir="${DIR}" lint \
+        || error "composer lint başarısız. Düzelt ve tekrar dene (ya da --skip-checks ile atla)."
+    composer --working-dir="${DIR}" test \
+        || error "composer test başarısız. Düzelt ve tekrar dene (ya da --skip-checks ile atla)."
+    composer --working-dir="${DIR}" security \
+        || error "composer security başarısız. Düzelt ve tekrar dene (ya da --skip-checks ile atla)."
+    detail "Kalite kapısı" "${GREEN}GEÇTİ${NC}"
+fi
 
 extract_changelog() {
     local version="${1}"

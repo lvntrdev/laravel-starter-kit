@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -44,7 +44,7 @@ class UploadFileAction extends FileManagerAction
         }
 
         if ($files === []) {
-            throw new LogicException(__('sk-file-manager.errors.no_files'));
+            throw new DomainRuleException(__('sk-file-manager.errors.no_files'));
         }
 
         $uploaded = [];

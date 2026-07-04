@@ -50,6 +50,8 @@
         isVisible: (field: FieldConfig) => boolean;
         isDisabled: (field: FieldConfig) => boolean;
         isLoading: (field: FieldConfig) => boolean;
+        /** True when a dynamic `optionsUrl` fetch failed for this field. */
+        optionError: (field: FieldConfig) => boolean;
         hasInlineLabel: (field: FieldConfig) => boolean;
         hasInlineFieldLabel: (field: FieldConfig) => boolean;
         isControlRight: (field: FieldConfig) => boolean;
@@ -431,6 +433,10 @@
                     v-if="ctx.activeErrors[field.key] && !ctx.isTranslatableField(field)"
                     class="sk-fb__error"
                 >{{ ctx.activeErrors[field.key] }}</small>
+                <small
+                    v-else-if="ctx.optionError(field)"
+                    class="sk-fb__error"
+                >{{ $t('sk-common.options_load_error') }}</small>
                 <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
             </div>
 
@@ -445,7 +451,7 @@
                                 class="sk-fb__label-icon sk-fb__label-icon--left"
                             />
                             {{ ctx.displayLabel(field) }}
-                            <span v-if="field.required" class="sk-fb__required">*</span>
+                            <span v-if="field.required" class="sk-fb__required" aria-hidden="true">*</span><span v-if="field.required" class="sr-only">{{ $t('sk-common.required') }}</span>
                             <SkIcon
                                 v-if="field.labelIcon && labelIconPosition(field) === 'right'"
                                 :icon="field.labelIcon"
@@ -480,7 +486,7 @@
                                 class="sk-fb__label-icon sk-fb__label-icon--left"
                             />
                             {{ ctx.displayLabel(field) }}
-                            <span v-if="field.required" class="sk-fb__required">*</span>
+                            <span v-if="field.required" class="sk-fb__required" aria-hidden="true">*</span><span v-if="field.required" class="sr-only">{{ $t('sk-common.required') }}</span>
                             <SkIcon
                                 v-if="field.labelIcon && labelIconPosition(field) === 'right'"
                                 :icon="field.labelIcon"
@@ -494,6 +500,10 @@
                     v-if="ctx.activeErrors[field.key] && !ctx.isTranslatableField(field)"
                     class="sk-fb__error"
                 >{{ ctx.activeErrors[field.key] }}</small>
+                <small
+                    v-else-if="ctx.optionError(field)"
+                    class="sk-fb__error"
+                >{{ $t('sk-common.options_load_error') }}</small>
                 <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
             </div>
 
@@ -515,7 +525,7 @@
                             class="sk-fb__label-icon sk-fb__label-icon--left"
                         />
                         {{ ctx.displayLabel(field) }}
-                        <span v-if="field.required" class="sk-fb__required">*</span>
+                        <span v-if="field.required" class="sk-fb__required" aria-hidden="true">*</span><span v-if="field.required" class="sr-only">{{ $t('sk-common.required') }}</span>
                         <SkIcon
                             v-if="field.labelIcon && labelIconPosition(field) === 'right'"
                             :icon="field.labelIcon"
@@ -557,7 +567,7 @@
                             class="sk-fb__label-icon sk-fb__label-icon--left"
                         />
                         {{ ctx.displayLabel(field) }}
-                        <span v-if="field.required" class="sk-fb__required">*</span>
+                        <span v-if="field.required" class="sk-fb__required" aria-hidden="true">*</span><span v-if="field.required" class="sr-only">{{ $t('sk-common.required') }}</span>
                         <SkIcon
                             v-if="field.labelIcon && labelIconPosition(field) === 'right'"
                             :icon="field.labelIcon"
@@ -589,6 +599,10 @@
                     v-if="ctx.activeErrors[field.key] && !ctx.isTranslatableField(field)"
                     class="sk-fb__error"
                 >{{ ctx.activeErrors[field.key] }}</small>
+                <small
+                    v-else-if="ctx.optionError(field)"
+                    class="sk-fb__error"
+                >{{ $t('sk-common.options_load_error') }}</small>
                 <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
             </div>
         </template>
@@ -606,7 +620,7 @@
                     class="sk-fb__label-icon sk-fb__label-icon--left"
                 />
                 {{ ctx.displayLabel(field) }}
-                <span v-if="field.required" class="sk-fb__required">*</span>
+                <span v-if="field.required" class="sk-fb__required" aria-hidden="true">*</span><span v-if="field.required" class="sr-only">{{ $t('sk-common.required') }}</span>
                 <SkIcon
                     v-if="field.labelIcon && labelIconPosition(field) === 'right'"
                     :icon="field.labelIcon"
@@ -658,6 +672,10 @@
                     v-if="ctx.activeErrors[field.key] && !ctx.isTranslatableField(field)"
                     class="sk-fb__error"
                 >{{ ctx.activeErrors[field.key] }}</small>
+                <small
+                    v-else-if="ctx.optionError(field)"
+                    class="sk-fb__error"
+                >{{ $t('sk-common.options_load_error') }}</small>
                 <small v-else-if="field.hint" class="sk-fb__hint">{{ $t(field.hint) }}</small>
             </div>
         </div>

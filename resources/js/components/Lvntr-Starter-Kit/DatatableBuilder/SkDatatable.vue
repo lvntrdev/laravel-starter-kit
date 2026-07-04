@@ -715,6 +715,12 @@
         return sortOrder.value === 'asc' ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down';
     }
 
+    function ariaSort(sortable: boolean, key: string): 'ascending' | 'descending' | 'none' | undefined {
+        if (!sortable) return undefined;
+        if (sortKey.value !== key) return 'none';
+        return sortOrder.value === 'asc' ? 'ascending' : 'descending';
+    }
+
     // ── Pagination ────────────────────────────────────────────────────────────────
 
     function goToPage(page: number) {
@@ -998,6 +1004,9 @@
 
         return tags;
     });
+
+    /** Whether the empty table state is caused by an active search/filter (vs. genuinely no data). */
+    const hasActiveSearchOrFilter = computed(() => activeTags.value.length > 0 || search.value.trim() !== '');
 
     function clearFilter(key: string) {
         activeFilters.value[key] = null;
@@ -1508,7 +1517,13 @@
                             autofocus
                             autocomplete="one-time-code"
                         />
-                        <InputIcon v-if="search" class="pi pi-times sk-dt-toolbar__search-clear" @click="search = ''" />
+                        <button
+                            v-if="search"
+                            type="button"
+                            class="p-inputicon pi pi-times sk-dt-toolbar__search-clear"
+                            :aria-label="$t('sk-button.close')"
+                            @click="search = ''"
+                        />
                     </IconField>
                 </div>
             </Popover>
@@ -1518,7 +1533,12 @@
                 <span v-for="tag in activeTags" :key="tag.key" class="sk-dt-tags__tag">
                     <span class="sk-dt-tags__tag-label">{{ tag.label }}:</span>
                     <span class="sk-dt-tags__tag-value">{{ tag.value }}</span>
-                    <i class="sk-dt-tags__tag-remove" :aria-label="$t('sk-button.clear_all')" @click="clearFilter(tag.key)" />
+                    <button
+                        type="button"
+                        class="sk-dt-tags__tag-remove"
+                        :aria-label="$t('sk-button.clear_all')"
+                        @click="clearFilter(tag.key)"
+                    />
                 </span>
                 <button class="sk-dt-tags__clear-all" @click="clearAllFilters">
                     {{ $t('sk-button.clear_all') }}
@@ -1546,7 +1566,11 @@
                                     v-if="showIdColumn"
                                     class="sk-dt__th sk-dt__th--sticky sk-dt__th--id"
                                     :class="{ 'sk-dt__th--sortable': config.sortable }"
+                                    :tabindex="config.sortable ? 0 : undefined"
+                                    :aria-sort="ariaSort(config.sortable, idKey)"
                                     @click="config.sortable ? handleSort(idKey) : undefined"
+                                    @keydown.enter="config.sortable ? handleSort(idKey) : undefined"
+                                    @keydown.space.prevent="config.sortable ? handleSort(idKey) : undefined"
                                 >
                                     <span class="sk-dt__sort-label">
                                         {{ $t('sk-common.id') }}
@@ -1563,7 +1587,11 @@
                                         'sk-dt__th--sorted': config.sortable && sortKey === column.key,
                                         'sk-dt__th--sticky': column.sticky,
                                     }"
+                                    :tabindex="config.sortable && column.sortable ? 0 : undefined"
+                                    :aria-sort="ariaSort(config.sortable && column.sortable, column.key)"
                                     @click="config.sortable && column.sortable ? handleSort(column.key) : undefined"
+                                    @keydown.enter="config.sortable && column.sortable ? handleSort(column.key) : undefined"
+                                    @keydown.space.prevent="config.sortable && column.sortable ? handleSort(column.key) : undefined"
                                 >
                                     <span class="sk-dt__sort-label">
                                         {{
@@ -1722,8 +1750,20 @@
                                                 <i class="pi pi-inbox" />
                                             </div>
                                             <p class="sk-dt__empty-text">
-                                                {{ $t('sk-datatable.no_records') }}
+                                                {{
+                                                    hasActiveSearchOrFilter
+                                                        ? $t('sk-datatable.no_results_filtered')
+                                                        : $t('sk-datatable.no_records')
+                                                }}
                                             </p>
+                                            <Button
+                                                v-if="hasActiveSearchOrFilter"
+                                                :label="$t('sk-datatable.clear_filters')"
+                                                severity="secondary"
+                                                text
+                                                size="small"
+                                                @click="clearAllFilters"
+                                            />
                                         </div>
                                     </td>
                                 </tr>

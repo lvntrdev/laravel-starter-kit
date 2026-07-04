@@ -4,8 +4,8 @@ namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 
 class RenameFolderAction extends FileManagerAction
 {
@@ -27,14 +27,14 @@ class RenameFolderAction extends FileManagerAction
             ->exists();
 
         if ($exists) {
-            throw new LogicException(__('sk-file-manager.errors.duplicate_folder'));
+            throw new DomainRuleException(__('sk-file-manager.errors.duplicate_folder'));
         }
 
         try {
             $folder->update(['name' => $name]);
         } catch (QueryException $e) {
             if ($this->isUniqueViolation($e)) {
-                throw new LogicException(__('sk-file-manager.errors.duplicate_folder'));
+                throw new DomainRuleException(__('sk-file-manager.errors.duplicate_folder'));
             }
 
             throw $e;
@@ -46,7 +46,7 @@ class RenameFolderAction extends FileManagerAction
     private function assertBelongsToContext(FileManagerContextDTO $context, Model $folder): void
     {
         if ($folder->getAttribute('owner_type') !== $context->ownerType || (string) $folder->getAttribute('owner_id') !== $context->ownerId) {
-            throw new LogicException(__('sk-file-manager.errors.folder_out_of_context'));
+            throw new DomainRuleException(__('sk-file-manager.errors.folder_out_of_context'));
         }
     }
 

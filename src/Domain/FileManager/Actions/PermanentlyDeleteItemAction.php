@@ -4,8 +4,8 @@ namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -19,7 +19,7 @@ class PermanentlyDeleteItemAction extends FileManagerAction
     public function execute(FileManagerContextDTO $context, string $itemType, string $itemId): void
     {
         if (! in_array($itemType, ['folder', 'file'], true)) {
-            throw new LogicException(__('sk-file-manager.errors.invalid_trash_item_type'));
+            throw new DomainRuleException(__('sk-file-manager.errors.invalid_trash_item_type'));
         }
 
         match ($itemType) {
@@ -39,7 +39,7 @@ class PermanentlyDeleteItemAction extends FileManagerAction
             ->first();
 
         if ($media === null) {
-            throw new LogicException(__('sk-file-manager.errors.trash_item_not_found'));
+            throw new DomainRuleException(__('sk-file-manager.errors.trash_item_not_found'));
         }
 
         // Spatie's MediaObserver removes the physical file when isForceDeleting() is true.
@@ -59,7 +59,7 @@ class PermanentlyDeleteItemAction extends FileManagerAction
             ->first();
 
         if ($folder === null) {
-            throw new LogicException(__('sk-file-manager.errors.trash_item_not_found'));
+            throw new DomainRuleException(__('sk-file-manager.errors.trash_item_not_found'));
         }
 
         DB::transaction(function () use ($context, $folder, $folderModel) {

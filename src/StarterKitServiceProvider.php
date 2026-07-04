@@ -8,6 +8,7 @@ use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -835,6 +836,23 @@ class StarterKitServiceProvider extends ServiceProvider
         Event::listen(RoleCreated::class, LogRoleCreated::class);
         Event::listen(RoleUpdated::class, LogRoleUpdated::class);
         Event::listen(RoleDeleted::class, LogRoleDeleted::class);
+
+        // ── schedule:run cron heartbeat ──────────────────────────────────────
+        // Her `schedule:run` çağrısında (görev due olsun olmasın) bir timestamp
+        // dosyası yazılır; sk:doctor ScheduleConfiguredCheck bununla cron'un
+        // canlı olup olmadığını (dosya var mı / bayat mı) tespit eder. Yalnız
+        // schedule:run komutunu dinler — string karşılaştırması, ihmal edilebilir
+        // maliyet. Yazma en-iyi-çaba (@) — heartbeat başarısızlığı komutu bozmaz.
+        Event::listen(CommandFinished::class, static function (CommandFinished $event): void {
+            if ($event->command !== 'schedule:run') {
+                return;
+            }
+
+            @file_put_contents(
+                storage_path('framework/.schedule-last-run'),
+                (string) time()
+            );
+        });
     }
 
     /**

@@ -45,7 +45,11 @@ class UpdateRoleAction extends BaseAction
         }
 
         if (! empty($changedFields)) {
-            RoleUpdated::dispatch($role, $changedFields, Auth::id());
+            // Snapshot the persisted permission set HERE (synchronous, correct)
+            // so a queued audit listener records THIS update, not a later pivot.
+            $permissions = $role->permissions()->pluck('name')->sort()->values()->all();
+
+            RoleUpdated::dispatch($role, $changedFields, $permissions, Auth::id());
         }
 
         return $role;

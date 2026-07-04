@@ -58,7 +58,13 @@ class EnvSyncCommand extends Command
             return self::SUCCESS;
         }
 
-        $newLines = "\n# Auto-added keys (".now()->format('Y-m-d').")\n";
+        // Idempotency: only add the "# Auto-added keys" header once. A file that
+        // already carries the block from a previous run gets new keys appended
+        // without a duplicate header — otherwise every run that finds missing
+        // keys stacks another dated header on top of the last one.
+        $hasExistingBlock = str_contains($exampleContent, '# Auto-added keys');
+
+        $newLines = $hasExistingBlock ? "\n" : "\n# Auto-added keys (".now()->format('Y-m-d').")\n";
 
         foreach ($missingKeys as $key) {
             $value = $this->isSensitive($key) ? '' : $envKeys[$key];

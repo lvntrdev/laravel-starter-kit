@@ -26,7 +26,7 @@ class UpdateContentLanguageAction extends BaseAction
      */
     public function execute(ContentLanguage $model, ContentLanguageDTO $dto): ContentLanguage
     {
-        return DB::transaction(function () use ($model, $dto): ContentLanguage {
+        $model = DB::transaction(function () use ($model, $dto): ContentLanguage {
             $attributes = $dto->toArray();
 
             $this->guardLastDefault($model, $attributes);
@@ -46,6 +46,17 @@ class UpdateContentLanguageAction extends BaseAction
 
             return $model;
         });
+
+        // Audit sink (Task 8): see CreateContentLanguageAction.
+        if (auth()->check()) {
+            activity('audit')
+                ->performedOn($model)
+                ->event('updated')
+                ->withProperties(['code' => $model->code, 'name' => $model->name])
+                ->log('Content language updated');
+        }
+
+        return $model;
     }
 
     /**

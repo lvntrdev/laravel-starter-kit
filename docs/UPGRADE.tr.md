@@ -4,6 +4,41 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v13.6.7 → v13.7.0
+
+### Özet
+
+Birkaç publish edilmiş stub dosyasına dokunan bir kalite/UX turu. Başlıca değişiklik bir güvenlik düzeltmesi: `auth.login_throttle = '0'` artık web login rate limiter'ını tamamen devre dışı bırakmıyor — bunun yerine bilinçli olarak gevşek bir taban limiter'a geçiyor. Bu sürümdeki diğer her şey (audit-log genişletmesi, `sk:install`/`sk:doctor`/`sk:eject` DX iyileştirmeleri, form/datatable erişilebilirliği) `src/` altında (vendor runtime) yaşıyor ve yalnızca `composer update` yeterli — tam liste için `CHANGELOG.md`'ye bakın. Aşağıdaki adımları bir kez çalıştırın; sonraki bölümler referans detaydır.
+
+```bash
+composer update lvntr/laravel-starter-kit
+php artisan sk:update   # güncellenmiş SettingsServiceProvider/FortifyServiceProvider, eslint.config.js, vitest.config.ts, Definition model, datatable.css'i teslim eder
+npm run build
+```
+
+### `login_throttle = '0'` artık web login limiter'ını tamamen devre dışı bırakmıyor
+
+**Öncesi:** Ayarlar → Güvenlik'te `auth.login_throttle` değerini `'0'` yapmak Fortify'nin `login` rate limiter'ını tamamen null'a çekiyordu — bu tek ayarda `0` değeri web login'in sınırsız denemeyi kabul etmesine yol açıyordu.
+
+**Sonrası:** `stubs/app/Providers/SettingsServiceProvider.php` artık sert `login` limiter'ını null'a çekmek yerine yeni bir `login-relaxed` limiter'a çeviriyor (tanımı `stubs/app/Providers/FortifyServiceProvider.php`'de). Web login bir yönetici tarafından gevşetilebilir, ama asla tam limitsiz kalmaz. API auth route'ları her iki durumda da etkilenmez — kendi sabit `throttle:5,1` middleware'ini taşırlar.
+
+**`SettingsServiceProvider.php` veya `FortifyServiceProvider.php`'yi özelleştirmediyseniz:** `sk:update` her iki değişikliği de otomatik teslim eder; yukarıdaki standart yükseltme adımlarının dışında bir işlem gerekmez.
+
+**Her ikisini de özelleştirdiyseniz:** `sk:update` sizin versiyonunuzu korur ve hash farkını raporlar. İki değişikliği elle uygulayın:
+- `FortifyServiceProvider::boot()`'a bir `login-relaxed` `RateLimiter::for(...)` tanımı ekleyin (kesin limitler için vendor stub'a bakın).
+- `SettingsServiceProvider`'da, `auth.login_throttle === '0'` iken `config(['fortify.limiters.login' => null])` satırını `config(['fortify.limiters.login' => 'login-relaxed'])` olarak değiştirin.
+
+Projenize özel bir sebepten tamamen limitsiz bir login limiter'ı isterseniz, kendi kopyanızda doğrudan `config(['fortify.limiters.login' => null])` ayarlamaya devam edebilirsiniz — bu artık kit'in varsayılan davranışı değildir.
+
+### İlgili küçük değişiklikler
+
+- **`stubs/eslint.config.js` ruleset'i yükseltildi** — `pluginVue` flat config `essential`'dan `strongly-recommended`'a taşındı. `sk:update` yeni dosyayı teslim eder; özelleştirmediyseniz, güncelledikten sonraki ilk `npm run lint` çalıştırmasında yeni (önceden var olan) Vue stil uyarıları görebilirsiniz. Kendi hızınızda düzeltin ya da kuralı kendi kopyanızda `warn`'a sabitleyin.
+- **Vitest config `vite.config.ts`'den ayrıştırıldı** — inline `test: {...}` bloğu yeni bir `stubs/vitest.config.ts`'e taşındı. `sk:update` iki dosyayı birlikte teslim eder; `vite.config.ts`'i özelleştirdiyseniz yeni `vitest.config.ts`'i elle yanına ekleyin (varsayılan `environment`/`globals` değerleri için vendor stub'a bakın).
+- **`Definition` modeli bir cache-flush observer'ı kazandı** — `app/Models/Definition.php` artık her yazma yolunda (`saved`/`deleted`/`restored`/`forceDeleted`) definition cache'ini flush ediyor; bu, seeder dışında bir yolla Definition yazmanın ~1h TTL'ye kadar bayat cache bırakabildiği bir hatayı düzeltiyor. Eski (hatalı) bayatlığa güveniyorduysanız dışında görünür bir değişiklik yok.
+- **Datatable inline arama-temizle / filtre-kaldırma markup'ı** — `stubs/resources/css/theme/main/components/datatable.css`, klavye erişilebilirliği için altındaki icon-only `<span>`'i gerçek bir `<button>`'a çevirdi; CSS reset görsel olarak birebir aynı tutuyor. Standart `sk:update && npm run build` dışında bir işlem gerekmez.
+
+---
+
 ## v13.5.11 → v13.6.0
 
 ### Özet
@@ -2508,6 +2543,32 @@ Her şey yeşile dönene kadar commit etmeyin. Bir test başarısız olursa ilgi
 ---
 
 ## Sorun giderme
+
+### Genel
+
+**`sk:update` sonrası sınıflar bulunamıyorsa:**
+
+```bash
+composer dump-autoload
+```
+
+**`sk:update` sonrası Vite manifest hatası:**
+
+```bash
+npm run build
+# veya dev sunucusunu başlatın
+npm run dev
+```
+
+**`sk:update` sonrası migration hatası:**
+
+`migrate:fresh` / `migrate:refresh`'e başvurmayın — bu projenin migration'ları artımlıdır ve tek tek çalıştırılabilir. Başarısız migration'ı düzeltin (ya da `php artisan migrate:rollback --step=1` ile geri alın) ve `php artisan migrate`'i tekrar çalıştırın.
+
+**Yükseltme sonrası Passport anahtarları eksikse:**
+
+```bash
+php artisan passport:keys --force
+```
 
 ### "422 Unprocessable Content" — yeni FormRequest authorize
 Yeni `authorize()` kontrolü sert. İlgili permission'ın user'a atanmış olduğundan emin olun: `php artisan sk:seed-permissions --fresh` çalıştırın.

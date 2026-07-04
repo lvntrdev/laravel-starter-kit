@@ -27,7 +27,7 @@ This guide explains the recommended installation flow for a fresh project.
 | ----------- | --------------- |
 | PHP         | 8.4+            |
 | Laravel     | 13              |
-| Node.js     | 18+             |
+| Node.js     | 20.19+             |
 | Database    | MySQL / MariaDB |
 
 ## 1. Prepare The Project
@@ -84,24 +84,28 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-The installer walks through each step interactively:
+Before touching any file, the installer runs a **preflight** check (Node.js version — warns and lets the npm step degrade later if Node is missing or older than 18; never hard-fails) and loads any **checkpoint** left by a previous interrupted run (`storage/starter-kit/install-progress.json`). If a step throws, the installer stops with an actionable message ("Step failed: `<step>` — fix the issue, then run `sk:install --resume`") instead of a raw stack trace; completed steps are checkpointed so `--resume` skips them and continues from the failure point. The progress file is deleted automatically once the install completes successfully.
+
+The installer then walks through each step interactively:
 
 | Step | What it does                                                                                     |
 | ---- | ------------------------------------------------------------------------------------------------ |
-| 1    | Configure database connection (driver, host, port, database, credentials)                        |
-| 2    | Publish application scaffolding (Controllers, Models, Routes, Vue pages, Enums, Providers, etc.) |
-| 3    | Eject `User` + `Role` domain runtime into `app/Domain/` (skipped when `--without-eject` is passed or when `storage/starter-kit/hashes.json` already exists) |
-| 4    | Merge `package.json` dependencies                                                                |
+| 1    | Publish application scaffolding (Controllers, Models, Routes, Vue pages, Enums, Providers, etc.) |
+| 2    | Merge `package.json` dependencies                                                                |
+| 3    | Seed `.env` from the freshly published `.env.example`, then generate `APP_KEY` when blank        |
+| 4    | Configure database connection (driver, host, port, database, credentials) — skipped in `--no-interaction` |
 | 5    | Remove conflicting default Laravel files (`vite.config.js`, `welcome.blade.php`, etc.)           |
-| 6    | Publish and inject config files (`app.php`, `filesystems.php`, `media-library.php`)              |
-| 7    | Configure application settings, filesystem disks, media library, and `bootstrap/app.php`         |
-| 8    | Register service providers                                                                       |
+| 6    | Merge kit `.gitignore` entries into the project's existing file                                  |
+| 7    | Publish and inject config files (`app.php`, `filesystems.php`, `services.php` for Turnstile, `media-library.php`), wire `bootstrap/app.php`, register service providers, and register the custom-helpers autoload entry |
+| 8    | Eject `User` + `Role` domain runtime into `app/Domain/` (skipped when `--without-eject` is passed or when `storage/starter-kit/hashes.json` already exists) |
 | 9    | Regenerate Composer autoload                                                                     |
-| 10   | Run database migrations                                                                          |
+| 10   | Run database migrations — skipped with a warning if the database is unreachable; fix the connection and re-run with `--resume` |
 | 11   | Run seeders (Roles, Permissions, Definitions, Settings)                                          |
-| 12   | Generate Passport encryption keys                                                                |
-| 13   | Create default admin user (`admin@lvntr.dev` / `password`)                                        |
-| 14   | Install npm dependencies and build frontend assets                                               |
+| 12   | Seed permissions from `config/permission-resources.php`                                          |
+| 13   | Generate Passport encryption keys                                                                |
+| 14   | Create default admin user (`admin@lvntr.dev` / random password printed at the end)                |
+| 15   | Install npm dependencies and build frontend assets                                               |
+| 16   | Finalize the application key and save stub hashes for `sk:update` tracking                       |
 
 ### Default domain eject (User + Role)
 
@@ -132,12 +136,14 @@ php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
 php artisan sk:install --without-eject
+php artisan sk:install --resume
 ```
 
 - `--force` overwrites existing publishable files
-- `--no-interaction` is useful for CI or scripted installs; accepts all defaults automatically
+- `--no-interaction` is useful for CI or scripted installs; accepts all defaults automatically; the admin password is always a fresh random value (printed at the end) since there is no operator to type one in
 - `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
 - `--without-eject` skips the default `User` and `Role` domain eject; runtime stays in vendor and resolves via `class_alias`
+- `--resume` picks up an install that failed partway through: steps already checkpointed in `storage/starter-kit/install-progress.json` are skipped and the run continues from the failed step. Passed without a prior checkpoint, it just runs a full install with a warning.
 
 ## 4. Build Frontend Assets
 
@@ -158,7 +164,7 @@ composer dev
 
 After installation, confirm these areas work:
 
-- web login page (log in with `admin@lvntr.dev` / `password`)
+- web login page (log in with `admin@lvntr.dev` and the password printed by the installer, or the credentials you entered interactively)
 - register and forgot-password pages, including Turnstile when enabled
 - dashboard access
 - user and role management pages

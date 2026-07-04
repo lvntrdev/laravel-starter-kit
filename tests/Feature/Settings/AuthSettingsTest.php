@@ -241,10 +241,10 @@ it('request enforces numeric bounds and boolean types on the new keys', function
 // 5. SettingsServiceProvider köprüsü — throttle gate + policy config
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('nulls fortify.limiters.login only when login_throttle is explicitly disabled', function (): void {
+it('relaxes fortify.limiters.login only when login_throttle is explicitly disabled', function (): void {
     config(['fortify.limiters.login' => 'login']);
 
-    // Key DB'de yokken (mevcut kurulum) gate DOKUNMAZ — throttle açık kalır.
+    // Key DB'de yokken (mevcut kurulum) gate DOKUNMAZ — strict throttle açık kalır.
     invokeAuthBridge();
     expect(config('fortify.limiters.login'))->toBe('login');
 
@@ -253,10 +253,15 @@ it('nulls fortify.limiters.login only when login_throttle is explicitly disabled
     invokeAuthBridge();
     expect(config('fortify.limiters.login'))->toBe('login');
 
-    // Yalnızca bilinçli '0' kaydında null'lanır.
+    // Bilinçli '0' kaydında strict 'login' yerine 'login-relaxed' tabanına
+    // geçilir — ASLA null'a çekilmez. Null'lamak throttle:login middleware'ini
+    // ve EnsureLoginIsNotThrottled adımını düşürüp web login'i tamamen limitsiz
+    // bırakırdı (brute-force kırmızı çizgisi). Limiter anahtarı non-null kalmalı.
     app(SettingService::class)->setValue('auth.login_throttle', '0');
     invokeAuthBridge();
-    expect(config('fortify.limiters.login'))->toBeNull();
+    expect(config('fortify.limiters.login'))
+        ->not->toBeNull()
+        ->toBe('login-relaxed');
 });
 
 it('bridges password policy into starter-kit.password_policy with safe defaults', function (): void {
@@ -326,8 +331,20 @@ it('SettingsServiceProvider stub applies the throttle gate before provider boot'
     // geç kalır.
     expect($contents)
         ->toContain('$this->app->booting(')
-        ->toContain("'fortify.limiters.login' => null")
+        // Disabled throttle → relaxed floor, NEVER null (brute-force red line).
+        ->toContain("'fortify.limiters.login' => 'login-relaxed'")
+        ->not->toContain("'fortify.limiters.login' => null")
         ->toContain("'starter-kit.password_policy.min_length'");
+});
+
+it('FortifyServiceProvider stub defines the login-relaxed brute-force floor', function (): void {
+    $contents = file_get_contents(dirname(__DIR__, 3).'/stubs/app/Providers/FortifyServiceProvider.php');
+
+    // Disabled login-throttle swaps in this limiter; it must exist and impose
+    // a bounded per-minute cap so web login is never fully unlimited.
+    expect($contents)
+        ->toContain("RateLimiter::for('login-relaxed'")
+        ->toContain('Limit::perMinute(');
 });
 
 it('SettingsServiceProvider bridge reads via the query builder, never Eloquent', function (): void {

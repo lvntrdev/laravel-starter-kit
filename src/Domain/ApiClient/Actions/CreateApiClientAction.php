@@ -2,7 +2,6 @@
 
 namespace Lvntr\StarterKit\Domain\ApiClient\Actions;
 
-use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Client;
 use Laravel\Passport\ClientRepository;
 
@@ -11,7 +10,8 @@ use Laravel\Passport\ClientRepository;
  *
  * Secret handling: `ClientRepository::create*()` metodları Client'a `plainSecret`
  * set eder. Bu değer yalnızca bu action'ın response'unda bir kez bulunabilir.
- * Log'a, session'a veya herhangi bir kalıcı depolama alanına yazılmamalıdır.
+ * Log'a, activity properties'e, session'a veya herhangi bir kalıcı depolama
+ * alanına yazılmamalıdır.
  */
 class CreateApiClientAction
 {
@@ -41,14 +41,22 @@ class CreateApiClientAction
             default => throw new \InvalidArgumentException("Geçersiz grant tipi: {$grantType}"),
         };
 
-        // plainSecret sadece bu response'ta mevcut.
-        // UYARI: bu değer log'a yazılmamalı.
-        Log::info('Yeni OAuth istemcisi oluşturuldu.', [
-            'client_id' => $client->id,
-            'name' => $client->name,
-            'grant_type' => $grantType,
-            // secret kasıtlı olarak loglanmıyor
-        ]);
+        // Audit sink (Task 8): admin ActivityLog UI'ında görünür kayıt.
+        // plainSecret sadece bu response'ta mevcut ve KASITLI olarak
+        // properties'e alınmaz. Kayıt yalnız kimliği doğrulanmış bir aktör
+        // varken atılır (auto-resolved causer); seeder/console yolları bir
+        // admin eylemi değildir.
+        if (auth()->check()) {
+            activity('audit')
+                ->performedOn($client)
+                ->event('created')
+                ->withProperties([
+                    'client_id' => $client->id,
+                    'name' => $client->name,
+                    'grant_type' => $grantType,
+                ])
+                ->log('OAuth client created');
+        }
 
         return $client;
     }

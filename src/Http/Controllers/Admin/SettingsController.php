@@ -37,6 +37,7 @@ use Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateStorageSettingsRequest;
 use Lvntr\StarterKit\Http\Requests\Admin\Settings\UpdateTurnstileSettingsRequest;
 use Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadAppearanceLogoRequest;
 use Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadFaviconRequest;
+use Lvntr\StarterKit\Http\Requests\Admin\Settings\UploadLogoRequest;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;
 use Lvntr\StarterKit\Support\ThemeResolver;
 
@@ -194,20 +195,8 @@ class SettingsController extends Controller
     /**
      * Upload application logo.
      */
-    public function uploadLogo(Request $request): ApiResponse
+    public function uploadLogo(UploadLogoRequest $request): ApiResponse|JsonResponse
     {
-        // SVG is intentionally excluded — can embed <script>/onload and execute
-        // in the app origin when served from the public disk.
-        $request->validate([
-            'logo' => [
-                'required',
-                'image',
-                'mimes:png,jpg,jpeg,webp',
-                'max:2048',
-                'dimensions:max_width=4096,max_height=4096',
-            ],
-        ]);
-
         // Delete old logo if exists
         $oldLogo = $this->settings->getValue('general.logo');
         if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
@@ -223,7 +212,7 @@ class SettingsController extends Controller
     /**
      * Delete application logo.
      */
-    public function deleteLogo(): JsonResponse
+    public function deleteLogo(): ApiResponse|JsonResponse
     {
         $path = $this->settings->getValue('general.logo');
         if ($path && Storage::disk('public')->exists($path)) {
@@ -242,7 +231,7 @@ class SettingsController extends Controller
      * intentionally excluded (same rationale as uploadLogo) — it can embed
      * <script>/onload and execute in the app origin when served publicly.
      */
-    public function uploadAppearanceLogo(UploadAppearanceLogoRequest $request, string $variant): ApiResponse
+    public function uploadAppearanceLogo(UploadAppearanceLogoRequest $request, string $variant): ApiResponse|JsonResponse
     {
         $key = $this->appearanceLogoKey($variant);
 
@@ -257,7 +246,7 @@ class SettingsController extends Controller
     /**
      * Delete an appearance logo variant (`logo_light` | `logo_dark`).
      */
-    public function deleteAppearanceLogo(string $variant): JsonResponse
+    public function deleteAppearanceLogo(string $variant): ApiResponse|JsonResponse
     {
         $key = $this->appearanceLogoKey($variant);
 
@@ -274,7 +263,7 @@ class SettingsController extends Controller
      * or .ico). Stored under `appearance/`. `.ico` is not an `image` per the
      * validator's GD check, so the rule is mimes-only, not `image`.
      */
-    public function uploadFavicon(UploadFaviconRequest $request): ApiResponse
+    public function uploadFavicon(UploadFaviconRequest $request): ApiResponse|JsonResponse
     {
         $this->deleteStoredFile('appearance.favicon');
 
@@ -287,7 +276,7 @@ class SettingsController extends Controller
     /**
      * Delete the favicon.
      */
-    public function deleteFavicon(): JsonResponse
+    public function deleteFavicon(): ApiResponse|JsonResponse
     {
         $this->deleteStoredFile('appearance.favicon');
         $this->settings->setValue('appearance.favicon', null);

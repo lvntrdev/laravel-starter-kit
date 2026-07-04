@@ -49,7 +49,9 @@ class ContentLanguageController extends Controller
      */
     public function dtApi(Request $request, ContentLanguageDatatableQuery $query): ApiResponse
     {
-        abort_unless($request->user()?->can('settings.read') ?? false, 403);
+        if (! ($request->user()?->can('settings.read') ?? false)) {
+            throw ApiException::forbidden();
+        }
 
         return $query->response();
     }
@@ -72,7 +74,9 @@ class ContentLanguageController extends Controller
      */
     public function data(Request $request, ContentLanguage $contentLanguage): ApiResponse
     {
-        abort_unless($request->user()?->can('settings.read') ?? false, 403);
+        if (! ($request->user()?->can('settings.read') ?? false)) {
+            throw ApiException::forbidden();
+        }
 
         return to_api(new ContentLanguageResource($contentLanguage));
     }
@@ -105,7 +109,9 @@ class ContentLanguageController extends Controller
         ContentLanguage $contentLanguage,
         DeleteContentLanguageAction $action,
     ): ApiResponse {
-        abort_unless($request->user()?->can('settings.update') ?? false, 403);
+        if (! ($request->user()?->can('settings.update') ?? false)) {
+            throw ApiException::forbidden();
+        }
 
         $action->execute($contentLanguage);
 

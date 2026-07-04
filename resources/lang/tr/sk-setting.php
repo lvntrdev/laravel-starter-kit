@@ -98,7 +98,7 @@ return [
         'two_factor_disable_title' => 'İki adımlı doğrulama kapatılsın mı?',
         'two_factor_disable_warning' => 'Bu ayar kapatıldığında tüm kullanıcılar için ek giriş kontrolü kaldırılır. Mevcut 2FA sırları temizlenir; özelliği tekrar açarsan ilgili kullanıcıların yeniden kurulum yapması gerekir.',
         'login_throttle_label' => 'Giriş denemesi limiti',
-        'login_throttle_hint' => 'Art arda başarısız denemelerde girişi geçici olarak yavaşlatarak deneme-yanılma saldırılarını caydırır.',
+        'login_throttle_hint' => 'Art arda başarısız denemelerde girişi geçici olarak yavaşlatarak deneme-yanılma saldırılarını caydırır. Kapatıldığında gevşek bir güvenlik limiti korunur; giriş asla tamamen limitsiz bırakılmaz.',
         'password_min_length_label' => 'Minimum Karakter',
         'password_min_length_hint' => 'Bir parolanın içermesi gereken en az karakter sayısı (6–128).',
         'password_expiry_days_label' => 'Şifre Geçerlilik Süresi (gün)',

@@ -46,6 +46,22 @@ class RevokeShareLinkAction extends FileManagerAction
             ],
         );
 
+        // Audit sink (Task 8): revoke edilen link admin ActivityLog UI'ında
+        // görünür. Yalnız GERÇEK bir revoke gerçekleştiğinde (idempotent tekrar
+        // çağrılarında değil) ve kimliği doğrulanmış aktör varken kaydedilir.
+        // token hash lookup key'dir (paylaşım secret'ının türevi) ve KASITLI
+        // olarak properties'e alınmaz.
+        if ($revocation->wasRecentlyCreated && auth()->check()) {
+            activity('audit')
+                ->performedOn($media)
+                ->event('deleted')
+                ->withProperties([
+                    'media_id' => $media->getKey(),
+                    'revoked_by_user_id' => $revokedByUserId,
+                ])
+                ->log('Share link revoked');
+        }
+
         return $revocation;
     }
 }

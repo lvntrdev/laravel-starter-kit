@@ -5,7 +5,6 @@ namespace Lvntr\StarterKit\Http\Controllers;
 use App\Models\FileFolder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\Actions\AddFavoriteAction;
 use Lvntr\StarterKit\Domain\FileManager\Actions\BulkDeleteAction;
 use Lvntr\StarterKit\Domain\FileManager\Actions\CopyFileAction;
@@ -27,7 +26,6 @@ use Lvntr\StarterKit\Domain\FileManager\Queries\FolderContentsQuery;
 use Lvntr\StarterKit\Domain\FileManager\Queries\FolderTreeQuery;
 use Lvntr\StarterKit\Domain\FileManager\Queries\TrashContentsQuery;
 use Lvntr\StarterKit\Domain\FileManager\Services\FileManagerAuthorizer;
-use Lvntr\StarterKit\Exceptions\ApiException;
 use Lvntr\StarterKit\Http\Requests\FileManager\BulkDeleteRequest;
 use Lvntr\StarterKit\Http\Requests\FileManager\CopyFileRequest;
 use Lvntr\StarterKit\Http\Requests\FileManager\DeleteFolderRequest;
@@ -85,11 +83,7 @@ class FileManagerController extends Controller
 
         $force = (bool) $request->input('force_delete', false);
 
-        try {
-            $result = $action->execute($context, $items, $force);
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $result = $action->execute($context, $items, $force);
 
         $message = $force ? __('sk-file-manager.bulk_force_deleted') : __('sk-file-manager.bulk_deleted');
 
@@ -101,15 +95,11 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $folder = $action->execute(
-                context: $context,
-                name: $request->string('name')->toString(),
-                parentId: $request->input('parent_id'),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $folder = $action->execute(
+            context: $context,
+            name: $request->string('name')->toString(),
+            parentId: $request->input('parent_id'),
+        );
 
         return to_api(['folder' => [
             'id' => (string) $folder->id,
@@ -123,11 +113,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $folder = $action->execute($context, $folder, $request->string('name')->toString());
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $folder = $action->execute($context, $folder, $request->string('name')->toString());
 
         return to_api(['folder' => [
             'id' => (string) $folder->id,
@@ -141,11 +127,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $media = $action->execute($context, $media, $request->string('name')->toString());
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $media = $action->execute($context, $media, $request->string('name')->toString());
 
         return to_api(['file' => [
             'id' => $media->id,
@@ -159,11 +141,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $copy = $action->execute($context, $media, $request->input('target_folder_id'));
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $copy = $action->execute($context, $media, $request->input('target_folder_id'));
 
         return to_api(['file' => [
             'id' => $copy->id,
@@ -186,15 +164,11 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute(
-                context: $context,
-                favoritableType: $request->string('favoritable_type')->toString(),
-                favoritableId: $request->string('favoritable_id')->toString(),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute(
+            context: $context,
+            favoritableType: $request->string('favoritable_type')->toString(),
+            favoritableId: $request->string('favoritable_id')->toString(),
+        );
 
         return to_api(null, __('sk-file-manager.favorite_added'), 201);
     }
@@ -236,15 +210,11 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute(
-                context: $context,
-                itemType: $request->string('item_type')->toString(),
-                itemId: $request->string('item_id')->toString(),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute(
+            context: $context,
+            itemType: $request->string('item_type')->toString(),
+            itemId: $request->string('item_id')->toString(),
+        );
 
         return to_api(message: __('sk-file-manager.item_restored'));
     }
@@ -254,15 +224,11 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute(
-                context: $context,
-                itemType: $request->string('item_type')->toString(),
-                itemId: $request->string('item_id')->toString(),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute(
+            context: $context,
+            itemType: $request->string('item_type')->toString(),
+            itemId: $request->string('item_id')->toString(),
+        );
 
         return to_api(message: __('sk-file-manager.item_permanently_deleted'));
     }
@@ -272,16 +238,12 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute(
-                context: $context,
-                itemType: $request->string('item_type')->toString(),
-                itemId: (string) $request->input('item_id'),
-                targetFolderId: $request->input('target_folder_id'),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute(
+            context: $context,
+            itemType: $request->string('item_type')->toString(),
+            itemId: (string) $request->input('item_id'),
+            targetFolderId: $request->input('target_folder_id'),
+        );
 
         return to_api(message: __('sk-file-manager.item_moved'));
     }
@@ -291,11 +253,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute($context, $folder);
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute($context, $folder);
 
         return to_api(message: __('sk-file-manager.folder_deleted'));
     }
@@ -305,16 +263,12 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $uploaded = $action->execute(
-                context: $context,
-                files: $request->file('files') ?? [],
-                folderId: $request->input('folder_id'),
-                folderName: $request->input('folder_name'),
-            );
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $uploaded = $action->execute(
+            context: $context,
+            files: $request->file('files') ?? [],
+            folderId: $request->input('folder_id'),
+            folderName: $request->input('folder_name'),
+        );
 
         return to_api(['files' => $uploaded], __('sk-file-manager.files_uploaded'), 201);
     }
@@ -324,11 +278,7 @@ class FileManagerController extends Controller
         $context = $this->contextFromRequest($request);
         $this->authorizer->authorizeWrite($context);
 
-        try {
-            $action->execute($context, $media);
-        } catch (LogicException $e) {
-            throw ApiException::unprocessable($e->getMessage());
-        }
+        $action->execute($context, $media);
 
         return to_api(message: __('sk-file-manager.file_deleted'));
     }

@@ -34,6 +34,10 @@ return [
     'characters_count' => ':count characters',
     'error' => 'Error',
     'unsaved' => 'You have unsaved changes.',
+    'required' => 'required',
+    'confirm_leave' => 'You have unsaved changes. Are you sure you want to leave this page?',
+    'data_load_error' => 'The data could not be loaded. Please try again.',
+    'options_load_error' => 'The options could not be loaded.',
 
     'confirmation' => 'Confirmation',
     'confirm_delete_header' => 'Delete Confirmation',

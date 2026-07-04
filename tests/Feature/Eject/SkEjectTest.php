@@ -37,6 +37,11 @@
 |     added but format left intact so sk:update's v1→v2 re-derivation still runs
 | 20. A fresh (no prior) registry IS stamped _format=v2 on eject
 |
+| Ownership consent gate (DX tutarlılık, madde 26):
+| 25. Declining the "you will own this domain" confirmation aborts before any
+|     file is written, without --force / --no-interaction
+| 26. Confirming the prompt proceeds with the eject as normal
+|
 */
 
 use Illuminate\Filesystem\Filesystem;
@@ -106,6 +111,7 @@ it('--dry-run shows plan and writes no files', function () use (&$tempDest): voi
         'domain' => 'Session',
         '--dry-run' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Nothing written into destination
@@ -121,6 +127,7 @@ it('ejects backend with correct namespace rewrite; Shared reference preserved', 
         'domain' => 'User',
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $actionPath = $dest.'/app/Domain/User/Actions/CreateUserAction.php';
@@ -152,6 +159,7 @@ it('injects 3 App-FQCN event bindings into DomainServiceProvider for User', func
         'domain' => 'User',
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $providerPath = $dest.'/app/Providers/DomainServiceProvider.php';
@@ -182,6 +190,7 @@ it('second eject does not duplicate event bindings in DomainServiceProvider', fu
         '--force' => true,
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ];
 
     $this->artisan('sk:eject', $args)->assertSuccessful();
@@ -202,6 +211,7 @@ it('--no-vue does not write any Vue files', function () use (&$tempDest): void {
         'domain' => 'User',
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // resources/js/pages/Admin/Users must NOT exist
@@ -220,6 +230,7 @@ it('ejecting Session (no events, no vue) leaves DomainServiceProvider unchanged'
     $this->artisan('sk:eject', [
         'domain' => 'Session',
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Provider file unchanged (no Event::listen added)
@@ -265,6 +276,7 @@ it('unknown domain returns FAILURE exit code and lists valid domains', function 
     $this->artisan('sk:eject', [
         'domain' => 'NonExistentDomain',
         '--destination' => $tempDest,
+        '--no-interaction' => true,
     ])->assertFailed();
 });
 
@@ -283,6 +295,7 @@ it('exits early without --force when app/Domain/{name} already exists', function
         'domain' => 'User',
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful(); // exits 0 (warn + exit, not FAILURE)
 
     // The sentinel must NOT have been overwritten
@@ -332,6 +345,7 @@ it('preserves an existing customized Vue page when --force is not passed', funct
     $this->artisan('sk:eject', [
         'domain' => 'User',
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // The customized page must survive untouched — no silent data loss.
@@ -353,6 +367,7 @@ it('overwrites an existing Vue page when --force is passed', function () use (&$
         'domain' => 'User',
         '--force' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // With --force the kit stub replaces the custom content.
@@ -376,6 +391,7 @@ it('returns a non-zero exit code when composer dump-autoload fails', function ()
         'domain' => 'User',
         '--no-vue' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertFailed();
 
     // The backend files were still copied — the failure is the autoload step,
@@ -395,6 +411,7 @@ it('--skip-autoload copies files and returns SUCCESS without running dump-autolo
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Backend files must be present.
@@ -415,6 +432,7 @@ it('--skip-autoload does not fail even when composer.phar is broken', function (
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful(); // SUCCESS — the broken phar is never invoked
 
     // Files were still ejected.
@@ -448,6 +466,7 @@ it('--force ejects runtime over a pre-existing BulkActions dir without clobberin
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // 1. The vendor runtime (every src/Domain/User subdir) is now copied in.
@@ -477,6 +496,7 @@ it('rewrites the ejected controller own-domain imports to App\\ (Logs)', functio
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $controllerPath = $dest.'/app/Http/Controllers/Admin/LogController.php';
@@ -512,6 +532,7 @@ it('keeps a cross-domain reference vendor when ejecting ApiRoute (SettingService
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $controllerPath = $dest.'/app/Http/Controllers/Admin/ApiRouteController.php';
@@ -549,6 +570,7 @@ it('stamps a skipped pre-existing controller as __ejected__ in the hash registry
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // The pre-existing file is byte-for-byte intact — no silent overwrite.
@@ -593,6 +615,7 @@ it('does not upgrade a legacy (v1, no _format) registry to v2 on eject', functio
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     /** @var array<string, string> $hashes */
@@ -621,6 +644,7 @@ it('writes _format=v2 when creating a fresh hash registry on eject', function ()
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $hashFile = $dest.'/storage/starter-kit/hashes.json';
@@ -650,6 +674,7 @@ it('sk:eject ApiClient re-homes the controller/request/resource trees under App\
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Controllers copied + own HTTP namespace flipped to App\.
@@ -687,6 +712,7 @@ it('sk:eject ApiClient stamps the ejected controller as __ejected__ so sk:update
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $hashes = json_decode(file_get_contents($dest.'/storage/starter-kit/hashes.json'), true);
@@ -708,6 +734,7 @@ it('sk:eject ContentLanguage re-homes the full stack but leaves App\\Models\\Con
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Controller: own HTTP + own DOMAIN segments flipped to App\.
@@ -761,6 +788,7 @@ it('backwardCompatAliasPlan() omits ContentLanguageController after eject, and n
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $provider = new StarterKitServiceProvider(app());
@@ -778,4 +806,44 @@ it('backwardCompatAliasPlan() omits ContentLanguageController after eject, and n
 
     // The model was never aliased to begin with (app-owned invariant).
     expect(array_key_exists('App\\Models\\ContentLanguage', $plan))->toBeFalse();
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Ownership consent gate — sk:eject without --force asks before writing
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Test 25: declining the confirmation aborts before any file is written ──
+
+it('aborts without writing files when the ownership confirmation is declined', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'Session',
+        '--destination' => $dest,
+    ])
+        ->expectsConfirmation(
+            'Ejecting Session makes it app-owned: you will maintain it yourself and no longer receive kit runtime updates for it. Continue?',
+            'no',
+        )
+        ->assertSuccessful();
+
+    expect(is_dir($dest.'/app/Domain/Session'))->toBeFalse();
+});
+
+// ── Test 26: confirming the prompt proceeds with the eject as normal ───────
+
+it('proceeds with the eject when the ownership confirmation is accepted', function () use (&$tempDest): void {
+    $dest = $tempDest;
+
+    $this->artisan('sk:eject', [
+        'domain' => 'Session',
+        '--destination' => $dest,
+    ])
+        ->expectsConfirmation(
+            'Ejecting Session makes it app-owned: you will maintain it yourself and no longer receive kit runtime updates for it. Continue?',
+            'yes',
+        )
+        ->assertSuccessful();
+
+    expect(is_dir($dest.'/app/Domain/Session'))->toBeTrue();
 });

@@ -3,9 +3,9 @@
 namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Throwable;
 
@@ -26,7 +26,7 @@ class CopyFileAction extends FileManagerAction
             $media->model_type !== $context->ownerType ||
             (string) $media->model_id !== $context->ownerId
         ) {
-            throw new LogicException(__('sk-file-manager.errors.file_out_of_context'));
+            throw new DomainRuleException(__('sk-file-manager.errors.file_out_of_context'));
         }
 
         /** @var class-string<Model> $folderModel */
@@ -44,7 +44,7 @@ class CopyFileAction extends FileManagerAction
                 ->exists();
 
             if (! $exists) {
-                throw new LogicException(__('sk-file-manager.errors.target_missing'));
+                throw new DomainRuleException(__('sk-file-manager.errors.target_missing'));
             }
         }
 
@@ -75,7 +75,7 @@ class CopyFileAction extends FileManagerAction
             if ($copy !== null && $copy->exists) {
                 $copy->forceDelete();
             }
-            throw new LogicException(__('sk-file-manager.errors.copy_failed'));
+            throw new DomainRuleException(__('sk-file-manager.errors.copy_failed'));
         }
     }
 

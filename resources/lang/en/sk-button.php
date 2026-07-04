@@ -23,4 +23,5 @@ return [
     'filter' => 'Filter',
     'reset' => 'Reset',
     'refresh' => 'Refresh',
+    'retry' => 'Retry',
 ];

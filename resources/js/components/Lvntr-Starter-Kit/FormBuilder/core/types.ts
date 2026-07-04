@@ -557,4 +557,10 @@ export interface FormBuilderConfig {
      * disabled and the submit button is hidden.
      */
     permission?: string;
+    /**
+     * Warn the user before navigating away while the form has unsaved changes.
+     * Only applies in internal mode (config.submit set). Default: true.
+     * Set false to opt out of the dirty-navigation prompt.
+     */
+    confirmLeave?: boolean;
 }

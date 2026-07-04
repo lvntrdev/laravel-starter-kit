@@ -150,7 +150,7 @@ class UpgradeCommand extends Command
         $this->line('  <fg=gray>Official upgrade guide:</> <fg=cyan>https://laravel.com/docs/13.x/upgrade</>');
         $this->newLine();
         $this->line('  <fg=gray>Typical steps:</>');
-        $this->line('    1. Edit <fg=cyan>composer.json</>: set <fg=cyan>"laravel/framework": "^13.0"</> and <fg=cyan>"php": "^8.3"</>.');
+        $this->line('    1. Edit <fg=cyan>composer.json</>: set <fg=cyan>"laravel/framework": "^13.0"</> and <fg=cyan>"php": "^8.4"</>.');
         $this->line('    2. Run <fg=cyan>composer update</>.');
         $this->line('    3. Run <fg=cyan>php artisan sk:upgrade</> to let this command finish the package-side work.');
         $this->newLine();
@@ -198,17 +198,18 @@ class UpgradeCommand extends Command
     }
 
     /**
-     * Abort if PHP is older than the minimum required by Laravel 13.
+     * Abort if PHP is older than the minimum required by the kit (composer.json
+     * requires ^8.4).
      */
     private function assertPhpVersion(): bool
     {
-        if (PHP_VERSION_ID >= 80300) {
+        if (PHP_VERSION_ID >= 80400) {
             $this->components->twoColumnDetail('PHP version', '<fg=green>'.PHP_VERSION.'</>');
 
             return true;
         }
 
-        $this->components->error('PHP 8.3 or newer is required for Laravel 13.');
+        $this->components->error('PHP 8.4 or newer is required.');
         $this->line('  Current version: <fg=yellow>'.PHP_VERSION.'</>');
         $this->newLine();
 

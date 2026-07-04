@@ -3,9 +3,9 @@
 namespace Lvntr\StarterKit\Domain\FileManager\Actions;
 
 use Illuminate\Database\Eloquent\Model;
-use LogicException;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Exceptions\ApiException;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AddFavoriteAction extends FileManagerAction
@@ -13,7 +13,7 @@ class AddFavoriteAction extends FileManagerAction
     /**
      * Add a folder or file to the owner's favorites (idempotent).
      *
-     * @throws LogicException when the type is invalid or the item does not exist in context
+     * @throws DomainRuleException when the type is invalid or the item does not exist in context
      */
     public function execute(
         FileManagerContextDTO $context,
@@ -21,7 +21,7 @@ class AddFavoriteAction extends FileManagerAction
         string $favoritableId,
     ): Model {
         if (! in_array($favoritableType, ['folder', 'file'], true)) {
-            throw new LogicException(__('sk-file-manager.errors.invalid_favoritable_type'));
+            throw new DomainRuleException(__('sk-file-manager.errors.invalid_favoritable_type'));
         }
 
         /** @var class-string<Model> $folderModel */
@@ -55,7 +55,7 @@ class AddFavoriteAction extends FileManagerAction
         };
 
         if (! $exists) {
-            throw new LogicException(__('sk-file-manager.errors.favoritable_not_found'));
+            throw new DomainRuleException(__('sk-file-manager.errors.favoritable_not_found'));
         }
 
         return $favoriteModel::query()->firstOrCreate([

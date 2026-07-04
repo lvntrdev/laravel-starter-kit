@@ -257,6 +257,7 @@ it('sk:eject Logs copies LogController into app/Http/Controllers/Admin/', functi
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     expect(file_exists($dest.'/app/Http/Controllers/Admin/LogController.php'))->toBeTrue(
@@ -274,6 +275,7 @@ it('ejected LogController has Lvntr\\StarterKit\\Http\\ rewritten to App\\Http\\
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $contents = file_get_contents($dest.'/app/Http/Controllers/Admin/LogController.php');
@@ -295,6 +297,7 @@ it('sk:eject Logs copies Log FormRequest directory into app/Http/Requests/Admin/
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     expect(is_dir($dest.'/app/Http/Requests/Admin/Log'))->toBeTrue();
@@ -312,6 +315,7 @@ it('ejected Log FormRequests have Lvntr\\StarterKit\\Http\\ rewritten to App\\Ht
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $deleteReq = file_get_contents($dest.'/app/Http/Requests/Admin/Log/DeleteLogFilesRequest.php');
@@ -350,6 +354,7 @@ it('sk:eject Logs rewrites the log-route.php controller import to the App\\ FQCN
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $routeContents = file_get_contents($routeDest);
@@ -376,6 +381,7 @@ it('sk:eject Logs succeeds even when log-route.php is absent from the destinatio
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Controller was still ejected (the route absence is non-fatal).
@@ -408,6 +414,7 @@ PHP;
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Content must be byte-for-byte unchanged (no duplicate rewrite).
@@ -423,6 +430,7 @@ it('sk:eject Logs copies Vue pages from package resources/js/pages/Admin/Logs/',
         'domain' => 'Logs',
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // The Vue pages directory must exist in the consumer's resources.
@@ -443,6 +451,7 @@ it('--no-vue on sk:eject Logs skips Vue pages but still copies the HTTP layer', 
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     // Controller must be present.
@@ -462,6 +471,7 @@ it('sk:eject Logs stamps the ejected files as __ejected__ in the hash registry',
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful();
 
     $hashFile = $dest.'/storage/starter-kit/hashes.json';
@@ -500,6 +510,7 @@ it('a second sk:eject Logs exits with success but writes no new files (idempoten
         '--no-vue' => true,
         '--skip-autoload' => true,
         '--destination' => $dest,
+        '--no-interaction' => true,
     ])->assertSuccessful(); // warns + exits 0
 
     // Controller must NOT have been copied (guard fired before the HTTP-layer step).

@@ -89,6 +89,8 @@ class SettingService
         );
 
         Cache::forget('settings');
+
+        $this->logSettingsChange([$path]);
     }
 
     /**
@@ -160,6 +162,38 @@ class SettingService
         });
 
         Cache::forget('settings');
+
+        $this->logSettingsChange(array_map(
+            static fn (int|string $key): string => "{$group}.{$key}",
+            array_keys($values),
+        ));
+    }
+
+    /**
+     * Record a settings change on the `audit` activity channel.
+     *
+     * Only the changed KEY PATHS are stored — never the values. Setting values
+     * can hold secrets (mail.password, storage.*_secret, turnstile/postman/apidog
+     * keys); writing them to activity_log would leak the secret into a second,
+     * unencrypted store. Recording which keys changed — attributed to the
+     * auto-resolved causer — is the useful, safe audit signal.
+     *
+     * Skipped when there is no authenticated causer: settings written from
+     * seeders/installers/queue jobs (e.g. the Postman collection-id sync) are
+     * configuration bootstrapping, not audited admin actions.
+     *
+     * @param  list<string>  $keys  Full "group.key" paths that were written.
+     */
+    private function logSettingsChange(array $keys): void
+    {
+        if ($keys === [] || ! auth()->check()) {
+            return;
+        }
+
+        activity('audit')
+            ->event('updated')
+            ->withProperties(['keys' => array_values($keys)])
+            ->log('Settings updated');
     }
 
     /**

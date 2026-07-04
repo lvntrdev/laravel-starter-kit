@@ -55,7 +55,7 @@ Politika değiştiğinde mevcut kullanıcıların parolaları geçersiz olmaz �
 ## Çalışma Zamanı Kuralları
 
 - pasif kullanıcılar web oturumu başlatamaz; Fortify login pipeline'ı status değeri `active` olmayan hesapları engeller
-- login denemeleri IP ve email/IP kombinasyonlarına göre rate-limit edilir; `auth.login_throttle = '1'` (varsayılan) olduğunda Fortify rate limiter aktiftir, Ayarlar → Güvenlik'ten `'0'` yapıldığında devre dışı bırakılır
+- login denemeleri IP ve email/IP kombinasyonlarına göre rate-limit edilir; `auth.login_throttle = '1'` (varsayılan, sert limiter) olduğunda Fortify rate limiter aktiftir; Ayarlar → Güvenlik'ten `'0'` yapıldığında limiter tamamen kalkmaz, daha gevşek bir `login-relaxed` tabanına geçilir — hiçbir admin ayarı web login'ini tamamen limitsiz bırakamaz. API auth route'ları bu ayardan bağımsız kendi sabit `throttle:5,1` middleware'ini taşır.
 - iki faktör challenge akışının ayrı bir limiter'ı vardır
 - iki faktör challenge'ı **tek kullanımlık** — yanlış kod, boş submit veya geçersiz recovery code challenge id'sini anında iptal eder; client yeni bir id almak için tekrar login olmak zorundadır
 - forgot-password POST route'u, eşleşme anında dinamik olarak Turnstile middleware'i alır

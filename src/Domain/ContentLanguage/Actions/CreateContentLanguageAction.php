@@ -23,7 +23,7 @@ class CreateContentLanguageAction extends BaseAction
 {
     public function execute(ContentLanguageDTO $dto): ContentLanguage
     {
-        return DB::transaction(function () use ($dto): ContentLanguage {
+        $language = DB::transaction(function () use ($dto): ContentLanguage {
             $attributes = $dto->toArray();
 
             // A default language must remain active so the content fallback
@@ -40,6 +40,19 @@ class CreateContentLanguageAction extends BaseAction
 
             return $language;
         });
+
+        // Audit sink (Task 8): content-language CRUD admin ActivityLog UI'ında
+        // görünür. Yalnız kimliği doğrulanmış aktör varken kaydedilir
+        // (seeder yolu bir admin eylemi değildir).
+        if (auth()->check()) {
+            activity('audit')
+                ->performedOn($language)
+                ->event('created')
+                ->withProperties(['code' => $language->code, 'name' => $language->name])
+                ->log('Content language created');
+        }
+
+        return $language;
     }
 
     /**
