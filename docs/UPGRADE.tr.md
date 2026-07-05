@@ -4,7 +4,7 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
-## v13.6.7 → v13.7.0
+## v13.6.7 → v13.6.8
 
 ### Özet
 

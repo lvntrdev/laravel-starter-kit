@@ -5,7 +5,7 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.7.0] - 2026-07-04
+## [13.6.8] - 2026-07-04
 
 A quality-control and UX sprint applying the findings of an internal audit report: security-test coverage, audit-log completeness, backend convention cleanup, accessibility/UX gaps, and install/upgrade DX. See [UPGRADE.md](docs/UPGRADE.md) for the one published-file behavior change (`login_throttle`) that needs `sk:update`; everything else here ships via `composer update` alone.
 

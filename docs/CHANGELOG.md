@@ -2,7 +2,7 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-07-04 — v13.7.0
+## 2026-07-04 — v13.6.8
 
 ### Quality & UX sprint
 

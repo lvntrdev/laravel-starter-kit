@@ -2,7 +2,7 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## 2026-07-04 — v13.7.0
+## 2026-07-04 — v13.6.8
 
 ### Kalite ve UX sprint'i
 

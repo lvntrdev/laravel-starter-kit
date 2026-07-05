@@ -4,7 +4,7 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
-## v13.6.7 → v13.7.0
+## v13.6.7 → v13.6.8
 
 ### Summary
 
