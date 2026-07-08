@@ -84,7 +84,7 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-Herhangi bir dosyaya dokunmadan önce installer bir **preflight** kontrolü çalıştırır (Node.js sürümü — Node eksikse ya da 18'den eskiyse uyarı verir ve npm adımının kendi kendine düşmesine izin verir; asla hard-fail olmaz) ve önceki yarıda kalmış bir çalışmadan **checkpoint** varsa yükler (`storage/starter-kit/install-progress.json`). Bir adım hata fırlatırsa installer ham stack trace yerine somut bir mesajla durur ("Step failed: `<adım>` — sorunu düzelt, sonra `sk:install --resume` çalıştır"); tamamlanmış adımlar checkpoint'e yazıldığından `--resume` onları atlayıp kaldığı yerden devam eder. Kurulum başarıyla bitince progress dosyası otomatik silinir.
+Herhangi bir dosyaya dokunmadan önce installer bir **preflight** kontrolü çalıştırır (Node.js sürümü — Node eksikse ya da Vite 7 motor tabanı olan 20.19'dan eskiyse uyarı verir ve npm adımının kendi kendine düşmesine izin verir; asla hard-fail olmaz) ve önceki yarıda kalmış bir çalışmadan **checkpoint** varsa yükler (`storage/starter-kit/install-progress.json`). Bir adım hata fırlatırsa installer ham stack trace yerine somut bir mesajla durur ("Step failed: `<adım>` — sorunu düzelt, sonra `sk:install --resume` çalıştır"); tamamlanmış adımlar checkpoint'e yazıldığından `--resume` onları atlayıp kaldığı yerden devam eder. Kurulum başarıyla bitince progress dosyası otomatik silinir.
 
 Sihirbaz ardından her adımda sizinle interaktif olarak ilerler:
 

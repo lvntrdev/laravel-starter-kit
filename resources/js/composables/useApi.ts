@@ -17,6 +17,7 @@
 
 import { trans } from 'laravel-vue-i18n';
 import { useToast } from 'primevue/usetoast';
+import { getXsrfToken } from './useCsrf';
 
 /** Standard API response envelope returned by ApiResponse / to_api() */
 export interface ApiEnvelope<T = unknown> {
@@ -39,15 +40,6 @@ export class ApiError extends Error {
     }
 }
 
-/**
- * Read a cookie value by name (used for XSRF-TOKEN).
- */
-function getCookie(name: string): string | undefined {
-    if (typeof document === 'undefined') return undefined;
-    const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[2]) : undefined;
-}
-
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 async function request<T = unknown>(method: HttpMethod, url: string, payload?: unknown): Promise<T> {
@@ -57,7 +49,7 @@ async function request<T = unknown>(method: HttpMethod, url: string, payload?: u
     };
 
     // CSRF token for mutating requests
-    const xsrf = getCookie('XSRF-TOKEN');
+    const xsrf = getXsrfToken();
     if (xsrf) {
         headers['X-XSRF-TOKEN'] = xsrf;
     }

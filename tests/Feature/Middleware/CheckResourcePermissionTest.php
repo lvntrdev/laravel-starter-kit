@@ -12,8 +12,10 @@
 |   1. Türetme  — action → ability map (index/show→read, store→create, …).
 |   2. Yetki     — çözülen izin DB'de seed'liyse, kullanıcı o izne sahip
 |                  olmalı; değilse AuthorizationException (403).
-|   3. Seed'siz  — çözülen izin DB'de YOKSA: production → deny, non-production
-|                  → warn + allow (unutulan izin satırını sessizce açmamak için).
+|   3. Seed'siz  — çözülen izin DB'de YOKSA FAIL-CLOSED: yalnız `local` geçer
+|                  (+warn); production/staging/uat/demo/testing → deny. Opt-out
+|                  `starter-kit.permissions.allow_unmapped=true` eski "prod dışı
+|                  allow" davranışını geri getirir (production yine deny).
 |   4. Sub-resource — ?type=student ile users.read → users:student.read'e
 |                  yükseltilir, ancak yalnız o sub-izin seed'liyse.
 |   5. Pass-through — route adı yok / segment < 2 / bilinmeyen action /
@@ -34,6 +36,10 @@ use Illuminate\Support\Facades\Log;
 use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
+
+// Her test'te seeded permission-name cache'i temizle: Cache::remember bir önceki
+// test'in name set'ini taşımasın (fail-closed matrisi seed durumuna duyarlı).
+beforeEach(fn () => CheckResourcePermission::flushCache());
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Yerel test kullanıcısı — App\Models\User gerektirmez; Spatie HasRoles +
@@ -173,10 +179,15 @@ it('denies when the user has a different resolved ability than required', functi
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 2. Seed'siz izin — production deny vs non-production warn+allow
+// 2. Seed'siz izin — FAIL-CLOSED varsayılan (yalnız local muaf) + opt-out bayrağı
+//
+// Varsayılan davranış (allow_unmapped=false): çözülen izin DB'de YOKSA yalnız
+// `local` ortamda geç (+warn); production/staging/uat/demo/testing → deny.
+// `allow_unmapped=true` eski davranışı geri getirir: prod dışı her ortamda geç,
+// production yine deny.
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('denies an unseeded resolved permission in production', function (): void {
+it('denies an unseeded resolved permission in production (default)', function (): void {
     // reports.read hiç seed edilmedi.
     app()->detectEnvironment(fn () => 'production');
     $user = makePermUser([]);
@@ -185,10 +196,32 @@ it('denies an unseeded resolved permission in production', function (): void {
         ->toThrow(AuthorizationException::class);
 });
 
-it('warns and allows an unseeded resolved permission in non-production', function (): void {
+it('denies an unseeded resolved permission on public staging (default, fail-closed)', function (): void {
+    // Regresyon kapısı: staging artık fail-open DEĞİL — unutulan izin satırı
+    // public staging'de endpoint'i sessizce açamaz.
+    app()->detectEnvironment(fn () => 'staging');
+    expect(config('starter-kit.permissions.allow_unmapped'))->toBeFalse();
+
+    $user = makePermUser([]);
+
+    expect(fn () => runMiddleware(permRequest('admin.reports.index', user: $user)))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('denies an unseeded resolved permission in the default (testing) environment', function (): void {
+    // Testbench default'u 'testing' — local değil → fail-closed → deny.
+    expect(app()->environment('local'))->toBeFalse();
+    expect(config('starter-kit.permissions.allow_unmapped'))->toBeFalse();
+
+    $user = makePermUser([]);
+
+    expect(fn () => runMiddleware(permRequest('admin.reports.index', user: $user)))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('warns and allows an unseeded resolved permission in local (dev DX exemption)', function (): void {
     Log::spy();
-    // Ortam testbench default'u ('testing') — production değil.
-    expect(app()->environment('production'))->toBeFalse();
+    app()->detectEnvironment(fn () => 'local');
 
     $user = makePermUser([]);
 
@@ -196,6 +229,30 @@ it('warns and allows an unseeded resolved permission in non-production', functio
 
     expect($response->getContent())->toBe('ok');
     Log::shouldHaveReceived('warning')->once();
+});
+
+it('warns and allows an unseeded permission on staging when allow_unmapped is opted in', function (): void {
+    Log::spy();
+    app()->detectEnvironment(fn () => 'staging');
+    config()->set('starter-kit.permissions.allow_unmapped', true);
+
+    $user = makePermUser([]);
+
+    $response = runMiddleware(permRequest('admin.reports.index', user: $user));
+
+    expect($response->getContent())->toBe('ok');
+    Log::shouldHaveReceived('warning')->once();
+});
+
+it('still denies an unseeded permission in production even when allow_unmapped is true', function (): void {
+    // Opt-out bayrağı production'ı ASLA açmaz — kırmızı çizgi korunur.
+    app()->detectEnvironment(fn () => 'production');
+    config()->set('starter-kit.permissions.allow_unmapped', true);
+
+    $user = makePermUser([]);
+
+    expect(fn () => runMiddleware(permRequest('admin.reports.index', user: $user)))
+        ->toThrow(AuthorizationException::class);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

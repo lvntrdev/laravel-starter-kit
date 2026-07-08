@@ -1,4 +1,6 @@
 import { useApi } from '@/composables/useApi';
+import { getXsrfToken } from '@/composables/useCsrf';
+import { withBasePath } from '@/composables/useBasePath';
 import { trans } from 'laravel-vue-i18n';
 import { computed, reactive, ref } from 'vue';
 import type {
@@ -438,15 +440,6 @@ export function useFileManager(options: Options) {
         pendingUploads.value = pendingUploads.value.filter((p) => p.tempId !== tempId);
     }
 
-    function xsrfToken(): string {
-        return decodeURIComponent(
-            document.cookie
-                .split('; ')
-                .find((c) => c.startsWith('XSRF-TOKEN='))
-                ?.split('=')[1] ?? '',
-        );
-    }
-
     function extractValidationMessage(envelope: unknown): string | null {
         if (!envelope || typeof envelope !== 'object') return null;
         const errors = (envelope as { errors?: Record<string, unknown> }).errors;
@@ -469,9 +462,9 @@ export function useFileManager(options: Options) {
             formData.append('files[]', file);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/file-manager/files');
+            xhr.open('POST', withBasePath('/file-manager/files'));
             xhr.setRequestHeader('Accept', 'application/json');
-            xhr.setRequestHeader('X-XSRF-TOKEN', xsrfToken());
+            xhr.setRequestHeader('X-XSRF-TOKEN', getXsrfToken());
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.withCredentials = true;
 

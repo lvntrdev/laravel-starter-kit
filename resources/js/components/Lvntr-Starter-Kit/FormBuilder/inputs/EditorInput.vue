@@ -24,6 +24,8 @@
     import type { FileItem } from '../../FileManager/types';
     import EditorImagePicker from './EditorImagePicker.vue';
     import { useDialog } from '@/composables/useDialog';
+    import { getXsrfToken } from '@/composables/useCsrf';
+    import { withBasePath } from '@/composables/useBasePath';
     import { useToast } from 'primevue/usetoast';
     import { trans } from 'laravel-vue-i18n';
 
@@ -190,11 +192,6 @@
         editor.value?.destroy();
     });
 
-    function xsrfToken(): string {
-        const match = document.cookie.match(/(^|;\s*)XSRF-TOKEN=([^;]*)/);
-        return match ? decodeURIComponent(match[2]) : '';
-    }
-
     function uploadFile(file: File): Promise<string> {
         return new Promise((resolve, reject) => {
             const cfg = props.imageUpload;
@@ -210,9 +207,9 @@
             formData.append('files[]', file);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/file-manager/files');
+            xhr.open('POST', withBasePath('/file-manager/files'));
             xhr.setRequestHeader('Accept', 'application/json');
-            xhr.setRequestHeader('X-XSRF-TOKEN', xsrfToken());
+            xhr.setRequestHeader('X-XSRF-TOKEN', getXsrfToken());
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.withCredentials = true;
 

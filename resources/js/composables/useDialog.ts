@@ -121,6 +121,10 @@ interface OpenAsyncOptions<T = unknown> extends OpenOptions {
     mapResponse?: (data: T) => Record<string, unknown>;
 }
 
+// Module-level singleton state — a single dialog instance is rendered in
+// AdminLayout and shared across all useDialog() callers. Deliberately client-only:
+// open/close mutate this only from browser interaction, never during SSR, so there
+// is no shared-state bleed between server requests.
 const state = reactive<DialogState>({
     visible: false,
     component: null,
@@ -138,6 +142,8 @@ const state = reactive<DialogState>({
  * Pending teardown timer shared across all useDialog() calls. A rapid
  * open → close → open sequence could otherwise let an earlier close()'s
  * 300 ms timer wipe the state of a dialog that has just been re-opened.
+ * Client-only like `state` above — set only from browser interaction, never
+ * during SSR.
  */
 let closeTimer: ReturnType<typeof setTimeout> | null = null;
 

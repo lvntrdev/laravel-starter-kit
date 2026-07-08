@@ -1,5 +1,6 @@
 /.github/** export-ignore
 /.claude/** export-ignore
+/.ai/** export-ignore
 /tests/** export-ignore
 /phpunit.xml export-ignore
 /docs/** export-ignore
@@ -10,6 +11,10 @@
 /.gitignore export-ignore
 /.gitattributes export-ignore
 /.npmignore export-ignore
+/release.sh export-ignore
+/testbench.yaml export-ignore
+/scripts/** export-ignore
+/pint.json export-ignore
 /stubs/node_modules/** export-ignore
 /stubs/public/build/** export-ignore
 /stubs/bootstrap/ssr/** export-ignore

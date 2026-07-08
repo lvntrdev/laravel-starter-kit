@@ -18,8 +18,13 @@ import type { Appearance } from '@/types';
  *   - custom  → build-time slot-override themes; NOT handled here; attribute is
  *               removed so the build-time `_active.css` import governs layout.
  *
- * FOUC strategy: same as `useDarkMode` — DOM is touched only in `onMounted`;
- * the first-paint flash is accepted kit behaviour (no inline-script addition).
+ * FOUC strategy: the first-paint flash is killed by a synchronous inline script
+ * in the root blade (`app.blade.php`) that sets `data-sk-theme` from the same
+ * server `appearance.theme` default BEFORE paint. This composable only touches
+ * the DOM in `onMounted` and applies the identical value, so it runs
+ * idempotently — a re-apply that never flips what the inline script already set.
+ * (Kept because it also reacts to live Inertia prop changes, e.g. after saving
+ * the Görünüm tab, which the one-shot inline script cannot.)
  *
  * Inertia partial-reload guard: when the `appearance` prop is absent in a partial
  * reload the composable does NOTHING (does not fall back to FALLBACK object),

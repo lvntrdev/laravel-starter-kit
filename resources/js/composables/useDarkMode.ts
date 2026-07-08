@@ -13,6 +13,12 @@ import { migrateLegacyAppearanceStorage, useAppearanceDefaults } from '@/composa
  * (`appearance.dark_mode_default`) instead of a hardcoded `false`. Once the user
  * toggles, the localStorage value is written and from then on it WINS over the
  * global default. SSR-safe: the DOM is only touched in `onMounted`.
+ *
+ * FOUC: the first-paint flash is killed by a synchronous inline script in the
+ * root blade (`app.blade.php`) that applies the SAME resolution (this key, the
+ * legacy-migration rule, and the user-override → global-default precedence)
+ * before paint. The `onMounted` apply below re-applies the identical value, so
+ * it is idempotent — it never flips what the inline script already set.
  */
 export function useDarkMode() {
     const STORAGE_KEY = 'admin-dark-mode';
@@ -58,7 +64,10 @@ export function useDarkMode() {
     // Watch and sync
     watch(isDark, (val) => applyDarkClass(val), { immediate: false });
 
-    // Apply on mount (resolves the global-default-vs-override value once — no flash).
+    // Re-apply on mount — resolves the global-default-vs-override value once.
+    // The blade inline FOUC script already set this before paint, so this is an
+    // idempotent reconciliation (also the point where a runtime toggle takes
+    // over via the watcher above), not the flash-prevention mechanism.
     onMounted(() => {
         applyDarkClass(isDark.value);
     });

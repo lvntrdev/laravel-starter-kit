@@ -251,6 +251,90 @@ describe('TranslatableInput — emit on user input', () => {
     });
 });
 
+// ── Tests: unresolved-locale preservation (data-loss regression) ──────────────
+
+describe('TranslatableInput — preserves locales outside resolvedLocales', () => {
+    it('onlyLocales keeps translations of the excluded locales on emit', async () => {
+        // resolvedLocales = [tr]; `en` is present in modelValue but filtered out.
+        const field = makeTextField({ onlyLocales: ['tr'] });
+        const wrapper = mount(TranslatableInput, {
+            props: { field, modelValue: { tr: 'Elma', en: 'Apple' } },
+            global: globalConfig,
+        });
+
+        const inputs = wrapper.findAll('input');
+        expect(inputs).toHaveLength(1);
+
+        await inputs[0].setValue('Armut');
+
+        const payloads = (wrapper.emitted('update:modelValue') ?? []) as Array<[Record<string, string>]>;
+        expect(payloads.length).toBeGreaterThanOrEqual(1);
+
+        const last = payloads[payloads.length - 1][0];
+        // tr updated, en (filtered out of the UI) preserved — not dropped.
+        expect(last).toEqual({ tr: 'Armut', en: 'Apple' });
+    });
+
+    it('exceptLocales keeps the removed locale translation on emit', async () => {
+        // resolvedLocales = [tr]; `en` is removed from the UI via exceptLocales.
+        const field = makeTextField({ exceptLocales: ['en'] });
+        const wrapper = mount(TranslatableInput, {
+            props: { field, modelValue: { tr: 'Elma', en: 'Apple' } },
+            global: globalConfig,
+        });
+
+        const inputs = wrapper.findAll('input');
+        expect(inputs).toHaveLength(1);
+
+        await inputs[0].setValue('Armut');
+
+        const payloads = (wrapper.emitted('update:modelValue') ?? []) as Array<[Record<string, string>]>;
+        const last = payloads[payloads.length - 1][0];
+        expect(last).toEqual({ tr: 'Armut', en: 'Apple' });
+    });
+
+    it('preserves a content locale absent from availableLocales', async () => {
+        // `de` is not in availableLocales (mock: tr/en) so it never resolves,
+        // yet the stored translation must survive an edit to a visible locale.
+        const field = makeTextField();
+        const wrapper = mount(TranslatableInput, {
+            props: { field, modelValue: { tr: '', en: 'Apple', de: 'Apfel' } },
+            global: globalConfig,
+        });
+
+        const inputs = visibleInputs(wrapper);
+        await inputs[0].setValue('Elma');
+
+        const payloads = (wrapper.emitted('update:modelValue') ?? []) as Array<[Record<string, string>]>;
+        const last = payloads[payloads.length - 1][0];
+        expect(last).toMatchObject({ tr: 'Elma', en: 'Apple', de: 'Apfel' });
+        // The out-of-band locale is still present.
+        expect(last.de).toBe('Apfel');
+    });
+
+    it('sequential edits across visible locales preserve the hidden locale', async () => {
+        // Simulate the v-model round-trip: parent writes the emitted value back.
+        const field = makeTextField({ exceptLocales: ['en'] });
+        const wrapper = mount(TranslatableInput, {
+            props: { field, modelValue: { tr: 'A', en: 'KEEP' } as Record<string, string> },
+            global: globalConfig,
+        });
+
+        const input = () => wrapper.findAll('input')[0];
+        await input().setValue('A2');
+
+        const first = (wrapper.emitted('update:modelValue') ?? []) as Array<[Record<string, string>]>;
+        // Parent propagates emitted value back into modelValue.
+        await wrapper.setProps({ modelValue: first[first.length - 1][0] });
+        await nextTick();
+
+        await input().setValue('A3');
+        const payloads = (wrapper.emitted('update:modelValue') ?? []) as Array<[Record<string, string>]>;
+        const last = payloads[payloads.length - 1][0];
+        expect(last).toEqual({ tr: 'A3', en: 'KEEP' });
+    });
+});
+
 // ── Tests: value normalization ────────────────────────────────────────────────
 
 describe('TranslatableInput — initial value normalization', () => {

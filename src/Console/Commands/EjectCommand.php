@@ -4,6 +4,7 @@ namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Lvntr\StarterKit\Console\Commands\Concerns\WritesFilesAtomically;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use Symfony\Component\Process\Process;
 
@@ -48,6 +49,8 @@ use function Laravel\Prompts\confirm;
  */
 class EjectCommand extends Command
 {
+    use WritesFilesAtomically;
+
     protected $signature = 'sk:eject
         {domain : The kit domain to eject (User, Role, Setting, ActivityLog, ApiClient, SystemHealth, ContentLanguage, Definitions, MediaUpload, ApiRoute, Logs, Files, Session, Media)}
         {--force : Overwrite existing app/Domain files}
@@ -492,7 +495,7 @@ class EjectCommand extends Command
                 $contents = $this->rewriteDomainNamespace($contents, $domain);
             }
 
-            $this->files->put($targetPath, $contents);
+            $this->atomicPut($targetPath, $contents);
             $count++;
         }
 
@@ -645,7 +648,7 @@ class EjectCommand extends Command
         if ($rewriteDomain) {
             $contents = $this->rewriteDomainNamespace($contents, $domain);
         }
-        $this->files->put($destination, $contents);
+        $this->atomicPut($destination, $contents);
 
         return ['copied' => 1, 'skipped' => []];
     }
@@ -713,7 +716,7 @@ class EjectCommand extends Command
                 }
             }
 
-            $this->files->put($targetPath, $contents);
+            $this->atomicPut($targetPath, $contents);
             $copied++;
         }
 
@@ -873,7 +876,7 @@ class EjectCommand extends Command
             $this->files->makeDirectory($dir, 0755, true);
         }
 
-        $this->files->put($hashFile, json_encode($hashes, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->atomicPut($hashFile, json_encode($hashes, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     /**
@@ -1116,7 +1119,7 @@ class EjectCommand extends Command
             return [];
         }
 
-        $this->files->put($providerPath, $updated);
+        $this->atomicPut($providerPath, $updated);
 
         return $added;
     }

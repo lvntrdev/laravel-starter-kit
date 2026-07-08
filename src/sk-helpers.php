@@ -14,7 +14,8 @@ use Lvntr\StarterKit\Http\Responses\ApiResponse;
 | Vendor Helper Functions
 |--------------------------------------------------------------------------
 |
-| This file is loaded by `StarterKitServiceProvider::register()` AFTER the
+| This file is NOT autoloaded via composer's `files` directive. It is
+| `require_once`'d by `StarterKitServiceProvider::register()` AFTER the
 | consumer-published copy at `app/Helpers/sk-helpers.php` (when present), so
 | every declaration below is wrapped in a `function_exists` guard — the
 | consumer's definitions always win.
@@ -184,7 +185,18 @@ if (! function_exists('format_date')) {
         }
 
         $carbon = $value instanceof Carbon ? $value : Carbon::parse($value);
-        $carbon = $carbon->setTimezone(config('app.display_timezone'));
+
+        // `app.display_timezone` is pushed at boot by SettingsServiceProvider
+        // from the General settings, but it can be absent — or present-but-null
+        // — on bare installs or before settings are seeded. `config(..., $def)`
+        // only substitutes the default for a MISSING key, so a null value would
+        // slip through; the `?:` chain coalesces both null and '' down to the
+        // app timezone, then UTC, so setTimezone() never receives null (throws).
+        $timezone = config('app.display_timezone')
+            ?: config('app.timezone')
+            ?: 'UTC';
+
+        $carbon = $carbon->setTimezone($timezone);
 
         // Admin-configured date format (General settings) drives the date part;
         // defaults preserve the kit's historical 'd-m-Y' output.

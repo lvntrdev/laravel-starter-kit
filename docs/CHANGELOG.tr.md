@@ -2,6 +2,17 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## Yayınlanmamış
+
+### Güvenlik
+
+- **Seed'lenmemiş izinler artık yalnız production'da değil, staging/demo'da da reddediliyor.** `CheckResourcePermission` middleware'i, gerekli izin veritabanında yoksa production dışındaki tüm ortamlarda (staging, uat, demo, testing) isteği geçiriyordu — böylece public bir staging veya demo host'u, izin satırı unutulmuş bir endpoint'i sessizce açığa çıkarabiliyordu. Artık `local` dışındaki her ortamda reddediyor (`local` geliştirici kolaylığı için yine uyarıp geçiriyor). Eski davranışı bilinçli olarak production dışı host'larda istiyorsanız `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true` ayarlayın. Bkz. [UPGRADE.tr.md](./UPGRADE.tr.md).
+- **İzin sorguları artık Octane-güvenli** — seed'lenmiş izin listesi tüm worker ömrü boyunca değil, kısa süreli (60sn) cache'leniyor ve hem `php artisan sk:seed-permissions` hem de Roller ekranındaki izin senkronu bunu hemen temizliyor; böylece yeni seed'lenen izinler Octane altında anında etkili oluyor.
+
+### Değiştirildi
+
+- **Datatable kolon görünürlük/sıra tercihleri `sessionStorage`'dan `localStorage`'a taşındı.** Bir `SkDatatable`'da kolon gösterme/gizleme veya sıralama tercihiniz varsa, yükseltme sonrası bu tercih **bir kez** sıfırlanır — veri kaybı yok, tamamen kozmetik; tercihi yeniden ayarlamanız yeterli.
+
 ## 2026-07-04 — v13.6.8
 
 ### Kalite ve UX sprint'i
@@ -103,6 +114,57 @@ Yönetim panelinde bir dizi arayüz iyileştirmesi — API veya kurulum değişi
 #### Değişti
 
 - **Güvenlik ayarları alt sekmesi "Cloudflare Turnstile" → "Bot Protection"** — güvenlik alt sekmesi etiketi (EN/TR) ve ilgili `SecurityTab` bölümü artık sağlayıcıdan bağımsız adı kullanır.
+
+## 2026-06-13 — v13.6.1
+
+### `sk:update` bayat bileşen import'larını kendiliğinden onarıyor
+
+Tek hedefli bir düzeltme — API veya kurulum değişikliği yok.
+
+#### Düzeltildi
+
+- **`sk:update` artık bir bileşen vendor'a taşındıktan sonra bayat import bırakmıyor** — bir bileşen stub'lardan `@lvntr/components`'e taşındığında eski yerel kopyası force-delete ediliyor, ama silinen yerel yolu hâlâ import eden kullanıcı-özelleştirmeli sayfalar dokunulmadan kalıyor ve Vite build'ini `ENOENT` load-fallback hatasıyla kırıyordu (örn. `@/components/Auth/TurnstileWidget.vue`). `sk:update` artık bu tür bayat import specifier'larını `resources/js` genelinde vendor yoluna (`@lvntr/components/ui/TurnstileWidget.vue`) yeniden yazıyor; böylece v13.6.0'da başlayan migrasyon, mevcut kullanıcıların özelleştirdiği Auth sayfalarında (`Login`, `Register`, `ForgotPassword`) tamamlanıyor.
+
+## 2026-06-13 — v13.6.0 (devam)
+
+### Vendor-first Faz 2 — Settings-sekmesi controller'ları, Definitions/Media, ContentLanguage
+
+Faz 2, Faz 1'de başlayan vendor-first taşımayı; vendor Settings sekmelerini destekleyen kalan controller'ları artı iki API/Service controller'ını taşıyarak ve ContentLanguage domain'ini tamamen vendorize ederek tamamlıyor. Vue ve migration'lar zaten vendor'daydı — bu yalnızca PHP katmanı taşıması. Sıfır kurulumlar bu dosyaların app kopyasını almaz; mevcut kurulumlar aynı hash guard altında `sk:update` ile taşınır.
+
+#### Değişti
+
+- **ApiClient, ApiToken, SystemHealth, ContentLanguage, Definitions (Api + Service) ve MediaUpload için vendor-first HTTP katmanı** — bu controller'lar (varsa FormRequest / API Resource'larıyla birlikte) artık `Lvntr\StarterKit\Http\...` altında yaşıyor ve geriye dönük uyumluluk için `App\Http\...` FQCN'lerine alias'lanıyor. Bir app kopyası alias'ı otomatik olarak devre dışı bırakır; böylece özelleştirmeniz kazanmaya devam eder. Route adları, permission anahtarları ve Passport secret'ının tek-seferlik gösterimi değişmedi.
+- **ContentLanguage domain'i vendorize edildi** — `Actions` / `DTOs` / `Queries` `Lvntr\StarterKit\Domain\ContentLanguage\` altına taşındı. `App\Models\ContentLanguage` modeli app-sahipli kalır (asla alias'lanmaz — policy discovery + route-model binding'i korur); vendor kodu ona `App\` FQCN'iyle referans verir.
+
+#### Eklendi
+
+- **`sk:eject` beş yeni giriş kazandı** — `SystemHealth`, `ContentLanguage`, `Definitions`, `MediaUpload` ve (`ApiToken` controller/request/resource'unu da eject eden) tam-HTTP-katmanlı bir `ApiClient`. Eject edilebilir domain sayısı 10'dan 14'e çıkıyor.
+
+#### Migrasyon
+
+`composer update lvntr/laravel-starter-kit && php artisan sk:update` çalıştırın. Bkz. `docs/UPGRADE.tr.md` (v13.5.11 → v13.6.0, "Behavior-module HTTP katmanı vendor'a taşındı — Faz 2").
+
+---
+
+## 2026-06-13 — v13.6.0 (devam)
+
+### Behavior-module HTTP + Vue katmanları vendor'a taşındı; `sk:eject` artık `Files`'ı destekliyor
+
+Beş yerleşik yönetim modülü — **Files, Logs, ActivityLogs, ApiRoutes, Settings** — artık controller'larını, FormRequest'lerini ve Vue yönetim sayfalarını tamamen vendor paketinden çalıştırıyor. Sıfır kurulumlar bu modüllerin app kopyasını almaz. Mevcut kurulumlar hash guard altında `sk:update` ile taşınır (değişmemiş kopyalar kaldırılır; değiştirilmiş kopyalar korunur ve raporlanır). Vue migrasyonu ayrıca `app.ts`'te `@lvntr/pages` vendor-fallback glob'unu gerektirir.
+
+#### Eklendi
+
+- **`sk:eject Files`** — FileManager yönetim Vue sayfalarını (`resources/js/pages/Admin/Files/`) UI özelleştirmesi için app'inize eject eder. FileManager backend'i (controller, FormRequest'ler, route-registry altyapısı) her zaman vendor-yönetimli kalır; yalnızca Vue katmanı kopyalanır. Geri almak kopyalanan sayfaları siler; vendor kopyası `app.ts` fallback'i üzerinden devam eder.
+- **Logs, ActivityLogs, ApiRoutes, Settings için vendor-first HTTP katmanı** — controller'lar ve FormRequest'ler artık `Lvntr\StarterKit\Http\...` altında yaşıyor ve geriye dönük uyumluluk için `App\Http\Controllers\Admin\*`'e alias'lanıyor. App'inizdeki bir `app/Http/Controllers/Admin/SomeController.php` dosyası alias'ı otomatik olarak devre dışı bırakır; böylece kopyanız kazanmaya devam eder.
+- **`sk:update`'te grup-atomik migrasyon** — vendor-first modüller katman bazında (PHP ve Vue bağımsız olarak) taşınır. Bir katmandaki herhangi bir dosya değiştirilmişse, o katmanın tamamı korunur. Hiçbir zaman yarı silinmiş bir modül üretilmez.
+
+#### Değişti
+
+- **`sk:eject` manifest'i genişledi** — `Files` domain'i eklendi (yalnızca Vue: `backend: ''`). Komut imzasındaki eject edilebilir domain listesi artık `Files`'ı içeriyor.
+
+#### Migrasyon
+
+`composer update lvntr/laravel-starter-kit && php artisan sk:update && npm run build` çalıştırın. Özelleştirilmiş bir modül için `sk:update` onu korur ve raporlar; tam açık sahiplik almak için `sk:eject <Module>` çalıştırın. Üç senaryolu rehber için bkz. `docs/UPGRADE.tr.md` (v13.5.11 → v13.6.0, "Behavior-module HTTP + Vue katmanları vendor'a taşındı").
 
 ---
 
@@ -666,7 +728,7 @@ php artisan permission:cache-reset
 
 ---
 
-## 2026-05-06 -v.13.5.2
+## 2026-05-06 — v13.5.2
 
 ### Yama sürüm — Ayarlar güvenlik sekmesi birleştirmesi, FileManager geri yükleme düzeltmesi ve i18n iyileştirmeleri
 
@@ -705,7 +767,7 @@ npm run build
 
 ---
 
-## 2026-05-05 -v.13.5.1
+## 2026-05-05 — v13.5.1
 
 ### Yama sürüm — NPM exports düzeltmesi, sk:publish iyileştirmeleri, depolama kotası ve yükleme validasyonu
 
@@ -752,7 +814,7 @@ php artisan sk:update
 
 ---
 
-## 2026-05-05 -v.13.5.0
+## 2026-05-05 — v13.5.0
 
 ### Major sürüm — Vendor-first runtime ve frontend UI lib taşıması
 
@@ -800,7 +862,7 @@ Mevcut `app/Domain/FileManager/`, `app/Domain/Shared/`, `app/Traits/`, `app/Help
 
 ---
 
-## 2026-05-04 -v.13.4.10
+## 2026-05-04 — v13.4.10
 
 ### Minor sürüm — Çevrilebilir FormBuilder alanları ve Sample Contents referans modülü
 
@@ -835,7 +897,7 @@ npm run build
 
 Kendi dil/settings akışını özelleştirmiş uygulamalar `general.languages` üzerinden okunan aktif dil listesini doğrulamalı. Mevcut düz string kolonlar otomatik taşınmaz; bir model attribute'unu Spatie `HasTranslations` altına almadan önce kolonları aşamalı migration ile JSON'a çevirin.
 
-## 2026-05-02 -v.13.4.9
+## 2026-05-02 — v13.4.9
 
 ### Minor sürüm — Dosya Yöneticisi favoriler, çöp kutusu, geri yükleme, kalıcı silme, kopyalama ve yeniden adlandırma
 
@@ -876,7 +938,7 @@ npm run build
 
 API response tarafında breaking değişiklik yok. File Manager stub’larını özelleştirmiş uygulamalar `sk:update --force` kullanmadan önce özellikle `FileManager.vue`, `useFileManager.ts`, `FileGrid.vue`, `FileManagerController.php`, `routes/web/file-manager-route.php`, `lang/{en,tr}/sk-file-manager.php`, yeni request/action/query dosyaları ve iki migration ile kendi dosyalarını karşılaştırmalı.
 
-## 2026-04-30 -v.13.4.8
+## 2026-04-30 — v13.4.8
 
 ### Minor sürüm — Dosya Yöneticisi UX yenilemesi (sidebar + stats + details + arama)
 
@@ -908,7 +970,7 @@ Dosya Yöneticisi UX yenilemesi — backend aynı, route'lar aynı, media tablos
 
 Breaking change yok. Mevcut consumer uygulamaları `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` çalıştırır — `sk:update` yeni shipped dosyaları ve genişletilmiş dil key'lerini çeker. Wire üzerindeki veri şekli değişmez; backend değişmez.
 
-## 2026-04-26 -v.13.4.7
+## 2026-04-26 — v13.4.7
 
 ### Patch sürüm — `EditorInput`'da duplicate Link extension uyarısı susturuldu
 
@@ -922,7 +984,7 @@ Tek-fix patch — Tiptap'ın `EditorInput` ayağa kalkarken yazdığı `Duplicat
 
 Breaking change yok. `composer update lvntr/laravel-starter-kit && php artisan sk:update` patch'i çeker — düzeltme `sk:update`'in zaten takip ettiği aynı shipped Vue dosyası üzerinden geliyor; ek adım gerekmez.
 
-## 2026-04-26 -v.13.4.6
+## 2026-04-26 — v13.4.6
 
 ### Patch sürüm — Vite optional-peer-dep stub'ı + `sk:update` package.json merge
 
@@ -938,7 +1000,7 @@ Breaking change yok. `composer update lvntr/laravel-starter-kit && php artisan s
 
 Breaking change yok. Mevcut consumer uygulamaları `composer update lvntr/laravel-starter-kit && php artisan sk:update && npm install && npm run build` çalıştırır — `sk:update` artık eksik `@tiptap/*` entry'lerini `package.json`'unuza sync'ler ve Vite stub'lar yerine gerçek paketleri resolve eder.
 
-## 2026-04-26 -v.13.4.5
+## 2026-04-26 — v13.4.5
 
 ### Patch sürüm — code-review taraması (API hiyerarşi + role-data + 2FA loading + permission directive + i18n)
 
@@ -962,7 +1024,7 @@ v13.4.x yüzeyinin takip eden bir kod incelemesinden çıkan küçük bir bulgu 
 
 - **İki güvenlik düzeltmesi için regression test'leri.** `tests/Feature/Api/UserTest.php` `hides higher-rank users from non-system_admin api callers` test'ini kazanıyor — `RoleEnum` index'i üzerinden role hiyerarşisini seed ediyor, `users.read` + `admin` rolünü `api` guard'ına da mirrorlayıp (Spatie'nin `Guard::getDefaultName()`'i `Passport::actingAs` altında `api`'ye geçiyor), bir admin kullanıcısına web + api versiyonlarını birlikte assign ediyor ve response'un üst-rank `system_admin` peer + acting `system_admin` user'ını dışlayıp same-rank admin peer'ı içerdiğini assert ediyor. `tests/Feature/Admin/RoleManagementTest.php` ikisini kazanıyor: `forbids non-system_admin from reading higher-rank role data` (admin `/admin/roles/{system_admin}/data`'da 403 alır) ve `allows non-system_admin to read lower-rank role data` (admin `/admin/roles/{user}/data`'da 200 alır).
 
-## 2026-04-25 -v.13.4.4
+## 2026-04-25 — v13.4.4
 
 ### Patch sürüm — system-admin log görüntüleyici (`/logs`)
 
@@ -988,7 +1050,7 @@ v13.4.x yüzeyinin takip eden bir kod incelemesinden çıkan küçük bir bulgu 
 
 - **64KB satır okuma sınırı.** `LogEntryQuery` `fgets($handle, 65536)` çağırır; sınırsız uzunlukta tek satırlık bir kayıt process belleğini tüketemez. Uzun satırlar isteği abort etmeden temiz şekilde truncate olur.
 
-## 2026-04-25 -v.13.4.3
+## 2026-04-25 — v13.4.3
 
 ### Patch sürüm — zengin dikey tab'lar + datatable per_page üst sınırı
 
@@ -1012,7 +1074,7 @@ v13.4.x yüzeyinin takip eden bir kod incelemesinden çıkan küçük bir bulgu 
 
 - **Branding — legacy "Starter Kit 12" referansları.** İki yer hâlâ "Starter Kit 12" diyordu — `config/scramble.php` API açıklaması ve `app.blade.php` fallback title; her ikisi de artık "Starter Kit 13" diyor.
 
-## 2026-04-24 -v.13.4.2
+## 2026-04-24 — v13.4.2
 
 ### Patch sürüm — Tiptap editor input, şifre üreticisi, dashboard hoş geldin mesajı + güvenlik sertleştirmesi
 
@@ -1052,7 +1114,7 @@ Zengin metin editörü olarak çalışan `FB.editor()` FormBuilder alanı (arkas
 
 - **Editor upload — stale `blob:` URL'lerinin form payload'una sızması engellendi.** `EditorInput.vue` artık `setContent({ emitUpdate: false })` sonrasında parent `v-model`'i elle senkronlıyor; taze bitmiş bir upload'tan geride kalan / kırık `<img src="blob:...">` parçaları submit edilen HTML'de sunucuya gitmiyor.
 
-## 2026-04-22 -v.13.4.1
+## 2026-04-22 — v13.4.1
 
 ### Patch sürüm — API response sertleştirme + Postman/Apidog sync + OAuth UUID fix
 
@@ -1118,7 +1180,7 @@ Detaylı migration adımları için [docs/UPGRADE.tr.md](UPGRADE.tr.md). Özet:
 - `ModelNotFoundException` mesajı model adını içerir (`"User not found."`). Frontend regex eşleşmeleri güncellenebilir.
 - `Api/Auth/AuthController` `data.user` alanları `UserResource::toArray()` çıktısıyla sınırlı. Ham modelin bir alanına bağımlıysanız resource'u güncelleyin.
 
-## 2026-04-21 -v.13.4.0
+## 2026-04-21 — v13.4.0
 
 ### Minor sürüm — Güvenlik sertleştirme sprinti
 
@@ -1196,7 +1258,7 @@ Paralel bir kod inceleme turu ~37 bulgu çıkardı — 13 HIGH, 14 MEDIUM, 4 LOW
 
 `composer update lvntr/laravel-starter-kit --with-all-dependencies` yalnızca paket `src/` katmanını (HSTS `preload`, stub güncellemeleri) alıyor. Yukarıdaki diğer her fix publish / stub-backed dosyalarda yaşıyor. Tam diff listesi ve smoke-test checklist'i için [docs/UPGRADE.tr.md](UPGRADE.tr.md).
 
-## 2026-04-20 -v.13.3.3
+## 2026-04-20 — v13.3.3
 
 ### Patch sürüm — Builder core importları için Windows build düzeltmesi
 
@@ -1204,7 +1266,7 @@ Paralel bir kod inceleme turu ~37 bulgu çıkardı — 13 HIGH, 14 MEDIUM, 4 LOW
 
 - **Windows production build `Could not load .../FormBuilder/core` hatasıyla patlıyordu.** `FormBuilder`, `DatatableBuilder` ve `TabBuilder` bileşenlerinin her biri, `index.ts`'i `@lvntr/components/<Builder>/core` olarak import edilen bir `core/` klasörüne sahip. Bazı Windows kurulumlarında Vite resolver'ı dizin→`index.ts` adımını atlayıp `vite:load-fallback`'e düşüyor, klasörü dosya gibi okumaya çalışıp `ENOENT` fırlatıyordu. Düzeltme: her üç builder için `core/` klasörünün yanına, `./core/index`'ten re-export yapan bir `core.ts` barrel dosyası eklendi; böylece import her platformda gerçek bir dosyaya rezolve oluyor. macOS/Linux davranışı değişmedi, `/core/builder` gibi mevcut subpath importları da etkilenmedi. Fixes lvntrdev/laravel-starter-kit#1.
 
-## 2026-04-19 -v.13.3.2
+## 2026-04-19 — v13.3.2
 
 ### Patch sürüm — güvenlik sertleştirmesi, user audit event'leri, Logo API zarfı, media-delete policy, permission-middleware cache doğruluğu, test bootstrap
 
@@ -1292,7 +1354,7 @@ Tam test suite auditi sırasında ortaya çıkan gizli bug'ların toplu düzeltm
 
 - **`tests/Feature/Admin/SettingsTest.php`'ye logo upload/delete coverage'ı eklendi.** `POST /settings/logo` üzerinde `ApiResponse` zarfını (200 + `data.logo_url`) ve `DELETE /settings/logo` üzerinde 204 sözleşmesini kilitliyor.
 
-## 2026-04-18 -v.13.3.0
+## 2026-04-18 — v13.3.0
 
 ### Özellik sürümü — Cloudflare Turnstile, last-login takibi, dosya önizleme modalları, shipping edilen `validation.php` ve `sk-*` çeviri namespace'i
 
@@ -1360,7 +1422,7 @@ Shipping edilen her çeviri dosyası artık `sk-` dosya adı prefix'i taşıyor:
 
 ---
 
-## 2026-04-16 -v.13.2.9
+## 2026-04-16 — v13.2.9
 
 ### `npm run build` — lang JSON çift import uyarısı giderildi
 
@@ -1387,7 +1449,7 @@ Lang JSON dosyaları küçük (birkaç KB) olduğu için statik bundling'in bund
 
 ---
 
-## 2026-04-16 -v.13.2.8
+## 2026-04-16 — v13.2.8
 
 ### Daha temiz ilk kurulumlar
 
@@ -1399,7 +1461,7 @@ Yeni kurulumlar artık gereksiz geliştirme kalıntıları ve gürültülü örn
 
 ---
 
-## 2026-04-15 -v.13.2.7
+## 2026-04-15 — v13.2.7
 
 ### File manager upload — HTTP context'i için `crypto.randomUUID` fallback'i
 
@@ -1419,7 +1481,7 @@ tempId yalnızca bir pending-upload satırını tamamlanma/hata callback'iyle e�
 
 ---
 
-## 2026-04-15 -v.13.2.6
+## 2026-04-15 — v13.2.6
 
 ### File manager validation mesajları — okunabilir, lokalize, dosya adıyla
 
@@ -1462,7 +1524,7 @@ Realpath guard, dosya published kopya olarak yüklendiğinde self-recursion'ı e
 
 ---
 
-## 2026-04-14 -v.13.2.4
+## 2026-04-14 — v13.2.4
 
 ### Tip güvenliği turu — `vue-tsc` ve ESLint sıfır uyarı
 
@@ -1479,7 +1541,7 @@ Starter kit kaynak kodu artık `vue-tsc --noEmit` ve `eslint 'resources/js/**/*.
 
 Mevcut uygulamalar için aksiyon gerekmiyor — değişiklikler davranışsal değil, tip/lint düzeyinde.
 
-## 2026-04-14 -v.13.2.3
+## 2026-04-14 — v13.2.3
 
 ### Installer DX — AST tabanlı enjeksiyon, bootstrap helper, preset uyarıları
 
@@ -1499,7 +1561,7 @@ Fresh bir Laravel üzerinde `composer require lvntr/laravel-starter-kit` akış�
 
 Mevcut kurulumlar için aksiyon gerekmiyor — installer tarafındaki tüm değişiklikler geriye dönük uyumlu, first-install tespiti ya da idempotent guard'larla korunuyor.
 
-## 2026-04-14 -v.13.2.2
+## 2026-04-14 — v13.2.2
 
 ### FileManager — `ContextRegistry` ile pluggable context'ler
 
@@ -1520,7 +1582,7 @@ FileManager artık `user` / `global` ile sınırlı değil. Her Eloquent model'i
 - **Testler** — yeni `CustomContextTest` dosyası: explicit register, path override, folder listing, tanımsız-context reject ve morph-map auto-resolve. 26/26 FileManager testi geçiyor.
 - **Doküman** — [file-manager.tr.md](./file-manager.tr.md) "Özel (custom) context'ler" bölümü aldı: çözüm sırası, zero-config walkthrough, `VehiclePolicy` örneği, contract tablosu ve override rehberi.
 
-## 2026-04-14 -v.13.2.1
+## 2026-04-14 — v13.2.1
 
 ### FileManager — UX rötuşları ve takip iyileştirmeleri
 
@@ -1545,7 +1607,7 @@ FileManager artık `user` / `global` ile sınırlı değil. Her Eloquent model'i
 
 Güncellenmiş kullanım, prop ve composable çıktıları için [file-manager.tr.md](./file-manager.tr.md).
 
-## 2026-04-14 -v.13.2.0
+## 2026-04-14 — v13.2.0
 
 ### FileManager — dosya yöneticisi modülü
 
@@ -1566,7 +1628,7 @@ Depolama: `user/{id}/files/{uuid}/...` ve `global/files/{uuid}/...` — klasör 
 
 Kullanım ve API detayları için [file-manager.tr.md](./file-manager.tr.md).
 
-## 2026-04-13 -v.13.1.10
+## 2026-04-13 — v13.1.10
 
 ### FormBuilder — stale form reset düzeltmesi
 
@@ -1574,7 +1636,7 @@ Kullanım ve API detayları için [file-manager.tr.md](./file-manager.tr.md).
 
 Etkilenen: config'i `page.props`'a bağımlı olan tüm `FB` formları (örn. koşullu `isFieldsLocked`, `isSelf`, auth'a göre alan görünürlüğü). API değişikliği yok — mevcut formlar otomatik olarak yararlanır.
 
-## 2026-04-13 -v.13.1.8
+## 2026-04-13 — v13.1.8
 
 ### FormBuilder — ColorSelector çıktı formatı
 

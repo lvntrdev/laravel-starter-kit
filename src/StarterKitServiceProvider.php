@@ -110,6 +110,23 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class StarterKitServiceProvider extends ServiceProvider
 {
     /**
+     * Resolved backward-compat alias manifest, relative to bootstrap/cache.
+     *
+     * Caches the output of backwardCompatAliasPlan() so the per-request
+     * override-existence scan (one file_exists() per overridable alias) runs
+     * once instead of on every boot. See resolveBackwardCompatAliases().
+     */
+    private const ALIAS_MANIFEST_RELATIVE = 'cache/starter-kit-aliases.php';
+
+    /**
+     * Whether the Scramble document transformers have been registered in this
+     * process (Scramble's configure() state is process-global, so appending
+     * the bearer transformer twice would duplicate it). Extensions are NOT
+     * guarded by this — see applyScrambleDocumentWiring().
+     */
+    private static bool $scrambleTransformersRegistered = false;
+
+    /**
      * Register package services.
      */
     public function register(): void
@@ -154,7 +171,7 @@ class StarterKitServiceProvider extends ServiceProvider
         // application instance when the helper is missing.
         $basePath = function_exists('base_path') ? base_path() : $this->app->basePath();
 
-        foreach ($this->backwardCompatAliasPlan($basePath) as $appClass => $vendorClass) {
+        foreach ($this->resolveBackwardCompatAliases($basePath) as $appClass => $vendorClass) {
             if (! class_exists($appClass, false) && ! interface_exists($appClass, false)) {
                 class_alias($vendorClass, $appClass);
             }
@@ -458,6 +475,195 @@ class StarterKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * Resolve the backward-compat alias plan, using a cached manifest to avoid
+     * re-running the per-request override-existence scan on every boot.
+     *
+     * backwardCompatAliasPlan() does one file_exists() per overridable alias
+     * (~120+ stat syscalls) to decide which App\ names to alias to the vendor
+     * class. That decision only changes when a consumer adds/removes an
+     * app/<Class>.php override — a rare, tooling-driven event — so it is cached
+     * to bootstrap/cache and re-used until an invalidation signal fires.
+     *
+     * Timing: this runs in register(), before the translator/router resolve, so
+     * the cache path is a plain `include` of a `return [...]` file (opcache-hot
+     * after the first request) with no container or config dependency beyond the
+     * environment + base path already available at that point.
+     *
+     * Invalidation strategy (three independent layers, so a stale manifest can
+     * never silently shadow — or drop — a consumer override):
+     *
+     *  1. **Dev/test skip.** In `local`/`testing` the plan is always computed
+     *     fresh (backwardCompatAliasCacheEnabled() === false). Override files
+     *     churn constantly during development; caching there would be a footgun.
+     *     This is the mandated safe default — no manifest is ever written in dev.
+     *
+     *  2. **mtime self-invalidation.** The manifest is treated stale when any
+     *     invalidation signal (the Composer classmap / composer.lock) is newer
+     *     than it (aliasManifestIsFresh()). Every `composer dump-autoload` —
+     *     which sk:install/sk:eject/sk:upgrade run, and which a consumer MUST run
+     *     for a newly added app/ override to autoload under an optimized /
+     *     classmap-authoritative build — rewrites the classmap, so the manifest
+     *     self-heals on the next request without any explicit clear.
+     *
+     *  3. **Explicit flush.** sk:update mutates app/ override files directly and
+     *     does NOT run composer dump-autoload, so layer 2 would not catch it;
+     *     it calls flushBackwardCompatAliasCache() to drop the manifest, which
+     *     is then rebuilt fresh on the next request.
+     *
+     * On any read miss the plan is recomputed and the manifest re-written
+     * (best-effort — a non-writable bootstrap/cache degrades to computing every
+     * request, i.e. exactly the pre-cache behaviour, never a boot failure).
+     *
+     * @return array<class-string, class-string>
+     */
+    protected function resolveBackwardCompatAliases(string $basePath): array
+    {
+        if (! $this->backwardCompatAliasCacheEnabled()) {
+            return $this->backwardCompatAliasPlan($basePath);
+        }
+
+        $manifestPath = $this->aliasManifestPath();
+
+        if ($this->aliasManifestIsFresh($manifestPath)) {
+            $cached = @include $manifestPath;
+
+            // A valid plan is never empty (the ApiResponse alias is
+            // unconditional), so an empty/corrupt include is ignored and the
+            // plan is recomputed below — defends against a torn/partial file.
+            if (is_array($cached) && $cached !== []) {
+                return $cached;
+            }
+        }
+
+        $plan = $this->backwardCompatAliasPlan($basePath);
+
+        $this->writeAliasManifest($manifestPath, $plan);
+
+        return $plan;
+    }
+
+    /**
+     * Whether the resolved alias plan may be cached to disk.
+     *
+     * Disabled in `local`/`testing`: override files change frequently there and
+     * a stale manifest would silently shadow (or drop) a consumer override.
+     */
+    protected function backwardCompatAliasCacheEnabled(): bool
+    {
+        return ! $this->app->environment('local', 'testing');
+    }
+
+    /**
+     * Absolute path of the cached alias manifest (bootstrap/cache).
+     */
+    protected function aliasManifestPath(): string
+    {
+        return $this->app->bootstrapPath(self::ALIAS_MANIFEST_RELATIVE);
+    }
+
+    /**
+     * Files whose modification means the override surface may have changed, so
+     * the cached alias manifest must be recomputed. Newer-than-manifest ⇒ stale.
+     *
+     * @return array<int, string>
+     */
+    protected function aliasInvalidationSignals(): array
+    {
+        $base = $this->app->basePath();
+
+        return [
+            // Rewritten by every `composer dump-autoload` (install/eject/upgrade
+            // and any manual override add/remove under an optimized autoloader).
+            $base.'/vendor/composer/autoload_classmap.php',
+            // Bumped by composer update/require/remove (package version changes
+            // that could alter the alias set).
+            $base.'/composer.lock',
+        ];
+    }
+
+    /**
+     * True when the manifest exists and no invalidation signal is newer than it.
+     */
+    private function aliasManifestIsFresh(string $manifestPath): bool
+    {
+        if (! is_file($manifestPath)) {
+            return false;
+        }
+
+        $manifestTime = @filemtime($manifestPath);
+
+        if ($manifestTime === false) {
+            return false;
+        }
+
+        foreach ($this->aliasInvalidationSignals() as $signal) {
+            $signalTime = @filemtime($signal);
+
+            if ($signalTime !== false && $signalTime > $manifestTime) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Write the resolved alias plan to the manifest (best-effort, atomic).
+     *
+     * Never throws: a non-writable bootstrap/cache simply skips the write and
+     * the plan is recomputed on the next boot (pre-cache behaviour). The
+     * temp-file + rename keeps a concurrent reader from ever seeing a partial
+     * file on the register() hot path.
+     *
+     * @param  array<class-string, class-string>  $plan
+     */
+    private function writeAliasManifest(string $path, array $plan): void
+    {
+        $dir = dirname($path);
+
+        if (! is_dir($dir) || ! is_writable($dir)) {
+            return;
+        }
+
+        $contents = "<?php\n\n"
+            ."// Auto-generated by Lvntr\\StarterKit — do not edit.\n"
+            ."// Backward-compat alias plan cache; rebuilt automatically when the\n"
+            ."// Composer classmap changes or sk:update flushes it.\n\n"
+            .'return '.var_export($plan, true).";\n";
+
+        $tmp = $path.'.'.getmypid().'.tmp';
+
+        if (@file_put_contents($tmp, $contents, LOCK_EX) === false) {
+            return;
+        }
+
+        if (! @rename($tmp, $path)) {
+            @unlink($tmp);
+        }
+    }
+
+    /**
+     * Drop the cached backward-compat alias manifest.
+     *
+     * Called by tooling that mutates app/ override files WITHOUT triggering a
+     * composer dump-autoload (notably sk:update), so the plan is rebuilt fresh
+     * on the next request. No-op when the manifest is absent or the container is
+     * unavailable. See resolveBackwardCompatAliases() invalidation layer 3.
+     */
+    public static function flushBackwardCompatAliasCache(): void
+    {
+        if (! function_exists('app')) {
+            return;
+        }
+
+        $path = app()->bootstrapPath(self::ALIAS_MANIFEST_RELATIVE);
+
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    /**
      * Bootstrap package services.
      */
     public function boot(): void
@@ -553,9 +759,21 @@ class StarterKitServiceProvider extends ServiceProvider
 
     /**
      * Configure Eloquent strict mode.
+     *
+     * Strict mode is an opinionated global mutation (lazy-loading, accessing a
+     * missing attribute and silently discarding a non-fillable assignment all
+     * throw). It is deliberately enabled outside production only, so consumer
+     * production traffic never 500s on a strictness violation. Apps that want
+     * to opt out entirely — e.g. while integrating a legacy schema — can set
+     * `starter-kit.strict_models` to false; the default (true) preserves the
+     * kit's historical behaviour.
      */
     private function configureModels(): void
     {
+        if (! config('starter-kit.strict_models', true)) {
+            return;
+        }
+
         Model::shouldBeStrict(! $this->app->isProduction());
     }
 
@@ -592,7 +810,7 @@ class StarterKitServiceProvider extends ServiceProvider
         if (! config('auth.guards.api')) {
             config(['auth.guards.api' => [
                 'driver' => 'passport',
-                'provider' => 'users',
+                'provider' => config('starter-kit.passport.provider', 'users'),
             ]]);
         }
 
@@ -725,27 +943,94 @@ class StarterKitServiceProvider extends ServiceProvider
 
     /**
      * Configure Scramble API documentation.
+     *
+     * Scramble's document wiring (transformers + envelope extension) and the
+     * docs-access gate are only ever needed when the OpenAPI spec is actually
+     * built: during console doc export, or on a request targeting Scramble's
+     * own docs/spec routes (`docs/api`, `docs/api.json`). Booting the document
+     * generator on every ordinary web/API request is pure overhead, so this is
+     * skipped outside that context. class_exists() also keeps installs that
+     * removed Scramble from fataling here.
      */
     private function configureScramble(): void
     {
-        Scramble::configure()
-            ->withDocumentTransformers(function (OpenApi $openApi) {
-                $openApi->secure(
-                    SecurityScheme::http('bearer')
-                );
-            });
+        if (! class_exists(Scramble::class) || ! $this->runningInScrambleContext()) {
+            return;
+        }
+
+        self::applyScrambleDocumentWiring();
+
+        // `can()` returns false for an unknown/unseeded ability, whereas
+        // hasPermissionTo() throws PermissionDoesNotExist — a fresh install
+        // without the seeded api-docs permission should simply deny (403), not
+        // 500. The docs middleware relies on this gate for its authorization.
+        Gate::define('viewApiDocs', function (User $user) {
+            return $user->can('api-docs.read');
+        });
+    }
+
+    /**
+     * Register Scramble's document wiring (bearer security transformer +
+     * ApiResponse envelope extension) so an export produces the package's
+     * full spec.
+     *
+     * Public and static because the boot-time context gate above cannot see
+     * web-triggered exports: the admin API-route actions (`regenerate-docs`,
+     * `postman-sync`, `apidog-sync`) run `Artisan::call('scramble:export')`
+     * inside an ordinary web request, where runningInScrambleContext() was
+     * false at boot. Those call sites invoke this right before exporting.
+     */
+    public static function applyScrambleDocumentWiring(): void
+    {
+        if (! class_exists(Scramble::class)) {
+            return;
+        }
+
+        if (! self::$scrambleTransformersRegistered) {
+            self::$scrambleTransformersRegistered = true;
+
+            Scramble::configure()
+                ->withDocumentTransformers(function (OpenApi $openApi) {
+                    $openApi->secure(
+                        SecurityScheme::http('bearer')
+                    );
+                });
+        }
 
         // Teach Scramble to document the ApiResponse envelope. The extension
         // runs from vendor now, so it is registered here rather than relying
-        // on a published config/scramble.php in the consumer app.
+        // on a published config/scramble.php in the consumer app. The merge is
+        // idempotent (array_unique), so it deliberately re-runs on every call —
+        // under Octane a request-scoped config sandbox would otherwise lose it
+        // while the static transformer guard survived the worker.
         config(['scramble.extensions' => array_values(array_unique(array_merge(
             (array) config('scramble.extensions', []),
             [ApiResponseExtension::class],
         )))]);
+    }
 
-        Gate::define('viewApiDocs', function (User $user) {
-            return $user->hasPermissionTo('api-docs.read');
-        });
+    /**
+     * True when Scramble's document wiring is actually needed: console doc
+     * export/generation, or a request to Scramble's fixed docs/spec routes.
+     *
+     * Scramble registers its UI at `docs/api` and the JSON spec at
+     * `docs/api.json` (see GeneratorConfigCollection); both are covered by the
+     * `docs/api*` match. Under Pest/Testbench runningInConsole() is true, so
+     * doc-oriented tests still exercise the wiring.
+     */
+    private function runningInScrambleContext(): bool
+    {
+        if ($this->app->runningInConsole()) {
+            return true;
+        }
+
+        if (! $this->app->bound('request')) {
+            return false;
+        }
+
+        $request = $this->app['request'];
+
+        return $request instanceof Request && $request->is('docs/api', 'docs/api*');
     }
 
     /**
@@ -1051,9 +1336,26 @@ class StarterKitServiceProvider extends ServiceProvider
      * On a fresh install where no override stub exists, the package mounts the
      * module itself under its declared middleware tier — matching the
      * previously published stub's behaviour 1:1.
+     *
+     * Route-cache guard: under `route:cache` the compiled route file already
+     * contains every mounted route, and boot() runs on top of that loaded
+     * collection. Re-running the registry here would register each module's
+     * route names a SECOND time (duplicate registration) and needlessly hit the
+     * filesystem for the override-stub `file_exists()` probes on every request.
+     * When routes are cached we therefore skip the whole registry. Model
+     * binders (registerRouteModelBindings()) are deliberately NOT guarded —
+     * `Route::model()` binders are never part of the route cache, so they must
+     * be re-registered on every boot, cached or not (see that method's docblock).
      */
     private function registerRoutes(): void
     {
+        // Cached routes are already loaded from the compiled cache file;
+        // re-mounting here would duplicate every module's route names and run
+        // the override-stub FS scan for nothing. Skip in that path entirely.
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
         foreach ($this->moduleRouteRegistry() as $module) {
             // Consumer override: if any override stub is present, the consumer
             // owns the mount (via the stub one-liner that calls the module

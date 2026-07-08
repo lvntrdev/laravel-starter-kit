@@ -26,6 +26,7 @@
 |
 */
 
+use Illuminate\Foundation\Application;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Lvntr\StarterKit\Tests\Stubs\ModuleRouteRegistryProbe;
@@ -297,6 +298,72 @@ it('(f) carries the sk-components descriptor and its loader mounts the role-gate
         // The role gate lives inside the route file itself — the showcase is
         // developer-only (system_admin), not permission-seeded.
         ->and($middleware)->toContain('role:system_admin');
+});
+
+it('(g) skips the whole registry under route:cache — no duplicate mount', function (): void {
+    // Under `route:cache` the compiled route file already holds every mounted
+    // route; re-running the registry in boot() would register each module's
+    // route names a SECOND time. Drive registerRoutes() against an app whose
+    // routesAreCached() reports true and assert the loader never fires (and no
+    // override-stub FS scan happens because the loop is never entered).
+    $cachedApp = Mockery::mock(Application::class);
+    $cachedApp->shouldReceive('routesAreCached')->andReturnTrue();
+
+    $loaderCalls = 0;
+
+    $probe = (new ModuleRouteRegistryProbe($cachedApp))->withRegistry([
+        [
+            'name' => 'cached-probe',
+            // A path that WOULD exist — proves the FS scan is skipped, not merely
+            // that the loader guard tripped. If the loop ran, file_exists() here
+            // is irrelevant because the loader increments unconditionally.
+            'overrideStubs' => [__FILE__],
+            'middleware' => ['web', 'auth', 'verified'],
+            'loader' => static function () use (&$loaderCalls): void {
+                $loaderCalls++;
+                Route::get('cached-probe/tree', static fn () => 'ok')
+                    ->name('cached-probe.tree');
+            },
+        ],
+    ]);
+
+    $probe->runRegisterRoutes();
+
+    /** @var Router $router */
+    $router = app('router');
+
+    expect($loaderCalls)->toBe(0, 'Cached-routes path must not re-run the registry loop')
+        ->and(moduleRoute($router, 'cached-probe.tree'))->toBeNull();
+});
+
+it('(g2) still mounts through the registry when routes are NOT cached', function (): void {
+    // Complement to (g): with routesAreCached() false the guard is transparent
+    // and the loader fires exactly as before — cache-less behaviour is 1:1.
+    $liveApp = Mockery::mock(Application::class);
+    $liveApp->shouldReceive('routesAreCached')->andReturnFalse();
+
+    $loaderCalls = 0;
+
+    $probe = (new ModuleRouteRegistryProbe($liveApp))->withRegistry([
+        [
+            'name' => 'uncached-probe',
+            'overrideStubs' => [base_path('routes/web/__definitely_missing_uncached_stub__.php')],
+            'middleware' => ['web', 'auth', 'verified'],
+            'loader' => static function () use (&$loaderCalls): void {
+                $loaderCalls++;
+                Route::get('uncached-probe/tree', static fn () => 'ok')
+                    ->name('uncached-probe.tree');
+            },
+        ],
+    ]);
+
+    $probe->runRegisterRoutes();
+
+    /** @var Router $router */
+    $router = app('router');
+
+    expect($loaderCalls)->toBe(1, 'Uncached path must run the registry loop')
+        ->and(moduleRoute($router, 'uncached-probe.tree'))->not->toBeNull();
 });
 
 it('(e) production registry carries the file-manager descriptor with its real tier', function (): void {

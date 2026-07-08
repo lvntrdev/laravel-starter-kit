@@ -20,6 +20,10 @@
  *   bus.refresh('users-table', 'stats-widget')
  */
 
+// Module-level singleton registry — one shared bus across the whole app.
+// Deliberately client-only: `on`/`refresh` are called from component setup and
+// user interaction in the browser, never during SSR, so there is no shared-state
+// bleed between server requests.
 const registry = new Map<string, Set<() => void>>();
 
 export function useRefreshBus() {

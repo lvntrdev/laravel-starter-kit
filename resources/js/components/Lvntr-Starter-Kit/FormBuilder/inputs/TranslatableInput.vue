@@ -92,10 +92,17 @@
     });
 
     function handleUpdate(locale: string, newVal: string): void {
-        const updated = { ...value.value, [locale]: newVal };
-        value.value = updated;
-        emit('update:modelValue', updated);
-        emit('update', updated);
+        // Keep internal display state in sync for the resolved locales only.
+        value.value = { ...value.value, [locale]: newVal };
+
+        // Emit against the *original* modelValue base — not the normalized
+        // `value` ref, which holds only the resolved locales. Locales present in
+        // modelValue but outside resolvedLocales (onlyLocales/exceptLocales
+        // filtering, or content languages absent from availableLocales) would
+        // otherwise be silently dropped on every keystroke — a data-loss bug.
+        const emitted = { ...(props.modelValue ?? {}), [locale]: newVal };
+        emit('update:modelValue', emitted);
+        emit('update', emitted);
     }
 
     // ── Tabs state ───────────────────────────────────────────────────────────────

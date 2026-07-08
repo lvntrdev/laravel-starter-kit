@@ -52,7 +52,8 @@ Her projede aynı admin ekranlarını sıfırdan yazmak istemeyip doğrudan iş 
 - **Admin Modülleri**
     - Dashboard
     - Aktivite Kayıtları (gözatılabilir, filtrelenebilir)
-    - Ayarlar paneli (Genel / Kimlik Doğrulama / Mail / Depolama / Dosya Yöneticisi)
+    - Ayarlar paneli (Genel / Kimlik Doğrulama / Mail / Depolama / Dosya Yöneticisi / İçerik Dilleri)
+    - Çok dilli içerik: Ayarlar'da yönetilen aktif diller, yeniden derleme gerekmeden tüm [Çevrilebilir Alan](./docs/translatable-fields.tr.md) formlarını anında etkiler
     - İmzalı paylaşım linki destekli, pluggable context'lere sahip Dosya Yöneticisi
     - API Client ve Personal Access Token yönetimi
     - Sistem Sağlık paneli
@@ -60,7 +61,8 @@ Her projede aynı admin ekranlarını sıfırdan yazmak istemeyip doğrudan iş 
     - Definitions (form ve tablolarda kullanılan DB tabanlı enum'lar)
 - **Geliştirici Araçları**
     - DDD tarzı domain katmanı (Action / DTO / Query / Event / Listener)
-    - FormBuilder, DatatableBuilder, TabBuilder fluent API'ları
+    - FormBuilder, DatatableBuilder, TabBuilder fluent API'ları ([Çevrilebilir Alanlar](./docs/translatable-fields.tr.md) dahil)
+    - `@lvntr/components` Vue komponent kütüphanesi (FormBuilder/DatatableBuilder/TabBuilder, UI primitifleri, Dosya Yöneticisi arayüzü) — npm'de yayınlanmaz; ayrı bir kurulum adımı gerekmeden Vite alias'ıyla paketin kendi `vendor/` kopyasından çözülür
     - `make:sk-domain` ile opt-in flag destekli domain iskeleti üretimi
     - Sayfa aşımı seçim desteği ile datatable bulk action API
     - `sk:update` ile güvenli güncelleme (hash tabanlı, kullanıcı değişikliklerini korur)

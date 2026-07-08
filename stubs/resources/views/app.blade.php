@@ -5,6 +5,72 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        {{--
+            FOUC killer — resolve dark mode + runtime theme on <html> BEFORE the
+            first paint, so a user's stored dark choice (or the admin global
+            theme/dark default) never flashes from the light/`main` server state
+            on every load / hard refresh.
+
+            Server-resolved global defaults come from the Inertia `appearance`
+            shared prop already embedded in $page (HandleInertiaRequests::share),
+            so no extra query is issued here. The resolution MIRRORS
+            useDarkMode.ts + useTheme.ts + useAppearanceDefaults.ts EXACTLY
+            (localStorage key `admin-dark-mode`, legacy-migration rule, and the
+            user-override → admin-global-default precedence). Those composables'
+            onMounted handlers re-apply the SAME value, so this script is
+            idempotent — it sets the final state and mounting never flips it.
+
+            CSP note: this is an inline <script> and depends on the current policy
+            including 'unsafe-inline' in script-src. If the app later moves to a
+            nonce-based CSP (out of scope here), this tag MUST receive that nonce.
+        --}}
+        @php
+            $skAppearance = data_get($page ?? [], 'props.appearance', []);
+            $skDarkDefault = (bool) data_get($skAppearance, 'dark_mode_default', false);
+            $skTheme = is_string(data_get($skAppearance, 'theme')) ? data_get($skAppearance, 'theme') : 'main';
+        @endphp
+        <script>
+            (function () {
+                try {
+                    var el = document.documentElement;
+
+                    // Dark mode: user override (localStorage) wins over the admin
+                    // global default. Mirrors useDarkMode.ts + the one-time
+                    // migrateLegacyAppearanceStorage() cleanup: a stored 'false'
+                    // that predates that migration is legacy noise (not a real
+                    // choice) and resolves to the global default, exactly as the
+                    // composable will once it mounts.
+                    var darkDefault = @json($skDarkDefault);
+                    var stored = null, migrated = false;
+                    try {
+                        stored = window.localStorage.getItem('admin-dark-mode');
+                        migrated = window.localStorage.getItem('admin-appearance-migrated') !== null;
+                    } catch (e) {}
+
+                    var dark;
+                    if (stored === null || (stored === 'false' && !migrated)) {
+                        dark = darkDefault;            // no explicit user choice
+                    } else {
+                        dark = stored === 'true';      // VueUse boolean serializer
+                    }
+                    el.classList.toggle('dark', dark);
+
+                    // Runtime theme: admin global default only (no per-user
+                    // override). Mirrors useTheme.ts — only a runtime theme other
+                    // than 'main' sets `data-sk-theme`; 'main' and build-time
+                    // custom themes leave it absent. The runtime set matches the
+                    // client's DEFAULT_RUNTIME_THEMES fallback (`runtime_themes`
+                    // is stripped from the global appearance share).
+                    var theme = @json($skTheme);
+                    var runtimeThemes = ['main', 'aura'];
+                    if (runtimeThemes.indexOf(theme) !== -1 && theme !== 'main') {
+                        el.setAttribute('data-sk-theme', theme);
+                    } else {
+                        el.removeAttribute('data-sk-theme');
+                    }
+                } catch (e) {}
+            })();
+        </script>
 
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>

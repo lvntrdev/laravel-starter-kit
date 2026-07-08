@@ -5,6 +5,17 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **`CheckResourcePermission` is now fail-closed on every host except `local`.** Previously, when a route resolved to a permission that was not seeded in the database, the middleware **allowed** the request through on *any* non-production environment (staging, uat, demo, `testing`) — only `production` denied it. A public staging/demo host could therefore silently expose an endpoint whose permission row had been forgotten. The middleware now **denies** an unseeded permission everywhere except `local` (which still warns + allows to preserve dev DX). Consumers who relied on the old posture can opt back in with `starter-kit.permissions.allow_unmapped => true` (env `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`), which restores allow-on-any-non-production; `production` always denies regardless. This is a deliberate behavior change on non-production hosts — see [UPGRADE.md](docs/UPGRADE.md). Runtime-only (`src/`), delivered by `composer update`.
+
+### Changed
+
+- **`CheckResourcePermission`'s seeded-permission lookup is now Octane-safe.** The list of seeded permission names was cached for the whole worker lifetime via a container `instance()` binding, so under Octane a long-lived worker could serve a stale set indefinitely. It is now a short-TTL `Cache::remember` (60s), and both `sk:seed-permissions` and the Roles UI permission sync flush it immediately after seeding so newly added permissions take effect at once.
+- **`SkDatatable` column visibility/order preferences moved from `sessionStorage` to `localStorage`.** Existing users' saved column preferences are reset **once** after upgrading (no data loss — purely cosmetic, preferences just revert to defaults and can be re-set).
+
 ## [13.6.8] - 2026-07-04
 
 A quality-control and UX sprint applying the findings of an internal audit report: security-test coverage, audit-log completeness, backend convention cleanup, accessibility/UX gaps, and install/upgrade DX. See [UPGRADE.md](docs/UPGRADE.md) for the one published-file behavior change (`login_throttle`) that needs `sk:update`; everything else here ships via `composer update` alone.
@@ -59,6 +70,12 @@ A quality-control and UX sprint applying the findings of an internal audit repor
 
 - **Translation bundles ship with the package** — the pre-compiled kit translation bundles (`resources/js/lang/php_{en,tr}.json`) were listed in `.gitignore`, so they never entered Git and were absent from the Composer dist (which is a `git archive` of tracked files only). A freshly installed app received only the build script, not the bundles, so every kit i18n key (`sk-menu.*`, `sk-setting.*`, …) rendered as its raw key instead of the translated label. The two bundles are now tracked and shipped. The consumer does not build the package, so — unlike the consumer-built theme bundle — these must be committed to reach `vendor/`; the build script's own docs already specified "COMMITTED and shipped".
 
+## [13.6.4] - 2026-06-14
+
+### Fixed
+
+- **Datatable inline filter dropdown no longer clipped** — a select filter's inline pill menu was rendered as an `absolute` element inside the table card, so a long option list was cut off at the card / scroll-container `overflow` edge. The menu is now teleported to `<body>` as a fixed overlay (the same approach PrimeVue's own `Select` uses via `appendTo`): it is positioned from its trigger, re-aligns on scroll/resize, caps at `min(60vh, 420px)` with its own scroll, and closes on outside-click / Escape. The `panel`-placement popover variant is unchanged (it already rides PrimeVue's overflow-visible portal).
+
 ## [13.6.3] - 2026-06-13
 
 ### Changed
@@ -94,12 +111,17 @@ A quality-control and UX sprint applying the findings of an internal audit repor
 
 ### Fixed
 
-- **`sk:update` self-heals stale imports of vendor-moved components** — when a component moves out of stubs into `@lvntr/components` its old local copy is force-deleted, but user-customized pages that still import the deleted local path were left untouched and broke the Vite build with an `ENOENT` load-fallback error (`@/components/Auth/TurnstileWidget.vue`). `sk:update` now rewrites such stale import specifiers to the vendor path (`@lvntr/components/ui/TurnstileWidget.vue`) across `resources/js`, so the migration that started in v13.6.0 completes on existing consumers' customized Auth pages (`Login`, `Register`, `ForgotPassword`).
 - **Admin panel layout & form alignment** — several `main`-theme layout glitches fixed: the roles form basics section is now a responsive 3-column grid that stacks on small screens (`FB.form().cols(3)`); the permissions table renders flush to its card via the `SkCard` `flush` prop instead of sitting inside the body padding; translatable-field locale tabs (`TranslatableInput`) were taller than plain labels and pushed their input down — the tab pills now match the plain-label height so all inputs in a row align; the sidebar nav crushed its rows when multiple groups were expanded — direct children are now `shrink-0` so overflow scrolls instead; and the sidebar footer height is pinned to `h-footer` (56px) so its top border lines up with the page footer border.
 
 ### Changed
 
 - **Security settings sub-tab "Cloudflare Turnstile" renamed to "Bot Protection"** — the settings security sub-tab label (EN/TR) and the related `SecurityTab` section now read "Bot Protection" instead of the provider-specific name.
+
+## [13.6.1] - 2026-06-13
+
+### Fixed
+
+- **`sk:update` self-heals stale imports of vendor-moved components** — when a component moves out of stubs into `@lvntr/components` its old local copy is force-deleted, but user-customized pages that still import the deleted local path were left untouched and broke the Vite build with an `ENOENT` load-fallback error (`@/components/Auth/TurnstileWidget.vue`). `sk:update` now rewrites such stale import specifiers to the vendor path (`@lvntr/components/ui/TurnstileWidget.vue`) across `resources/js`, so the migration that started in v13.6.0 completes on existing consumers' customized Auth pages (`Login`, `Register`, `ForgotPassword`).
 
 ## [13.6.0] - 2026-06-07
 

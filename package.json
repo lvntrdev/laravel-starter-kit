@@ -1,6 +1,5 @@
 {
   "name": "@lvntr/starter-kit",
-  "version": "13.5.11",
   "description": "Vue 3 components for Lvntr Starter Kit (FormBuilder, DatatableBuilder, TabBuilder, FileManager, Skeleton, UI)",
   "type": "module",
   "scripts": {

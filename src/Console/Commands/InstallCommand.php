@@ -1811,13 +1811,13 @@ class InstallCommand extends Command
         $node = $this->detectNodeMajorVersion();
 
         if ($node === null) {
-            $this->components->warn('Node.js was not found on PATH — skipping npm install/build. Install Node 18+, then run: npm install && npm run build');
+            $this->components->warn('Node.js was not found on PATH — skipping npm install/build. Install Node 20.19+ (Vite 7 engine floor), then run: npm install && npm run build');
 
             return;
         }
 
-        if ($node < 18) {
-            $this->components->warn("Node.js v{$node} is too old (need 18+) — skipping npm install/build. Upgrade Node, then run: npm install && npm run build");
+        if ($node < 20) {
+            $this->components->warn("Node.js v{$node} is too old (need 20.19+, Vite 7 engine floor) — skipping npm install/build. Upgrade Node, then run: npm install && npm run build");
 
             return;
         }

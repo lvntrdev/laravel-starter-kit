@@ -2,7 +2,7 @@
 
 ### Admin-first Laravel starter kit.
 
-![CI](https://img.shields.io/github/actions/workflow/status/lvntrdev/laravel-starter-kit/ci.yml?branch=master&style=flat-square&label=CI)
+![CI](https://img.shields.io/github/actions/workflow/status/lvntrdev/laravel-starter-kit/ci.yml?branch=main&style=flat-square&label=CI)
 ![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
 ![Packagist Version](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
@@ -52,7 +52,8 @@ It is designed for teams who want to skip re-building the same admin screens on 
 - **Admin Modules**
     - Dashboard
     - Activity Logs (browsable, filterable)
-    - Settings panel (General / Auth / Mail / Storage / File Manager)
+    - Settings panel (General / Auth / Mail / Storage / File Manager / Content Languages)
+    - Multi-language content: active languages managed in Settings drive every [Translatable Field](./docs/translatable-fields.md) form-wide, no rebuild required
     - File Manager with pluggable contexts and signed share links
     - API Clients & Personal Access Token management
     - System Health dashboard
@@ -61,6 +62,7 @@ It is designed for teams who want to skip re-building the same admin screens on 
 - **Developer Tooling**
     - DDD-style domain layer (Actions / DTOs / Queries / Events / Listeners)
     - FormBuilder, DatatableBuilder, TabBuilder fluent APIs (including [Translatable Fields](./docs/translatable-fields.md))
+    - `@lvntr/components` Vue component library (FormBuilder/DatatableBuilder/TabBuilder, UI primitives, File Manager UI) — not published on npm; resolved via a Vite alias into the package's own `vendor/` copy, so no separate install step is needed
     - Domain scaffolding via `make:sk-domain` with opt-in flag support
     - Datatable bulk actions with cross-page selection
     - Safe upgrade flow via `sk:update` (hash-tracked, preserves your edits)
@@ -104,6 +106,11 @@ receive breaking changes from a newer Laravel target.
 Laravel release is targeted, `main` will move to that next-major dev
 stream and the previous major's `N.x` branch will continue to receive
 backports.
+
+The **git tag is the single source of version truth** — neither
+`composer.json` nor the root `package.json` carries a `version` field, so
+there is nothing to keep in sync. Releases are cut with `release.sh` (from
+`main`), which tags the release and pushes only that tag.
 
 ## Documentation
 

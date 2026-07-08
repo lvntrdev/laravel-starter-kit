@@ -2,6 +2,17 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## Unreleased
+
+### Security
+
+- **Unmapped permissions are now denied on staging/demo, not just production.** The `CheckResourcePermission` middleware used to let a request through whenever the required permission was missing from the database on any non-production environment — so a public staging or demo host could silently expose an endpoint whose permission row was forgotten. It now denies everywhere except `local` (local still warns and allows for dev convenience). If you deliberately want the old behavior on non-production hosts, set `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`. See [UPGRADE.md](./UPGRADE.md).
+- **Permission lookups are now Octane-safe** — the seeded-permission list is cached for a short time (60s) instead of for the whole worker lifetime, and both `php artisan sk:seed-permissions` and the Roles screen's permission sync clear it immediately, so newly seeded permissions take effect right away under Octane.
+
+### Changed
+
+- **Datatable column visibility/order preferences moved from `sessionStorage` to `localStorage`.** If you've customized which columns are shown/hidden or reordered in a `SkDatatable`, that preference resets once after upgrading — no data loss, purely cosmetic, and you can just re-set it.
+
 ## 2026-07-04 — v13.6.8
 
 ### Quality & UX sprint
@@ -103,6 +114,16 @@ A batch of `main`-theme polish fixes for the admin panel — no API or setup cha
 #### Changed
 
 - **Security settings sub-tab "Cloudflare Turnstile" → "Bot Protection"** — the security sub-tab label (EN/TR) and the related `SecurityTab` section now use the provider-neutral name.
+
+## 2026-06-13 — v13.6.1
+
+### `sk:update` self-heals stale component imports
+
+A single targeted fix — no API or setup change.
+
+#### Fixed
+
+- **`sk:update` no longer leaves stale imports behind after a component moves to vendor** — when a component moves out of stubs into `@lvntr/components`, its old local copy is force-deleted, but user-customized pages that still imported the deleted local path were left untouched and broke the Vite build with an `ENOENT` load-fallback error (e.g. `@/components/Auth/TurnstileWidget.vue`). `sk:update` now rewrites such stale import specifiers to the vendor path (`@lvntr/components/ui/TurnstileWidget.vue`) across `resources/js`, completing the migration that started in v13.6.0 on existing consumers' customized Auth pages (`Login`, `Register`, `ForgotPassword`).
 
 ---
 

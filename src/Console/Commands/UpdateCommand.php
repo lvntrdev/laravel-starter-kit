@@ -4,6 +4,7 @@ namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Lvntr\StarterKit\Console\Commands\Concerns\WritesFilesAtomically;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 
 use function Laravel\Prompts\confirm;
@@ -12,6 +13,8 @@ use function Laravel\Prompts\spin;
 
 class UpdateCommand extends Command
 {
+    use WritesFilesAtomically;
+
     protected $signature = 'sk:update
         {--force : Overwrite all files including user-modified ones}
         {--dry-run : Show what would be updated without making changes}';
@@ -593,6 +596,15 @@ class UpdateCommand extends Command
         // 6. Update hash registry
         if (! $dryRun) {
             $this->updateHashRegistry();
+        }
+
+        // 6b. Flush the cached backward-compat alias manifest. This run may have
+        // added or removed app/ override files (removeVendorMigratedPaths /
+        // addNewFiles) without a composer dump-autoload, so the manifest's
+        // mtime-based self-invalidation would miss it — clear it explicitly so
+        // the ServiceProvider rebuilds a fresh plan on the next request.
+        if (! $dryRun) {
+            StarterKitServiceProvider::flushBackwardCompatAliasCache();
         }
 
         // Optional: inform user about vendor-resident paths still in app/
@@ -1497,7 +1509,7 @@ class UpdateCommand extends Command
 
         $hashes['_format'] = 'v2';
 
-        $this->files->put($hashFile, json_encode($hashes, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->atomicPut($hashFile, json_encode($hashes, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     /**

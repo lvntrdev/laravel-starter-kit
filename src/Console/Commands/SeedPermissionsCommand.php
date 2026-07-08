@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
+use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
 
 use function Laravel\Prompts\spin;
 
@@ -32,6 +33,11 @@ class SeedPermissionsCommand extends Command
         }
 
         spin(fn () => $seeder->run(), 'Seeding permissions...');
+
+        // Invalidate the CheckResourcePermission name cache so freshly seeded
+        // permissions are honored immediately — critical under Octane where the
+        // worker (and its cache) outlives the seeding command.
+        CheckResourcePermission::flushCache();
 
         $this->newLine();
         $this->components->info('Permissions seeded successfully.');

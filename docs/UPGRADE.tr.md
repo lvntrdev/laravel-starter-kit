@@ -4,6 +4,32 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## Yayınlanmamış
+
+### `CheckResourcePermission` artık staging/demo'da fail-closed (davranış değişikliği)
+
+Bu bir **runtime** (`src/`) değişikliğidir; yalnız `composer update` ile taşınır — publish edilmiş dosya değişmez, `sk:update` gerekmez. Buraya, production dışı host'larda bilinçli, güvenlik amaçlı bir **davranış değişikliği** olduğu için eklenmiştir.
+
+**Önce:** middleware bir route'u DB'de **seed'lenmemiş** bir izne çözdüğünde, production *dışındaki* her ortamda (staging, uat, demo, `testing`) isteği bir uyarı logu ile **geçiriyordu** — yalnız `production` reddediyordu. Böylece public bir staging/demo host'u, izin satırı unutulmuş bir endpoint'i sessizce açığa çıkarabiliyordu.
+
+**Sonra:** seed'lenmemiş bir izin, `local` dışındaki her ortamda **reddedilir**. `local` yine uyarıp geçirir; böylece henüz seed'lenmemiş bir izin günlük geliştirmeyi bloklamaz.
+
+**Fark edebilecekleriniz:** public bir staging / uat / demo dağıtımında, izni (`php artisan sk:seed-permissions` ile) seed'lenmemiş bir route artık sessizce geçmek yerine **403** döner. Çözüm izni seed'lemektir — ki production zaten bunu gerektiriyordu.
+
+**Opt-out (eski davranışa dönüş):** production dışı ortamlarda eski "geçir" davranışını bilinçli olarak istiyorsanız `.env`'e ekleyin:
+
+```dotenv
+STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true
+```
+
+(veya `config(['starter-kit.permissions.allow_unmapped' => true])`). Bu bayrak ne olursa olsun production her zaman reddeder; `local` her zaman geçirir.
+
+**Bu değişiklikte ayrıca:** middleware'in seed'lenmiş izin sorgusu artık Octane-güvenli — izin adı kümesini tüm worker ömrü yerine kısa TTL (60sn) ile cache'ler ve `sk:seed-permissions` seed sonrası bu cache'i hemen temizler; böylece yeni seed'lenen izin, bayat bir worker geri dönüşene kadar beklemek yerine anında etkili olur.
+
+**Cache-store bağımlılığı:** seed'lenmiş izin kontrolü artık bir container-instance binding yerine `Cache::remember()` (uygulamanızın yapılandırılmış varsayılan cache store'u) üzerinden çalışıyor. Networked bir cache store (Redis, Memcached, …) kullanıyorsanız, izin kontrolü yolu artık cache-miss durumunda o store'a dokunuyor — cache trafiğini izliyorsanız veya paylaşımlı/clustered bir store kullanıyorsanız bilmekte fayda var. `file` veya `array` cache driver'ındaki projelerde davranış farkı yok.
+
+---
+
 ## v13.6.7 → v13.6.8
 
 ### Özet

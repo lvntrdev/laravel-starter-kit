@@ -4,6 +4,32 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## Unreleased
+
+### `CheckResourcePermission` is now fail-closed on staging/demo (behavior change)
+
+This is a **runtime** (`src/`) change delivered by `composer update` alone — no published file changes, no `sk:update` needed. It is listed here because it is a deliberate, security-motivated **behavior change** on non-production hosts.
+
+**Before:** when the middleware resolved a route to a permission that was **not seeded** in the database, it **allowed** the request through on any *non-production* environment (staging, uat, demo, `testing`) with a logged warning — only `production` denied. A public staging/demo host could therefore silently expose an endpoint whose permission row had been forgotten.
+
+**After:** an unseeded permission is **denied** on every environment except `local`. `local` still warns + allows so day-to-day development is not blocked by a not-yet-seeded permission.
+
+**What you may notice:** on a public staging / uat / demo deployment, a route whose permission has not been seeded (via `php artisan sk:seed-permissions`) now returns **403** instead of silently passing. The fix is to seed the permission — which is exactly what production already required.
+
+**Opt-out (restore the old posture):** if you deliberately want the previous "allow on any non-production environment" behavior, set in your `.env`:
+
+```dotenv
+STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true
+```
+
+(or `config(['starter-kit.permissions.allow_unmapped' => true])`). Production always denies regardless of this flag; `local` always allows.
+
+**Also in this change:** the middleware's seeded-permission lookup is now Octane-safe — it caches the permission-name set for a short TTL (60s) instead of for the whole worker lifetime, and `sk:seed-permissions` flushes that cache immediately after seeding, so a newly seeded permission takes effect at once rather than after a stale worker recycles.
+
+**Cache-store dependency:** the seeded-permission check now goes through `Cache::remember()` (your app's configured default cache store) instead of a container-instance binding. If you run a networked cache store (Redis, Memcached, …), the permission-check path now talks to that store on a cache miss — worth knowing if you monitor cache traffic or run a shared/clustered store. Projects on the `file` or `array` cache driver see no behavior difference.
+
+---
+
 ## v13.6.7 → v13.6.8
 
 ### Summary

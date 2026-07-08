@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
     tags: ['v*']
   pull_request:
 
@@ -132,3 +132,33 @@ jobs:
       - name: Test (Vitest)
         working-directory: stubs
         run: npm run test --if-present
+
+  changelog-sync:
+    name: Changelog sync (tag)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert tag version is documented in all changelogs
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          MISSING=0
+
+          if ! grep -qE "^## \[${VERSION}\]" CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::missing heading for v${VERSION}"
+            MISSING=1
+          fi
+
+          for f in docs/CHANGELOG.md docs/CHANGELOG.tr.md; do
+            if ! grep -qE "^## .* — v${VERSION}$" "$f"; then
+              echo "::error file=$f::missing heading for v${VERSION}"
+              MISSING=1
+            fi
+          done
+
+          if [ "$MISSING" -ne 0 ]; then
+            echo "Changelog drift detected for tag v${VERSION}." >&2
+            exit 1
+          fi

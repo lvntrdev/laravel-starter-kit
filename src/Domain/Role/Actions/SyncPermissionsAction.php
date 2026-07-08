@@ -5,6 +5,7 @@ namespace Lvntr\StarterKit\Domain\Role\Actions;
 use Database\Seeders\_01_RolePermissionSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
+use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
 
 /**
  * Action: Run the RolePermissionSeeder to sync permissions from config.
@@ -21,5 +22,10 @@ class SyncPermissionsAction extends BaseAction
             '--class' => _01_RolePermissionSeeder::class,
             '--no-interaction' => true,
         ]);
+
+        // The middleware caches the seeded permission-name set (short TTL).
+        // Flush it so permissions seeded by this sync are honored immediately
+        // instead of fail-closed-denying until the TTL expires.
+        CheckResourcePermission::flushCache();
     }
 }

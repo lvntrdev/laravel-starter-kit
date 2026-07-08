@@ -2,6 +2,7 @@
     import { useApi } from '@/composables/useApi';
     import { useDefinition } from '@/composables/useDefinition';
     import { useRefreshBus } from '@/composables/useRefreshBus';
+    import { TAILWIND_PALETTES } from '@/composables/useAccentColor';
     import { Link } from '@inertiajs/vue3';
     import type {
         ActionConfig,
@@ -92,12 +93,14 @@
     /**
      * Option color dot background. `opt.color` is typically a Tailwind color
      * name (e.g. "sky", "emerald", "slate") which is NOT a valid CSS named
-     * color, so a raw `background: sky` would render nothing. Map it to the
-     * Tailwind 4 color variable, falling back to the literal value for hex /
-     * real CSS colors.
+     * color, so a raw `background: sky` would render nothing. Tailwind also
+     * tree-shakes unused `--color-*` variables, so `var(--color-sky-500)` is
+     * not reliably present at runtime — resolve against the inlined v4 oklch
+     * palettes (the same source the accent swatches use) so every palette dot
+     * renders, falling back to the literal value for hex / real CSS colors.
      */
     function dotStyle(color: string): Record<string, string> {
-        return { background: `var(--color-${color}-500, ${color})` };
+        return { background: TAILWIND_PALETTES[color]?.[500] ?? color };
     }
 
     // ── Scroll constraint ──────────────────────────────────────────────────────
@@ -355,6 +358,11 @@
     /** Storage key — unique per DataTable instance. */
     const storageKey = `dt:${props.config.route}`;
     const reloadFlagKey = `${storageKey}:reload`;
+    // Column order/visibility persist SEPARATELY in localStorage so they survive
+    // Inertia SPA navigation (which clears the sessionStorage filter/page blob).
+    // Keyed by route — the table's instance identity in this kit; two tables on
+    // the same route would share prefs, the same constraint `storageKey` already has.
+    const columnStorageKey = `dt:cols:${props.config.route}`;
 
     /**
      * Mark that a page reload is happening (F5/close).
@@ -402,18 +410,9 @@
                         }
                     }
                 }
-                const savedColumns = saved.columns as { order?: string[]; hidden?: string[] } | undefined;
-                if (savedColumns) {
-                    columnOrder.value = savedColumns.order ?? [];
-                    hiddenColumns.value = new Set(savedColumns.hidden ?? []);
-                    // Restored state is the user's chosen state — protect it
-                    // from both local and server defaults.
-                    for (const key of columnOrder.value) {
-                        defaultAppliedKeys.add(key);
-                        userTouchedKeys.add(key);
-                    }
-                    reconcileColumns();
-                }
+                // Column order/visibility are NOT read here anymore — they live in
+                // their own localStorage bucket (see restoreColumnState) so they
+                // survive Inertia navigation independently of this session blob.
             }
         } catch {
             // sessionStorage unavailable or corrupt — start clean
@@ -475,6 +474,45 @@
                     activeFilters.value[filter.key] = val;
                 }
             }
+        }
+    }
+
+    /**
+     * Restore column order / visibility from localStorage. Kept separate from
+     * restoreState() because column prefs survive Inertia navigation (localStorage)
+     * whereas filter/sort/page state does not (sessionStorage, cleared on navigate).
+     */
+    function restoreColumnState(): void {
+        try {
+            const raw = localStorage.getItem(columnStorageKey);
+            if (!raw) return;
+            const saved = JSON.parse(raw) as { order?: string[]; hidden?: string[] };
+            columnOrder.value = saved.order ?? [];
+            hiddenColumns.value = new Set(saved.hidden ?? []);
+            // Persisted columns are the user's chosen state — protect them from
+            // both local and server defaults.
+            for (const key of columnOrder.value) {
+                defaultAppliedKeys.add(key);
+                userTouchedKeys.add(key);
+            }
+            reconcileColumns();
+        } catch {
+            // localStorage unavailable or corrupt — fall back to config defaults
+        }
+    }
+
+    /** Persist column order / visibility to localStorage (survives navigation). */
+    function saveColumnState(): void {
+        try {
+            localStorage.setItem(
+                columnStorageKey,
+                JSON.stringify({
+                    order: columnOrder.value,
+                    hidden: [...hiddenColumns.value],
+                }),
+            );
+        } catch {
+            // localStorage unavailable — column prefs simply won't persist
         }
     }
 
@@ -554,22 +592,30 @@
                     page: currentPage.value,
                     perPage: meta.value.per_page,
                     filters: serializableFilters,
-                    columns: {
-                        order: columnOrder.value,
-                        hidden: [...hiddenColumns.value],
-                    },
                 }),
             );
         } catch {
             // sessionStorage unavailable — URL params still work
         }
 
+        // Column prefs live in their own localStorage bucket (survives navigation).
+        saveColumnState();
+
         window.history.replaceState(window.history.state, '', url);
     }
 
     // ── Data fetching ─────────────────────────────────────────────────────────────
 
+    // Monotonic token guarding against out-of-order responses: a slow earlier
+    // request (filter A) must never overwrite a newer one (filter B) if it
+    // resolves late. Each call captures its token; a response whose token is no
+    // longer current is discarded. The recursive re-fetch below (server-added
+    // default column) bumps the token too, so the outer call self-invalidates
+    // and lets the inner, newest fetch own the final state.
+    let fetchSeq = 0;
+
     async function fetchData() {
+        const seq = ++fetchSeq;
         loading.value = true;
 
         try {
@@ -616,6 +662,10 @@
 
             const response = await api.get<DataTableResponse<unknown>>(url);
 
+            // A newer fetch superseded this one while it was in flight — drop the
+            // stale result so it can't clobber fresher data/meta (out-of-order guard).
+            if (seq !== fetchSeq) return;
+
             data.value = response.data;
             meta.value = {
                 total: response.total,
@@ -643,7 +693,9 @@
                 }
             }
         } finally {
-            loading.value = false;
+            // Only the current (winning) request owns the loading flag; a stale
+            // request returning after a newer one must not flip it off early.
+            if (seq === fetchSeq) loading.value = false;
         }
     }
 
@@ -664,6 +716,10 @@
             sessionStorage.removeItem(storageKey);
         }
 
+        // Column prefs come from localStorage and survive navigation, so they are
+        // restored unconditionally — independent of the URL/sessionStorage filter
+        // state that restoreState() handles (and its URL-param early return).
+        restoreColumnState();
         restoreState();
         fetchData();
 
@@ -684,6 +740,9 @@
 
     watch(debouncedSearch, () => {
         if (initializing) return;
+        // The result set changes — previously selected row IDs may fall outside
+        // the new filter, so a bulk action on them would target stale rows. Reset.
+        props.selection?.clearSelection();
         currentPage.value = 1;
         fetchData();
     });
@@ -692,6 +751,8 @@
         activeFilters,
         () => {
             if (initializing) return;
+            // Same rationale as search: filtering invalidates the current selection.
+            props.selection?.clearSelection();
             currentPage.value = 1;
             fetchData();
         },

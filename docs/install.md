@@ -84,7 +84,7 @@ composer require lvntr/laravel-starter-kit:^13.0
 php artisan sk:install
 ```
 
-Before touching any file, the installer runs a **preflight** check (Node.js version — warns and lets the npm step degrade later if Node is missing or older than 18; never hard-fails) and loads any **checkpoint** left by a previous interrupted run (`storage/starter-kit/install-progress.json`). If a step throws, the installer stops with an actionable message ("Step failed: `<step>` — fix the issue, then run `sk:install --resume`") instead of a raw stack trace; completed steps are checkpointed so `--resume` skips them and continues from the failure point. The progress file is deleted automatically once the install completes successfully.
+Before touching any file, the installer runs a **preflight** check (Node.js version — warns and lets the npm step degrade later if Node is missing or older than 20.19, the Vite 7 engine floor; never hard-fails) and loads any **checkpoint** left by a previous interrupted run (`storage/starter-kit/install-progress.json`). If a step throws, the installer stops with an actionable message ("Step failed: `<step>` — fix the issue, then run `sk:install --resume`") instead of a raw stack trace; completed steps are checkpointed so `--resume` skips them and continues from the failure point. The progress file is deleted automatically once the install completes successfully.
 
 The installer then walks through each step interactively:
 

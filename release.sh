@@ -12,9 +12,11 @@ NC='\033[0m'
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SKIP_CHECKS=0
+ALLOW_BRANCH=0
 for arg in "$@"; do
     case "${arg}" in
-        --skip-checks) SKIP_CHECKS=1 ;;
+        --skip-checks)  SKIP_CHECKS=1 ;;
+        --allow-branch) ALLOW_BRANCH=1 ;;
     esac
 done
 
@@ -32,6 +34,11 @@ if [[ -n "$(git -C "${DIR}" status --porcelain)" ]]; then
     git -C "${DIR}" status --short | sed 's/^/    /'
     echo -e "\n  Önce değişiklikleri commit et, sonra release yap.\n"
     exit 1
+fi
+
+CURRENT_BRANCH=$(git -C "${DIR}" rev-parse --abbrev-ref HEAD)
+if [[ "${CURRENT_BRANCH}" != "main" && "${ALLOW_BRANCH}" -ne 1 ]]; then
+    error "Yayın yalnızca 'main' branch'ten yapılır (mevcut: ${CURRENT_BRANCH}).\n  Bilerek başka branch'ten yayınlıyorsan --allow-branch ile tekrar dene."
 fi
 
 echo ""
@@ -96,7 +103,6 @@ if git -C "${DIR}" tag -l "${VERSION}" | grep -q "^${VERSION}$"; then
 fi
 
 REMOTE=$(git -C "${DIR}" remote get-url origin 2>/dev/null || echo "bilinmiyor")
-CURRENT_BRANCH=$(git -C "${DIR}" rev-parse --abbrev-ref HEAD)
 
 echo ""
 detail "Yeni versiyon" "${GREEN}${VERSION}${NC}"
@@ -107,6 +113,46 @@ echo ""
 read -rp "  ${VERSION} yayınlansın mı? [E/h]: " CONFIRM
 CONFIRM="${CONFIRM:-E}"
 [[ "${CONFIRM}" =~ ^[EeYy]$ ]] || { warn "Yayın iptal edildi."; exit 0; }
+
+# Sürüm başlığının 3 changelog dosyasında da bulunduğunu doğrular.
+# Desenler CI'daki "changelog-sync" adımıyla birebir aynıdır (bkz. .github/workflows/ci.yml)
+# — yerelde CI'dan önce hata verir. Eksikse DUR (mevcut tek-dosya "e" kaçamağı kaldırıldı).
+verify_changelogs() {
+    local ver="${1}"
+    local escaped="${ver//./\\.}"
+    local missing=()
+
+    grep -qE "^## \[${escaped}\]" "${DIR}/CHANGELOG.md" 2>/dev/null \
+        || missing+=("CHANGELOG.md")
+
+    local f
+    for f in docs/CHANGELOG.md docs/CHANGELOG.tr.md; do
+        grep -qE "^## .* — v${escaped}\$" "${DIR}/${f}" 2>/dev/null \
+            || missing+=("${f}")
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        error "v${ver} sürüm başlığı şu changelog dosyalarında eksik:\n$(printf '    - %s\n' "${missing[@]}")\n  Üç dosyaya da (root + docs EN + docs TR) girişi ekle, sonra tekrar dene (ya da --skip-checks ile atla)."
+    fi
+    detail "Changelog kontrolü" "${GREEN}GEÇTİ${NC} ${GRAY}(3 dosya)${NC}"
+}
+
+# Dağıtım arşivine (git archive HEAD, .gitattributes export-ignore uygulanmış hâli)
+# yalnızca geliştirmeye özel yolların sızıp sızmadığını denetler; bulursa UYARIR (durdurmaz).
+smoke_test_dist() {
+    local unexpected
+    unexpected=$(git -C "${DIR}" archive HEAD 2>/dev/null | tar -t 2>/dev/null \
+        | grep -vE '/$' \
+        | grep -E '^(\.ai/|\.github/|\.claude/|release\.sh$|scripts/|plan-docs/|package-audit-notes/|tests/|phpunit\.xml$|testbench\.yaml$|pint\.json$|CHANGELOG\.md$|README-tr\.md$|\.gitignore$|\.gitattributes$|\.npmignore$)' \
+        || true)
+    if [[ -n "${unexpected}" ]]; then
+        warn "Dağıtım arşivinde beklenmeyen (geliştirmeye özel) yollar var:"
+        echo "${unexpected}" | sed 's/^/      /'
+        warn ".gitattributes içinde 'export-ignore' ile hariç tut — aksi hâlde yayınlanan pakete sızar."
+    else
+        detail "Dist smoke testi" "${GREEN}TEMİZ${NC}"
+    fi
+}
 
 if [[ "${SKIP_CHECKS}" -eq 1 ]]; then
     warn "Kalite kapısı atlandı (--skip-checks)."
@@ -119,6 +165,8 @@ else
         || error "composer test başarısız. Düzelt ve tekrar dene (ya da --skip-checks ile atla)."
     composer --working-dir="${DIR}" security \
         || error "composer security başarısız. Düzelt ve tekrar dene (ya da --skip-checks ile atla)."
+    verify_changelogs "${CLEAN_VERSION}"
+    smoke_test_dist
     detail "Kalite kapısı" "${GREEN}GEÇTİ${NC}"
 fi
 
@@ -137,11 +185,8 @@ extract_changelog() {
 CHANGELOG_BODY=$(extract_changelog "${CLEAN_VERSION}")
 
 if [[ -z "${CHANGELOG_BODY}" ]]; then
-    echo ""
-    warn "CHANGELOG.md içinde ${CLEAN_VERSION} girişi bulunamadı."
-    read -rp "  CHANGELOG olmadan ${VERSION} etiketi oluşturulsun mu? [e/H]: " CL_CONFIRM
-    CL_CONFIRM="${CL_CONFIRM:-H}"
-    [[ "${CL_CONFIRM}" =~ ^[EeYy]$ ]] || { warn "Yayın iptal edildi."; exit 0; }
+    # Buraya yalnızca --skip-checks ile gelinebilir (aksi hâlde verify_changelogs durdurur).
+    warn "CHANGELOG.md içinde ${CLEAN_VERSION} girişi bulunamadı — etiket gövdesiz oluşturuluyor (--skip-checks)."
     git -C "${DIR}" tag -a "${VERSION}" -m "Release ${VERSION}"
     detail "${VERSION} etiketi" "${YELLOW}OLUŞTURULDU${NC} ${GRAY}(CHANGELOG'suz)${NC}"
 else
@@ -149,8 +194,8 @@ else
     detail "${VERSION} etiketi" "${GREEN}OLUŞTURULDU${NC} ${GRAY}(CHANGELOG'dan dolduruldu)${NC}"
 fi
 
-echo -e "  ${GRAY}→${NC} Remote'a gönderiliyor (${CURRENT_BRANCH})..."
-git -C "${DIR}" push origin "${CURRENT_BRANCH}" --tags
+echo -e "  ${GRAY}→${NC} Remote'a gönderiliyor (${CURRENT_BRANCH} + ${VERSION})..."
+git -C "${DIR}" push origin "${CURRENT_BRANCH}" "${VERSION}"
 detail "Push" "${GREEN}TAMAM${NC}"
 
 echo ""

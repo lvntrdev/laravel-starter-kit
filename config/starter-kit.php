@@ -80,6 +80,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Eloquent strict mode
+    |--------------------------------------------------------------------------
+    |
+    | When true (default), StarterKitServiceProvider enables Eloquent strict
+    | mode (Model::shouldBeStrict) OUTSIDE production only — lazy-loading,
+    | accessing a missing attribute and silently discarding a non-fillable
+    | assignment all throw during local/staging/testing so bugs surface early,
+    | while production traffic is never risked with a strictness 500.
+    |
+    | Set to false to opt out of this opinionated global mutation entirely
+    | (e.g. when integrating a legacy schema that trips these guards).
+    |
+    */
+
+    'strict_models' => env('STARTER_KIT_STRICT_MODELS', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resource permission gating (CheckResourcePermission)
+    |--------------------------------------------------------------------------
+    |
+    | The CheckResourcePermission middleware derives the required permission
+    | from the route name (admin.users.index → users.read). When the resolved
+    | permission is NOT seeded in the database the middleware is FAIL-CLOSED by
+    | default: only `local` allows the request through (+ a logged warning);
+    | every other environment — production, staging, uat, demo, testing —
+    | denies it. This stops a forgotten permission row from silently exposing
+    | an endpoint on a public non-production host.
+    |
+    | Set `allow_unmapped` to true (env: STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS)
+    | to restore the legacy behavior where ANY non-production environment lets
+    | the unmapped permission through with a warning. Production always denies
+    | regardless of this flag; local always allows.
+    |
+    */
+
+    'permissions' => [
+        'allow_unmapped' => (bool) env('STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Passport OAuth2 configuration
     |--------------------------------------------------------------------------
     |
@@ -91,6 +133,13 @@ return [
     */
 
     'passport' => [
+        // Auth provider backing the auto-registered `api` guard. The provider
+        // is only synthesised when the consumer app has not already defined an
+        // `api` guard, so a custom guard is never overridden. Point this at the
+        // auth provider whose model is your Passport `HasApiTokens` user (the
+        // key must exist under `auth.providers`).
+        'provider' => env('STARTER_KIT_PASSPORT_PROVIDER', 'users'),
+
         // Access tokens are short-lived by default — leaked bearer tokens
         // should expire before they are abused. Prefer refresh tokens for
         // session longevity, not long access-token TTLs.
