@@ -4,7 +4,7 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
-## Yayınlanmamış
+## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` artık staging/demo'da fail-closed (davranış değişikliği)
 

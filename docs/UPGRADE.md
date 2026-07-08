@@ -4,7 +4,7 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
-## Unreleased
+## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` is now fail-closed on staging/demo (behavior change)
 
