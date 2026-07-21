@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-07-21 — v13.6.10
+
+### Fixed
+
+- **The "unsaved changes" warning no longer sticks around after you save.** On forms that submit themselves, saving worked but the form still considered itself dirty — so the unsaved-changes banner stayed visible and closing or leaving the page kept asking you to confirm, even though everything had already been saved. Saving now marks the form clean straight away. If you keep typing while the save is still running, those newer edits weren't part of the save — the form stays marked as unsaved for them, so nothing is silently lost. Create forms that clear themselves after saving still clear as before.
+
 ## 2026-07-08 — v13.6.9
 
 ### Security

@@ -448,6 +448,9 @@
         }
 
         selfSubmitting.value = true;
+        // Snapshot of exactly what this request carries. `currentValues` rebuilds a
+        // fresh object on every read, so this stays a true point-in-time copy.
+        const submittedValues = currentValues.value;
         internalForm
             .transform((data: Record<string, unknown>) => {
                 if (dateOnlyFields.length === 0) return data;
@@ -465,7 +468,28 @@
             [method](url, {
                 preserveScroll,
                 forceFormData: hasFileFields.value,
-                onSuccess: () => emit('success'),
+                onSuccess: () => {
+                    emit('success');
+                    // Save succeeded → rebaseline Inertia's dirty tracking to the
+                    // saved state so isDirty clears (the unsaved-changes banner and
+                    // the beforeunload / Inertia leave-guard both hang off it). Done
+                    // explicitly because the derivedDefaults watch does not fire
+                    // reliably here: preserveScroll submits, its shallow-equal
+                    // early-return, and remote-data forms that never refetch all
+                    // leave the form stuck-dirty after a real save.
+                    //
+                    // Skipped when the form no longer matches what was sent: fields
+                    // stay editable while the request is in flight, so an edit made
+                    // mid-request was never submitted. Rebaselining would mark that
+                    // unsent input as saved and silently drop it — the form must
+                    // stay dirty instead. The emit runs first so a host that calls
+                    // reset() on success (create forms) is compared in its post-reset
+                    // state, which already equals its defaults — skipping is a no-op
+                    // there.
+                    if (shallowRecordEqual(currentValues.value, submittedValues)) {
+                        internalForm.defaults();
+                    }
+                },
                 onFinish: () => {
                     selfSubmitting.value = false;
                 },

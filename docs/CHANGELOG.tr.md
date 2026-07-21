@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-07-21 — v13.6.10
+
+### Düzeltildi
+
+- **"Kaydedilmemiş değişiklikler" uyarısı artık kayıttan sonra ekranda kalmıyor.** Kendi kendine gönderim yapan formlarda kayıt başarıyla tamamlanıyordu ama form kendini hâlâ "değişmiş" sayıyordu — bu yüzden kaydedilmemiş-değişiklik banner'ı görünmeye devam ediyor, sayfayı kapatmak veya sayfadan ayrılmak her şey kaydedilmiş olmasına rağmen onay soruyordu. Kayıt artık formu anında temiz olarak işaretliyor. Kayıt sürerken yazmaya devam ederseniz, o yeni değişiklikler kaydın parçası değildi — form onlar için "kaydedilmemiş" kalmaya devam ediyor, böylece hiçbir şey sessizce kaybolmuyor. Kayıttan sonra kendini temizleyen oluşturma formları eskisi gibi temizlenmeye devam ediyor.
+
 ## 2026-07-08 — v13.6.9
 
 ### Güvenlik

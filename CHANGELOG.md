@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.10] - 2026-07-21
+
+### Fixed
+
+- **`SkForm` internal-mode submits no longer stay dirty after a successful save.** For forms driven by `config.submit`, `onSuccess` only emitted `success` and never rebaselined Inertia's `defaults`, so `isDirty` (`data !== defaults`) stayed `true` forever against the pre-save baseline. The unsaved-changes banner and the `beforeunload` / Inertia leave-guard therefore kept firing *after* a real save — data was persisted correctly, the flag was not. `onSuccess` now calls `internalForm.defaults()` to rebaseline dirty tracking to the saved state. This is done explicitly instead of relying on the `derivedDefaults` watch, which does not fire reliably for `preserveScroll` submits, shallow-equal early-returns, or remote-data forms that never refetch. Two ordering/safety details are deliberate: `success` is emitted *before* the rebaseline, so a host that calls `reset()` on success (create forms, e.g. the Settings → Mail test-mail form) still clears to the original defaults rather than to the just-submitted values; and the rebaseline is **skipped when the form no longer matches the submitted payload**, since fields stay editable while the request is in flight — an edit typed mid-request was never sent, so the form correctly stays dirty instead of marking unsent input as saved. Runtime-only (`resources/js/components/`), delivered by `composer update`.
+
 ## [13.6.9] - 2026-07-08
 
 ### Security
