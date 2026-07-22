@@ -24,6 +24,14 @@ export default mergeConfig(
                 'resources/js/**/*.{test,spec}.ts',
                 'vendor/lvntr/laravel-starter-kit/resources/js/**/*.{test,spec}.ts',
             ],
+            // Inertia paketleri inline işlenir: aksi halde `@inertiajs/vue3`
+            // node_modules'ten externalize edilerek yüklenir ve `@inertiajs/core`
+            // için kurulan `vi.mock` ona HİÇ ulaşmaz — SkForm testleri gerçek
+            // `useForm`'u (gerçek dirty-tracking semantiği) kullanabilsin diye
+            // yalnız transport (core router) taklit edilir, bu da inline gerektirir.
+            server: {
+                deps: { inline: [/@inertiajs\//] },
+            },
         },
     }),
 );

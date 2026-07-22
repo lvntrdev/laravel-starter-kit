@@ -456,10 +456,13 @@
      *  1. The uploaded file now lives on the server and is rendered as
      *     `existingMedia`; the `File` left in form state lists the same file a
      *     SECOND time.
-     *  2. `isDirty` can never clear otherwise: Inertia's `defaults()` runs
-     *     `cloneDeep(data())`, and lodash `cloneDeep` cannot clone a `File` →
-     *     `isEqual(data(), defaults)` stays false forever, leaving the unsaved
-     *     badge and the leave-guard permanently on. `defaults()` ALONE is not enough.
+     *  2. `isDirty` can never clear otherwise. Inertia rebaselines with
+     *     `cloneDeep(data())` (es-toolkit) and a deep watcher then recomputes
+     *     `isDirty = !isEqual(data(), defaults)`. A `File` survives the clone as
+     *     a DIFFERENT instance, and `isEqual` does not treat two distinct `File`
+     *     objects as equal → the flag flips straight back to true, leaving the
+     *     unsaved badge and the leave-guard permanently on. Rebaselining ALONE
+     *     cannot fix it; the `File` has to leave form state.
      *
      * For `multiple` fields the value is `[keepId..., File...]`; it is reduced to
      * the current media id list returned by the server. Single-file fields get `null`.
