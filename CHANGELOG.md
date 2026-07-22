@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.6.11] - 2026-07-22
+
+### Fixed
+
+- **`SkForm` file-upload fields are no longer left holding the submitted `File` after a successful save.** Two user-visible symptoms shared one root cause. The uploaded file is written to the server and re-rendered as `existingMedia`, but the `File` object stayed in form state, so `newFilePreviews` listed the same file a *second* time — the same image appeared as two rows. Worse, `13.6.10`'s `internalForm.defaults()` rebaseline was technically unable to clear `isDirty` while a `File` was present: Inertia's `defaults()` runs `cloneDeep(this.data())`, and lodash `cloneDeep` cannot clone a `File` (the `[object File]` tag is unsupported, so it yields an empty object), which makes the subsequent `isEqual(this.data(), defaults)` check false forever. The unsaved-changes banner and the `beforeunload` / Inertia leave-guard therefore stayed on permanently for any form containing a file field. `onSuccess` now clears every `file-upload` field before rebaselining — `multiple` fields are reduced to the current `existingMedia` id list, single-file fields to `null` — so `defaults()` operates on cloneable state and dirty tracking actually resets. For `dataUrl`-driven forms (including `.resource()` in edit mode) the media list is **refreshed from the server first**: `remoteData` is otherwise captured once at mount, so `existingMedia` would still hold the pre-upload ids — reducing the field to those would hide the file just uploaded and make the *next* save delete it, since `HasMediaCollections::syncMediaCollection()` removes any media missing from the submitted keep-list. The refresh is silent (no loading skeleton, and a failure never replaces a just-saved form with the load-error panel); if it fails, the file fields are left untouched and the form stays dirty rather than risking the upload. Runtime-only (`resources/js/components/`), delivered by `composer update`.
+
 ## [13.6.10] - 2026-07-21
 
 ### Fixed

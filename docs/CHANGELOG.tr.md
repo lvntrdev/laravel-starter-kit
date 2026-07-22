@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-07-22 — v13.6.11
+
+### Düzeltildi
+
+- **Yüklenen dosya artık iki kez görünmüyor, dosya alanı olan formlarda "kaydedilmemiş değişiklikler" uyarısı nihayet kapanıyor.** Dosya yükleme alanı olan bir formu kaydettikten sonra, seçtiğiniz dosya sunucuya kaydedilmiş kopyasının yanında formda da duruyordu — aynı görsel iki satır olarak listeleniyordu. Formda kalan bu dosya aynı zamanda formu kalıcı olarak "değişmiş" gösteriyordu; bu yüzden kaç kez kaydederseniz kaydedin kaydedilmemiş-değişiklik banner'ı ve "sayfadan ayrılmak istediğinize emin misiniz?" uyarısı hiç kaybolmuyordu. Kayıt artık yüklenmiş dosya listesini sunucudan tazeleyip seçiciyi temizliyor: tek kopya görüyorsunuz, form temize geçiyor ve az önce yüklediğiniz dosya formu ikinci kez kaydettiğinizde kaybolma riski taşımıyor.
+
 ## 2026-07-21 — v13.6.10
 
 ### Düzeltildi

@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-07-22 — v13.6.11
+
+### Fixed
+
+- **Uploading a file no longer shows it twice, and the "unsaved changes" warning finally clears on forms with file fields.** After saving a form with an upload field, the file you had just picked stayed in the form alongside the copy that had already been stored — so the same image showed up as two entries. The same leftover file also kept the form permanently marked as changed, which meant the unsaved-changes banner and the "are you sure you want to leave?" prompt never went away, no matter how many times you saved. Saving now refreshes the stored file list from the server and clears the picker, so you see one copy and the form goes clean — and the file you just uploaded is no longer at risk of disappearing when you save the form a second time.
+
 ## 2026-07-21 — v13.6.10
 
 ### Fixed

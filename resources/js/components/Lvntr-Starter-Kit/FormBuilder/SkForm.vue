@@ -104,15 +104,35 @@
     const dataError = ref(false);
     const remoteData = ref<Record<string, unknown> | null>(null);
 
+    /** Fetches `dataUrl` and unwraps `dataKey`. Throws on failure. */
+    async function requestRemoteData(url: string): Promise<Record<string, unknown>> {
+        const response = await api.get<Record<string, unknown>>(url);
+        return props.config.dataKey ? (response[props.config.dataKey] as Record<string, unknown>) : response;
+    }
+
+    /**
+     * Silent refresh used after a successful save. Updates `remoteData` without
+     * touching the loading/error UI: the form is already on screen with valid
+     * data, so flashing the skeleton — or worse, replacing a just-saved form
+     * with the load-error panel — would be wrong. Returns `false` when the
+     * refresh failed, in which case the previous data is left untouched.
+     */
+    async function refreshRemoteData(): Promise<boolean> {
+        if (!props.config.dataUrl) return false;
+        try {
+            remoteData.value = await requestRemoteData(props.config.dataUrl);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     async function fetchRemoteData(): Promise<void> {
         if (!props.config.dataUrl) return;
         dataLoading.value = true;
         dataError.value = false;
         try {
-            const response = await api.get<Record<string, unknown>>(props.config.dataUrl);
-            remoteData.value = props.config.dataKey
-                ? (response[props.config.dataKey] as Record<string, unknown>)
-                : response;
+            remoteData.value = await requestRemoteData(props.config.dataUrl);
         } catch {
             // Surface the failure instead of swallowing it: flag an in-form retry
             // state and notify the user via a toast.
@@ -429,6 +449,29 @@
         removeInertiaBefore?.();
     });
 
+    /**
+     * Clears file-upload field values after a successful save.
+     *
+     * Required for two reasons:
+     *  1. The uploaded file now lives on the server and is rendered as
+     *     `existingMedia`; the `File` left in form state lists the same file a
+     *     SECOND time.
+     *  2. `isDirty` can never clear otherwise: Inertia's `defaults()` runs
+     *     `cloneDeep(data())`, and lodash `cloneDeep` cannot clone a `File` →
+     *     `isEqual(data(), defaults)` stays false forever, leaving the unsaved
+     *     badge and the leave-guard permanently on. `defaults()` ALONE is not enough.
+     *
+     * For `multiple` fields the value is `[keepId..., File...]`; it is reduced to
+     * the current media id list returned by the server. Single-file fields get `null`.
+     */
+    function clearSubmittedFileInputs(): void {
+        for (const field of flatFields.value) {
+            if (field.type !== 'file-upload') continue;
+            const f = field as FileUploadFieldConfig;
+            setValue(f.key, f.multiple ? (f.existingMedia ?? []).map((m) => m.id) : null);
+        }
+    }
+
     function handleSubmit(): void {
         if (!props.config.submit || isReadOnly.value) {
             return;
@@ -486,9 +529,30 @@
                     // reset() on success (create forms) is compared in its post-reset
                     // state, which already equals its defaults — skipping is a no-op
                     // there.
-                    if (shallowRecordEqual(currentValues.value, submittedValues)) {
-                        internalForm.defaults();
+                    if (!shallowRecordEqual(currentValues.value, submittedValues)) {
+                        return;
                     }
+                    // File cleanup needs the FRESH server-side media id list, and it
+                    // is only safe once that list is in hand. For `dataUrl` forms
+                    // `remoteData` is captured once at mount, so `existingMedia`
+                    // still holds the PRE-upload ids — reducing the field to those
+                    // would hide the file just uploaded and make the next save
+                    // delete it (`syncMediaCollection` drops any media missing from
+                    // the submitted keep-list). Refresh first, silently.
+                    void (async () => {
+                        if (hasFileFields.value && props.config.dataUrl && !(await refreshRemoteData())) {
+                            // Refresh failed → the ids in hand are unknown/stale, so
+                            // touching the file fields could destroy the upload. Leave
+                            // form state alone; staying dirty is the honest outcome.
+                            return;
+                        }
+                        // nextTick lets the derivedDefaults watch settle (and picks up
+                        // a parent that rebuilt the config from its new page props)
+                        // before the values are cleared and rebaselined.
+                        await nextTick();
+                        clearSubmittedFileInputs();
+                        internalForm.defaults();
+                    })();
                 },
                 onFinish: () => {
                     selfSubmitting.value = false;
