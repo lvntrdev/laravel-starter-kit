@@ -59,15 +59,18 @@ import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
 
 - `layout('vertical' | 'horizontal')`
 - `cols(number)` — form grid sütun sayısı (1–12 aralığının tamamı desteklenir; daha önce 6'nın üzerindeki değerler varsayılan 2 sütunlu düzene düşüyordu)
+- `dividers(boolean)` — horizontal layout'ta alan satırları arasına ince ayraç çizgileri çeker ve label'ları sola yaslar (ayarlar-tarzı üst üste satırlar). Vertical layout'ta etkisi yoktur. Varsayılan `false`.
 - `class(string)`
 - `dataUrl(url)`
 - `dataKey(key)`
 - `initialData(record)`
 - `actionsPosition('top' | 'bottom' | 'both')`
 - `submit({ url, method, preserveScroll? })`
+- `resource({ store, update, data, key, id? })` — `submit`, `dataUrl` ve `dataKey`'i tek bir config'ten türeten kısayol: `id` dolu ise edit modu (PUT ile `update`, veri `data`'dan yüklenir); `id` boş ise create modu (POST ile `store`)
 - `actionLabels(...)`
 - `hideCancel(boolean)`
 - `hideSubmit(boolean)`
+- `hideActions(boolean)` — tüm action bar'ı (üst ve alt) gizler; submit işlemini host, formun expose ettiği `submit()` metodu üzerinden yönetir
 - `onCancel('back' | 'emit')`
 - `inDialog(boolean)`
 - `showBack(boolean)`
@@ -75,6 +78,7 @@ import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
 - `cardSubtitle(string)`
 - `isCard(boolean)`
 - `permission(key)` — formu salt-okunur moda alan yetki anahtarı (yetki yoksa tüm alanlar disabled + submit gizli)
+- `confirmLeave(boolean)` — form dirty iken sayfadan çıkışta uyarır (yalnızca internal submit modunda). Varsayılan `true`; opt-out için `false` verin.
 - `addFields(...fields)`
 
 ## Ortak Field Metotları
@@ -83,7 +87,10 @@ import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
 
 - `key`
 - `label`
+- `trans(boolean)` — `label`'ın `$t()` ile çözülen bir çeviri anahtarı mı (varsayılan `true`) yoksa hazır çözülmüş ham bir string mi olduğunu belirtir. Önceden çevrilmiş bir label verirken (örn. `.label($t('admin.example')).trans(false)`) `false` verin ki template üzerinde `$t()` tekrar çalışmasın.
 - `required`
+- `labelPlacement('top' | 'inline')` — vertical layout'ta label konumu. Varsayılan `'top'` (kontrolün üstünde, alt alta); `'inline'` ise label'ı kontrolün yanına yerleştirir (`checkbox`/`toggle-button`/`toggle-switch` tiplerinin zaten varsayılan olarak kullandığı görünüm).
+- `controlPosition('left' | 'right')` — kontrolün label'ına göre konumu. Varsayılan `'left'`.
 - `optional`
 - `class`
 - `hint`

@@ -86,6 +86,22 @@ Tipik akış:
 
 Domain yapısı scaffolding komutlarıyla desteklenir, ancak komut referansı [artisan-commands.tr.md](./artisan-commands.tr.md) içinde tutulur. Bu dosya özellikle DDD anlatımını komut dökümanından ayrı tutmak için vardır.
 
+### `make:sk-domain` temel flag'leri
+
+Domain adı ve `--fields=` dışında, sihirbazın katman/ID/Vue seçimlerinin tamamı non-interaktif olarak geçilebilir:
+
+| Flag | Ne yapar |
+| --- | --- |
+| `--fields="name:string,age:integer"` | Virgülle ayrılmış `alan:tip` çiftleri. Mevcut tipler: `string`, `integer`, `bigInteger`, `unsignedBigInteger`, `float`, `decimal`, `boolean`, `text`, `longText`, `json`, `date`, `dateTime`, `timestamp`. Atlanırsa alan alan interaktif sorulur. |
+| `--id-type=id\|uuid\|ulid` | Primary key stratejisi. `id` (varsayılan) auto-increment bigint'tir; `uuid`/`ulid` model'e ilgili `HasUuids`/`HasUlids` concern'ini ekler ve migration'daki `id` kolonunu değiştirir. Atlanırsa interaktif sorulur — `--from-migration` kullanıldığında tamamen atlanır (migration dosyasından tespit edilir). |
+| `--api` / `--no-api` | API controller + route'ları zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--admin` / `--no-admin` | Admin controller + route'ları zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--events` / `--no-events` | Created/Updated/Deleted event'lerini ve loglayan listener'larını zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--soft-deletes` / `--no-soft-deletes` | Model ve migration'da `SoftDeletes`'i zorla etkinleştirir veya zorla devre dışı bırakır. İkisi de verilmezse (varsayılan: evet) sorulur — `--from-migration` kullanıldığında tamamen atlanır (migration dosyasından tespit edilir). |
+| `--vue=none\|empty\|full` | Vue sayfa üretim modu; yalnızca Admin katmanı üretiliyorsa geçerlidir (aksi halde `none`'a zorlanır). `full` Index (DataTable) + Create/Edit (FormBuilder) üretir; `empty` yalnızca boş bir Index sayfası üretir; `none` Vue üretimini atlar. Atlanırsa interaktif sorulur (varsayılan: `full`). |
+| `--vue-fields` / `--no-vue-fields` | Yalnızca `--vue=full` ile anlamlıdır. Üretilen DataTable kolonlarına ve FormBuilder'a model alanlarını dahil eder ya da yalnızca id içeren bir iskelet üretir. İkisi de verilmezse ve alan varsa (varsayılan: evet) sorulur. |
+| `--from-migration=<dosya adı>` | Alanları, ID tipini ve soft-delete'i `--fields`/`--id-type`/promptlar yerine var olan bir migration dosyasından ayrıştırır, örn. `--from-migration=2026_03_21_create_products_table.php`. Tam ya da kısmi dosya adı kabul edilir (`database/migrations/` altında glob ile eşleştirilir). |
+
 ### `make:sk-domain` v2 opt-in flag'leri
 
 Komutun flag'siz çağrılması v13.5.x davranışını korur (geriye dönük uyumlu).
@@ -100,7 +116,7 @@ Komutun flag'siz çağrılması v13.5.x davranışını korur (geriye dönük uy
 | `--with-test` | Feature test |
 | `--with-relations` | İlişki scaffold'ı (`--relations` ile birlikte kullanılır) |
 
-**Toplu syntax** — birden fazla opt-in'i tek flag ile:
+**Toplu syntax** — `policy`, `factory`, `seeder`, `test`, `relations`'ın herhangi bir kombinasyonunu tek flag ile geçin (tekil `--with-*` flag'leri buna eklemeli olarak uygulanır):
 
 ```bash
 php artisan make:sk-domain Article --with=policy,factory,test
@@ -112,7 +128,7 @@ php artisan make:sk-domain Article --with=policy,factory,test
 php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
 ```
 
-Desteklenen ilişki türleri: `belongsTo`, `hasMany`, `hasOne`, `belongsToMany`, `morphTo`, `morphMany`.
+Desteklenen ilişki türleri: `belongsTo`, `hasMany`, `morphTo`. `--relations=` verilmesi `--with-relations`'ı zımnen içerir.
 
 **Örnekler:**
 

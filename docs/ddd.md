@@ -86,6 +86,22 @@ Typical flow:
 
 The domain structure is supported by scaffolding commands, but the command reference lives in [artisan-commands.md](./artisan-commands.md). This file exists specifically to keep DDD guidance separate from command documentation.
 
+### `make:sk-domain` core flags
+
+Beyond the domain name and `--fields=`, the wizard's layer/ID/Vue choices can all be passed non-interactively:
+
+| Flag | What it does |
+| --- | --- |
+| `--fields="name:string,age:integer"` | Comma-separated `field:type` pairs. Available types: `string`, `integer`, `bigInteger`, `unsignedBigInteger`, `float`, `decimal`, `boolean`, `text`, `longText`, `json`, `date`, `dateTime`, `timestamp`. Omit to be prompted field-by-field. |
+| `--id-type=id\|uuid\|ulid` | Primary key strategy. `id` (default) is an auto-increment bigint; `uuid`/`ulid` add the matching `HasUuids`/`HasUlids` concern and switch the migration's `id` column. Prompts interactively when omitted — skipped entirely with `--from-migration` (detected from the file). |
+| `--api` / `--no-api` | Force-generate or force-skip the API controller + routes. Prompts (default: yes) when neither is passed. |
+| `--admin` / `--no-admin` | Force-generate or force-skip the Admin controller + routes. Prompts (default: yes) when neither is passed. |
+| `--events` / `--no-events` | Force-generate or force-skip the Created/Updated/Deleted events and their logging listeners. Prompts (default: yes) when neither is passed. |
+| `--soft-deletes` / `--no-soft-deletes` | Force-enable or force-disable `SoftDeletes` on the model and migration. Prompts (default: yes) when neither is passed — skipped entirely with `--from-migration` (detected from the file). |
+| `--vue=none\|empty\|full` | Vue page generation mode; only applies when the Admin layer is generated (forced to `none` otherwise). `full` scaffolds Index (DataTable) + Create/Edit (FormBuilder); `empty` scaffolds an empty Index page only; `none` skips Vue generation. Prompts interactively (default: `full`) when omitted. |
+| `--vue-fields` / `--no-vue-fields` | Only relevant with `--vue=full`. Include the model's fields in the generated DataTable columns and FormBuilder, or generate an id-only skeleton. Prompts (default: yes) when neither is passed and fields exist. |
+| `--from-migration=<filename>` | Parse fields, ID type, and soft-deletes from an existing migration file instead of `--fields`/`--id-type`/prompts, e.g. `--from-migration=2026_03_21_create_products_table.php`. Accepts a full or partial filename (glob-matched under `database/migrations/`). |
+
 ### `make:sk-domain` v2 opt-in flags
 
 Calling the command without any flags preserves the v13.5.x behavior (backward compatible).
@@ -100,7 +116,7 @@ Calling the command without any flags preserves the v13.5.x behavior (backward c
 | `--with-test` | Feature test |
 | `--with-relations` | Relation scaffold (use together with `--relations`) |
 
-**Bulk syntax** — pass multiple opt-ins in one flag:
+**Bulk syntax** — pass any combination of `policy`, `factory`, `seeder`, `test`, `relations` in one flag (individual `--with-*` flags are additive on top of it):
 
 ```bash
 php artisan make:sk-domain Article --with=policy,factory,test
@@ -112,7 +128,7 @@ php artisan make:sk-domain Article --with=policy,factory,test
 php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,hasMany:Comment,morphTo:commentable"
 ```
 
-Supported relation types: `belongsTo`, `hasMany`, `hasOne`, `belongsToMany`, `morphTo`, `morphMany`.
+Supported relation types: `belongsTo`, `hasMany`, `morphTo`. Passing `--relations=` implies `--with-relations`.
 
 **Examples:**
 

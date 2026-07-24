@@ -211,6 +211,15 @@ php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```
 
+## Ek Yapılandırma
+
+İki `config/starter-kit.php` anahtarı interaktif installer'ın bir parçası değildir ama kit davranışını değiştirir — kurulumdan önce env üzerinden set edin veya yayınlanmış config dosyasını override edin:
+
+| Config anahtarı | Env değişkeni | Varsayılan | Etkisi |
+|---|---|---|---|
+| `app_namespace` | `STARTER_KIT_APP_NAMESPACE` | `App` | Yalnızca `sk:publish` tarafından okunur (`sk:install`'ın ana scaffolding adımı tarafından değil): varsayılan olmayan bir değere set edildiğinde, bu komutun kopyaladığı `.php` dosyalarındaki (`--tag=config` ile `config/starter-kit.php`, `--tag=helpers` ile `app/Helpers/sk-helpers.php`) `namespace App\…` / `use App\…` / `App\…` referanslarını yapılandırılan namespace'e yeniden yazar. `sk:install`'ın kendisinin kopyaladığı dosyalar olduğu gibi kopyalanır — varsayılan olmayan bir uygulama namespace'i `sk:install` sonrasında hâlâ manuel düzenleme gerektirir. |
+| `strict_models` | `STARTER_KIT_STRICT_MODELS` | `true` | `true` olduğunda `StarterKitServiceProvider`, Eloquent'in `Model::shouldBeStrict()` modunu production dışında (local/staging/testing) etkinleştirir — lazy-loading, eksik bir attribute'a erişme ve fillable olmayan bir mass-assignment'ı sessizce yok sayma hepsi throw eder, böylece bug'lar erken ortaya çıkar. Bu ayardan bağımsız olarak production trafiği asla etkilenmez. Bu guard'lara takılan legacy bir şema entegre ederken olduğu gibi, tamamen opt-out olmak için `false` yapın. |
+
 ## Veritabanını Sıfırlama (site:install)
 
 Geliştirme sırasında `site:install` komutu tüm tabloları silip sıfırdan kurar:

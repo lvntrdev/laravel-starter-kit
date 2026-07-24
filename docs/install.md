@@ -210,6 +210,15 @@ php artisan sk:publish --tag=lang
 php artisan sk:publish --tag=config
 ```
 
+## Additional Configuration
+
+Two `config/starter-kit.php` keys are not part of the interactive installer but change kit behavior — set them via env before installing, or override the published config:
+
+| Config key | Env var | Default | Effect |
+|---|---|---|---|
+| `app_namespace` | `STARTER_KIT_APP_NAMESPACE` | `App` | Only consumed by `sk:publish` (not by `sk:install`'s main scaffolding step): when set to a non-default value, it rewrites `namespace App\…` / `use App\…` / `App\…` references in the `.php` files that command copies (`config/starter-kit.php` under `--tag=config`, `app/Helpers/sk-helpers.php` under `--tag=helpers`) to the configured namespace. Files copied by `sk:install` itself are copied verbatim — a non-default application namespace still needs manual edits after `sk:install`. |
+| `strict_models` | `STARTER_KIT_STRICT_MODELS` | `true` | When `true`, `StarterKitServiceProvider` enables Eloquent's `Model::shouldBeStrict()` outside production (local/staging/testing) — lazy-loading, reading a missing attribute, and silently discarding a non-fillable mass-assignment all throw so bugs surface early. Production traffic is never affected regardless of this setting. Set to `false` to opt out entirely, e.g. when integrating a legacy schema that trips these guards. |
+
 ## Resetting the Database (site:install)
 
 For development, the `site:install` command drops all tables and reinstalls from scratch:

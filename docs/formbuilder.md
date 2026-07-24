@@ -59,15 +59,18 @@ If `submit(...)` is omitted, you can use `v-model` and handle submission yoursel
 
 - `layout('vertical' | 'horizontal')`
 - `cols(number)` — grid column count for the form (1–12 are all supported; previously values above 6 silently fell back to the default 2-column layout)
+- `dividers(boolean)` — in horizontal layout, draw hairline dividers between field rows and left-align labels (settings-style stacked rows). No effect in vertical layout. Default `false`.
 - `class(string)`
 - `dataUrl(url)`
 - `dataKey(key)`
 - `initialData(record)`
 - `actionsPosition('top' | 'bottom' | 'both')`
 - `submit({ url, method, preserveScroll? })`
+- `resource({ store, update, data, key, id? })` — shorthand that derives `submit`, `dataUrl`, and `dataKey` from a single config: truthy `id` → edit mode (PUT to `update`, data loaded from `data`); falsy `id` → create mode (POST to `store`)
 - `actionLabels(...)`
 - `hideCancel(boolean)`
 - `hideSubmit(boolean)`
+- `hideActions(boolean)` — suppress the whole action bar (top and bottom); the host drives submission via the form's exposed `submit()` method
 - `onCancel('back' | 'emit')`
 - `inDialog(boolean)`
 - `showBack(boolean)`
@@ -75,6 +78,7 @@ If `submit(...)` is omitted, you can use `v-model` and handle submission yoursel
 - `cardSubtitle(string)`
 - `isCard(boolean)`
 - `permission(key)` — permission key that puts the form into read-only mode when the user lacks it (all fields disabled + submit hidden)
+- `confirmLeave(boolean)` — warn before navigating away while the form is dirty (internal submit mode only). Default `true`; pass `false` to opt out.
 - `addFields(...fields)`
 
 ## Common Field Methods
@@ -83,7 +87,10 @@ Most fields support:
 
 - `key`
 - `label`
+- `trans(boolean)` — whether `label` is a translation key resolved via `$t()` (default `true`) or an already-resolved raw string. Pass `false` when supplying a pre-translated label (e.g. `.label($t('admin.example')).trans(false)`) so the template skips `$t()` on it.
 - `required`
+- `labelPlacement('top' | 'inline')` — label position in vertical layout. Default `'top'` (stacked above the control); `'inline'` places the label beside the control (the look `checkbox`/`toggle-button`/`toggle-switch` already use by default).
+- `controlPosition('left' | 'right')` — position of the control relative to its label. Default `'left'`.
 - `optional`
 - `class`
 - `hint`

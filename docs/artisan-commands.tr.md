@@ -29,13 +29,33 @@ Bir dizi ortam sağlık kontrolü çalıştırır ve her birinin sonucunu raporl
 ```bash
 php artisan sk:doctor
 php artisan sk:doctor --json
-php artisan sk:doctor --only=database,redis
+php artisan sk:doctor --only=database-connection,redis-connection
 ```
 
-Kapsanan kontroller: PHP extension'ları, veritabanı bağlantısı, Redis, Passport anahtarları, storage symlink, yazılabilir dizinler, queue driver, schedule çalışması, mail driver, npm build artifact'ları, config cache ve FileManager disk bağlantısı.
-
 - `--json` tablo yerine makine okunabilir JSON çıktı üretir
-- `--only=<kontroller>` virgülle ayrılmış seçili kontrolleri çalıştırır (örn. `--only=database,redis`)
+- `--only=<seçiciler>` virgülle ayrılmış seçili kontrolleri çalıştırır. Her seçici, kontrolün adının küçük harfe çevrilip boşlukların tire ile değiştirilmiş halidir (örn. "Database Connection" → `database-connection`) — herhangi bir seçiciyi bu kuralla türetebilirsiniz
+
+Kontroller (ad → `--only` seçicisi):
+
+| Kontrol                | `--only` seçicisi        |
+| ---------------------- | ------------------------ |
+| PHP Extensions         | `php-extensions`         |
+| Node Version           | `node-version`           |
+| Database Connection    | `database-connection`    |
+| Redis Connection       | `redis-connection`       |
+| Passport Keys          | `passport-keys`          |
+| Storage Symlink        | `storage-symlink`        |
+| Writable Directories   | `writable-directories`   |
+| Log Channel            | `log-channel`            |
+| Log Stack              | `log-stack`              |
+| Queue Driver           | `queue-driver`           |
+| Queue Worker           | `queue-worker`           |
+| Schedule Configured    | `schedule-configured`    |
+| Mail Driver            | `mail-driver`            |
+| NPM Build Artifacts    | `npm-build-artifacts`    |
+| Config Cache           | `config-cache`           |
+| FileManager Disk       | `filemanager-disk`       |
+| Theme Manifest         | `theme-manifest`         |
 
 Çıkış kodları:
 
@@ -55,12 +75,14 @@ php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
 php artisan sk:install --without-eject
+php artisan sk:install --resume
 ```
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` tüm varsayılanları otomatik kabul eder; CI veya script tabanlı kurulumlar için uygundur
 - `--without-ai-skill` Lvntr Starter Kit AI skill'lerinin yayınlanmasını tamamen atlar — hem Claude Code kopyaları (`.claude/skills/`) hem de Codex aynası (`.codex/skills/`). Kit'in skill bundle'ını ne Claude Code ne Codex ile kullanan consumer'lar için
 - `--without-eject` ilk kurulumda varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür. Bu flag'i atlarsanız `app/Domain/User/` ve `app/Domain/Role/` otomatik oluşturulur. Sahiplik takası için [install.tr.md](./install.tr.md) belgesine bakın.
+- `--resume` daha önce yarıda kalmış bir kurulumu, zaten tamamlandığı işaretlenmiş adımları atlayarak devam ettirir. Tam resume akışı için [install.tr.md](./install.tr.md) belgesine bakın.
 
 ## `sk:update`
 
@@ -213,6 +235,20 @@ php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,
 php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
 
+Temel flag'ler:
+
+| Flag | Ne yapar |
+| ---- | -------- |
+| `--fields="name:string,age:integer"` | Virgülle ayrılmış `alan:tip` çiftleri. Mevcut tipler: `string`, `integer`, `bigInteger`, `unsignedBigInteger`, `float`, `decimal`, `boolean`, `text`, `longText`, `json`, `date`, `dateTime`, `timestamp`. Atlanırsa alan alan interaktif sorulur. |
+| `--id-type=id\|uuid\|ulid` | Primary key stratejisi. `id` (varsayılan) auto-increment bigint'tir; `uuid`/`ulid` model'e ilgili `HasUuids`/`HasUlids` concern'ini ekler ve migration'daki `id` kolonunu değiştirir. Atlanırsa interaktif sorulur — `--from-migration` kullanıldığında tamamen atlanır (migration dosyasından tespit edilir). |
+| `--api` / `--no-api` | API controller + route'ları zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--admin` / `--no-admin` | Admin controller + route'ları zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--events` / `--no-events` | Created/Updated/Deleted event'lerini ve loglayan listener'larını zorla üretir veya zorla atlar. İkisi de verilmezse (varsayılan: evet) sorulur. |
+| `--soft-deletes` / `--no-soft-deletes` | Model ve migration'da `SoftDeletes`'i zorla etkinleştirir veya zorla devre dışı bırakır. İkisi de verilmezse (varsayılan: evet) sorulur — `--from-migration` kullanıldığında tamamen atlanır (migration dosyasından tespit edilir). |
+| `--vue=none\|empty\|full` | Vue sayfa üretim modu; yalnızca Admin katmanı üretiliyorsa geçerlidir (aksi halde `none`'a zorlanır). `full` Index (DataTable) + Create/Edit (FormBuilder) üretir; `empty` yalnızca boş bir Index sayfası üretir; `none` Vue üretimini atlar. Atlanırsa interaktif sorulur (varsayılan: `full`). |
+| `--vue-fields` / `--no-vue-fields` | Yalnızca `--vue=full` ile anlamlıdır. Üretilen DataTable kolonlarına ve FormBuilder'a model alanlarını dahil eder ya da yalnızca id içeren bir iskelet üretir. İkisi de verilmezse ve alan varsa (varsayılan: evet) sorulur. |
+| `--from-migration=<dosya adı>` | Alanları, ID tipini ve soft-delete'i `--fields`/`--id-type`/promptlar yerine var olan bir migration dosyasından ayrıştırır, örn. `--from-migration=2026_03_21_create_products_table.php`. Tam ya da kısmi dosya adı kabul edilir (`database/migrations/` altında glob ile eşleştirilir). |
+
 Opt-in flag'ler (v2):
 
 | Flag | Ne üretir |
@@ -222,8 +258,8 @@ Opt-in flag'ler (v2):
 | `--with-seeder` | Seeder |
 | `--with-test` | Feature test |
 | `--with-relations` | İlişki scaffold'ı (`--relations` ile birlikte kullanılır) |
-| `--with=policy,factory,test` | Toplu syntax — birden fazla opt-in tek flag'de |
-| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Scaffold için ilişki tanımları |
+| `--with=<policy,factory,seeder,test,relations>` | Toplu syntax — yukarıdaki opt-in'lerin herhangi bir kombinasyonu tek flag'de; tekil `--with-*` flag'leri buna eklemeli olarak uygulanır |
+| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Scaffold için ilişki tanımları. Desteklenen tipler: `belongsTo`, `hasMany`, `morphTo`. `--relations=` verilmesi `--with-relations`'ı zımnen içerir |
 
 Action, DTO, Query, Request, Route ve Vue ekranı gibi paket konvansiyonlarını hızlıca kurmak istediğinizde kullanın.
 
@@ -233,7 +269,10 @@ Action, DTO, Query, Request, Route ve Vue ekranı gibi paket konvansiyonlarını
 
 ```bash
 php artisan remove:sk-domain Product
+php artisan remove:sk-domain Product --force
 ```
+
+- `--force` onay istemini atlar
 
 ## `env:sync`
 

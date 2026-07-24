@@ -29,13 +29,33 @@ Runs a series of environment health checks and reports the result of each.
 ```bash
 php artisan sk:doctor
 php artisan sk:doctor --json
-php artisan sk:doctor --only=database,redis
+php artisan sk:doctor --only=database-connection,redis-connection
 ```
 
-Checks covered: PHP extensions, database connection, Redis, Passport keys, storage symlink, writable directories, queue driver, scheduler, mail driver, npm build artifacts, config cache, and FileManager disk connection.
-
 - `--json` outputs machine-readable JSON instead of a table
-- `--only=<checks>` runs a comma-separated subset of checks (e.g. `--only=database,redis`)
+- `--only=<selectors>` runs a comma-separated subset of checks. Each selector is the check's name lowercased with spaces turned into hyphens (e.g. "Database Connection" → `database-connection`) — derive any selector this way
+
+Checks (name → `--only` selector):
+
+| Check                 | `--only` selector       |
+| ---------------------- | ------------------------ |
+| PHP Extensions         | `php-extensions`         |
+| Node Version           | `node-version`           |
+| Database Connection    | `database-connection`    |
+| Redis Connection       | `redis-connection`       |
+| Passport Keys          | `passport-keys`          |
+| Storage Symlink        | `storage-symlink`        |
+| Writable Directories   | `writable-directories`   |
+| Log Channel            | `log-channel`            |
+| Log Stack              | `log-stack`              |
+| Queue Driver           | `queue-driver`           |
+| Queue Worker           | `queue-worker`           |
+| Schedule Configured    | `schedule-configured`    |
+| Mail Driver            | `mail-driver`            |
+| NPM Build Artifacts    | `npm-build-artifacts`    |
+| Config Cache           | `config-cache`           |
+| FileManager Disk       | `filemanager-disk`       |
+| Theme Manifest         | `theme-manifest`         |
 
 Exit codes:
 
@@ -55,12 +75,14 @@ php artisan sk:install --force
 php artisan sk:install --no-interaction
 php artisan sk:install --without-ai-skill
 php artisan sk:install --without-eject
+php artisan sk:install --resume
 ```
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` accepts all defaults automatically; useful for CI or scripted installs
 - `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skills entirely — both the Claude Code copies (`.claude/skills/`) and their Codex mirror (`.codex/skills/`). Useful when the consumer uses neither Claude Code nor Codex with the kit's skill bundle
 - `--without-eject` skips the default `User` and `Role` domain eject on a first install; the runtime stays in vendor and resolves via `class_alias`. Omit this flag to have `app/Domain/User/` and `app/Domain/Role/` created automatically. See [install.md](./install.md) for the ownership trade-off.
+- `--resume` resumes a previously interrupted install, skipping steps already checkpointed as completed. See [install.md](./install.md) for the full resume workflow.
 
 ## `sk:update`
 
@@ -213,6 +235,20 @@ php artisan make:sk-domain Article --with-relations --relations="belongsTo:User,
 php artisan make:sk-domain Article --with=policy,factory,seeder,test,relations --relations="belongsTo:User,morphTo:commentable"
 ```
 
+Core flags:
+
+| Flag | What it does |
+| ---- | ------------ |
+| `--fields="name:string,age:integer"` | Comma-separated `field:type` pairs. Available types: `string`, `integer`, `bigInteger`, `unsignedBigInteger`, `float`, `decimal`, `boolean`, `text`, `longText`, `json`, `date`, `dateTime`, `timestamp`. Omit to be prompted field-by-field. |
+| `--id-type=id\|uuid\|ulid` | Primary key strategy. `id` (default) is an auto-increment bigint; `uuid`/`ulid` add the matching `HasUuids`/`HasUlids` concern and switch the migration's `id` column. Prompts interactively when omitted — skipped entirely with `--from-migration` (detected from the file). |
+| `--api` / `--no-api` | Force-generate or force-skip the API controller + routes. Prompts (default: yes) when neither is passed. |
+| `--admin` / `--no-admin` | Force-generate or force-skip the Admin controller + routes. Prompts (default: yes) when neither is passed. |
+| `--events` / `--no-events` | Force-generate or force-skip the Created/Updated/Deleted events and their logging listeners. Prompts (default: yes) when neither is passed. |
+| `--soft-deletes` / `--no-soft-deletes` | Force-enable or force-disable `SoftDeletes` on the model and migration. Prompts (default: yes) when neither is passed — skipped entirely with `--from-migration` (detected from the file). |
+| `--vue=none\|empty\|full` | Vue page generation mode; only applies when the Admin layer is generated (forced to `none` otherwise). `full` scaffolds Index (DataTable) + Create/Edit (FormBuilder); `empty` scaffolds an empty Index page only; `none` skips Vue generation. Prompts interactively (default: `full`) when omitted. |
+| `--vue-fields` / `--no-vue-fields` | Only relevant with `--vue=full`. Include the model's fields in the generated DataTable columns and FormBuilder, or generate an id-only skeleton. Prompts (default: yes) when neither is passed and fields exist. |
+| `--from-migration=<filename>` | Parse fields, ID type, and soft-deletes from an existing migration file instead of `--fields`/`--id-type`/prompts, e.g. `--from-migration=2026_03_21_create_products_table.php`. Accepts a full or partial filename (glob-matched under `database/migrations/`). |
+
 Opt-in flags (v2):
 
 | Flag | What it generates |
@@ -222,8 +258,8 @@ Opt-in flags (v2):
 | `--with-seeder` | Seeder |
 | `--with-test` | Feature test |
 | `--with-relations` | Relation scaffold (use together with `--relations`) |
-| `--with=policy,factory,test` | Bulk syntax — multiple opt-ins in a single flag |
-| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Relation definitions for the scaffold |
+| `--with=<policy,factory,seeder,test,relations>` | Bulk syntax — any combination of the opt-ins above in a single flag; individual `--with-*` flags are additive on top of it |
+| `--relations="belongsTo:User,hasMany:Comment,morphTo:commentable"` | Relation definitions for the scaffold. Supported types: `belongsTo`, `hasMany`, `morphTo`. Passing `--relations=` implies `--with-relations` |
 
 Use it when you want the package conventions for actions, DTOs, queries, requests, routes, and Vue screens.
 
@@ -233,7 +269,10 @@ Removes a generated domain and its related files.
 
 ```bash
 php artisan remove:sk-domain Product
+php artisan remove:sk-domain Product --force
 ```
+
+- `--force` skips the confirmation prompt
 
 ## `env:sync`
 

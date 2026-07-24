@@ -2,11 +2,11 @@
 
 Kit composables are shipped inside the package and run directly from the vendor library by default — they no longer need to be copied into the consumer app. Imports throughout the application use `@/composables/<name>` (or the bare `@/composables` barrel) exactly as before; a Vite `customResolver` plus a matching tsconfig path entry resolve those paths **local-first, then vendor**: if a file exists under the consumer's `resources/js/composables/` it wins, otherwise the vendor copy is used automatically.
 
-**`useAdminMenu`** is the only composable that still ships as an editable stub (`resources/js/composables/useAdminMenu.ts`). It depends on the consumer's generated `@/routes/*` files and is the project's own menu definition, so it must remain editable. The `@/composables/index.ts` barrel also stays as a stub.
+**`useAdminMenu`** and **`usePageHeader`** are the only composables that still ship as editable stubs (`resources/js/composables/useAdminMenu.ts`, `resources/js/composables/usePageHeader.ts`). `useAdminMenu` depends on the consumer's generated `@/routes/*` files and is the project's own menu definition, so it must remain editable. `usePageHeader` defines the page-header context that `AdminLayout.vue` (itself a stub) provides and that form pages such as `UserForm.vue` consume, so it ships alongside the layout as an editable stub. The `@/composables/index.ts` barrel also stays as a stub.
 
 ### Upgrading composables via Composer
 
-Because the 15 kit composables live in the package, they are updated when you run `composer update lvntr/laravel-starter-kit`. No manual file copying is required.
+Because the kit composables live in the package, they are updated when you run `composer update lvntr/laravel-starter-kit`. No manual file copying is required.
 
 ### Publishing composables for customization
 
@@ -32,11 +32,13 @@ Projects created before this change already have all composables under `resource
 - `useConfirm` for confirmation actions
 - `useFlash` for flash message handling
 - `useDarkMode` for dark mode persistence
+- `useTheme` for applying the active runtime theme (`main`/`aura`)
 - `usePageLoading` for Inertia loading state
 - `useRefreshBus` for forcing table or widget refreshes
 - `useSidebar` for responsive sidebar state
 - `useUrlTab` for tab state synced to the URL
 - `useAdminMenu` and `useMenuBuilder` for admin navigation composition
+- `usePageHeader` for the back-button page-header context shared between `AdminLayout` and form pages
 
 ## Core Request and Dialog Helpers
 
@@ -160,6 +162,14 @@ Handles desktop collapse state and mobile drawer state for the admin sidebar.
 
 Persists dark mode in local storage and toggles the `.dark` class on `<html>`.
 
+### useTheme()
+
+Applies the active runtime theme (`main`, `aura`) to `<html>` via the `data-sk-theme` attribute, driven by the admin-wide `appearance.theme` value from Inertia shared props.
+
+- `theme` — the resolved runtime theme name (`undefined` during a partial reload that omits the `appearance` prop)
+- `runtimeThemes` — the set of instantly-switchable themes; falls back to `['main', 'aura']` when the server omits `runtime_themes`
+- `applyTheme(value)` — sets or removes `data-sk-theme` on `<html>`
+
 ### usePageLoading()
 
 Tracks Inertia navigation state using `inertia:start` and `inertia:finish` browser events.
@@ -169,6 +179,13 @@ Tracks Inertia navigation state using `inertia:start` and `inertia:finish` brows
 Returns reactive flash data from Inertia shared props.
 
 In this project, flash messages are displayed in `AdminLayout.vue`, not inside the composable itself.
+
+### usePageHeader()
+
+Provides the page-header injection context that `AdminLayout.vue` sets and that back-button form pages (e.g. `UserForm.vue`, `RoleForm.vue`) read to render their title/subtitle inside the first card instead of a separate page header. Ships as an editable stub alongside `useAdminMenu` — see the note above.
+
+- `active` — `true` only when the Aura theme, a back button, and the page's `header-in-card` opt-in all align; otherwise the injected default is inert
+- `title`, `subtitle`, `goBack()` — consumed by the first card of an opted-in form page
 
 ## Definition Helpers
 
@@ -303,6 +320,18 @@ Used by `AdminLayout` and the Appearance tab to manage the per-user accent color
 ### useAppearanceDefaults() — Internal
 
 Reads the global appearance defaults (accent color, dark mode, sidebar style, logo and favicon URLs) from Inertia shared props on every page load. Used by `useAccentColor`, `useDarkMode`, and layouts to seed initial state before any per-user override is applied.
+
+### getXsrfToken() — Internal
+
+Exported from `useCsrf.ts`. Single source of truth for reading the Laravel `XSRF-TOKEN` cookie — `useApi()`, the FileManager upload XHR, and the rich-text editor's image upload all read through this so cookie parsing stays consistent. Returns `''` when the cookie is absent (SSR, or not yet set).
+
+- `getXsrfToken(): string`
+
+### withBasePath() — Internal
+
+Exported from `useBasePath.ts`. Used by vendor UI (the rich-text `EditorInput`, FileManager) for raw `fetch`/`XMLHttpRequest` calls that build their own URL and need the app's deploy sub-path prefix; Inertia navigation already honors the base automatically.
+
+- `withBasePath(path: string): string`
 
 ## Recommendation
 

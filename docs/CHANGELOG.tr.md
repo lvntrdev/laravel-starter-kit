@@ -1248,7 +1248,7 @@ Paralel bir kod inceleme turu ~37 bulgu çıkardı — 13 HIGH, 14 MEDIUM, 4 LOW
 
 #### Security — manuel operatör adımı
 
-- **GV-H1 — Passport private keys rotation.** `.gitignore` kuralı düşmeden önce bu dosyaları commit etmiş legacy install'larda `storage/oauth-private.key` ve `storage/oauth-public.key` git history'de duruyor. [docs/UPGRADE.tr.md §6](UPGRADE.tr.md#6-gv-h1--passport-private-key-rotation-critical-manual) `git filter-repo` + `passport:keys --force` + `passport:purge` + takım-geneli `git reset --hard` akışını belgeliyor; bu adım paket tarafında otomatize edilemez. Repo'nuz key dosyalarını hiç commit etmediyse adımı atlayın.
+- **GV-H1 — Passport private keys rotation.** `.gitignore` kuralı düşmeden önce bu dosyaları commit etmiş legacy install'larda `storage/oauth-private.key` ve `storage/oauth-public.key` git history'de duruyor. [docs/UPGRADE.tr.md §6](UPGRADE.tr.md#6-gv-h1--passport-private-key-rotasyonu-kri̇ti̇k-manuel) `git filter-repo` + `passport:keys --force` + `passport:purge` + takım-geneli `git reset --hard` akışını belgeliyor; bu adım paket tarafında otomatize edilemez. Repo'nuz key dosyalarını hiç commit etmediyse adımı atlayın.
 
 #### Changed
 

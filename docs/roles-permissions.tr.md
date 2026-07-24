@@ -138,46 +138,20 @@ Frontend permission plugin'i şu direktifleri kaydeder:
 
 Proje, route niyetini permission kontrolüne çevirir. `users.index` gibi bir route adı çoğu zaman `users.read` kontrolüne karşılık gelir. `check.permission` middleware'i ile korunan route'lar bu otomatik çözümlemeden yararlanır.
 
-Çözümlenen permission veritabanında yoksa middleware ortam bazlı davranır:
+Çözümlenen permission veritabanında yoksa middleware'in davranışı `app()->environment()` değerine göre değişir (v13.6.9'dan beri varsayılan fail-closed'dır):
 
-- production: route'un sessizce açık kalmaması için isteği `403` ile reddeder
-- production dışı ortamlar: isteğe izin verir ve eksik permission seed edilmesi için warning log yazar
+- `local`: isteğe izin verir ve eksik permission seed edilsin diye warning log yazar — günlük geliştirme, henüz seed edilmemiş bir permission yüzünden bloklanmasın diye
+- diğer tüm ortamlar — `production`, `staging`, `uat`, `demo`, `testing` vb.: isteği `403` ile reddeder, böylece unutulmuş bir permission satırı public bir host'ta route'u sessizce açığa çıkarmaz
+
+**Opt-out:** v13.6.9 öncesindeki "production dışı her ortamda izin ver" davranışını geri getirmek için `config('starter-kit.permissions.allow_unmapped')` değerini `true` yapın (env `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`). Bu bayrak ne olursa olsun `production` her zaman reddeder. Tam migration notu için [UPGRADE.tr.md](./UPGRADE.tr.md) dosyasına bakın.
 
 ### Octane / Long-Running Worker Ortamları
 
-`CheckResourcePermission`, tüm permission isim listesini `app()->instance('check-permission.cache', ...)` ile container'a kaydeder. Standart PHP-FPM'de bu per-request bir cache'tir — container her request'te tazedir, dolayısıyla stale state birikmez.
+`CheckResourcePermission`, seed edilmiş permission isim listesini request veya worker ömrü boyunca değil, kısa bir TTL (60 saniye) ile `Cache::remember()` üzerinden cache'ler. Hem `php artisan sk:seed-permissions` hem de Roles ekranının permission sync'i (`RoleController::syncPermissions()` → `SyncPermissionsAction`), seed işleminden hemen sonra `CheckResourcePermission::flushCache()` çağırır; böylece yeni seed edilen bir permission, TTL'in dolmasını beklemeden anında geçerli olur.
 
-**Octane (Swoole / RoadRunner) veya uzun ömürlü başka bir worker ortamında container request'ler arasında yaşar.** Worker'lar çalışırken `sk:seed-permissions` komutu çalıştırılır ya da admin panelden permission sync tetiklenirse in-memory cache, process yeniden başlatılana kadar eski listeyi korur. Bu şu sonuçlara yol açabilir:
+Bu sayede kit Octane'de de ekstra bir şey yapmadan güvenlidir — Octane (Swoole / RoadRunner) ya da standart PHP-FPM fark etmeksizin, bir `RequestReceived` listener'ına ya da manuel cache temizleme workaround'una gerek yoktur.
 
-- yeni eklenen permission'lar unmapped sayılır ve production'da beklenmedik `403` fırlatır
-- silinen permission'lar cache'de kalmaya devam eder ve kısa süre erişime izin vermeyi sürdürür
-
-Kit Octane **varsaymaz** — FPM, ekstra yapılandırma olmaksızın tamamen doğru çalışır. Octane ortamında bu durumu yönetmek **host uygulama deployment kararıdır**. Önerilen iki yaklaşım:
-
-**Seçenek A — her request başında cache'i temizle** (sıfır kesinti):
-
-`AppServiceProvider` içinde (ya da ayrı bir service provider'da) her request öncesinde container instance'ını silen bir Octane listener kaydedin:
-
-```php
-use Laravel\Octane\Facades\Octane;
-
-Octane::listen(
-    \Laravel\Octane\Events\RequestReceived::class,
-    function () {
-        app()->forgetInstance('check-permission.cache');
-    },
-);
-```
-
-**Seçenek B — her permission sync sonrasında worker'ları yeniden başlat** (daha basit, kısa kesinti):
-
-```bash
-php artisan sk:seed-permissions --fresh && php artisan octane:reload
-```
-
-Veya admin panelden sync tetikleniyorsa hemen ardından `octane:reload` (ya da process manager üzerinden graceful restart) çalıştırın.
-
-Her iki seçenek de stale cache penceresini ortadan kaldırır. Sıfır kesinti gerekiyorsa Seçenek A önerilir; permission değişikliklerinin nadir ve bakım penceresi içinde yapıldığı durumlarda Seçenek B daha basittir.
+**Kalan bir uyarı:** cache store'unuz merkezi olarak paylaşılan değil de process başına ayrı ise (örneğin `array` driver), seed/sync işlemini gerçekleştirmemiş bir worker, 60 saniyelik TTL boyunca hâlâ eski (stale) permission listesini sunmaya devam edebilir — kısa TTL zaten tam olarak bu pencereyi sınırlamak için var.
 
 ## Login Sırasında Status Kontrolü
 

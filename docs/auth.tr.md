@@ -78,6 +78,28 @@ API tarafında Passport kullanılır:
 - `two-factor-challenge`, API 2FA akışını `code` veya `recovery_code` ile tamamlar ve başarı durumunda `{ user, token }` döner
 - istemciler, her başarılı auth yanıtında token beklemek yerine `requires_verification` ve `requires_two_factor` alanlarına göre dallanmalıdır
 
+## Passport Yapılandırması
+
+Token ömürleri ve scope kataloğu `config/starter-kit.php` dosyasında `passport` anahtarı altında tanımlanır ve boot sırasında `StarterKitServiceProvider` tarafından uygulanır (`laravel/passport` kurulu değilse no-op'tur).
+
+| Config anahtarı (`passport.…`) | Env değişkeni | Varsayılan | Etkisi |
+|---|---|---|---|
+| `provider` | `STARTER_KIT_PASSPORT_PROVIDER` | `users` | Otomatik kaydedilen `api` guard'ının arkasındaki auth provider. Guard yalnızca uygulama zaten `auth.guards.api` tanımlamamışsa sentezlenir — kendi tanımladığınız bir custom guard asla ezilmez. |
+| `access_token_minutes` | `PASSPORT_TOKEN_MINUTES` | `60` | Access token TTL'i, `Passport::tokensExpireIn()` üzerinden uygulanır. |
+| `refresh_token_days` | `PASSPORT_REFRESH_TOKEN_DAYS` | `14` | Refresh token TTL'i, `Passport::refreshTokensExpireIn()` üzerinden uygulanır. |
+| `personal_token_days` | `PASSPORT_PERSONAL_TOKEN_DAYS` | `30` | Personal Access Token TTL'i, `Passport::personalAccessTokensExpireIn()` üzerinden uygulanır. |
+| `scopes` | — | 5 örnek scope (`users.read`, `users.write`, `files.read`, `files.write`, `admin`) | `Passport::tokensCan()` ile kaydedilen scope kataloğu. Aynı zamanda `/admin/api-tokens` üzerinden bir PAT oluşturulurken `StoreApiTokenRequest`'in doğruladığı allow-list'tir — bu katalog dışında bir scope istemek, Passport'a hiç ulaşmadan validation hatasıyla reddedilir. Katalogda bulunsa bile literal `*` allow-list'ten çıkarılır, yani UI üzerinden wildcard scope'lu bir PAT asla oluşturulamaz. |
+| `default_scopes` | — | `[]` (boş) | `Passport::setDefaultScope()` ile uygulanan scope(lar). Yalnızca `scopes` doluyken etkilidir. |
+
+Set edildiğinde (null olmayan, boş olmayan bir string) hâlâ öncelikli olan iki legacy env değişkeni vardır:
+
+- `PASSPORT_TOKEN_DAYS` (gün) — `access_token_minutes`'ı ezer; değer dakikaya çevrilmek için `24 * 60` ile çarpılır.
+- `PASSPORT_PERSONAL_TOKEN_MONTHS` (ay) — `personal_token_days`'i ezer; değer güne çevrilmek için `30` ile çarpılır.
+
+İkisi de sırasıyla `passport.access_token_days` / `passport.personal_token_months` config anahtarlarına eşlenir; bu anahtarların varsayılanı `null`'dur — set edilmedikleri sürece yukarıdaki dakika/gün anahtarları geçerli olur.
+
+**Scope enforcement opt-in'dir.** `passport.scopes`'u doldurmak tek başına hiçbir şeyi kısıtlamaz — yalnızca katalog ve (isteğe bağlı) default'u kaydeder. Bir route'u gerçekten kısıtlamak için Passport'un kendi `scope`/`scopes` middleware'ini route'a eklemeniz gerekir (örn. `->middleware('scope:users.read')`). `scopes`'u boş bırakmak Passport'un implicit `*` scope'unu korur, böylece mevcut istemciler ve token'lar değişmeden çalışmaya devam eder. `/admin/api-clients` üzerinden oluşturulan OAuth2 istemcilerinin hiç scope taşımadığını unutmayın (kaldırıldı — bkz. [API İstemcileri ve Token'lar](./api-clients.tr.md)); yukarıdaki scope kataloğu yalnızca Personal Access Token'lar için geçerlidir.
+
 ## API İstemcileri ve Token'lar
 
 Admin paneli, Passport OAuth2 istemcilerini ve Personal Access Token'ları (PAT) yönetmek için bir arayüz sunar:

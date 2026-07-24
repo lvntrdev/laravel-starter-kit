@@ -2,11 +2,11 @@
 
 Kit composable'ları artık pakete dahil edilmiştir ve varsayılan olarak doğrudan vendor kütüphanesinden çalışır — tüketici uygulamasına kopyalanmaları gerekmez. Uygulama genelindeki importlar daha önce olduğu gibi `@/composables/<name>` (veya yalnızca `@/composables` barrel'ı) üzerinden yapılır; Vite `customResolver` ve buna eşlik eden tsconfig path girişi bu yolları **önce local, sonra vendor** olarak çözer: tüketicinin `resources/js/composables/` dizininde bir dosya varsa o kullanılır, yoksa vendor kopyası otomatik devreye girer.
 
-**`useAdminMenu`**, stub olarak gönderilmeye devam eden tek composable'dır (`resources/js/composables/useAdminMenu.ts`). Tüketicinin ürettiği `@/routes/*` dosyalarına bağımlıdır ve projeye özgü menü tanımını barındırır; bu nedenle düzenlenebilir olarak kalmalıdır. `@/composables/index.ts` barrel'ı da stub olarak kalmaya devam eder.
+**`useAdminMenu`** ve **`usePageHeader`**, stub olarak gönderilmeye devam eden tek composable'lardır (`resources/js/composables/useAdminMenu.ts`, `resources/js/composables/usePageHeader.ts`). `useAdminMenu`, tüketicinin ürettiği `@/routes/*` dosyalarına bağımlıdır ve projeye özgü menü tanımını barındırır; bu nedenle düzenlenebilir olarak kalmalıdır. `usePageHeader`, `AdminLayout.vue`'nun (kendisi de bir stub) sağladığı ve `UserForm.vue` gibi form sayfalarının tükettiği page-header context'ini tanımlar; bu nedenle layout ile birlikte düzenlenebilir bir stub olarak gönderilir. `@/composables/index.ts` barrel'ı da stub olarak kalmaya devam eder.
 
 ### Composer üzerinden composable güncellemeleri
 
-15 kit composable'ı pakette yer aldığından, `composer update lvntr/laravel-starter-kit` çalıştırıldığında otomatik olarak güncellenir. Elle dosya kopyalamaya gerek yoktur.
+Kit composable'ları pakette yer aldığından, `composer update lvntr/laravel-starter-kit` çalıştırıldığında otomatik olarak güncellenir. Elle dosya kopyalamaya gerek yoktur.
 
 ### Özelleştirmek için composable yayımlama
 
@@ -32,11 +32,13 @@ Bu değişiklikten önce oluşturulan projelerde tüm composable'lar `resources/
 - onay işlemleri için `useConfirm`
 - flash mesaj yönetimi için `useFlash`
 - dark mode kalıcılığı için `useDarkMode`
+- aktif runtime temasını (`main`/`aura`) uygulamak için `useTheme`
 - Inertia yüklenme durumu için `usePageLoading`
 - tablo veya widget yenilemek için `useRefreshBus`
 - responsive sidebar durumu için `useSidebar`
 - URL ile senkron sekme durumu için `useUrlTab`
 - admin navigasyonu üretmek için `useAdminMenu` ve `useMenuBuilder`
+- `AdminLayout` ile form sayfaları arasında paylaşılan geri-butonlu page-header context'i için `usePageHeader`
 
 ## Temel İstek ve Dialog Yardımcıları
 
@@ -160,6 +162,14 @@ Admin sidebar için masaüstü daraltma ve mobil açık/kapalı durumlarını y�
 
 Dark mode tercihini local storage'da saklar ve `<html>` üzerinde `.dark` sınıfını değiştirir.
 
+### useTheme()
+
+Inertia shared props'taki admin geneli `appearance.theme` değerine göre, `data-sk-theme` attribute'u üzerinden aktif runtime temasını (`main`, `aura`) `<html>` öğesine uygular.
+
+- `theme` — çözümlenmiş runtime tema adı (`appearance` prop'unun eksik olduğu partial reload sırasında `undefined`)
+- `runtimeThemes` — anında geçiş yapılabilen temaların kümesi; sunucu `runtime_themes` göndermezse `['main', 'aura']` varsayılanına döner
+- `applyTheme(value)` — `<html>` üzerinde `data-sk-theme` attribute'unu ayarlar veya kaldırır
+
 ### usePageLoading()
 
 `inertia:start` ve `inertia:finish` tarayıcı event'leri ile sayfa geçiş durumunu izler.
@@ -169,6 +179,13 @@ Dark mode tercihini local storage'da saklar ve `<html>` üzerinde `.dark` sını
 Inertia shared props içindeki flash verisini reactive olarak sunar.
 
 Bu projede flash mesajlar composable içinde değil, `AdminLayout.vue` içinde toast olarak gösterilir.
+
+### usePageHeader()
+
+`AdminLayout.vue`'nun sağladığı ve geri-butonlu form sayfalarının (örn. `UserForm.vue`, `RoleForm.vue`) başlık/alt başlığı ayrı bir page-header yerine ilk kartın içinde göstermek için okuduğu page-header injection context'ini sunar. `useAdminMenu` ile birlikte düzenlenebilir bir stub olarak gönderilir — yukarıdaki nota bakın.
+
+- `active` — yalnızca Aura teması, geri butonu ve sayfanın `header-in-card` opt-in'i aynı anda sağlandığında `true`; aksi halde inject edilen varsayılan pasiftir
+- `title`, `subtitle`, `goBack()` — opt-in yapılmış bir form sayfasının ilk kartı tarafından tüketilir
 
 ## Definition Yardımcıları
 
@@ -303,6 +320,18 @@ Kullanıcı başına accent renk tercihini ve sidebar yüzeyini yönetmek için 
 ### useAppearanceDefaults() — Dahili
 
 Her sayfa yüklenişinde Inertia shared props'tan global görünüm varsayılanlarını (accent renk, dark mode, sidebar stili, logo ve favicon URL'leri) okur. `useAccentColor`, `useDarkMode` ve layout'lar tarafından, kullanıcıya özgü herhangi bir override uygulanmadan önce başlangıç değerini belirlemek için kullanılır.
+
+### getXsrfToken() — Dahili
+
+`useCsrf.ts` dosyasından dışa aktarılır. Laravel `XSRF-TOKEN` cookie'sini okumak için tek doğruluk kaynağıdır — `useApi()`, FileManager upload XHR'ı ve zengin metin editörünün görsel yükleme akışı tutarlı cookie parsing için bunun üzerinden geçer. Cookie yoksa (SSR veya henüz set edilmemişse) `''` döner.
+
+- `getXsrfToken(): string`
+
+### withBasePath() — Dahili
+
+`useBasePath.ts` dosyasından dışa aktarılır. Kendi URL'sini oluşturan ham `fetch`/`XMLHttpRequest` çağrıları için uygulamanın deploy alt-path'ini eklemek amacıyla vendor UI (zengin metin `EditorInput`, FileManager) tarafından kullanılır; Inertia navigasyonu base'i zaten otomatik olarak hesaba katar.
+
+- `withBasePath(path: string): string`
 
 ## Öneri
 

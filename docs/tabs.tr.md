@@ -61,14 +61,21 @@ const tabConfig = TB.tabs()
 - `label(string)`
 - `icon(string)`
 - `description(string)` — label altında ikincil satır (yalnızca dikey düzen)
-- `iconColor(color)` — renkli icon tile preset'i (yalnızca dikey düzen); varsayılan `slate`. Seçenekler: `blue`, `amber`, `emerald`, `purple`, `teal`, `red`, `indigo`, `slate`, `pink`, `orange`, `cyan`, `green`, `yellow`
+- `iconColor(color)` — renkli icon tile preset'i (yalnızca dikey düzen); varsayılan `slate`. Seçenekler: `blue`, `amber`, `emerald`, `purple`, `teal`, `red`, `rose`, `indigo`, `slate`, `pink`, `orange`, `cyan`, `green`, `yellow`
 - `badge(value, severity?)` — sağ tarafta badge (metin veya sayı). Severity: `success` / `warn` / `info` / `danger` / `secondary` (varsayılan)
 - `checked(value = true)` — sağ tarafta yeşil check işareti; `badge` üzerinde önceliklidir
+- `permission(...permissions)` — kullanıcı verilen yetkilerden en az birine sahip değilse sekmeyi gizler (variadic; birden çok değerde OR — `canAny()` ile aynı mantık)
+- `role(...roles)` — kullanıcı verilen rollerden en az birine sahip değilse sekmeyi gizler (variadic; birden çok değerde OR)
 - `visible(boolean | () => boolean)`
 - `disabled(boolean | () => boolean)`
 - `isCard(boolean)`
 - `cardTitle(string)`
 - `cardSubtitle(string)`
+
+```ts
+TB.item().key('billing').label('Faturalama').permission('billing.view', 'billing.manage'),
+TB.item().key('admin-tools').label('Yönetici Araçları').role('admin', 'superadmin'),
+```
 
 ## Zengin Dikey Tab Görünümü
 

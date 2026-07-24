@@ -61,14 +61,21 @@ const tabConfig = TB.tabs()
 - `label(string)`
 - `icon(string)`
 - `description(string)` — secondary line under the label (vertical layout only)
-- `iconColor(color)` — colored icon tile preset (vertical layout only); defaults to `slate`. One of: `blue`, `amber`, `emerald`, `purple`, `teal`, `red`, `indigo`, `slate`, `pink`, `orange`, `cyan`, `green`, `yellow`
+- `iconColor(color)` — colored icon tile preset (vertical layout only); defaults to `slate`. One of: `blue`, `amber`, `emerald`, `purple`, `teal`, `red`, `rose`, `indigo`, `slate`, `pink`, `orange`, `cyan`, `green`, `yellow`
 - `badge(value, severity?)` — trailing badge (text or number). Severity: `success` / `warn` / `info` / `danger` / `secondary` (default)
 - `checked(value = true)` — trailing green check mark; takes precedence over `badge`
+- `permission(...permissions)` — hide the tab unless the user holds at least one of the given permissions (variadic; OR across multiple values — same as `canAny()`)
+- `role(...roles)` — hide the tab unless the user holds at least one of the given roles (variadic; OR across multiple values)
 - `visible(boolean | () => boolean)`
 - `disabled(boolean | () => boolean)`
 - `isCard(boolean)`
 - `cardTitle(string)`
 - `cardSubtitle(string)`
+
+```ts
+TB.item().key('billing').label('Billing').permission('billing.view', 'billing.manage'),
+TB.item().key('admin-tools').label('Admin Tools').role('admin', 'superadmin'),
+```
 
 ## Rich Vertical Tabs
 

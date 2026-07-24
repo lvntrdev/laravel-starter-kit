@@ -138,46 +138,20 @@ Each row action and menu action on `SkDatatable` supports a `.visible(() => can(
 
 The project maps route intent to permission checks. A route name like `users.index` typically resolves to a `users.read` permission check. Routes protected with `check.permission` middleware benefit from this automatic resolution.
 
-If the resolved permission does not exist in the database, the middleware behaves differently by environment:
+If the resolved permission does not exist in the database, the middleware's behavior depends on `app()->environment()` (fail-closed by default, since v13.6.9):
 
-- production: deny the request with `403` so unseeded permissions do not silently expose routes
-- non-production: allow the request and log a warning so developers can seed the missing permission
+- `local`: allow the request and log a warning, so day-to-day development is not blocked by a not-yet-seeded permission
+- every other environment — `production`, `staging`, `uat`, `demo`, `testing`, etc.: deny the request with `403` so a forgotten permission row never silently exposes a route on a public host
+
+**Opt-out:** set `config('starter-kit.permissions.allow_unmapped')` to `true` (env `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`) to restore the pre-v13.6.9 "allow on any non-production environment" behavior. `production` always denies regardless of this flag. See [UPGRADE.md](./UPGRADE.md) for the full migration note.
 
 ### Octane / Long-Running Worker Deployments
 
-`CheckResourcePermission` caches the full permission name list in the service container via `app()->instance('check-permission.cache', ...)`. Under standard PHP-FPM this is a per-request cache — the container is fresh on every request and no stale state can accumulate.
+`CheckResourcePermission` caches the seeded permission-name set with `Cache::remember()` under a short TTL (60 seconds) rather than for the whole request or worker lifetime. Both `php artisan sk:seed-permissions` and the Roles screen's permission sync (`RoleController::syncPermissions()` → `SyncPermissionsAction`) call `CheckResourcePermission::flushCache()` immediately after seeding, so a freshly seeded permission is honored at once instead of waiting out the TTL.
 
-**Under Octane (Swoole / RoadRunner) or any other long-running worker, the container persists across requests.** If you run `sk:seed-permissions` or trigger a permission sync while the workers are running, the in-memory cache retains the old permission list until the process is recycled. This can cause:
+This makes the kit Octane-safe out of the box — no `RequestReceived` listener or manual cache-clearing workaround is required, on Octane (Swoole / RoadRunner) or standard PHP-FPM alike.
 
-- newly added permissions to be treated as unmapped, triggering an unexpected `403` in production
-- removed permissions to remain in the cache and continue allowing access momentarily
-
-The kit does **not** assume Octane — FPM is fully correct with no extra configuration. Handling this under Octane is a **host-app deployment decision**. Two recommended approaches:
-
-**Option A — flush the cache on each request** (zero-downtime):
-
-Register an Octane listener in your `AppServiceProvider` (or a dedicated service provider) that removes the container instance before each request is handled:
-
-```php
-use Laravel\Octane\Facades\Octane;
-
-Octane::listen(
-    \Laravel\Octane\Events\RequestReceived::class,
-    function () {
-        app()->forgetInstance('check-permission.cache');
-    },
-);
-```
-
-**Option B — reload workers after every permission sync** (simpler, brief interruption):
-
-```bash
-php artisan sk:seed-permissions --fresh && php artisan octane:reload
-```
-
-Or, if you trigger a sync from the admin panel, follow it immediately with `octane:reload` (or a graceful restart via your process manager).
-
-Either option eliminates the stale-cache window. Option A is preferred for zero-downtime deployments; Option B is simpler for infrequent permission changes during a maintenance window.
+**Residual caveat:** if your cache store is per-process rather than centrally shared (for example the `array` driver), a worker other than the one that performed the seed/sync can still serve a stale permission-name list for up to the 60-second TTL — the short TTL exists specifically to bound that window.
 
 ## Login Status Check
 

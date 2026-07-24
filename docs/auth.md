@@ -78,6 +78,28 @@ Passport powers the API side:
 - `two-factor-challenge` completes the API 2FA flow with either `code` or `recovery_code` and returns `{ user, token }` on success
 - clients should branch on `requires_verification` and `requires_two_factor` instead of assuming every successful auth response contains a token
 
+## Passport Configuration
+
+Token lifetimes and the scope catalog are set under the `passport` key in `config/starter-kit.php` and applied by `StarterKitServiceProvider` at boot (a no-op when `laravel/passport` isn't installed).
+
+| Config key (`passport.…`) | Env var | Default | Effect |
+|---|---|---|---|
+| `provider` | `STARTER_KIT_PASSPORT_PROVIDER` | `users` | Auth provider backing the auto-registered `api` guard. The guard is only synthesized when the app hasn't already defined `auth.guards.api` — a custom guard you defined yourself is never overridden. |
+| `access_token_minutes` | `PASSPORT_TOKEN_MINUTES` | `60` | Access token TTL, applied via `Passport::tokensExpireIn()`. |
+| `refresh_token_days` | `PASSPORT_REFRESH_TOKEN_DAYS` | `14` | Refresh token TTL, applied via `Passport::refreshTokensExpireIn()`. |
+| `personal_token_days` | `PASSPORT_PERSONAL_TOKEN_DAYS` | `30` | Personal Access Token TTL, applied via `Passport::personalAccessTokensExpireIn()`. |
+| `scopes` | — | 5 example scopes (`users.read`, `users.write`, `files.read`, `files.write`, `admin`) | Scope catalog registered with `Passport::tokensCan()`. It is also the allow-list `StoreApiTokenRequest` validates against when a PAT is created from `/admin/api-tokens` — requesting a scope outside this catalog is rejected with a validation error before it ever reaches Passport. The literal `*` is stripped from the allow-list even if present in the catalog, so a PAT can never be created with the wildcard scope from the UI. |
+| `default_scopes` | — | `[]` (empty) | Scope(s) applied via `Passport::setDefaultScope()`. Only takes effect when `scopes` is non-empty. |
+
+Two legacy env vars still take precedence when set (non-null, non-empty string):
+
+- `PASSPORT_TOKEN_DAYS` (days) overrides `access_token_minutes` — the value is multiplied by `24 * 60` to derive minutes.
+- `PASSPORT_PERSONAL_TOKEN_MONTHS` (months) overrides `personal_token_days` — the value is multiplied by `30` to derive days.
+
+Both map to the `passport.access_token_days` / `passport.personal_token_months` config keys, which are `null` by default; leave them unset to use the minutes/days keys above.
+
+**Scope enforcement is opt-in.** Populating `passport.scopes` alone restricts nothing — it only registers the catalog and (optionally) the default. To actually gate a route, attach Passport's own `scope`/`scopes` middleware (e.g. `->middleware('scope:users.read')`). Leaving `scopes` empty preserves Passport's implicit `*` scope, so existing clients and tokens keep working unchanged. Note that OAuth2 clients created via `/admin/api-clients` don't carry scopes at all (removed — see [API Clients & Tokens](./api-clients.md)); the scope catalog above applies to Personal Access Tokens only.
+
 ## API Clients & Tokens
 
 The admin panel provides a UI for managing Passport OAuth2 clients and Personal Access Tokens (PATs):
