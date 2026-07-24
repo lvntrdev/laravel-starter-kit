@@ -141,7 +141,7 @@ php artisan sk:install --resume
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` is useful for CI or scripted installs; accepts all defaults automatically; the admin password is always a fresh random value (printed at the end) since there is no operator to type one in
-- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
+- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skills entirely — both the Claude Code copies (`.claude/skills/`) and their Codex mirror (`.codex/skills/`). Useful when the consumer uses neither Claude Code nor Codex with the kit's skill bundle
 - `--without-eject` skips the default `User` and `Role` domain eject; runtime stays in vendor and resolves via `class_alias`
 - `--resume` picks up an install that failed partway through: steps already checkpointed in `storage/starter-kit/install-progress.json` are skipped and the run continues from the failed step. Passed without a prior checkpoint, it just runs a full install with a warning.
 

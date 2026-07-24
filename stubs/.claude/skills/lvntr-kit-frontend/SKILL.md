@@ -1,38 +1,38 @@
 ---
 name: lvntr-kit-frontend
-description: "Bu skill'i şu durumlarda aktive et: resources/js/pages/Admin/** altında Vue sayfası yazarken veya değiştirirken; @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading) kullanırken; FormBuilder / DatatableBuilder / TabBuilder (FB / DB / TB) ile form, tablo veya tab yapılandırması oluştururken; useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode composable'larını çağırırken; dialog açarken, tablo refresh'i yaparken, permission gating eklerken. Türkçe tetikleyiciler: tablo ekle, form ekle, dialog aç, vue sayfası, bileşen, composable. Use when building Vue/Inertia/PrimeVue UI (forms, tables, tabs, dialogs) in a Lvntr Starter Kit app."
+description: "Enforces the Lvntr Starter Kit frontend rules. Activate when: writing or modifying Vue pages under resources/js/pages/Admin/**; using @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading); building form/table/tab configs with the FormBuilder / DatatableBuilder / TabBuilder (FB / DB / TB); calling useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode, useTheme, useAccentColor, useDatatableSelection, useMenuBuilder composables; opening dialogs, refreshing tables, adding permission gating, or theming (VITE_SK_THEME). Turkish triggers: tablo ekle, form ekle, dialog aç, vue sayfası, bileşen, composable. Use when building Vue/Inertia/PrimeVue UI (forms, tables, tabs, dialogs) in a Lvntr Starter Kit app."
 ---
 
 # Lvntr Kit — Frontend Skill
 
-Frontend bileşenleri, builder API'leri ve composable'lar için referans skill.
-Backend katmanı (Action/DTO/API/route) → `lvntr-kit-domain`.
-Tüm hard rule'lar, proje şekli ve komut referansı → `lvntr-starter-kit`.
+Reference skill for frontend components, builder APIs, and composables.
+Backend layer (Action/DTO/API/route) → `lvntr-kit-domain`.
+All hard rules, project shape, and command reference → `lvntr-starter-kit`.
 
 ---
 
 ## Iron Law (Frontend)
 
-Bu dört kural ihlal edildiğinde kit bozulur; hiçbir gerekçe geçerli değildir.
+The kit breaks when any of these four rules is violated; no justification is valid.
 
-- **SkForm / SkDatatable / SkTabs kullan — raw PrimeVue kullanma.** `DataTable`, `TabView`, ham `<form>` kullanmak kit'in builder zincirini kırar.
-- **`useDialog()` / `useConfirm()` bypass etme.** Doğrudan PrimeVue `Dialog` import etme, native `confirm()` / `alert()` çağırma. `AppDialog` ve `ConfirmDialog group="app"` zaten `AdminLayout.vue`'da monte edilmiştir.
-- **`useApi()` kullan — `import axios` yok.** API çağrıları kit'in CSRF-aware HTTP client'ından geçmelidir.
-- **Vue'da URL hardcode etme.** `@/routes/**` veya `@/actions/**` import et, `.url()` çağır. Route değişikliğinden sonra `php artisan wayfinder:generate` çalıştır.
+- **Use SkForm / SkDatatable / SkTabs — do not use raw PrimeVue.** Using `DataTable`, `TabView`, or a raw `<form>` breaks the kit's builder chain.
+- **Do not bypass `useDialog()` / `useConfirm()`.** Do not import PrimeVue `Dialog` directly or call native `confirm()` / `alert()`. `AppDialog` and `ConfirmDialog group="app"` are already mounted in `AdminLayout.vue`.
+- **Use `useApi()` — no `import axios`.** API calls must go through the kit's CSRF-aware HTTP client.
+- **Do not hardcode URLs in Vue.** Import from `@/routes/**` or `@/actions/**` and call `.url()`. Run `php artisan wayfinder:generate` after a route change.
 
-> Numaralı kanonik hard rule'lar (1-8) yalnızca `lvntr-starter-kit` core'da; yukarıdakiler bu skill'in frontend özet kuralları (core #4/#5 + SkForm/useApi frontend eklemeleri).
+> The numbered canonical hard rules (1-8) live only in the `lvntr-starter-kit` core; the rules above are this skill's frontend summary (core #4/#5 + the SkForm/useApi frontend additions).
 
 ---
 
 ## Triggers
 
-Bu path veya sembollerden herhangi biri görünüyorsa skill aktiftir:
+The skill is active when any of these paths or symbols appears:
 
 - `resources/js/pages/Admin/**`
 - `@lvntr/components/*` — `SkForm`, `SkDatatable`, `SkTabs`, `AppDialog`, `AvatarUpload`, `PageLoading`
-- `FB`, `DB`, `TB` builder nesneleri
-- `useDialog`, `useConfirm`, `useApi`, `useDefinition`, `useRefreshBus`, `useCan`, `useFlash`, `useSidebar`, `useDarkMode`, `usePageLoading`
-- `refreshKey`, `dtApi`, `definitionOptions`, `inDialog`
+- `FB`, `DB`, `TB` builder objects
+- `useDialog`, `useConfirm`, `useApi`, `useDefinition`, `useRefreshBus`, `useCan`, `useFlash`, `useSidebar`, `useDarkMode`, `usePageLoading`, `useTheme`, `useAccentColor`, `useDatatableSelection`, `useMenuBuilder`
+- `refreshKey`, `dtApi`, `definitionOptions`, `inDialog`, `VITE_SK_THEME`
 
 ---
 
@@ -46,7 +46,7 @@ const formConfig = computed(() =>
   FB.form()
     .cols(2)
     .submit({ url: products.store.url(), method: 'post' })   // OR .resource({ store, update, data, key, id? })
-    .inDialog(true)                                          // dialog mode → cancel emit zorlar
+    .inDialog(true)                                          // dialog mode → forces the cancel emit
     .addFields(
       FB.inputText().key('name'),
       FB.inputNumber().key('price').min(0).fractionDigits(2, 2).suffix('₺'),
@@ -62,24 +62,34 @@ const formConfig = computed(() =>
 <SkForm :config="formConfig" @success="onSuccess" @cancel="onCancel" />
 ```
 
-### Field tipleri
+### Field types
 
 `inputText`, `inputNumber`, `inputOtp`, `inputMask`, `datePicker`,
 `select`, `multiselect`, `radio`, `selectButton`, `checkbox`, `checkboxGroup`,
-`password`, `textarea`, `toggleButton`, `toggleSwitch`, `fileUpload`,
-`colorSelector`, `title`, `slot`
+`password`, `textarea`, `editor`, `toggleButton`, `toggleSwitch`,
+`fileUpload`, `colorSelector`, `title`, `section`, `slot`,
+`translatableText`, `translatableTextarea`, `translatableEditor`
 
-### Her field için ortak chainable'lar
+### Chainable methods shared by every field
 
 `.key(req)`, `.label(s|false)`, `.required(b)`, `.optional()`, `.hint(s)`,
 `.visible(fn)`, `.disabled(fn)`, `.default(v)`, `.props({...})`, `.class(css)`,
 `.hidden(b)`, `.groupPrefix(s)`, `.groupSuffix(s)`, `.controlPosition('left'|'right')`
 
-Seçenek barındıran field'lar: `.optionsUrl(url|fn)` (fn formu cascading select'te reaktif çalışır)
-veya `.definitionOptions('key', { only?, except? })`.
+Fields with options: `.optionsUrl(url|fn)` (the fn form is reactive in a cascading select)
+or `.definitionOptions('key', { only?, except? })`.
 
-`.label()` atlanırsa label `sk-attribute.attributes.{key}`'den otomatik çözümlenir —
-hardcode string yerine `lang/{locale}/sk-attribute.php`'ye ekle.
+If `.label()` is omitted, the label resolves automatically from `sk-attribute.attributes.{key}` —
+add it to `lang/{locale}/sk-attribute.php` instead of hardcoding a string.
+
+### Built-in SkForm guards (v13.6.8+)
+
+- **Double-submit guard** — re-entrant submits while a request is in flight are ignored.
+- **Dirty-form navigation warning** — both Inertia SPA navigation and browser
+  `beforeunload`; opt out per-form with `confirmLeave: false`.
+- **Load-failure retry state** — if remote form data or field options fail to
+  load, the form shows a toast + in-form retry instead of failing silently.
+- Required fields render `aria-required` + a screen-reader "required" hint.
 
 ---
 
@@ -94,7 +104,7 @@ const tableConfig = DB.table<Product>()
   .addColumns(
     DB.column<Product>().key('name').label('sk-product.name'),
     DB.column<Product>().key('price').render((row, escape) =>
-      `<b>${escape(String(row.price))} ₺</b>`),          // escape: XSS önlemi
+      `<b>${escape(String(row.price))} ₺</b>`),          // escape: XSS prevention
     DB.column<Product>().key('status').tag('definition').tagKey('productStatus').tagOutlined(),
   )
   .addFilters(
@@ -117,11 +127,16 @@ const tableConfig = DB.table<Product>()
 <SkDatatable :config="tableConfig" refreshKey="products-table" />
 ```
 
-Backend endpoint `ProductDatatableQuery::response()` → `DatatableQueryBuilder` zincirinden dönmeli.
-`SkDatatable` tam olarak `DataTableResponse<T>` şeklini bekler — başka shape çalışmaz.
+The backend endpoint `ProductDatatableQuery::response()` must return through the `DatatableQueryBuilder` chain.
+`SkDatatable` expects exactly the `DataTableResponse<T>` shape — no other shape works.
 
-`tag('definition')` eşleşen definition'ın `severity`'siyle otomatik renklendirir.
-`.render()` içinde **daima** `escape` callback kullan — XSS önlemi.
+`tag('definition')` colors automatically using the matching definition's `severity`.
+**Always** use the `escape` callback inside `.render()` — this prevents XSS.
+
+Bulk selection across pages goes through `useDatatableSelection()` — do not
+hand-roll checkbox state. Sortable headers are keyboard-operable and the
+empty state distinguishes "no results for your filter" (with a Clear-filters
+action) from "no records at all" — don't reimplement either.
 
 ---
 
@@ -148,35 +163,42 @@ const tabConfig = TB.tabs()
 </SkTabs>
 ```
 
-Slot adı `tab.key` ile birebir eşleşmelidir. Aktif tab URL'ye `queryParam` (default `tab`) üzerinden senkronize edilir. Permission/role gating tab'ı tamamen gizler — disabled değil.
+The slot name must match `tab.key` exactly. The active tab is synchronized to the URL through `queryParam` (default `tab`). Permission/role gating hides the tab completely — it does not disable it.
 
 ---
 
 ## §4 — Composables
 
-`resources/js/composables/` altında, `@/composables`'dan re-export edilir.
+The kit composables **run from the vendor package** and resolve local-first:
+`@/composables/<name>` uses a local copy when present (published via
+`php artisan sk:publish --tag=composables` or customized) and otherwise falls
+back to the vendor copy. Only `useAdminMenu` (menu definition) and
+`usePageHeader` ship as editable app stubs.
 
-| Composable | Kısa açıklama |
+| Composable | Short description |
 |---|---|
-| `useDialog()` | `dialog.open(Component, props, title, opts)`, `dialog.openAsync(Component, dataUrl, title, opts)`, `dialog.close()`. Opts içinde `refreshKey` geçilirse kayıt başarısında tablo otomatik refresh olur. **PrimeVue Dialog doğrudan import edilmez.** |
-| `useConfirm()` | `confirmDelete(cb, message?, icon?)` ve `confirmAction({...})` — `AdminLayout.vue`'da `<ConfirmDialog group="app" />` zaten monte. **Native `confirm()`/`alert()` kullanılmaz.** |
-| `useApi()` | CSRF-aware HTTP client. `api.get<T>(url)`, `.post`, `.put`, `.patch`, `.delete`. Inertia visit'in yetmediği durumlarda kullan (autocomplete, file upload). `useApi({ toast: false })` hata toast'ını kapatır. |
-| `useDefinition()` | `/definitions` endpoint'inden cache'li enum'lar. `await load(['userStatus'])`, sonra `list(key)`, `options(key)`, `find(key, value)`. `.definitionOptions(key)` dolaylı olarak kullanır. |
-| `useRefreshBus()` | Bileşenler arası refresh. Tablolar `refreshKey` ile register olur; mutasyonlar `bus.refresh('o-key')` çağırır. `useDialog({ refreshKey })` bunu otomatik wire eder. |
-| `useCan()` | `can(perm)`, `canAny([perms])`, `hasRole(role)` — Inertia shared props'tan gelir. |
-| `useFlash()` | Reaktif Inertia flash: `flash.value = { success?, error?, warning?, info?, status? }`. |
+| `useDialog()` | `dialog.open(Component, props, title, opts)`, `dialog.openAsync(Component, dataUrl, title, opts)`, `dialog.close()`. If `refreshKey` is passed in opts, the table refreshes automatically after a successful save. **Never import PrimeVue Dialog directly.** |
+| `useConfirm()` | `confirmDelete(cb, message?, icon?)` and `confirmAction({...})` — `<ConfirmDialog group="app" />` is already mounted in `AdminLayout.vue`. **Never use native `confirm()`/`alert()`.** |
+| `useApi()` | CSRF-aware HTTP client. `api.get<T>(url)`, `.post`, `.put`, `.patch`, `.delete`. Use when an Inertia visit is insufficient (autocomplete, file upload). `useApi({ toast: false })` disables error toasts. |
+| `useDefinition()` | Cached enums from the `/definitions` endpoint. `await load(['userStatus'])`, then `list(key)`, `options(key)`, `find(key, value)`. `.definitionOptions(key)` uses it indirectly. |
+| `useRefreshBus()` | Cross-component refresh. Tables register with `refreshKey`; mutations call `bus.refresh('o-key')`. `useDialog({ refreshKey })` wires this automatically. |
+| `useCan()` | `can(perm)`, `canAny([perms])`, `hasRole(role)` — comes from Inertia shared props. |
+| `useFlash()` | Reactive Inertia flash: `flash.value = { success?, error?, warning?, info?, status? }`. |
+| `useDatatableSelection()` | Cross-page bulk selection state for `SkDatatable` bulk actions (`BulkSelectionMode`, `BulkActionPayload`). |
+| `useMenuBuilder()` | Fluent builder consumed by `useAdminMenu` to declare the sidebar menu (groups, items, permissions). |
 | `useSidebar()` | `{ isCollapsed, isMobileOpen, isMobile, toggle, openMobile, closeMobile }`. |
-| `useDarkMode()` | `{ isDark, toggleDark }` — `<html>`'e `.dark` toggle, localStorage'a persist. |
-| `usePageLoading(delay = 150)` | `{ isLoading, isNavigating }` — anti-flicker gecikmeli Inertia navigasyon flag'leri. |
-| `useUrlTab(tabs, paramName?)` | Manuel URL↔tab senkronu. TabBuilder bunu içeride yapar; yalnızca özel (custom) tab'lar için gerekir. |
+| `useDarkMode()` | `{ isDark, toggleDark }` — toggles `.dark` on `<html>` and persists to localStorage. |
+| `useTheme()` / `useAccentColor()` | Runtime appearance: active theme, accent color and sidebar style (`ACCENT_COLORS`, `SIDEBAR_STYLES`); pairs with `useAppearanceDefaults()`. |
+| `usePageLoading(delay = 150)` | `{ isLoading, isNavigating }` — Inertia navigation flags with an anti-flicker delay. |
+| `useUrlTab(tabs, paramName?)` | Manual URL↔tab synchronization. TabBuilder handles this internally; needed only for custom tabs. |
 
 ---
 
-## §5 — Frontend recipe (entity eklerken adımlar 14-16)
+## §5 — Frontend recipe (steps 14-16 when adding an entity)
 
-Tam adım sırası `lvntr-starter-kit` §4'tedir. Aşağıdakiler yalnızca frontend kısmıdır.
+The complete step sequence is in `lvntr-kit-domain` (backend steps 1-13). The following is only the frontend portion.
 
-**Adım 14 — Index.vue**
+**Step 14 — Index.vue**
 
 ```vue
 <!-- resources/js/pages/Admin/Products/Index.vue -->
@@ -198,18 +220,18 @@ const tableConfig = DB.table<Product>()
     DB.action<Product>()
       .icon('pi pi-pencil').severity('warn').label('sk-button.edit')
       .visible(() => can('products.update'))
-      .handle((p) => dialog.open(ProductForm, { id: p.id, inDialog: true }, 'Ürün Düzenle', { refreshKey: 'products-table' })),
+      .handle((p) => dialog.open(ProductForm, { id: p.id, inDialog: true }, 'Edit Product', { refreshKey: 'products-table' })),
   )
   .build();
 </script>
 
 <template>
   <SkDatatable :config="tableConfig" refreshKey="products-table" />
-  <Button v-can="'products.create'" @click="dialog.open(ProductForm, { inDialog: true }, 'Yeni Ürün', { refreshKey: 'products-table' })" />
+  <Button v-can="'products.create'" @click="dialog.open(ProductForm, { inDialog: true }, 'New Product', { refreshKey: 'products-table' })" />
 </template>
 ```
 
-**Adım 15 — ProductForm.vue**
+**Step 15 — ProductForm.vue**
 
 ```vue
 <!-- resources/js/pages/Admin/Products/components/ProductForm.vue -->
@@ -239,52 +261,53 @@ const formConfig = computed(() =>
 </template>
 ```
 
-**Adım 16 — Dialog wiring ve refresh**
+**Step 16 — Dialog wiring and refresh**
 
 ```ts
-// Dialog açmak
-dialog.open(ProductForm, { inDialog: true }, 'Yeni Ürün', { refreshKey: 'products-table' });
+// Opening a dialog
+dialog.open(ProductForm, { inDialog: true }, 'New Product', { refreshKey: 'products-table' });
 
-// Async data ile dialog (edit flow)
-dialog.openAsync(ProductForm, products.show.url(id), 'Ürün Düzenle', { refreshKey: 'products-table' });
+// Dialog with async data (edit flow)
+dialog.openAsync(ProductForm, products.show.url(id), 'Edit Product', { refreshKey: 'products-table' });
 
-// Manuel refresh (dialog dışı mutasyon sonrası)
+// Manual refresh (after a mutation outside the dialog)
 const bus = useRefreshBus();
 bus.refresh('products-table');
 ```
 
 ---
 
-## §6 — Frontend pitfall'lar
+## §6 — Frontend pitfalls
 
-1. **URL hardcode** — `fetch('/api/products')` Wayfinder typing'i kırar. `@/routes/products`'tan import et, `.url()` çağır. Route değişince `php artisan wayfinder:generate` unut.
-2. **Custom datatable shape** — `SkDatatable` tam olarak `DataTableResponse<T>` bekler. Backend endpoint her zaman `DatatableQueryBuilder` zincirinden geçmelidir; elle şekillendirilmiş response çalışmaz.
-3. **Hardcode label** — `.label('Ürün Adı')` yerine çeviri anahtarı kullan (`'sk-product.name'`). Eksik anahtar `sk-attribute.attributes.{key}`'den otomatik çözümlenir.
-4. **Eksik `refreshKey`** — Mutasyon dialog'u olan her tabloda `<SkDatatable refreshKey="...">` VE `useDialog({ refreshKey: '...' })` birlikte set edilmeli. Birini atlarsan tablo kayıt sonrası refresh olmaz.
-5. **`wayfinder:generate` atlamak** — Route eklendikten veya değiştirildikten sonra generate çalıştırılmazsa Vue import'ları bozulur ya da eski URL'ye düşer.
+1. **Hardcoded URL** — `fetch('/api/products')` breaks Wayfinder typing. Import from `@/routes/products` and call `.url()`. Do not forget `php artisan wayfinder:generate` when a route changes.
+2. **Custom datatable shape** — `SkDatatable` expects exactly `DataTableResponse<T>`. The backend endpoint must always go through the `DatatableQueryBuilder` chain; a hand-shaped response does not work.
+3. **Hardcoded label** — use a translation key (`'sk-product.name'`) instead of `.label('Product Name')`. A missing key resolves automatically from `sk-attribute.attributes.{key}`.
+4. **Missing `refreshKey`** — every table with a mutation dialog must set both `<SkDatatable refreshKey="...">` AND `useDialog({ refreshKey: '...' })`. If either is omitted, the table does not refresh after saving.
+5. **Skipping `wayfinder:generate`** — if generation does not run after adding or changing a route, Vue imports break or resolve to the old URL.
+6. **Editing `resources/css/theme/_active.css`** — it is generated by the `skTheme()` vite plugin. Theme changes go into the `resources/css/theme/{main,custom}/` slot tree (`VITE_SK_THEME` selects the active theme).
 
 ---
 
-## Hard rule hatırlatma (bu skill doğrudan tetiklendiğinde)
+## Hard rule reminder (when this skill triggers directly)
 
-Tam liste `lvntr-starter-kit` §1'de (8 kural). Frontend için kritik olan #1, #2, #4, #5:
+The full list is in `lvntr-starter-kit` §1 (8 rules). The critical frontend rules are #1, #2, #4, #5:
 
-- **#1** `vendor/lvntr/laravel-starter-kit/` düzenleme yok
-- **#2** Auto-generated düzenleme yok (`wayfinder/routes/actions`, `*.d.ts`, `_ide_helper*`, `.phpstorm.meta.php`)
-- **#4** `useDialog()`/`useConfirm()` bypass yok (doğrudan PrimeVue `Dialog`, native `confirm()/alert()` yok)
-- **#5** Vue'da URL hardcode yok → `@/routes`/`@/actions` `.url()` + `wayfinder:generate`
+- **#1** Do not edit `vendor/lvntr/laravel-starter-kit/`
+- **#2** Do not edit auto-generated files (`wayfinder/routes/actions`, `*.d.ts`, `_ide_helper*`, `.phpstorm.meta.php`, `_active.css`)
+- **#4** Do not bypass `useDialog()`/`useConfirm()` (no direct PrimeVue `Dialog`, no native `confirm()/alert()`)
+- **#5** No hardcoded URLs in Vue → `@/routes`/`@/actions` `.url()` + `wayfinder:generate`
 
 ---
 
 ## Cross-ref
 
-`lvntr-starter-kit` ile birlikte çalışır (core: tüm 8 hard rule, proje şekli, komut referansı, permissions, i18n).
-Aynı entity'nin backend'i (Action / DTO / API / route) → `lvntr-kit-domain`.
+Works with `lvntr-starter-kit` (core: all 8 hard rules, project shape, command reference, permissions, i18n).
+The same entity's backend (Action / DTO / API / route) → `lvntr-kit-domain`.
 
 ---
 
 ## Bottom Line
 
-Form için `FB` + `SkForm`, tablo için `DB` + `SkDatatable`, tab için `TB` + `SkTabs`.
-Dialog `useDialog()`, onay `useConfirm()`, HTTP `useApi()`, refresh `useRefreshBus()`.
-URL hardcode yok; `@/routes/**` + `.url()`.
+For forms, `FB` + `SkForm`; for tables, `DB` + `SkDatatable`; for tabs, `TB` + `SkTabs`.
+Dialog with `useDialog()`, confirmation with `useConfirm()`, HTTP with `useApi()`, refresh with `useRefreshBus()`.
+No hardcoded URLs; `@/routes/**` + `.url()`. Theme edits go into the slot tree, never into `_active.css`.

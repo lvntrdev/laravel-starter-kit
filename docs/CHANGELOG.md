@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## Unreleased
+
+### Added
+
+- **The kit's AI skills now work with Codex as well as Claude Code.** `sk:install` publishes the three skills to `.claude/skills/` and mirrors them to `.codex/skills/`, which the OpenAI Codex CLI reads natively. Edit the `.claude` copies to customize — the `.codex` mirror is regenerated on every `sk:install`/`sk:update` and never touches your own skills in that directory. `sk:install --without-ai-skill` skips both trees; `sk:update --without-ai-skill` skips regenerating the mirror for one run.
+
+### Changed
+
+- **The shipped AI skills were brought up to date with the current kit** (they still described the pre-v13.6.0 layout): vendor-first architecture, `sk:eject` and the install-time User/Role eject, `sk:doctor`, the full `sk:publish` tag list, `make:sk-domain --with=` extras, the real `sk:update` overwrite rules, the current composables and FormBuilder field types, SkForm's safety guards, and the theme system. Skill bodies are now in English (Turkish trigger keywords retained) so one skill set serves both assistants.
+
 ## 2026-07-22 — v13.6.11
 
 ### Fixed

@@ -4,6 +4,7 @@ namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Lvntr\StarterKit\Console\Commands\Concerns\MirrorsAiSkills;
 use Lvntr\StarterKit\Console\Commands\Concerns\WritesFilesAtomically;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 
@@ -13,11 +14,13 @@ use function Laravel\Prompts\spin;
 
 class UpdateCommand extends Command
 {
+    use MirrorsAiSkills;
     use WritesFilesAtomically;
 
     protected $signature = 'sk:update
         {--force : Overwrite all files including user-modified ones}
-        {--dry-run : Show what would be updated without making changes}';
+        {--dry-run : Show what would be updated without making changes}
+        {--without-ai-skill : Skip regenerating the .codex/skills AI-skill mirror}';
 
     protected $description = 'Update Starter Kit files while preserving user modifications';
 
@@ -605,6 +608,19 @@ class UpdateCommand extends Command
         // the ServiceProvider rebuilds a fresh plan on the next request.
         if (! $dryRun) {
             StarterKitServiceProvider::flushBackwardCompatAliasCache();
+        }
+
+        // 6c. Regenerate only the kit-owned Codex skills from the consumer's
+        // Claude copies. User-owned .codex skills are outside this mirror.
+        // Best-effort: a mirror failure must not fail an otherwise completed update.
+        try {
+            $hashes = $this->loadHashRegistry();
+            $this->mirrorAiSkills(
+                dryRun: $dryRun,
+                skipped: $this->option('without-ai-skill') || $this->aiSkillsWereSkipped($hashes),
+            );
+        } catch (\Throwable $e) {
+            $this->components->warn('AI skills could not be mirrored to .codex/skills: '.$e->getMessage());
         }
 
         // Optional: inform user about vendor-resident paths still in app/

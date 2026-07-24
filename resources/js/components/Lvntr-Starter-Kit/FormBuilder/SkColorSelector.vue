@@ -286,6 +286,32 @@
             900: '#1c1917',
             950: '#0c0a09',
         },
+        white: {
+            50: '#ffffff',
+            100: '#ffffff',
+            200: '#ffffff',
+            300: '#ffffff',
+            400: '#ffffff',
+            500: '#ffffff',
+            600: '#ffffff',
+            700: '#ffffff',
+            800: '#ffffff',
+            900: '#ffffff',
+            950: '#ffffff',
+        },
+        black: {
+            50: '#000000',
+            100: '#000000',
+            200: '#000000',
+            300: '#000000',
+            400: '#000000',
+            500: '#000000',
+            600: '#000000',
+            700: '#000000',
+            800: '#000000',
+            900: '#000000',
+            950: '#000000',
+        },
     };
 
     type ColorFormat = 'hex' | 'name' | 'name-tone';
@@ -325,6 +351,8 @@
             'zinc',
             'neutral',
             'stone',
+            'white',
+            'black',
         ],
         tones: () => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950],
         format: 'name',
@@ -436,7 +464,9 @@
 
     function getToneStyle(color: string, tone: number): Record<string, string> {
         const hex = COLOR_PALETTE[color]?.[tone] ?? 'transparent';
-        return { backgroundColor: hex, outlineColor: hex };
+        // Pure white would blend into the light background — give it a visible ring.
+        const outline = hex.toLowerCase() === '#ffffff' ? '#cbd5e1' : hex;
+        return { backgroundColor: hex, outlineColor: outline };
     }
 
     function isToneActive(color: string, tone: number): boolean {
@@ -451,6 +481,8 @@
             :options="colors"
             :disabled="disabled"
             :invalid="invalid"
+            filter
+            filter-placeholder="Search color"
             class="w-full"
             @update:model-value="updateColor"
         >
@@ -485,14 +517,17 @@
 
         <div
             v-if="showToneSelector && selectedColor"
-            class="flex items-center gap-2 flex-wrap mt-2 border border-slate-300 rounded p-4 dark:border-surface-700"
+            class="flex items-center gap-2 flex-wrap mt-2 border border-slate-300 rounded p-3 dark:border-surface-700"
         >
-            <span class="font-bold text-surface-500 dark:text-surface-400 shrink-0">Tone:</span>
-            <ul class="flex gap-1.5 flex-wrap">
+            <span class="text-sm font-bold text-surface-500 dark:text-surface-400 shrink-0">
+                Tone:
+                <span v-if="selectionLabel" class="ml-1 font-normal text-surface-700 dark:text-surface-300">{{ selectionLabel }}</span>
+            </span>
+            <ul class="flex gap-1 flex-wrap">
                 <li v-for="tone in tones" :key="`tone-${tone}`">
                     <button
                         type="button"
-                        class="size-6 rounded-full border-2 outline-1 transition"
+                        class="size-5 rounded-full border-2 outline-1 transition"
                         :class="
                             isToneActive(selectedColor, tone)
                                 ? 'border-surface-900 dark:border-surface-0 scale-110'
@@ -505,7 +540,6 @@
                     />
                 </li>
             </ul>
-            <span class="text-surface-700 dark:text-surface-300 ml-1">{{ selectionLabel }}</span>
         </div>
     </div>
 </template>

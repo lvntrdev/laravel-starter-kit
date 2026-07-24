@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## Yayınlanmamış
+
+### Eklendi
+
+- **Kit'in AI skill'leri artık Claude Code'un yanı sıra Codex ile de çalışıyor.** `sk:install` üç skill'i `.claude/skills/` dizinine yayınlar ve OpenAI Codex CLI'ın native okuduğu `.codex/skills/` dizinine aynalar. Özelleştirmek için `.claude` kopyalarını düzenleyin — `.codex` aynası her `sk:install`/`sk:update`'te yeniden üretilir ve o dizindeki kendi skill'lerinize asla dokunmaz. `sk:install --without-ai-skill` iki ağacı da atlar; `sk:update --without-ai-skill` tek bir çalışmada aynanın yeniden üretilmesini atlar.
+
+### Değiştirildi
+
+- **Paketle gelen AI skill'leri güncel kit ile hizalandı** (hâlâ v13.6.0 öncesi yapıyı anlatıyorlardı): vendor-first mimari, `sk:eject` ve kurulum sırasındaki User/Role eject'i, `sk:doctor`, tam `sk:publish` tag listesi, `make:sk-domain --with=` ekleri, gerçek `sk:update` üzerine-yazma kuralları, güncel composable'lar ve FormBuilder alan tipleri, SkForm güvenlik korumaları ve tema sistemi. Skill gövdeleri artık İngilizce (Türkçe tetikleyici anahtar kelimeler korundu) — tek skill seti iki asistana da hizmet ediyor.
+
 ## 2026-07-22 — v13.6.11
 
 ### Düzeltildi

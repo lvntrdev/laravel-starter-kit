@@ -1,10 +1,10 @@
-# Claude Code Skills
+# AI Skills (Claude Code & Codex)
 
-The starter kit ships three Claude Code skills that teach any compatible AI coding assistant the kit's conventions, hard rules, and builder APIs. The skills work standalone — they do not require any external tooling or orchestration layer.
+The starter kit ships three AI skills that teach any compatible AI coding assistant the kit's conventions, hard rules, and builder APIs. The skills work standalone — they do not require any external tooling or orchestration layer — and are published for both **Claude Code** (`.claude/skills/`) and **OpenAI Codex CLI** (`.codex/skills/`), which reads project-level skills from that directory natively.
 
 ## Installation
 
-`php artisan sk:install` copies the skills into your host application's `.claude/skills/` directory automatically.
+`php artisan sk:install` copies the skills into your host application's `.claude/skills/` directory and mirrors them to `.codex/skills/` automatically. The `.codex` copies are a **generated mirror**: edit the `.claude` copies (customizations included) and `sk:install`/`sk:update` re-sync the mirror; anything else you place under `.codex/skills/` is never touched.
 
 To skip the skills:
 
@@ -12,7 +12,7 @@ To skip the skills:
 php artisan sk:install --without-ai-skill
 ```
 
-The `--without-ai-skill` flag is set at install time (`sk:install`). `sk:update` has no such flag — it automatically honors the install-time choice and never re-adds skipped skills.
+The `--without-ai-skill` flag at install time skips both directories, and `sk:update` honors that choice automatically (it never re-adds skipped skills). `sk:update --without-ai-skill` additionally skips regenerating the `.codex/skills/` mirror on a single update run.
 
 ## How They Activate
 
@@ -60,4 +60,5 @@ What it covers:
 
 - Skills are language-agnostic: they trigger on Turkish keywords as well (for example `yeni domain`, `tablo ekle`, `form ekle`).
 - The three skills cross-reference each other; activating one will point the assistant to the others when the scope warrants it.
-- If you do not use Claude Code, pass `--without-ai-skill` to skip the copy step entirely — no other behavior changes.
+- If you use neither Claude Code nor Codex, pass `--without-ai-skill` to skip the copy step entirely — no other behavior changes.
+- To customize a skill, edit its `.claude/skills/` copy — the `.codex/skills/` mirror picks the change up on the next `sk:install`/`sk:update`. Direct edits under `.codex/skills/` to the three kit skills are overwritten by the mirror.

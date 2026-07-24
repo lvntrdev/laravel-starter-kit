@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **AI skills are now published for Codex too.** `sk:install` copies the kit's three AI skills to `.claude/skills/` (Claude Code) and mirrors them to `.codex/skills/`, which the OpenAI Codex CLI reads natively as project-level skills. The `.codex` copies are a generated mirror of the published `.claude` tree (consumer customizations included): install/update regenerate only the kit-owned skill directories and never touch anything else under `.codex/skills/`; a kit skill dir whose `.claude` source is absent is left alone. `sk:install --without-ai-skill` skips both trees (and keeps suppressing the mirror on later updates via the `__skipped__` sentinel), and a new `sk:update --without-ai-skill` flag skips regenerating the mirror on a single run. The mirror is best-effort — a failure warns instead of failing an otherwise completed install/update.
+
+### Changed
+
+- **The three shipped AI skills (`stubs/.claude/skills/`) were refreshed from v13.5.11-era content to the current kit.** Now covered: the vendor-first architecture with `class_alias`/local-first override semantics, `sk:eject` (14 ejectable domains) and the install-time User/Role eject, `sk:doctor`, `sk:install --resume/--without-eject`, `file-manager:purge-trash`, the full 12-tag `sk:publish` list (adds `filemanager`, `composables`, `plugins`), `make:sk-domain --with=/--relations=`, the actual `sk:update` semantics (SAFE_UPDATE now only regenerates `PermissionEnum.php`; `permission-resources.php`/`settings.php` are never overwritten; vendor-resident paths are reported, not copied), the current composable surface (vendor-resident, local-first), the full FormBuilder field-type list (adds `editor`, `section`, `translatableText/Textarea/Editor`), the SkForm safety guards, and the `VITE_SK_THEME` theme system. Skill bodies are now fully in English (Turkish trigger keywords retained) so the same files serve both Claude and Codex.
+
 ## [13.6.11] - 2026-07-22
 
 ### Fixed

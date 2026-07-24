@@ -1,10 +1,10 @@
-# Claude Code Skill'leri
+# AI Skill'leri (Claude Code & Codex)
 
-Starter kit, herhangi bir uyumlu yapay zeka kodlama asistanına kit'in convention'larını, hard rule'larını ve builder API'lerini öğreten üç Claude Code skill'i ile birlikte gelir. Skill'ler bağımsız çalışır — herhangi bir harici araç ya da orkestrasyon katmanı gerektirmez.
+Starter kit, herhangi bir uyumlu yapay zeka kodlama asistanına kit'in convention'larını, hard rule'larını ve builder API'lerini öğreten üç AI skill'i ile birlikte gelir. Skill'ler bağımsız çalışır — herhangi bir harici araç ya da orkestrasyon katmanı gerektirmez — ve hem **Claude Code** (`.claude/skills/`) hem de proje seviyesindeki skill'leri bu dizinden native okuyan **OpenAI Codex CLI** (`.codex/skills/`) için yayınlanır.
 
 ## Kurulum
 
-`php artisan sk:install` komutu skill'leri otomatik olarak host uygulamanızın `.claude/skills/` dizinine kopyalar.
+`php artisan sk:install` komutu skill'leri host uygulamanızın `.claude/skills/` dizinine kopyalar ve otomatik olarak `.codex/skills/` dizinine aynalar. `.codex` kopyaları **üretilen bir ayna**dır: `.claude` kopyalarını düzenleyin (özelleştirmeler dahil), `sk:install`/`sk:update` aynayı yeniden senkronlar; `.codex/skills/` altına koyduğunuz diğer hiçbir şeye dokunulmaz.
 
 Skill'leri atlamak için:
 
@@ -12,7 +12,7 @@ Skill'leri atlamak için:
 php artisan sk:install --without-ai-skill
 ```
 
-`--without-ai-skill` flag'i kurulum sırasında (`sk:install`) verilir. `sk:update`'te böyle bir flag yoktur — kurulumdaki tercihi otomatik korur ve atlanan skill'leri yeniden eklemez.
+Kurulumdaki `--without-ai-skill` flag'i iki dizini de atlar; `sk:update` bu tercihi otomatik korur (atlanan skill'leri yeniden eklemez). `sk:update --without-ai-skill` ise tek bir update çalışmasında `.codex/skills/` aynasının yeniden üretilmesini atlar.
 
 ## Nasıl Tetiklenir
 
@@ -60,4 +60,5 @@ Kapsadıkları:
 
 - Skill'ler dil bağımsızdır: Türkçe anahtar kelimelerle de tetiklenir (örneğin `yeni domain`, `tablo ekle`, `form ekle`).
 - Üç skill birbirine çapraz referans verir; kapsam gerektirdiğinde biri etkinleştiğinde asistanı diğerlerine yönlendirir.
-- Claude Code kullanmıyorsanız kopyalama adımını tamamen atlamak için `--without-ai-skill` flag'ini geçin — başka hiçbir davranış değişmez.
+- Ne Claude Code ne Codex kullanıyorsanız kopyalama adımını tamamen atlamak için `--without-ai-skill` flag'ini geçin — başka hiçbir davranış değişmez.
+- Bir skill'i özelleştirmek için `.claude/skills/` kopyasını düzenleyin — `.codex/skills/` aynası değişikliği bir sonraki `sk:install`/`sk:update`'te alır. Üç kit skill'inin `.codex/skills/` altındaki kopyalarına yapılan doğrudan düzenlemeler ayna tarafından üzerine yazılır.

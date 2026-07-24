@@ -59,7 +59,7 @@ php artisan sk:install --without-eject
 
 - `--force` overwrites existing publishable files
 - `--no-interaction` accepts all defaults automatically; useful for CI or scripted installs
-- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skill (`stubs/.claude/skills/`) — useful when the consumer does not use Claude Code with the kit's skill bundle
+- `--without-ai-skill` skips publishing the Lvntr Starter Kit AI skills entirely — both the Claude Code copies (`.claude/skills/`) and their Codex mirror (`.codex/skills/`). Useful when the consumer uses neither Claude Code nor Codex with the kit's skill bundle
 - `--without-eject` skips the default `User` and `Role` domain eject on a first install; the runtime stays in vendor and resolves via `class_alias`. Omit this flag to have `app/Domain/User/` and `app/Domain/Role/` created automatically. See [install.md](./install.md) for the ownership trade-off.
 
 ## `sk:update`
@@ -70,7 +70,10 @@ Use this after `composer update`.
 php artisan sk:update
 php artisan sk:update --dry-run
 php artisan sk:update --force
+php artisan sk:update --without-ai-skill
 ```
+
+- `--without-ai-skill` skips regenerating the `.codex/skills/` AI-skill mirror for this run. (An install-time `--without-ai-skill` opt-out is honored automatically — skipped skills are never re-added.)
 
 ## `sk:upgrade`
 

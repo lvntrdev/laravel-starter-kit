@@ -1,6 +1,6 @@
 ---
 name: lvntr-starter-kit
-description: "Use this skill whenever working in a Laravel project that has the Lvntr Starter Kit (lvntr/laravel-starter-kit) installed. ALWAYS activate when: writing or modifying controllers under app/Http/Controllers/Admin or app/Http/Controllers/Api; adding business logic under app/Domain/; creating FormRequests, API Resources, Actions, DTOs, Queries, Events, Listeners; touching routes/web/*-route.php or routes/api/*-route.php; building Vue pages under resources/js/pages/Admin/**; using @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading); calling FB/DB/TB builders or composables (useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode); editing lang/{locale}/sk-*.php translations; running sk:install / sk:update / sk:publish / sk:upgrade / make:sk-domain / remove:sk-domain / sk:seed-permissions / site:install / env:sync; updating config/permission-resources.php, config/starter-kit.php, config/settings.php; working with the file manager, activity log, definitions, or settings panel; or when the user mentions: starter kit, sk-, ApiResponse, to_api, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder, RoleEnum, PermissionEnum, definitionOptions, refreshKey, dtApi. Also triggers on Turkish: yeni domain, domain ekle, tablo ekle, form ekle, dialog aç. Enforces the kit's hard rules and upgrade-safety, and routes builder/domain detail to the lvntr-kit-frontend / lvntr-kit-domain skills."
+description: "Use this skill whenever working in a Laravel project that has the Lvntr Starter Kit (lvntr/laravel-starter-kit) installed. ALWAYS activate when: writing or modifying controllers under app/Http/Controllers/Admin, Api or Service; adding business logic under app/Domain/; creating FormRequests, API Resources, Actions, DTOs, Queries, Events, Listeners; touching routes/web/*-route.php or routes/api/*-route.php; building Vue pages under resources/js/pages/Admin/**; using @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading); calling FB/DB/TB builders or composables (useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode, useTheme, useAccentColor, useDatatableSelection, useMenuBuilder); editing lang/{locale}/sk-*.php translations; running sk:install / sk:update / sk:publish / sk:upgrade / sk:doctor / sk:eject / make:sk-domain / remove:sk-domain / sk:seed-permissions / site:install / env:sync / file-manager:purge-trash; updating config/permission-resources.php, config/starter-kit.php, config/settings.php; working with the file manager, activity log, definitions, settings panel, or theme system (VITE_SK_THEME); or when the user mentions: starter kit, sk-, ApiResponse, to_api, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder, RoleEnum, PermissionEnum, definitionOptions, refreshKey, dtApi, eject, vendor-first. Also triggers on Turkish: yeni domain, domain ekle, tablo ekle, form ekle, dialog aç. Enforces the kit's hard rules and upgrade-safety, and routes builder/domain detail to the lvntr-kit-frontend / lvntr-kit-domain skills."
 ---
 
 # Lvntr Starter Kit — Core Gate
@@ -8,15 +8,21 @@ description: "Use this skill whenever working in a Laravel project that has the 
 This project is built on top of **Lvntr Starter Kit** (`lvntr/laravel-starter-kit`).
 The kit ships an admin-first scaffolding for Laravel 13 / Inertia v3 / Vue 3 /
 PrimeVue 4 / Tailwind 4: authentication (Fortify + Passport), users / roles /
-permissions, activity logs, settings panel, file manager, definitions, a fluent
-Vue component library (FormBuilder, DatatableBuilder, TabBuilder), and a
-DDD-flavored domain layer.
+permissions, activity & audit logs, settings panel, file manager, definitions,
+a slot-based theme system, a fluent Vue component library (FormBuilder,
+DatatableBuilder, TabBuilder), and a DDD-flavored domain layer.
 
-After `sk:install` runs, two things matter:
+The kit is **vendor-first** (v13.6.0+). Three things matter:
 
-1. **Most code lives in your app** (`app/`, `routes/`, `resources/`, `lang/`,
-   `config/`) — the kit publishes editable scaffolding there.
-2. **The package itself stays untouched** (`vendor/lvntr/laravel-starter-kit/`)
+1. **Your app owns the HTTP layer, Models, Policies, routes, Vue pages, and
+   config** — plus the `User`/`Role` domains, which are auto-ejected on a
+   fresh install.
+2. **Module runtimes, kit middleware, kit migrations, kit translations, and
+   the composables run from the vendor package** and resolve through
+   `class_alias` / local-first resolvers — **a local copy in your app always
+   wins**. Take full ownership of a module with `php artisan sk:eject {Domain}`
+   (trade-off: no more upstream updates for it).
+3. **The package itself stays untouched** (`vendor/lvntr/laravel-starter-kit/`)
    — it is upgradable via `composer update` + `php artisan sk:update`.
 
 > **Online docs:** [starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/) — full
@@ -27,26 +33,27 @@ After `sk:install` runs, two things matter:
 ## Iron Law
 
 ```
-vendor/ ve auto-generated'a dokunma; envelope/dialog/URL/Action kurallarını bypass etme;
-pint çalıştırmadan ve committed migration'ı düzenleyerek bitirme.
+Never touch vendor/ or auto-generated files; never bypass the envelope/dialog/URL/Action rules;
+never finish without pint, and never edit a committed migration.
 ```
 
-Tam liste: aşağıdaki **Hard rules** bölümü.
+Full list: the **Hard rules** section below.
 
 ---
 
 ## Red Flags — STOP
 
-Bu düşüncelerin herhangi biri geçerse dur:
+Stop the moment any of these thoughts appears:
 
-- "vendor'a küçük bir patch yeter" — STOP. `vendor/` dokunulmaz; `sk:publish` veya `app/` override kullan.
-- "`response()->json()` daha hızlı" — STOP. `to_api()` / `ApiResponse::*` zorunlu; envelope bypass edilemez.
-- "Şimdilik `confirm()` kullanayım" — STOP. `useConfirm()` zorunlu; native `confirm()/alert()` yasak.
-- "URL'i hardcode'layıp sonra düzeltirim" — STOP. Vue'da hiçbir URL hardcode edilmez; `@/routes/**` + `.url()`.
-- "Wayfinder regen'i sonra yaparım" — STOP. Route değişikliğinden hemen sonra `wayfinder:generate` çalışır.
-- "Controller'da iki satır logic zarar vermez" — STOP. Business logic `app/Domain/{Entity}/Actions/` altında olur; controller 5 satır kalır.
-- "Auto-generated dosyayı küçük düzeltme için editleyeyim" — STOP. `wayfinder/routes/actions/`, `*.d.ts`, `_ide_helper*` asla elle düzenlenmez.
-- "Committed migration'ı düzeltmek daha hızlı" — STOP. Yeni migration eklenir; committed olan asla düzenlenmez.
+- "A small patch in vendor/ will do" — STOP. `vendor/` is untouchable; use `sk:publish`, `sk:eject`, or an `app/` override.
+- "`response()->json()` is faster" — STOP. `to_api()` / `ApiResponse::*` is mandatory; the envelope cannot be bypassed.
+- "I'll use `confirm()` for now" — STOP. `useConfirm()` is mandatory; native `confirm()/alert()` is forbidden.
+- "I'll hardcode the URL and fix it later" — STOP. No URL is ever hardcoded in Vue; `@/routes/**` + `.url()`.
+- "I'll run the Wayfinder regen later" — STOP. `wayfinder:generate` runs immediately after a route change.
+- "Two lines of logic in the controller won't hurt" — STOP. Business logic lives under `app/Domain/{Entity}/Actions/`; controllers stay ~5 lines.
+- "I'll hand-edit the auto-generated file, it's a small fix" — STOP. `wayfinder/routes/actions/`, `*.d.ts`, `_ide_helper*`, `_active.css` are never edited by hand.
+- "Fixing the committed migration is quicker" — STOP. Add a new migration; a committed one is never edited.
+- "I'll edit the ejected copy AND expect vendor updates" — STOP. Ejecting is a one-way trade: ownership instead of upstream updates.
 
 ---
 
@@ -54,17 +61,18 @@ Bu düşüncelerin herhangi biri geçerse dur:
 
 | Excuse | Reality |
 |---|---|
-| "vendor/ değişikliği küçük, composer'da kaybolmaz" | `composer update` sırasında tüm patch'ler silinir; bir sonraki upgrade'de sessizce bozulur. |
-| "`response()->json()` envelope ile aynı sonucu verir" | Exception handler envelope'u yalnızca `ApiResponse` üzerinden yönetir; `response()->json()` trace_id, error mapping ve status normalizasyonunu atlar. |
-| "PrimeVue `Dialog`'ı doğrudan import edersem daha az boilerplate" | `AdminLayout.vue`'deki tek `<AppDialog />` mount noktasını devre dışı bırakır; z-index, focus trap ve destroy lifecycle'ı bozulur. |
-| "URL'i hardcode edeyim, Wayfinder tipi olan bir fark yaratmaz" | Route adı veya parametre değiştiğinde TypeScript hatası yerine runtime 404 alırsın; refactor körlüğü yaratır. |
-| "Pint'i atlasam pre-commit hook zaten yakalar" | Hook commit'i reddeder; `--amend` ile düzeltmek önceki commit'i kirletir. Pint'i önceden çalıştır. |
+| "The vendor/ change is tiny, composer won't lose it" | Every patch is wiped on `composer update`; it silently breaks on the next upgrade. |
+| "`response()->json()` produces the same output as the envelope" | The exception handler manages the envelope only through `ApiResponse`; `response()->json()` skips trace_id, error mapping and status normalization. |
+| "Importing PrimeVue `Dialog` directly is less boilerplate" | It bypasses the single `<AppDialog />` mount in `AdminLayout.vue`; z-index, focus trap and destroy lifecycle break. |
+| "Hardcoding one URL makes no difference" | When the route name or params change you get a runtime 404 instead of a TypeScript error; it creates refactor blindness. |
+| "If I skip pint the pre-commit hook will catch it anyway" | The hook rejects the commit; fixing with `--amend` pollutes the previous commit. Run pint first. |
+| "I'll customize the vendor-resident class by editing vendor" | Publish or eject instead — a local copy in `app/` always wins via the alias-skip invariant. |
 
 ---
 
 ## 0. When to apply
 
-- Any work under `app/Domain/`, `app/Http/Controllers/{Admin,Api}/`,
+- Any work under `app/Domain/`, `app/Http/Controllers/{Admin,Api,Service}/`,
   `app/Http/Requests/`, `app/Http/Resources/`, `routes/web/*-route.php`,
   `routes/api/*-route.php`, `resources/js/pages/Admin/**`,
   `resources/js/components/Lvntr-Starter-Kit/**`, or `lang/{locale}/sk-*.php`
@@ -74,8 +82,10 @@ Bu düşüncelerin herhangi biri geçerse dur:
 - Returning JSON from an API controller (use `to_api()` or `ApiResponse::*`)
 - Adding a permission (edit `config/permission-resources.php`, run
   `sk:seed-permissions --fresh`)
-- Customizing a published Vue component (run `sk:publish` first)
-- Upgrading the kit (`composer update`, then `sk:update`)
+- Customizing a published Vue component or composable (run `sk:publish` first)
+- Taking ownership of a kit module (`sk:eject {Domain}` — read the trade-off)
+- Upgrading the kit (`composer update`, then `sk:update --dry-run`, then `sk:update`)
+- Diagnosing environment/config issues (`sk:doctor`)
 
 ## When NOT to apply
 
@@ -93,13 +103,15 @@ rules about *what not to touch* are kit-specific.
 ## 1. Hard rules (these break the kit if ignored)
 
 1. **Never edit `vendor/lvntr/laravel-starter-kit/`.** The kit is upgradable —
-   patches there vanish on `composer update`. If you need to change kit code,
-   either (a) override via your `app/` layer, (b) publish the asset with
-   `sk:publish`, or (c) extend the relevant class.
+   patches there vanish on `composer update`. To change kit code:
+   (a) override via your `app/` layer (a local copy always wins),
+   (b) publish the asset with `sk:publish`, or
+   (c) take domain ownership with `sk:eject`.
 2. **Never edit auto-generated files.** Each is regenerated by build/composer:
    - `resources/js/{wayfinder,routes,actions}/`
    - `auto-imports.d.ts`, `components.d.ts`
    - `_ide_helper.php`, `_ide_helper_models.php`, `.phpstorm.meta.php`
+   - `resources/css/theme/_active.css` (generated by the `skTheme()` vite plugin)
 3. **Never use `response()->json()` in API controllers.** Use `to_api(...)` or
    `ApiResponse::*`, throw `ApiException::*` for errors. The standard envelope
    is enforced by the exception handler installed by the kit.
@@ -118,17 +130,20 @@ rules about *what not to touch* are kit-specific.
 
 ---
 
-## Domain katmanı ve API envelope
+## Domain layer & API envelope
 
-Action/DTO/Query desenleri, `to_api` / `ApiException` envelope kuralları ve entity ekleme recipe'i: **`lvntr-kit-domain`** skill.
+Action/DTO/Query patterns, the `to_api` / `ApiException` envelope rules and
+the add-an-entity recipe: **`lvntr-kit-domain`** skill.
 
-Form/tablo/Vue mı kuruyorsun? → **`lvntr-kit-frontend`**. Domain/controller/API mı? → **`lvntr-kit-domain`**.
+Building a form/table/Vue page? → **`lvntr-kit-frontend`**.
+Domain/controller/API work? → **`lvntr-kit-domain`**.
 
 ---
 
-## Frontend builders ve composables
+## Frontend builders & composables
 
-FormBuilder/DatatableBuilder/TabBuilder tam API'si, composables referansı ve Vue sayfası recipe'i: **`lvntr-kit-frontend`** skill.
+The full FormBuilder/DatatableBuilder/TabBuilder API, the composables
+reference and the Vue page recipe: **`lvntr-kit-frontend`** skill.
 
 ---
 
@@ -136,7 +151,8 @@ FormBuilder/DatatableBuilder/TabBuilder tam API'si, composables referansı ve Vu
 
 Permissions are **declarative**, not hand-rolled. You declare resources and
 abilities, and dynamic middleware resolves a route name like `admin.products.index`
-to the permission `products.read`.
+to the permission `products.read`. In **production an unmapped route is
+denied**; in non-production it warns and allows.
 
 ### Adding a new resource
 
@@ -174,8 +190,9 @@ if (hasRole('system_admin')) { … }
 <section v-role="'admin'">…</section>
 ```
 
-The `v-can` and `v-role` directives are registered by
-`resources/js/plugins/permission.ts`.
+The `v-can` / `v-role` directives resolve local-first from
+`resources/js/plugins/` and otherwise run from the vendor package
+(`sk:publish --tag=plugins` recreates an editable copy).
 
 ### Backend gating
 
@@ -187,11 +204,15 @@ manually — adding the resource to `permission-resources.php` is enough.
 
 ## 8. Translations & validation messages
 
-The kit splits translations into `sk-*` PHP namespaces:
+The kit's 44 `sk-*` translation files (EN + TR) run **from the vendor
+package** with precompiled frontend JSON. Your app's `lang/` files override
+them **per key** — app keys always win; missing keys fall back to the vendor
+default. `lang/{locale}/validation.php` stays app-owned.
 
-| File | Use for |
+| File / namespace | Use for |
 |---|---|
-| `sk-attribute.php` (or `validation.php`'s `attributes` block) | field labels |
+| `validation.php` `attributes` block (app-owned) | field labels |
+| `sk-attribute.php` | field labels (kit namespace) |
 | `sk-button.php` | button labels |
 | `sk-message.php` | flash messages (created/updated/deleted/etc.) |
 | `sk-common.php` | shared UI strings |
@@ -199,6 +220,8 @@ The kit splits translations into `sk-*` PHP namespaces:
 
 Frontend access: `$t('sk-message.created', { entity: $t('sk-user.user') })`
 Backend access: `__('sk-message.created', ['entity' => __('sk-user.user')])`
+
+To customize kit strings wholesale: `php artisan sk:publish --tag=lang`.
 
 ### Field label auto-resolution
 
@@ -209,29 +232,38 @@ DataTable column labels.
 
 ### Build step
 
-`npm run build` compiles PHP translations into `lang/php_{locale}.json`. Only
-the active locale is lazy-loaded at runtime.
+`npm run build` compiles app PHP translations and merges them over the
+vendor-precompiled JSON. Only the active locale is lazy-loaded at runtime.
 
 ---
 
-## References (detay — gerekince oku)
+## References (detail — read on demand)
 
-Bu skill yalın bir gate'tir; ağır referanslar talep üzerine okunur:
-- Proje dosya şekli (`sk:install` sonrası dizin ağacı) → `references/project-shape.md`
-- Komut referansı (sk:install/update/publish/upgrade, make:sk-domain, seed-permissions, site:install, env:sync, wayfinder:generate) → `references/commands.md`
-- Built-in modüller (file manager, activity log, settings panel, definitions, OAuth/Passport) → `references/modules.md`
-- Güvenli güncelleme akışı (`sk:update`, SAFE_UPDATE, hash registry) → `references/update-flow.md`
-- "Nereye bak" lookup tablosu (hangi pattern hangi dosyada) → `references/lookup.md`
+This skill is a lean gate; heavy reference is read on demand:
+- Project file shape after `sk:install` (vendor-first layout, what is app-owned) → `references/project-shape.md`
+- Command reference (install/update/publish/upgrade/doctor/eject, make:sk-domain incl. `--with=`, seed-permissions, purge-trash, site:install, env:sync, wayfinder:generate) → `references/commands.md`
+- Built-in modules (file manager, activity & audit log, settings panel, definitions, OAuth/Passport, theme system) → `references/modules.md`
+- Safe update flow (`sk:update`, hash registry, SAFE_UPDATE vs NEVER_UPDATE vs vendor-resident) → `references/update-flow.md`
+- "Where to look" lookup table (which pattern lives in which file) → `references/lookup.md`
 
 ---
 
-## Skill köprüleri
+## Skill bridges
 
-- Domain/controller/API katmanı → **`lvntr-kit-domain`**
-- Frontend builder/composable/Vue sayfası → **`lvntr-kit-frontend`**
+- Domain/controller/API layer → **`lvntr-kit-domain`**
+- Frontend builder/composable/Vue page → **`lvntr-kit-frontend`**
+
+These skills are published to both `.claude/skills/` (Claude) and
+`.codex/skills/` (Codex). The `.codex` copies are a **generated mirror** —
+edit the `.claude` copies; `sk:install`/`sk:update` re-sync the mirror.
 
 ---
 
 ## Bottom Line
 
-Kit'in yükseltme güvenliği sekiz hard rule üzerine kuruludur. `vendor/` ve auto-generated dosyalar hiçbir koşulda düzenlenmez. API envelope, dialog sistemi, URL yönetimi ve Action katmanı bypass edilemez. PHP değişiklikleri pint ile biter; committed migration'lar düzenlenmez. Bu kurallar tercih değil, non-negotiable.
+The kit's upgrade safety rests on the eight hard rules. `vendor/` and
+auto-generated files are never edited under any circumstances. The API
+envelope, the dialog system, URL management and the Action layer cannot be
+bypassed. PHP changes end with pint; committed migrations are never edited.
+Customization goes through `app/` overrides, `sk:publish`, or `sk:eject` —
+never through vendor. These rules are non-negotiable.

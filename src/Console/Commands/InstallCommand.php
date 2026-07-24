@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Lvntr\StarterKit\Console\Commands\Concerns\MirrorsAiSkills;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use PhpParser\Error;
 use PhpParser\Node;
@@ -27,9 +28,11 @@ use function Laravel\Prompts\text;
 
 class InstallCommand extends Command
 {
+    use MirrorsAiSkills;
+
     protected $signature = 'sk:install
         {--force : Overwrite existing files}
-        {--without-ai-skill : Skip stubs/.claude/skills/ AI skill files}
+        {--without-ai-skill : Skip .claude/skills/ and .codex/skills/ AI skill files}
         {--without-eject : Keep User/Role runtime in vendor (skip default domain eject)}
         {--resume : Resume a previously interrupted install, skipping already-completed steps}';
 
@@ -439,6 +442,14 @@ class InstallCommand extends Command
 
             // 13. Save stub hashes for update tracking
             $this->saveStubHashes();
+
+            // Best-effort: the .codex mirror is a regenerable artifact — a
+            // failure here must not mark an otherwise completed install failed.
+            try {
+                $this->mirrorAiSkills(skipped: (bool) $this->option('without-ai-skill'));
+            } catch (\Throwable $e) {
+                $this->components->warn('AI skills could not be mirrored to .codex/skills: '.$e->getMessage());
+            }
 
         } catch (\Throwable $e) {
             // Progress is checkpointed after every completed step, so it is

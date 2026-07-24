@@ -1,11 +1,13 @@
 ---
 name: lvntr-kit-domain
-description: "Enforces backend/DDD patterns for Lvntr Starter Kit apps. Triggers on: app/Domain/, app/Http/Controllers/Admin/, app/Http/Controllers/Api/, FormRequest, Resource, Action, DTO, Query, Events, Listeners, routes/web/*-route.php, routes/api/*-route.php, to_api, ApiResponse, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder. Also triggers on Turkish: yeni domain, domain ekle, action ekle, controller yaz, api endpoint ekle. Use when working on the backend/DDD layer (controllers, actions, DTOs, API responses, routes) of a Lvntr Starter Kit app."
+description: "Enforces backend/DDD patterns for Lvntr Starter Kit apps. Triggers on: app/Domain/, app/Http/Controllers/Admin/, app/Http/Controllers/Api/, FormRequest, Resource, Action, DTO, Query, Events, Listeners, routes/web/*-route.php, routes/api/*-route.php, to_api, ApiResponse, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder, sk:eject. Also triggers on Turkish: yeni domain, domain ekle, action ekle, controller yaz, api endpoint ekle. Use when working on the backend/DDD layer (controllers, actions, DTOs, API responses, routes) of a Lvntr Starter Kit app."
 ---
 
 # lvntr-kit-domain — Backend / DDD Reference
 
-Pairs with `lvntr-starter-kit` (core: hard rules, proje şekli, komutlar, permissions, i18n, built-in modüller). Aynı entity'nin frontend'i (form/tablo/Vue) → `lvntr-kit-frontend`.
+Pairs with `lvntr-starter-kit` (core: hard rules, project shape, commands,
+permissions, i18n, built-in modules). The same entity's frontend
+(form/table/Vue) → `lvntr-kit-frontend`.
 
 ---
 
@@ -13,11 +15,13 @@ Pairs with `lvntr-starter-kit` (core: hard rules, proje şekli, komutlar, permis
 
 These five rules apply on every backend task. Violating any one breaks either upgradeability or API contract.
 
-1. **Never edit `vendor/lvntr/laravel-starter-kit/`.** Patches there vanish on `composer update`. Override via `app/`, publish with `sk:publish`, or extend the class.
+1. **Never edit `vendor/lvntr/laravel-starter-kit/`.** Patches there vanish on `composer update`. Override via `app/` (a local copy always wins), publish with `sk:publish`, or take ownership with `sk:eject`.
 3. **Never use `response()->json()` in API controllers.** Use `to_api(...)` or `ApiResponse::*`; throw `ApiException::*` for errors. The exception handler installed by the kit enforces the standard envelope.
 6. **Never put business logic in controllers.** Push it into `app/Domain/{Entity}/Actions/`. Controllers stay 5-line thin.
 7. **Run `vendor/bin/pint --dirty --format agent`** before finishing any PHP change. The pre-commit hook rejects otherwise. Do not `--amend`; create a new commit after the fix.
 8. **Never edit a committed migration.** Add a new one. Two-step destructive changes (add first, drop in a follow-up) keep production safe.
+
+*(Numbering follows the canonical hard-rule list in `lvntr-starter-kit` §1.)*
 
 ---
 
@@ -30,13 +34,33 @@ This skill applies when a task touches any of:
 - `app/Http/Requests/`, `app/Http/Resources/`
 - `routes/web/*-route.php`, `routes/api/*-route.php`
 - Symbols: `to_api`, `ApiResponse`, `ApiException`, `BaseAction`, `BaseDTO`, `ActionPipeline`, `DatatableQueryBuilder`
-- Commands: `make:sk-domain`, `remove:sk-domain`, `sk:seed-permissions`
+- Commands: `make:sk-domain`, `remove:sk-domain`, `sk:seed-permissions`, `sk:eject`
+
+---
+
+## Vendor-first note (v13.6.0+)
+
+On a fresh install only `User` and `Role` are app-owned domains (auto-ejected
+by `sk:install`). Other kit domains (`Setting`, `ActivityLog`, `Logs`,
+`Session`, `Media`, `ApiClient`, `ApiRoute`, `FileManager`, `Shared` base
+classes) **run from the vendor package**; their `App\Domain\…` names resolve
+via `class_alias`, and an app copy — when you create one via `sk:eject` —
+always wins. Extend or configure kit modules; eject only when you truly need
+project-owned code (trade-off: no more upstream updates for that domain).
+
+`ApiResponse`, `ApiException`, and the `sk-helpers` (`to_api()`,
+`format_date()`, …) also run from vendor. `App\Http\Responses\ApiResponse` is
+a vendor alias — do not subclass it; `app/Http/Responses/DatatableQueryBuilder.php`
+is a thin app shim you may extend.
 
 ---
 
 ## End-to-End Recipe — Backend Steps
 
-The fast path is always `php artisan make:sk-domain Entity`. For manual wiring or existing models, follow these steps in order. **Steps 14-16 (frontend) are in `lvntr-kit-frontend`.**
+The fast path is always `php artisan make:sk-domain Entity` (add
+`--with=policy,factory,seeder,test` or `--relations="belongsTo:User,…"` for
+the opt-in extras). For manual wiring or existing models, follow these steps
+in order. **Steps 14-16 (frontend) are in `lvntr-kit-frontend`.**
 
 ### Step 1 — Model + migration + factory
 
@@ -68,7 +92,7 @@ app/Domain/Product/{Actions,DTOs,Queries,Events,Listeners}
 - Inject deps via constructor (PHP 8 promoted properties)
 - HTTP-context free — pass `?string $performedById = null` when needed
 - Dispatch domain events on success: `ProductCreated::dispatch($product, $performedById)`
-- Throw `\LogicException` for guarded failures; controller catches and flashes
+- Throw `\LogicException` for guarded failures; the kit's handler maps it to a 422 on API routes, and Admin controllers catch and flash it
 
 ### Step 5 — Datatable query
 
@@ -91,7 +115,7 @@ return DatatableQueryBuilder::for(Product::query())
 
 - `app/Domain/Product/Events/{Created,Updated,Deleted}.php` — `Dispatchable + SerializesModels`
 - `app/Domain/Product/Listeners/Log{…}.php` — typically `implements ShouldQueue`
-- **Register in `app/Providers/DomainServiceProvider::boot()`** — listeners are NOT auto-discovered. Forgetting this is the #1 mistake.
+- **Register in `app/Providers/DomainServiceProvider::boot()`** — listeners are NOT auto-discovered. Forgetting this is the #1 mistake. (Vendor-resident kit domains wire their own listeners in the package provider — that part is not your concern.)
 
 ### Step 7 — FormRequests
 
@@ -169,7 +193,7 @@ Controller → FormRequest (validate) → DTO (BaseDTO::fromArray) → Action (B
 - **DTO:** `readonly`, immutable, self-mapping, no validation.
 - **Action:** one `execute()`, inject deps, dispatch events, throw `\LogicException` for domain guards.
 - **Event + Listener:** wired in `DomainServiceProvider::boot()` — NOT auto-discovered.
-- **ActionPipeline:** only for multi-step transactional workflows. Single-action flows don't need it.
+- **ActionPipeline:** only for multi-step transactional workflows (auto-wraps in `DB::transaction`; `withoutTransaction()` to opt out). Single-action flows don't need it.
 
 Reference domain: `app/Domain/User/` is the canonical kit example for all patterns. Thin controller template: `app/Http/Controllers/Admin/UserController.php`.
 
@@ -207,7 +231,7 @@ throw ApiException::unprocessable($errors);   // 422 with field errors
 throw ApiException::serverError('Upstream timeout.');
 ```
 
-The handler auto-maps Laravel's built-ins: `ModelNotFoundException → 404`, `ValidationException → 422`, `AuthenticationException → 401`, `ThrottleRequestsException → 429`.
+The handler auto-maps Laravel's built-ins: `ModelNotFoundException → 404`, `ValidationException → 422`, `AuthenticationException → 401`, `ThrottleRequestsException → 429`, `LogicException → 422`.
 
 ### Envelope shape
 
@@ -236,11 +260,12 @@ The handler auto-maps Laravel's built-ins: `ModelNotFoundException → 404`, `Va
 2. **Returning `response()->json(...)`** from an Api controller — bypasses the standard envelope. Use `to_api()` / `ApiResponse::*`.
 3. **Custom datatable shape** — `<SkDatatable>` expects exactly `DataTableResponse<T>`. Always go through `DatatableQueryBuilder`.
 4. **Mocking the database in tests** — use `RefreshDatabase` + Passport's `actingAs($user)`. Kit ships factories for User and core entities; don't mock DB calls.
-5. **Editing `vendor/lvntr/laravel-starter-kit/`** — every change is lost on `composer update`. Use `sk:publish` to extract what you need.
+5. **Editing `vendor/lvntr/laravel-starter-kit/`** — every change is lost on `composer update`. Use `sk:publish` / `sk:eject` to extract what you need.
 6. **Skipping `vendor/bin/pint --dirty --format agent`** — the pre-commit hook rejects the commit. Don't `--amend`; create a new commit after the fix.
+7. **Subclassing `ApiResponse`** — it's a vendor alias with covariance constraints; use the fluent API or `to_api()` instead.
 
 ---
 
 ## Bottom Line
 
-Thin controller. DTO in, Action out. Envelope always. Register your listeners. Never touch vendor. Run pint. New migration, never edit.
+Thin controller. DTO in, Action out. Envelope always. Register your listeners. Never touch vendor — publish or eject. Run pint. New migration, never edit.

@@ -16,7 +16,7 @@ class StoreRoleRequest extends FormRequest
     public const TAG_COLORS = [
         'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
         'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink',
-        'rose', 'slate', 'gray', 'zinc', 'neutral', 'stone',
+        'rose', 'slate', 'gray', 'zinc', 'neutral', 'stone', 'white', 'black',
     ];
 
     /**

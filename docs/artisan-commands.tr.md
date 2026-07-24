@@ -59,7 +59,7 @@ php artisan sk:install --without-eject
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` tüm varsayılanları otomatik kabul eder; CI veya script tabanlı kurulumlar için uygundur
-- `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
+- `--without-ai-skill` Lvntr Starter Kit AI skill'lerinin yayınlanmasını tamamen atlar — hem Claude Code kopyaları (`.claude/skills/`) hem de Codex aynası (`.codex/skills/`). Kit'in skill bundle'ını ne Claude Code ne Codex ile kullanan consumer'lar için
 - `--without-eject` ilk kurulumda varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür. Bu flag'i atlarsanız `app/Domain/User/` ve `app/Domain/Role/` otomatik oluşturulur. Sahiplik takası için [install.tr.md](./install.tr.md) belgesine bakın.
 
 ## `sk:update`
@@ -70,7 +70,10 @@ php artisan sk:install --without-eject
 php artisan sk:update
 php artisan sk:update --dry-run
 php artisan sk:update --force
+php artisan sk:update --without-ai-skill
 ```
+
+- `--without-ai-skill` bu çalışmada `.codex/skills/` AI-skill aynasının yeniden üretilmesini atlar. (Kurulum sırasındaki `--without-ai-skill` tercihi otomatik korunur — atlanan skill'ler asla yeniden eklenmez.)
 
 ## `sk:upgrade`
 

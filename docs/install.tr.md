@@ -141,7 +141,7 @@ php artisan sk:install --resume
 
 - `--force` mevcut yayınlanabilir dosyaların üzerine yazar
 - `--no-interaction` CI veya script tabanlı kurulumlar için uygundur; tüm varsayılanları otomatik olarak kabul eder; admin parolası, girecek bir operatör olmadığından her zaman taze bir rastgele değerdir (sonunda ekrana basılır)
-- `--without-ai-skill` Lvntr Starter Kit AI skill'inin yayınlanmasını atlar (`stubs/.claude/skills/`) — kit'in skill bundle'ını Claude Code ile kullanmayan consumer'lar için
+- `--without-ai-skill` Lvntr Starter Kit AI skill'lerinin yayınlanmasını tamamen atlar — hem Claude Code kopyaları (`.claude/skills/`) hem de Codex aynası (`.codex/skills/`). Kit'in skill bundle'ını ne Claude Code ne Codex ile kullanan consumer'lar için
 - `--without-eject` varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür
 - `--resume` yarıda kalmış bir kurulumu kaldığı yerden devam ettirir: `storage/starter-kit/install-progress.json`'a checkpoint'lenmiş adımlar atlanır, çalışma başarısız olan adımdan devam eder. Önceden bir checkpoint yoksa uyarıyla birlikte tam bir kurulum çalıştırır.
 
