@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## Yayınlanmadı
+
+### Değiştirildi
+
+- **Kit artık MIT lisanslı** (önceden PolyForm Noncommercial 1.0.0). Ticari kullanım kısıtsız serbest — telif ve izin bildirimi korunduğu sürece kit'i kapalı kaynaklı ve ücretli ürünlerin içinde dağıtabilirsiniz.
+
 ## 2026-07-25 — v13.6.12
 
 ### Eklendi

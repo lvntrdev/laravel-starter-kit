@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The license changed from PolyForm Noncommercial 1.0.0 to MIT.** Commercial use is now permitted without restriction: the kit may be used, modified, and redistributed in closed-source and paid products, subject only to retaining the copyright and permission notice. The SPDX identifier in `composer.json` and `package.json` is now `MIT`, and `LICENSE` carries the MIT text.
+
 ## [13.6.12] - 2026-07-25
 
 ### Added

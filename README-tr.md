@@ -3,7 +3,7 @@
 ### Admin odaklı Laravel starter kit.
 
 ![Tests](https://img.shields.io/badge/tests-passing-22c55e?style=flat-square)
-![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square)
 ![Packagist Sürüm](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
@@ -114,4 +114,4 @@ Kurulum, güncelleme akışı, domain scaffolding, FormBuilder / DatatableBuilde
 
 ## Lisans
 
-[PolyForm Noncommercial 1.0.0](./LICENSE)
+[MIT](./LICENSE)

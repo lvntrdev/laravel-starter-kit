@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## Unreleased
+
+### Changed
+
+- **The kit is now MIT licensed** (previously PolyForm Noncommercial 1.0.0). Commercial use is allowed without restriction — you can ship the kit inside closed-source and paid products, as long as the copyright and permission notice stay in place.
+
 ## 2026-07-25 — v13.6.12
 
 ### Added

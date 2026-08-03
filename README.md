@@ -3,7 +3,7 @@
 ### Admin-first Laravel starter kit.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/lvntrdev/laravel-starter-kit/ci.yml?branch=main&style=flat-square&label=CI)
-![License](https://img.shields.io/badge/license-PolyForm--Noncommercial%201.0.0-f59e0b?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square)
 ![Packagist Version](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
@@ -120,4 +120,4 @@ Everything — installation, update flow, domain scaffolding, FormBuilder / Data
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](./LICENSE)
+[MIT](./LICENSE)
