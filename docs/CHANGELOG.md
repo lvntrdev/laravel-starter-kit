@@ -2,7 +2,7 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## Unreleased
+## 2026-08-15 — v13.6.14
 
 ### Security
 

@@ -2,7 +2,7 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## Unreleased
+## 2026-08-15 — v13.6.14
 
 ### Güvenlik
 
