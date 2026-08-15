@@ -7,6 +7,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Actions\Fortify\ValidateTurnstile;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -114,9 +115,23 @@ class FortifyServiceProvider extends ServiceProvider
             PrepareAuthenticatedSession::class,
         ]));
 
-        // ── forgot-password → turnstile middleware ───────────────────
+        // ── forgot-password → reset gate + turnstile middleware ──────
         Route::matched(function ($event) {
             $request = $event->request;
+
+            // Fail-closed twin of ResetUserPassword's guard. POST
+            // /forgot-password (route name `password.email`) is served by
+            // Fortify's own controller, so there is no app-owned action to
+            // guard — the `auth.password_reset` setting is enforced here
+            // instead. SettingsServiceProvider's booting() bridge already
+            // keeps Fortify from registering the route at all while the
+            // feature is off; this closes the gap if that config ever drifts
+            // from the DB. Matching on the route NAME rather than the path
+            // keeps the guard correct under a custom `fortify.prefix`.
+            if ($request->isMethod('POST') && $event->route->getName() === 'password.email') {
+                abort_unless((string) Setting::getValue('auth.password_reset', '1') === '1', 403);
+            }
+
             if ($request->isMethod('POST') && $request->is('forgot-password')) {
                 $event->route->middleware(['turnstile']);
             }

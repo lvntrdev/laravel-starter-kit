@@ -3,9 +3,12 @@
 import { usePage } from '@inertiajs/vue3';
 
 /**
- * Prefix an absolute app path with the sub-path the app is deployed under
+ * Prefix a root-relative app path with the sub-path the app is deployed under
  * (e.g. `https://host/admin/`), derived at runtime by comparing Inertia's
  * app-relative page URL with `window.location.pathname`.
+ * Absolute and document-relative URLs are returned unchanged. Root-relative
+ * app paths are always prefixed when a deploy sub-path exists, so callers must
+ * pass client-constructed app paths and apply this exactly once.
  *
  * Deliberately NOT `import.meta.env.BASE_URL`: in a production Laravel/Vite
  * build that is the ASSET base (`/build/`, or a CDN URL), not the application
@@ -17,10 +20,12 @@ import { usePage } from '@inertiajs/vue3';
  * navigation already honours the base.
  */
 export function withBasePath(path: string): string {
+    if (!path.startsWith('/') || path.startsWith('//')) return path;
+
     const base = appBasePath();
     if (base === '') return path;
 
-    return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    return `${base}${path}`;
 }
 
 /**

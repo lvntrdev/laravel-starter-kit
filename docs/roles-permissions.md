@@ -16,6 +16,9 @@ Examples from the current project:
 - `users.update`
 - `roles.update`
 - `settings.update`
+- `files.read`
+- `files.create`
+- `files.update`
 - `files.delete`
 - `activity-logs.read`
 - `pulse.read`
@@ -46,6 +49,19 @@ Sub-resources are also supported:
 
 Default role permissions are also defined in `config/permission-resources.php`.
 
+### FileManager abilities
+
+FileManager's built-in `global` context checks four independent abilities; holding one does not imply any other:
+
+| Permission | Allows |
+| --- | --- |
+| `files.read` | Browse trees, list favorites/trash, and download files |
+| `files.create` | Upload files, create folders, and copy files |
+| `files.update` | Rename/move items, change favorites, restore trash, and pass the context check for share/revoke |
+| `files.delete` | Delete items, empty trash, and permanently delete trashed items |
+
+After changing role assignments, run `php artisan sk:seed-permissions` so the seeded permission data matches the four-ability contract.
+
 ## Role Hierarchy In User Management
 
 User management is hierarchy-aware on both the admin panel and the API:
@@ -75,6 +91,18 @@ php artisan sk:seed-permissions --fresh
 ```
 
 The admin panel also exposes a permission sync action for `system_admin` users.
+
+### Keeping the matrix in step with package updates
+
+`sk:update` never writes to `config/permission-resources.php` — the file is yours, and an updater that merged into it would eventually overwrite a project's own authorization model. The consequence is that a resource or ability the kit adds in a later release does not reach an existing installation by itself, and the first sign of that is usually a 403 on a screen that used to work.
+
+After an update, ask:
+
+```bash
+php artisan sk:doctor --only=permission-matrix
+```
+
+The check lists every resource and ability the package ships that your config does not declare (resources you added yourself are never reported). Add the listed entries by hand, then run `php artisan sk:seed-permissions`.
 
 ## Automatic Route-to-Permission Mapping
 
@@ -190,7 +218,7 @@ The starter kit uses **three stacked layers**. They do not replace each other �
 
 - **Middleware only** is enough for flat admin CRUD where any user with the permission may act on any row.
 - **Add a Policy** when you need row-level rules (self-ownership, state-based gating, tenant scoping). Policies are auto-discovered: `App\Models\Foo` → `App\Policies\FooPolicy`.
-- **Register a FileManager context** when a domain wants to expose a files tab bound to one of its models (users, organisations, projects). The context's authorizer closure controls read/write access without duplicating logic in a controller.
+- **Register a FileManager context** when a domain wants to expose a files tab bound to one of its models (users, organisations, projects). The context's authorizer closure controls `read`, `create`, `update`, and `delete` access without duplicating logic in a controller.
 
 ### Policy pattern
 
@@ -221,6 +249,6 @@ The kit ships policies for `User`, `Role`, `Setting`, and `FileFolder`. They are
 
 ### FileManager ContextRegistry
 
-`ContextRegistry` exposes a pluggable authorization hook: each file context (e.g. `user`, or a custom `project` context added by the host app) provides a closure that decides whether the current user may `read` or `write` inside that context. The default user-owned context delegates to `UserPolicy@view` / `UserPolicy@update`, so one policy drives both explicit `authorize()` calls and the files tab guard.
+`ContextRegistry` exposes a pluggable authorization hook: each file context (e.g. `user`, or a custom `project` context added by the host app) provides a closure that receives `read`, `create`, `update`, or `delete`. The kit never passes the deprecated `write` name. The default user-owned context delegates `read` to `UserPolicy@view` and every mutation to `UserPolicy@update`, so one policy drives both explicit `authorize()` calls and the files tab guard.
 
 Keep context closures thin; delegate real rules to a Policy so logic stays in one place.

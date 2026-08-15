@@ -42,6 +42,24 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * FileManager HTTP surface.
+ *
+ * AUTHORIZATION — read before adding an action.
+ * These routes are deliberately excluded from the `CheckResourcePermission`
+ * middleware (see the `$routesWithoutPermissionMiddleware` list in
+ * `routes/web.php`), because the required permission depends on the resolved
+ * FileManager context, not on the route name. That makes
+ * {@see FileManagerAuthorizer} the ONLY gate in front of every operation
+ * below: an action that forgets to call it is fully unauthenticated-adjacent
+ * (anyone who can reach the route can run it).
+ *
+ * Every action MUST therefore call exactly one of `authorizeRead()`,
+ * `authorizeCreate()`, `authorizeUpdate()` or `authorizeDelete()` before it
+ * touches data, and it must be the ability that matches what the action
+ * really does — the abilities are not interchangeable (`files.create` does
+ * not grant deletes).
+ */
 class FileManagerController extends Controller
 {
     public function __construct(
@@ -76,7 +94,7 @@ class FileManagerController extends Controller
     public function bulkDelete(BulkDeleteRequest $request, BulkDeleteAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeDelete($context);
 
         /** @var array<int, array{type: string, id: string}> $items */
         $items = $request->input('items', []);
@@ -93,7 +111,7 @@ class FileManagerController extends Controller
     public function createFolder(StoreFolderRequest $request, CreateFolderAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeCreate($context);
 
         $folder = $action->execute(
             context: $context,
@@ -111,7 +129,7 @@ class FileManagerController extends Controller
     public function renameFolder(UpdateFolderRequest $request, FileFolder $folder, RenameFolderAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeUpdate($context);
 
         $folder = $action->execute($context, $folder, $request->string('name')->toString());
 
@@ -125,7 +143,7 @@ class FileManagerController extends Controller
     public function renameFile(RenameFileRequest $request, Media $media, RenameFileAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeUpdate($context);
 
         $media = $action->execute($context, $media, $request->string('name')->toString());
 
@@ -139,7 +157,7 @@ class FileManagerController extends Controller
     public function copyFile(CopyFileRequest $request, Media $media, CopyFileAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeCreate($context);
 
         $copy = $action->execute($context, $media, $request->input('target_folder_id'));
 
@@ -162,7 +180,7 @@ class FileManagerController extends Controller
     public function addFavorite(FavoriteRequest $request, AddFavoriteAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeUpdate($context);
 
         $action->execute(
             context: $context,
@@ -176,7 +194,7 @@ class FileManagerController extends Controller
     public function removeFavorite(FavoriteRequest $request, RemoveFavoriteAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeUpdate($context);
 
         $action->execute(
             context: $context,
@@ -198,7 +216,7 @@ class FileManagerController extends Controller
     public function emptyTrash(FileManagerContextRequest $request, EmptyTrashAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeDelete($context);
 
         $result = $action->execute($context);
 
@@ -208,7 +226,11 @@ class FileManagerController extends Controller
     public function restoreItem(TrashItemRequest $request, RestoreItemAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        // `update`, not `delete`: restoring from Trash destroys nothing, it
+        // moves an existing item back into the tree. Requiring `files.delete`
+        // here would mean a role that may not delete also may not undo a
+        // delete, which is the wrong way round.
+        $this->authorizer->authorizeUpdate($context);
 
         $action->execute(
             context: $context,
@@ -222,7 +244,7 @@ class FileManagerController extends Controller
     public function permanentlyDeleteItem(TrashItemRequest $request, PermanentlyDeleteItemAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeDelete($context);
 
         $action->execute(
             context: $context,
@@ -236,7 +258,7 @@ class FileManagerController extends Controller
     public function moveItem(MoveItemRequest $request, MoveItemAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeUpdate($context);
 
         $action->execute(
             context: $context,
@@ -251,7 +273,7 @@ class FileManagerController extends Controller
     public function deleteFolder(DeleteFolderRequest $request, FileFolder $folder, DeleteFolderAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeDelete($context);
 
         $action->execute($context, $folder);
 
@@ -261,7 +283,7 @@ class FileManagerController extends Controller
     public function upload(UploadFileRequest $request, UploadFileAction $action): ApiResponse
     {
         $context = $request->context();
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeCreate($context);
 
         $uploaded = $action->execute(
             context: $context,
@@ -276,7 +298,7 @@ class FileManagerController extends Controller
     public function deleteFile(Request $request, Media $media, DeleteFileAction $action): ApiResponse
     {
         $context = $this->contextFromRequest($request);
-        $this->authorizer->authorizeWrite($context);
+        $this->authorizer->authorizeDelete($context);
 
         $action->execute($context, $media);
 

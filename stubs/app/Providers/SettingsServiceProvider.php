@@ -21,10 +21,13 @@ class SettingsServiceProvider extends ServiceProvider
      * boot(), which runs BEFORE any app provider's boot() (discovered
      * package providers boot first). The login route's `throttle:login`
      * middleware is attached at that moment based on
-     * config('fortify.limiters.login') — so the login-throttle gate must
-     * be applied in a booting callback: Laravel fires those after ALL
-     * register() calls but before ANY provider boot(), i.e. early enough
-     * for Fortify's route registration to observe the gated value.
+     * config('fortify.limiters.login'), and the /register,
+     * /forgot-password and /reset-password routes are registered at that
+     * same moment behind Features::enabled(config('fortify.features')) —
+     * so BOTH gates must be applied in a booting callback: Laravel fires
+     * those after ALL register() calls but before ANY provider boot(),
+     * i.e. early enough for Fortify's route registration to observe the
+     * gated values.
      */
     public function register(): void
     {
@@ -103,6 +106,79 @@ class SettingsServiceProvider extends ServiceProvider
             'starter-kit.password_policy.require_numbers' => ($auth['password_require_numbers'] ?? '1') === '1',
             'starter-kit.password_policy.require_symbols' => ($auth['password_require_symbols'] ?? '1') === '1',
         ]);
+
+        $this->gateFortifyFeatures($auth);
+    }
+
+    /**
+     * Rebuild config('fortify.features') from the auth settings group.
+     *
+     * This MUST run from the booting() bridge, never from boot(): Fortify's
+     * own boot() registers /register, POST /forgot-password and
+     * POST /reset-password behind Features::enabled(...), so a features array
+     * rebuilt in an app provider's boot() arrives AFTER the routes are already
+     * bound — "registration disabled" then leaves the endpoint wide open. The
+     * caller has already degraded to the safe fallbacks when the DB is
+     * unavailable (fresh install, pre-migration): in that case this method is
+     * never reached and config/fortify.php's own feature list stands, exactly
+     * as it did before the gate moved.
+     *
+     * Only the six features the auth settings screen actually governs are
+     * recomputed. Any other entry already present in config('fortify.features')
+     * — Features::passkeys() ships enabled in Fortify's default config, and a
+     * consumer may add its own — is carried over untouched: this gate closes
+     * what the admin turned off, it does not silently strip a feature it has
+     * no toggle for.
+     *
+     * @param  array<string, mixed>  $auth
+     */
+    private function gateFortifyFeatures(array $auth): void
+    {
+        $managed = [
+            Features::registration(),
+            Features::resetPasswords(),
+            Features::emailVerification(),
+            Features::updateProfileInformation(),
+            Features::updatePasswords(),
+            Features::twoFactorAuthentication(),
+        ];
+
+        $features = array_values(array_filter(
+            (array) config('fortify.features', []),
+            static fn (mixed $feature): bool => ! in_array($feature, $managed, true),
+        ));
+
+        if (($auth['registration'] ?? '1') === '1') {
+            $features[] = Features::registration();
+        }
+
+        if (($auth['password_reset'] ?? '1') === '1') {
+            $features[] = Features::resetPasswords();
+        }
+
+        if (($auth['email_verification'] ?? '1') === '1') {
+            $features[] = Features::emailVerification();
+        }
+
+        $features[] = Features::updateProfileInformation();
+        $features[] = Features::updatePasswords();
+
+        if (($auth['two_factor'] ?? '1') === '1') {
+            // The options array is applied as a SIDE EFFECT: Features::
+            // twoFactorAuthentication() writes config('fortify-options.
+            // two-factor-authentication'), which Fortify reads at route
+            // registration to decide whether the 2FA management endpoints
+            // carry `password.confirm`. Setting it from here (instead of
+            // boot()) is what finally makes that middleware take effect —
+            // the Profile > Two Factor tab already performs the
+            // /user/confirm-password round-trip the middleware expects.
+            $features[] = Features::twoFactorAuthentication([
+                'confirm' => true,
+                'confirmPassword' => true,
+            ]);
+        }
+
+        config(['fortify.features' => $features]);
     }
 
     /**
@@ -156,33 +232,11 @@ class SettingsServiceProvider extends ServiceProvider
             }
         }
 
-        // Auth — always rebuild Fortify features array from DB settings
-        $auth = $settings['auth'] ?? [];
-        $features = [];
-
-        if (($auth['registration'] ?? '1') === '1') {
-            $features[] = Features::registration();
-        }
-
-        if (($auth['password_reset'] ?? '1') === '1') {
-            $features[] = Features::resetPasswords();
-        }
-
-        if (($auth['email_verification'] ?? '1') === '1') {
-            $features[] = Features::emailVerification();
-        }
-
-        $features[] = Features::updateProfileInformation();
-        $features[] = Features::updatePasswords();
-
-        if (($auth['two_factor'] ?? '1') === '1') {
-            $features[] = Features::twoFactorAuthentication([
-                'confirm' => true,
-                'confirmPassword' => true,
-            ]);
-        }
-
-        config(['fortify.features' => $features]);
+        // Auth — the Fortify feature gate is NOT applied here. It runs in the
+        // booting() bridge above (gateFortifyFeatures), because Fortify binds
+        // its /register and password-reset routes during its own boot(), which
+        // happens before this method. Rebuilding the array here would flip
+        // Features::enabled() without ever removing the route.
 
         // Mail
         if ($mail = $settings['mail'] ?? null) {

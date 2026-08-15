@@ -130,9 +130,9 @@
             DB.column<Role>()
                 .label(trans('sk-role.display_name'))
                 .key('display_name')
-                .render((role) => {
-                    const lang = document.documentElement.lang || 'en';
-                    return role.display_name?.[lang] || role.display_name?.en || '—';
+                .render((role, escapeHtml) => {
+                    const lang = typeof document === 'undefined' ? 'en' : document.documentElement.lang || 'en';
+                    return escapeHtml(role.display_name?.[lang] || role.display_name?.en || '—');
                 }),
             DB.column<Role>()
                 .label(trans('sk-role.permissions'))

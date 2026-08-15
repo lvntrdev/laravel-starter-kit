@@ -20,6 +20,7 @@ Bu döküman starter kit için komut referansıdır. DDD ile ilgili mimari notla
 | `php artisan sk:seed-permissions --fresh` | Rol ve yetki verilerini config'ten yeniden üretir                |
 | `php artisan postman:sync`                | Scramble OpenAPI spec'ini Postman'a gönderir                     |
 | `php artisan apidog:sync`                 | Scramble OpenAPI spec'ini Apidog'a gönderir                      |
+| `php artisan sk:redact-activity-secrets`  | Mevcut aktivite kayıtlarından kimlik bilgilerini geri döndürülemez biçimde kaldırır |
 | `php artisan file-manager:purge-trash`    | Eski Dosya Yöneticisi çöpünü kalıcı olarak siler                 |
 
 ## `sk:doctor`
@@ -58,6 +59,14 @@ Kontroller (ad → `--only` seçicisi):
 | FileManager Disk       | `filemanager-disk`       |
 | Theme Manifest         | `theme-manifest`         |
 | Timezone Storage       | `timezone-storage`       |
+| Activity Log Secrets   | `activity-log-secrets`   |
+| Permission Matrix      | `permission-matrix`      |
+
+`ActivityLogSecretsCheck`, bir `activity_log` satırı hâlâ parola hash'i, token veya secret içeriyorsa FAIL döndürür. Bu durum, paket güncellenip (yeni satırlardaki sızıntı anında kapanır) `php artisan migrate` çalıştırılmadığında, yani geçmiş satırlar hiç temizlenmediğinde ortaya çıkar. Veritabanını yedekleyip `php artisan migrate` ya da `php artisan sk:redact-activity-secrets` çalıştırın; kaldırma geri döndürülemez. Aktivite kaydı tablosunun bulunmaması veya JSON payload kolonu olmaması OK, decode edilemeyen JSON payload WARN, veritabanı hatası ise başarı değil WARN sonucu verir.
+
+Kontrol, tam temizlik geçişi değil **sınırlı ve salt-okunur bir sondadır**. Birincil anahtara göre sıralı ilk 500 satırı okur — MySQL, MariaDB, SQLite ve PostgreSQL'de aynı sabit maliyet — ve kararı SQL'de değil PHP'de verir; böylece `Password` gibi farklı yazılmış bir anahtar, JSON kolonunun collation'ından bağımsız olarak yakalanır. Mesajlar tam olarak ölçüleni söyler: büyük bir tabloda bulgu bir alt sınır olarak ("en az N") raporlanır, temiz sonuç ise tüm tabloyu aklamak yerine taradığı pencereyi adlandırır. Tam sayım için `php artisan sk:redact-activity-secrets --dry-run --all` çalıştırın — `--all` zorunludur, çünkü onsuz komut MySQL, MariaDB ve SQLite'ta SQL tarafında bir anahtar-adı ön filtresi kullanır ve farklı yazılmış bir anahtar bu filtreden kaçabilir.
+
+`PermissionResourcesDriftCheck`, `config/permission-resources.php` paketin gönderdiği her kaynak ve yeteneği kapsamıyorsa WARN döndürür — örneğin FileManager'ın `files.create` / `files.update` / `files.delete` ayrımından önce kurulmuş ve hâlâ eski kümeyi tanımlayan bir uygulama. Bu dosya updater'ın "asla dokunma" listesindedir; bu bilinçli bir tercihtir, çünkü KENDİ kaynaklarınızı orada tanımlarsınız. Bedeli, paketin yeni girdilerinin kendiliğinden gelmemesidir ve belirtisi, daha önce çalışan bir ekranda 403 almaktır. Kontrol tek yönlüdür: kendi eklediğiniz kaynaklar asla raporlanmaz. Çözüm, listelenen girdileri `config/permission-resources.php` dosyasına eklemek ve `php artisan sk:seed-permissions` çalıştırmaktır. Eksik veya boş config WARN, okunamayan paket kopyası da başarı yerine WARN döndürür.
 
 `TimezoneStorageCheck`, `config('app.timezone')` tam olarak `UTC` değilse FAIL döndürür. Bu ayar doğruysa varsayılan bağlantıdan ayrıca `SELECT @@session.time_zone` değerini okur. MySQL/MariaDB bağlantısında yalnız `+00:00` ve `UTC` başarılıdır; `SYSTEM` ve diğer tüm değerler FAIL döndürür, çünkü uygulama satırları tutarlı okurken bile `TIMESTAMP` değerleri diskte offset'li olabilir. Sorgu hatası veya eksik sonuç hiçbir zaman başarı sayılmaz, WARN döndürür. Diğer veritabanı sürücüleri oturum kontrolünü uygulanamaz olarak belirten OK sonucu verir. Gösterim yapılandırmasını `APP_DISPLAY_TIMEZONE` ile ayrı tutun; bağlantı sözleşmesi ve mevcut veri dönüşüm rehberi için [Saat Dilimleri](timezone.tr.md) belgesine bakın.
 
@@ -102,6 +111,8 @@ php artisan sk:update --without-ai-skill
 ```
 
 - `--without-ai-skill` bu çalışmada `.codex/skills/` AI-skill aynasının yeniden üretilmesini atlar. (Kurulum sırasındaki `--without-ai-skill` tercihi otomatik korunur — atlanan skill'ler asla yeniden eklenmez.)
+
+**Düzenlemeleriniz korunur — paket sahipli dosyalarda da.** Kopyalanan her dosya, kurulum/güncelleme anında kaydedilen hash ile karşılaştırılır; içeriği artık bu kayıtla eşleşmeyen dosya korunur ve "Skipped" başlığı altında listelenir. Bu artık `app/Enums/PermissionEnum.php` dosyasını da kapsıyor: dosya paket sahiplidir ve her güncellemede yenilenir, ancak aynı zamanda public `for()` / `allFor()` yardımcılarına sahip backed bir enum'dur — dolayısıyla eklediğiniz bir proje yeteneği (`case Approve = 'approve';`) sessizce ezilmek yerine korunur. Korunan kopya ayrı raporlanır, çünkü paket kendi case'lerinin var olmasını bekler — dosyanızı `vendor/lvntr/laravel-starter-kit/stubs/` altındaki aynı göreli yol ile karşılaştırıp yeni case'leri birleştirin ya da `--force` ile paket sürümünü alıp düzenlemelerinizi geri dönülmez şekilde bırakın. Hash kaydı olmayan bir kopya (hash takibinden önceye dayanan kurulum) dokunulmamış varsayılmaz; diğer tüm untracked dosyalarla aynı etkileşimli seçim ekranında sorulur.
 
 ## `sk:upgrade`
 
@@ -326,6 +337,25 @@ php artisan apidog:sync
 ```
 
 `apidog` ayar grubunu okur: `apidog.access_token` ve `apidog.project_id` zorunludur. Değerlerden biri eksikse komut "not configured" hatası verip durur — değerleri **Settings → API Clients → Apidog** altından (ya da doğrudan ilgili satırları ekleyerek) doldurup komutu tekrar koşturun. Asıl iş `App\Domain\ApiRoute\Actions\SyncApidogAction` içinde yapılır ve `postman:sync` ile aynı `OpenApiExporter` helper'ını paylaşır — spec Apidog'a **değiştirilmeden** gönderilir, bu sayede push edilen proje gerçek sunucu kontratını aynen yansıtır.
+
+## `sk:redact-activity-secrets`
+
+Mevcut aktivite kaydı satırlarındaki hem `attribute_changes` hem `properties` JSON kolonlarından hassas anahtarları recursive olarak kaldırır; diğer tüm anahtarları korur. İşlem geri döndürülemez: çalıştırmadan önce veritabanı yedeği alın.
+
+```bash
+php artisan sk:redact-activity-secrets --dry-run
+php artisan sk:redact-activity-secrets
+php artisan sk:redact-activity-secrets --chunk=500
+php artisan sk:redact-activity-secrets --all
+```
+
+| Flag | Amaç |
+| --- | --- |
+| `--dry-run` | Değişiklik yazmadan redact edilecek satırları raporlar |
+| `--chunk=<satır>` | Her turda bu kadar satır işler (varsayılan 500, en fazla 5000) |
+| `--all` | Hassas anahtar ön filtresini kullanmak yerine tüm satırları tarar |
+
+Komut idempotent'tir ve eski bir yedek geri yüklendikten sonra yeniden çalıştırılmalıdır. Bir JSON payload'ı decode edilemezse sayılır, uyarıyla bildirilir ve değiştirilmeden bırakılır; hâlâ kimlik bilgisi içerebileceği için o satırı elle inceleyin.
 
 ## `file-manager:purge-trash`
 

@@ -261,7 +261,7 @@ class VehiclePolicy
 <FileManager context="vehicle" :context-id="vehicle.id" height="100%" />
 ```
 
-Behind the scenes the auto-resolved context uses path `vehicle/{id}/files`. The default authorizer short-circuits for self-ownership (actor IS the owner — what makes `context="user"` work without extra config), otherwise delegates to Laravel policies: `$user->can('view', $vehicle)` for reads, `$user->can('update', $vehicle)` for writes. No policy → Laravel denies by default, so storage stays safe.
+Behind the scenes the auto-resolved context uses path `vehicle/{id}/files`. The default authorizer short-circuits for self-ownership (actor IS the owner — what makes `context="user"` work without extra config), otherwise delegates to Laravel policies: `$user->can('view', $vehicle)` for `read`, `$user->can('update', $vehicle)` for `create`, `update`, and `delete`. No policy → Laravel denies by default, so storage stays safe.
 
 > The starter kit ships with a matching `app/Policies/UserPolicy.php` (self + `users.read` / `users.update`) so `context="user"` works out of the box. Use it as a template when writing policies for your own contexts.
 
@@ -292,7 +292,7 @@ A context definition has four parts:
 | `model`     | `class-string<Model>`                                        | Eloquent class stored as the polymorphic owner                                            |
 | `path`      | `string`                                                     | Disk path template; `{id}` is replaced with the owner's primary key (omit for singletons) |
 | `resolve`   | `Closure(?string $id): Model`                                | How to load the owner model from the incoming `context_id`                                |
-| `authorize` | `Closure(Model $actor, string $ability, Model $owner): bool` | `$ability` is `'read'` or `'write'`                                                       |
+| `authorize` | `Closure(Model $actor, string $ability, Model $owner): bool` | `$ability` is `'read'`, `'create'`, `'update'`, or `'delete'`; the kit never passes `'write'` |
 
 Validation is driven by the registry — unknown keys that don't auto-resolve return 422. Contexts whose `path` contains `{id}` automatically require `context_id`.
 
@@ -365,17 +365,21 @@ Both the backend actions (`DeleteFileAction`, `DeleteFolderAction`) and the Vue 
 
 ## Permissions
 
-The component itself does not check permissions — `FileManagerAuthorizer` on the backend does, per request. It calls the `authorize` closure on the resolved context definition with one of two abilities:
+The component itself does not check permissions — `FileManagerAuthorizer` is the only backend gate for these routes and checks every request. It calls the `authorize` closure on the resolved context definition with exactly one of four abilities:
 
-- `read` — `/tree`, `/contents`, `/files/{media}/download`
-- `write` — upload, rename, move, delete, bulk-delete
+| Ability | Operations | Built-in `global` permission |
+| --- | --- | --- |
+| `read` | tree, folder contents, favorites/trash listings, download | `files.read` |
+| `create` | upload, create folder, copy file | `files.create` |
+| `update` | rename, move, favorite toggle, restore, share/revoke context check | `files.update` |
+| `delete` | file/folder/bulk delete, empty trash, permanent delete | `files.delete` |
 
 Built-in rules:
 
-- **User context** — allowed when the authenticated user IS the context user, OR has `users.read` / `users.update` permission
-- **Global context** — requires `files.read` for reads, or `files.create` / `files.update` / `files.delete` for writes
-- **Auto-resolved contexts** — delegate to Laravel policies: `$user->can('view', $owner)` for reads, `$user->can('update', $owner)` for writes
-- **Custom registrations** — whatever your `authorize` closure returns
+- **User context** — allowed when the authenticated user IS the context user; otherwise its policy uses `users.read` for `read` and `users.update` for all mutations
+- **Global context** — maps each ability one-to-one to the matching `files.*` permission; unknown abilities fail closed
+- **Auto-resolved contexts** — delegate to Laravel policies: `$user->can('view', $owner)` for `read`, `$user->can('update', $owner)` for every mutation
+- **Custom registrations** — receive `read`, `create`, `update`, or `delete`; the kit never passes the deprecated `write` ability
 
 The `files` resource is seeded with `create / read / update / delete` abilities; assign these to roles via the Roles admin. For custom contexts, define a policy or pass a permission-based closure when registering.
 

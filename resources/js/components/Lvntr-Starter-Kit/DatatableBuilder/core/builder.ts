@@ -37,8 +37,8 @@ export class ColumnBuilder<_T = unknown> {
     }
 
     /** Custom HTML renderer. An `escape` helper is passed as the second argument for XSS-safe output. */
-    render(fn: (row: _T, escape: (str: string) => string) => string): this {
-        this.config.render = fn as (row: unknown, escape: (str: string) => string) => string;
+    render(fn: (row: _T, escape: (value: unknown) => string) => string): this {
+        this.config.render = fn as (row: unknown, escape: (value: unknown) => string) => string;
         return this;
     }
 

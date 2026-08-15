@@ -42,7 +42,7 @@
                 .label('sk-api-clients.fields.grant_type')
                 .key('grant_types')
                 .sortable(false)
-                .render((client) => {
+                .render((client, escapeHtml) => {
                     const labels: Record<string, string> = {
                         authorization_code: trans('sk-api-clients.grant_types.authorization_code'),
                         client_credentials: trans('sk-api-clients.grant_types.client_credentials'),
@@ -53,7 +53,7 @@
                             ?.map((g) => labels[g] ?? g)
                             .map(
                                 (l) =>
-                                    `<span class="inline-flex items-center rounded-full bg-surface-100 px-2 py-0.5 text-base text-surface-700 dark:bg-surface-800 dark:text-surface-300">${l}</span>`,
+                                    `<span class="inline-flex items-center rounded-full bg-surface-100 px-2 py-0.5 text-base text-surface-700 dark:bg-surface-800 dark:text-surface-300">${escapeHtml(l)}</span>`,
                             )
                             .join(' ') ?? '—'
                     );

@@ -150,9 +150,15 @@ it('never loops: an expired user can always reach the exempt escape-hatch routes
 it('is registered on the authenticated panel route group in the stub web routes', function (): void {
     $contents = file_get_contents(dirname(__DIR__, 3).'/stubs/routes/web.php');
 
+    // Stack artık array_filter ile kuruluyor: yalnızca `verified` koşullu
+    // (email doğrulama kapalıyken Fortify verification.notice rotasını hiç
+    // bağlamıyor — bkz. AuthFeatureGatingTest). `auth` ve expiry middleware'i
+    // koşulsuz kalmak zorunda.
     expect($contents)
         ->toContain('use App\Http\Middleware\EnsurePasswordNotExpired;')
-        ->toContain("Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])");
+        ->toContain('Route::middleware($panelMiddleware)->group(')
+        ->toContain("'auth',")
+        ->toContain('EnsurePasswordNotExpired::class,');
 });
 
 it('ships the password_expired flash message in both kit languages', function (): void {

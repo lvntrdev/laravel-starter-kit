@@ -105,7 +105,13 @@ php artisan migrate
 php artisan env:sync
 ```
 
-Permission kaynakları veya roller değiştiyse ayrıca şunu çalıştırın:
+Ardından güncellemenin, matrisinizde henüz tanımlı olmayan izinler bekleyip beklemediğini kontrol edin:
+
+```bash
+php artisan sk:doctor --only=permission-matrix
+```
+
+Permission kaynakları veya roller değiştiyse — ya da yukarıdaki kontrol bir şey listelediyse — ayrıca şunu çalıştırın:
 
 ```bash
 php artisan sk:seed-permissions --fresh
@@ -120,9 +126,9 @@ Güncellemeyle yeni ayar grupları veya auth davranışları geldiyse şu ekranl
 
 ## Dosya Güncelleme Stratejisi Özeti
 
-- Güvenli çekirdek yollar otomatik olarak üzerine yazılır.
+- Paket sahipli çekirdek yollar otomatik yenilenir — ancak yalnızca kopyanız kurulum/güncelleme anında kaydedilen hash ile hâlâ eşleşiyorsa. Buradaki tek girdi `app/Enums/PermissionEnum.php` ve ona eklediğiniz bir yetenek case'i ezilmek yerine korunur ve raporlanır. Paketin yeni case'lerini elle birleştirin (`vendor/lvntr/laravel-starter-kit/stubs/` altındaki aynı göreli yol ile karşılaştırın) ya da `--force` ile paket sürümünü alıp düzenlemelerinizi bırakın.
 - Özelleştirilebilir dosyalar değişmediyse güncellenir, aksi halde korunur.
-- `config/permission-resources.php` kullanıcıya ait bir dosya olarak kabul edilir.
+- `config/permission-resources.php` kullanıcıya ait bir dosya olarak kabul edilir ve asla yazılmaz. Bunun diğer yüzü: paketin eklediği kaynak ve yetenekler kendiliğinden gelmez. `php artisan sk:doctor --only=permission-matrix` matrisinizde eksik olanları raporlar.
 - Paketle gelen yeni dosyalar otomatik eklenir.
 
 ## Özelleştirilmiş Bir Dosyayı Geri Alma

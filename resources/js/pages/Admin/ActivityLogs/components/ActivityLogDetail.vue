@@ -50,11 +50,50 @@
         return Object.keys(attrs);
     });
 
-    function formatValue(val: unknown): string {
+    // ── Credential masking (defense in depth) ────────────────────────────────
+    // The backend stopped recording these attributes (see the deny list in
+    // Lvntr\StarterKit\Traits\HasActivityLogging::SENSITIVE_LOG_ATTRIBUTES),
+    // but rows written BEFORE that fix — or by a consumer model that rewrote
+    // getActivitylogOptions() — can still carry a password hash or a token.
+    // This screen therefore never prints such a value, whatever the row holds.
+    // Keep both lists in sync with the trait.
+    const SENSITIVE_KEYS = new Set(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes']);
+    const SENSITIVE_KEY_SUFFIXES = ['_token', '_secret'];
+    const MASK = '••••••';
+
+    function isSensitiveKey(key: string): boolean {
+        const normalized = key.toLowerCase();
+        return SENSITIVE_KEYS.has(normalized) || SENSITIVE_KEY_SUFFIXES.some((suffix) => normalized.endsWith(suffix));
+    }
+
+    function formatValue(val: unknown, key?: string): string {
+        // Masked unconditionally: reporting "—" for an absent sensitive key
+        // would still disclose whether a value was stored.
+        if (key !== undefined && isSensitiveKey(key)) return MASK;
         if (val === null || val === undefined) return '—';
-        if (typeof val === 'object') return JSON.stringify(val);
+        if (typeof val === 'object') return JSON.stringify(redactProperties(val));
         return String(val);
     }
+
+    // Custom properties are rendered as a raw JSON dump, so the mask has to be
+    // applied to the structure itself — including nested `attributes` / `old`
+    // objects left behind by older activity-log rows.
+    function redactProperties(value: unknown): unknown {
+        if (Array.isArray(value)) return value.map(redactProperties);
+
+        if (value !== null && typeof value === 'object') {
+            return Object.fromEntries(
+                Object.entries(value as Record<string, unknown>).map(([key, val]) => [
+                    key,
+                    isSensitiveKey(key) ? MASK : redactProperties(val),
+                ]),
+            );
+        }
+
+        return value;
+    }
+
+    const safeProperties = computed(() => redactProperties(props.data.properties ?? {}));
 </script>
 
 <template>
@@ -155,10 +194,10 @@
                                 {{ key }}
                             </td>
                             <td class="px-3 py-2 text-red-600 dark:text-red-400">
-                                {{ formatValue(data.attribute_changes?.old?.[key]) }}
+                                {{ formatValue(data.attribute_changes?.old?.[key], key) }}
                             </td>
                             <td class="px-3 py-2 text-green-600 dark:text-green-400">
-                                {{ formatValue(data.attribute_changes?.attributes?.[key]) }}
+                                {{ formatValue(data.attribute_changes?.attributes?.[key], key) }}
                             </td>
                         </tr>
                     </tbody>
@@ -173,7 +212,7 @@
             </h3>
             <pre
                 class="overflow-auto rounded bg-surface-50 p-3 text-xs text-surface-700 dark:bg-surface-800 dark:text-surface-300"
-            >{{ JSON.stringify(data.properties, null, 2) }}</pre>
+            >{{ JSON.stringify(safeProperties, null, 2) }}</pre>
         </div>
     </div>
 </template>

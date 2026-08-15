@@ -28,8 +28,13 @@ class LoginUserAction extends BaseAction
 {
     /**
      * Challenge TTL for the API 2FA flow.
+     *
+     * Public because TwoFactorChallengeAction reuses it for the companion claim
+     * key: that claim has to outlive the payload it guards, and deriving both
+     * TTLs from ONE constant is what guarantees it. The claim is always written
+     * later than the payload, so an equal TTL already expires later.
      */
-    private const TWO_FACTOR_CHALLENGE_TTL = 300; // seconds (5 min)
+    public const TWO_FACTOR_CHALLENGE_TTL = 300; // seconds (5 min)
 
     /**
      * @return array{kind: string, user?: User, token?: string, challenge?: string}|null
@@ -93,6 +98,22 @@ class LoginUserAction extends BaseAction
     public static function challengeKey(string $challenge): string
     {
         return "api:2fa_challenge:{$challenge}";
+    }
+
+    /**
+     * Companion key that marks a challenge as CLAIMED by one redeemer.
+     *
+     * Deliberately a second key rather than a flag inside the payload. The
+     * payload above is written with put() — last write wins, no claim
+     * semantics, and reading it cannot tell you whether anyone else read it
+     * too. The claim key is written with Cache::add() instead: add-if-absent,
+     * implemented atomically by the store, and it reports which caller created
+     * it. That report is the only thing that can serialize two concurrent
+     * redemptions of the same challenge. See TwoFactorChallengeAction.
+     */
+    public static function challengeClaimKey(string $challenge): string
+    {
+        return "api:2fa_challenge_claimed:{$challenge}";
     }
 
     private function requiresTwoFactor(User $user): bool

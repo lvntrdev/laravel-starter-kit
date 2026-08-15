@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
+use Lvntr\StarterKit\Console\Doctor\Checks\ActivityLogSecretsCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ConfigCacheCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\DatabaseConnectionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\FileManagerDiskCheck;
@@ -14,6 +15,7 @@ use Lvntr\StarterKit\Console\Doctor\Checks\MailDriverCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\NodeVersionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\NpmBuildArtifactsCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\PassportKeysCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\PermissionResourcesDriftCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\PhpExtensionsCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\QueueDriverCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\QueueWorkerCheck;
@@ -87,6 +89,8 @@ class DoctorCommand extends Command
             new QueueWorkerCheck,
             new ScheduleConfiguredCheck,
             new TimezoneStorageCheck,
+            new ActivityLogSecretsCheck,
+            new PermissionResourcesDriftCheck,
             new MailDriverCheck,
             new NpmBuildArtifactsCheck,
             new ConfigCacheCheck,

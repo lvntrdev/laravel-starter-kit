@@ -20,6 +20,7 @@ This document is the command reference for the starter kit. Architectural notes 
 | `php artisan sk:seed-permissions --fresh` | Rebuild role and permission data from config                 |
 | `php artisan postman:sync`                | Push the Scramble OpenAPI spec to Postman                    |
 | `php artisan apidog:sync`                 | Push the Scramble OpenAPI spec to Apidog                     |
+| `php artisan sk:redact-activity-secrets`  | Irreversibly remove credentials from existing activity logs  |
 | `php artisan file-manager:purge-trash`    | Permanently delete old File Manager trash                    |
 
 ## `sk:doctor`
@@ -58,6 +59,14 @@ Checks (name → `--only` selector):
 | FileManager Disk       | `filemanager-disk`       |
 | Theme Manifest         | `theme-manifest`         |
 | Timezone Storage       | `timezone-storage`       |
+| Activity Log Secrets   | `activity-log-secrets`   |
+| Permission Matrix      | `permission-matrix`      |
+
+`ActivityLogSecretsCheck` returns FAIL when an `activity_log` row still contains a password hash, token, or secret. That happens when the package was updated (which closes the leak for new rows immediately) without running `php artisan migrate`, so the historical rows were never cleaned. Back up the database and run `php artisan migrate` or `php artisan sk:redact-activity-secrets`; removal is irreversible. A missing activity-log table or a table without JSON payload columns is OK, an undecodable JSON payload is WARN, and a database error is WARN rather than a pass.
+
+The check is a **bounded, read-only probe**, not the full cleanup pass. It reads the first 500 rows ordered by primary key — the same fixed cost on MySQL, MariaDB, SQLite, and PostgreSQL alike — and decides in PHP rather than in SQL, so a differently-cased key such as `Password` is caught regardless of the JSON column's collation. The messages state exactly what was measured: over a larger table a finding is reported as a floor ("at least N"), and a clean result names the window it covered instead of clearing the whole table. Run `php artisan sk:redact-activity-secrets --dry-run --all` for the exhaustive count — `--all` is required, because without it the command uses a SQL key-name prefilter on MySQL, MariaDB and SQLite that a differently-cased key can slip past.
+
+`PermissionResourcesDriftCheck` returns WARN when `config/permission-resources.php` no longer covers every resource and ability the package ships — for example an installation that predates the FileManager `files.create` / `files.update` / `files.delete` split and still declares the old set. That file is in the updater's never-touch list, deliberately, because it is where you declare your OWN resources; the price is that new package entries never arrive on their own, and the symptom is a 403 on a screen that used to work. The check is one-directional: resources you added yourself are never reported. Fix by adding the listed entries to `config/permission-resources.php` and running `php artisan sk:seed-permissions`. A missing or empty config is WARN, and an unreadable package copy is WARN rather than a pass.
 
 `TimezoneStorageCheck` returns FAIL when `config('app.timezone')` is not exactly `UTC`. When that setting is correct, it also reads `SELECT @@session.time_zone` from the default connection. For a MySQL/MariaDB connection, only `+00:00` and `UTC` pass; `SYSTEM` and every other value FAIL because `TIMESTAMP` rows can be offset on disk even while the application reads them back consistently. A query failure or missing result returns WARN, never a pass. Other database drivers report OK with the session check marked inapplicable. Keep display configuration separate through `APP_DISPLAY_TIMEZONE`, and see [Timezones](timezone.md) for the connection contract and existing-data conversion guide.
 
@@ -102,6 +111,8 @@ php artisan sk:update --without-ai-skill
 ```
 
 - `--without-ai-skill` skips regenerating the `.codex/skills/` AI-skill mirror for this run. (An install-time `--without-ai-skill` opt-out is honored automatically — skipped skills are never re-added.)
+
+**Your edits survive, including in package-owned files.** Every copied file is compared against the hash recorded for it at install/update time, and a file whose content no longer matches that record is preserved and listed under "Skipped". This now covers `app/Enums/PermissionEnum.php` too: it is package-owned and refreshed on every update, but it is also a backed enum with public `for()` / `allFor()` helpers, so a project ability added to it (`case Approve = 'approve';`) is preserved instead of silently overwritten. A preserved copy is reported separately, because the package does expect its own cases to exist — diff your file against the same relative path under `vendor/lvntr/laravel-starter-kit/stubs/`, merge the new cases, or re-run with `--force` to take the package version and discard your edits. A copy with no hash record (an installation predating hash tracking) is offered in the same interactive prompt as every other untracked file rather than assumed to be untouched.
 
 ## `sk:upgrade`
 
@@ -326,6 +337,25 @@ php artisan apidog:sync
 ```
 
 Reads the `apidog` settings group: `apidog.access_token` and `apidog.project_id` are required. If either value is missing the command aborts with a "not configured" error — populate them under **Settings → API Clients → Apidog** (or insert the rows directly) and re-run. The heavy lifting is done by `App\Domain\ApiRoute\Actions\SyncApidogAction`, which shares the `OpenApiExporter` helper with `postman:sync` — the spec is uploaded to Apidog unchanged so the pushed project mirrors the real server contract.
+
+## `sk:redact-activity-secrets`
+
+Recursively removes sensitive keys from both the `attribute_changes` and `properties` JSON columns of existing activity-log rows while preserving all other keys. The operation is irreversible: take a database backup before running it.
+
+```bash
+php artisan sk:redact-activity-secrets --dry-run
+php artisan sk:redact-activity-secrets
+php artisan sk:redact-activity-secrets --chunk=500
+php artisan sk:redact-activity-secrets --all
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `--dry-run` | Report rows that would be redacted without writing changes |
+| `--chunk=<rows>` | Process this many rows per round trip (default 500, maximum 5000) |
+| `--all` | Scan every row instead of using the sensitive-key prefilter |
+
+The command is idempotent and should be re-run after restoring an older backup. If a JSON payload cannot be decoded, it is counted, reported with a warning, and left unchanged; inspect that row manually because it may still contain a credential.
 
 ## `file-manager:purge-trash`
 

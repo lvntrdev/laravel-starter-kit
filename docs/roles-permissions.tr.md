@@ -16,6 +16,9 @@ Mevcut projeden örnekler:
 - `users.update`
 - `roles.update`
 - `settings.update`
+- `files.read`
+- `files.create`
+- `files.update`
 - `files.delete`
 - `activity-logs.read`
 - `pulse.read`
@@ -46,6 +49,19 @@ Alt kaynaklar da desteklenir:
 
 Varsayılan rollerin yetkileri de `config/permission-resources.php` içinde tanımlıdır.
 
+### FileManager ability'leri
+
+FileManager'ın built-in `global` context'i dört bağımsız ability kontrol eder; birine sahip olmak diğerlerini vermez:
+
+| Yetki | İzin verdiği işlemler |
+| --- | --- |
+| `files.read` | Tree'de gezinme, favorileri/çöpü listeleme ve dosya indirme |
+| `files.create` | Dosya yükleme, klasör oluşturma ve dosya kopyalama |
+| `files.update` | Öğeleri yeniden adlandırma/taşıma, favorileri değiştirme, çöpten geri yükleme ve paylaşma/iptal context kontrolünü geçme |
+| `files.delete` | Öğeleri silme, çöpü boşaltma ve çöpteki öğeleri kalıcı silme |
+
+Rol atamalarını değiştirdikten sonra seed edilmiş yetki verisini dört-ability sözleşmesiyle eşlemek için `php artisan sk:seed-permissions` çalıştırın.
+
 ## User Yönetiminde Rol Hiyerarşisi
 
 Kullanıcı yönetimi hem admin paneli hem de API tarafında rol hiyerarşisini dikkate alır:
@@ -75,6 +91,18 @@ php artisan sk:seed-permissions --fresh
 ```
 
 Admin panelde ayrıca sadece `system_admin` kullanıcılarının çalıştırabildiği bir permission sync aksiyonu vardır.
+
+### Matrisi paket güncellemeleriyle aynı hizada tutmak
+
+`sk:update`, `config/permission-resources.php` dosyasına asla yazmaz — dosya sizindir ve içine merge eden bir updater er ya da geç projenin kendi yetkilendirme modelini ezerdi. Bunun sonucu şudur: kitin sonraki bir sürümde eklediği kaynak veya yetenek mevcut kuruluma kendiliğinden ulaşmaz ve bunun ilk belirtisi genelde daha önce çalışan bir ekranda alınan 403'tür.
+
+Güncellemeden sonra sorun:
+
+```bash
+php artisan sk:doctor --only=permission-matrix
+```
+
+Kontrol, paketin gönderdiği ama sizin config'inizde tanımlı olmayan tüm kaynak ve yetenekleri listeler (kendi eklediğiniz kaynaklar asla raporlanmaz). Listelenen girdileri elle ekleyip `php artisan sk:seed-permissions` çalıştırın.
 
 ## Otomatik Route-to-Permission Eşleme
 
@@ -190,7 +218,7 @@ Starter kit **üç katmanı üst üste** kullanır. Birbirlerinin yerine geçmez
 
 - **Sadece middleware** flat admin CRUD için yeterlidir — izni olan herkes her satıra erişebilir.
 - **Policy ekle** satır bazlı kural gerektiğinde (self-ownership, state-tabanlı kontrol, tenant scope). Policy'ler otomatik keşfedilir: `App\Models\Foo` → `App\Policies\FooPolicy`.
-- **FileManager context kaydet** bir domain'in kendi modeline bağlı files tab'ı açması gerektiğinde (kullanıcılar, organizasyonlar, projeler). Context'in authorize closure'ı okuma/yazma erişimini yönetir, controller'da logic tekrarlanmaz.
+- **FileManager context kaydet** bir domain'in kendi modeline bağlı files tab'ı açması gerektiğinde (kullanıcılar, organizasyonlar, projeler). Context'in authorize closure'ı `read`, `create`, `update` ve `delete` erişimini yönetir, controller'da logic tekrarlanmaz.
 
 ### Policy kalıbı
 
@@ -221,6 +249,6 @@ Kit; `User`, `Role`, `Setting` ve `FileFolder` için policy'ler sağlar. Bu poli
 
 ### FileManager ContextRegistry
 
-`ContextRegistry`, pluggable bir yetkilendirme hook'u açar: her dosya context'i (örn. `user` veya host uygulamanın eklediği özel `project` context'i) mevcut kullanıcının `read` / `write` yapıp yapamayacağını belirleyen bir closure sağlar. Varsayılan user-owned context `UserPolicy@view` / `UserPolicy@update`'e delege eder — yani tek bir policy hem açık `authorize()` çağrılarını hem de files tab guard'ını yönetir.
+`ContextRegistry`, pluggable bir yetkilendirme hook'u açar: her dosya context'i (örn. `user` veya host uygulamanın eklediği özel `project` context'i) `read`, `create`, `update` veya `delete` alan bir closure sağlar. Kit deprecated `write` adını hiçbir zaman göndermez. Varsayılan user-owned context `read` işlemini `UserPolicy@view`'a, tüm mutasyonları `UserPolicy@update`'e delege eder — yani tek bir policy hem açık `authorize()` çağrılarını hem de files tab guard'ını yönetir.
 
 Closure'ı ince tut; gerçek kuralları Policy'ye delege et ki mantık tek yerde kalsın.

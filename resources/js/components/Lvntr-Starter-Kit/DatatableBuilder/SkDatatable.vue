@@ -13,6 +13,7 @@
         FilterOption,
         ServerColumn,
     } from './core';
+    import { escapeHtml } from './core/escapeHtml';
     import type { UseDatatableSelectionReturn } from './selection';
     import { getActiveLanguage, trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
@@ -138,7 +139,10 @@
 
     onMounted(() => calcScrollMax());
 
-    useEventListener(window, 'resize', useDebounceFn(calcScrollMax, 200));
+    const browserWindow = typeof window === 'undefined' ? undefined : window;
+    const browserDocument = typeof document === 'undefined' ? undefined : document;
+
+    useEventListener(browserWindow, 'resize', useDebounceFn(calcScrollMax, 200));
 
     // ── State ────────────────────────────────────────────────────────────────────
 
@@ -802,11 +806,6 @@
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
-    function escapeHtml(str: string): string {
-        const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return str.replace(/[&<>"']/g, (c) => map[c]);
-    }
-
     /**
      * Label a date the user picked in the calendar.
      *
@@ -987,16 +986,16 @@
         }
     }
 
-    useEventListener(document, 'click', closeFilterMenu);
-    useEventListener(document, 'keydown', (e: KeyboardEvent) => {
+    useEventListener(browserDocument, 'click', closeFilterMenu);
+    useEventListener(browserDocument, 'keydown', (e: KeyboardEvent) => {
         if (e.key === 'Escape') closeFilterMenu();
     });
     // keep the teleported menu glued to its trigger while the page/container scrolls
-    useEventListener(window, 'scroll', () => openFilterObj.value && updateMenuPos(), {
+    useEventListener(browserWindow, 'scroll', () => openFilterObj.value && updateMenuPos(), {
         capture: true,
         passive: true,
     });
-    useEventListener(window, 'resize', () => openFilterObj.value && updateMenuPos());
+    useEventListener(browserWindow, 'resize', () => openFilterObj.value && updateMenuPos());
 
     /** Pill menu options — an "All" (null) entry followed by the filter's own options. */
     function pillOptions(filter: FilterConfig): FilterOption[] {
@@ -1776,7 +1775,7 @@
                                                 />
                                             </template>
                                         </template>
-                                        <!-- eslint-disable-next-line vue/no-v-html -- column.render is author-defined in the datatable config, not user input; the escapeHtml helper must be used by the author for any untrusted values -->
+                                        <!-- eslint-disable-next-line vue/no-v-html -- render callbacks own the HTML contract: author markup may be static, but every untrusted dynamic value must pass through the second-argument escapeHtml helper before interpolation -->
                                         <span v-else-if="column.render" v-html="column.render(row, escapeHtml)" />
                                         <template v-else>
                                             {{ getNestedValue(row, column.key) ?? '-' }}

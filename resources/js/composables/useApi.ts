@@ -17,6 +17,7 @@
 
 import { trans } from 'laravel-vue-i18n';
 import { useToast } from 'primevue/usetoast';
+import { withBasePath } from './useBasePath';
 import { getXsrfToken } from './useCsrf';
 
 /** Standard API response envelope returned by ApiResponse / to_api() */
@@ -61,7 +62,7 @@ async function request<T = unknown>(method: HttpMethod, url: string, payload?: u
         options.body = JSON.stringify(payload);
     }
 
-    const response = await fetch(url, options);
+    const response = await fetch(withBasePath(url), options);
 
     // 204 No Content — return null
     if (response.status === 204) {

@@ -13,11 +13,16 @@
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
 
-    const currentDate = new Date().toLocaleDateString(document.documentElement.lang || 'en-US', {
+    const dateFormatOptions: Intl.DateTimeFormatOptions = {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+    };
+    const currentDate = ref('');
+
+    onMounted(() => {
+        currentDate.value = new Date().toLocaleDateString(document.documentElement.lang || 'en-US', dateFormatOptions);
     });
 
     type Trend = 'up' | 'down';
@@ -333,7 +338,7 @@
                         Welcome, {{ user?.first_name || 'Admin' }}
                     </h1>
                     <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
-                        {{ currentDate }} — here's today's summary.
+                        <template v-if="currentDate">{{ currentDate }} — </template>here's today's summary.
                     </p>
                 </div>
                 <div class="flex items-center gap-2">

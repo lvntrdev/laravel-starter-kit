@@ -19,9 +19,22 @@ use InvalidArgumentException;
  *
  * Auto-resolved contexts get a sensible default: path `{key}/{id}/files`, owner
  * resolved via `findOrFail`, and authorization delegated to Laravel policies
- * (`can('view', $owner)` for reads, `can('update', $owner)` for writes). Call
- * `register()` only when you need to deviate from those defaults (custom path,
- * permission-only auth, singleton resolvers, …).
+ * (`can('view', $owner)` for reads, `can('update', $owner)` for every mutation).
+ * Call `register()` only when you need to deviate from those defaults (custom
+ * path, permission-only auth, singleton resolvers, …).
+ *
+ * ## Ability contract for `authorize` closures
+ *
+ * A closure registered here receives ONE of four ability names — `read`,
+ * `create`, `update`, `delete` — matching the operation the request performs
+ * (see `Domain\FileManager\Services\FileManagerAuthorizer`).
+ * The single `write` ability that used to stand for every mutation is
+ * deprecated: it is no longer passed by the kit, and a closure that branches
+ * on `$ability === 'write'` will never see that branch again. Branch on the
+ * four names (or on `$ability === 'read'` for a read/mutate split), e.g.:
+ *
+ *     'authorize' => fn (Model $actor, string $ability, Model $owner): bool
+ *         => $actor->can("vehicles.{$ability}"),
  */
 class ContextRegistry
 {
@@ -49,9 +62,23 @@ class ContextRegistry
             'path' => 'global/files',
             'resolve' => fn (?string $id) => $globalBucketClass::singleton(),
             'authorize' => function (Model $actor, string $ability, Model $owner): bool {
-                return $ability === 'read'
-                    ? $actor->can('files.read') || $actor->can('files.update')
-                    : $actor->can('files.update') || $actor->can('files.create') || $actor->can('files.delete');
+                // One permission per ability. The previous OR-collapse meant a
+                // role holding only `files.create` could also delete files and
+                // empty the trash — FileManager routes are excluded from
+                // CheckResourcePermission, so this closure is the only gate.
+                return match ($ability) {
+                    'read' => $actor->can('files.read'),
+                    'create' => $actor->can('files.create'),
+                    'update' => $actor->can('files.update'),
+                    'delete' => $actor->can('files.delete'),
+                    // Deprecated ability, kept only for callers that still
+                    // invoke ContextDefinition::authorize() with the old
+                    // `write` name. Resolved as the narrowest mutating
+                    // permission — never create or delete.
+                    'write' => $actor->can('files.update'),
+                    // Unknown ability → fail closed.
+                    default => false,
+                };
             },
         ]);
     }
@@ -160,7 +187,14 @@ class ContextRegistry
      *   1. Self-match — an actor managing their own record is always allowed
      *      (covers the built-in `user` context without any policy).
      *   2. Otherwise delegate to Laravel policies: `view` for reads, `update`
-     *      for writes.
+     *      for every mutation.
+     *
+     * The four file abilities deliberately collapse into the owner's `update`
+     * policy ability here: an auto-resolved context has no per-file permission
+     * set, and the owner policy speaks about the OWNER record — mapping a file
+     * delete onto `delete($vehicle)` would demand the right to destroy the
+     * vehicle itself. Register the context explicitly when you need the file
+     * abilities gated one by one.
      */
     private function defaultAuthorize(Model $actor, string $ability, Model $owner): bool
     {

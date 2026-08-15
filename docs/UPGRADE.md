@@ -4,6 +4,79 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## Unreleased
+
+### Activity-log credential redaction — back up before migrating
+
+New activity rows no longer record sensitive attributes, but existing `activity_log` rows may still contain password hashes, tokens, or secrets. The new data-only migration recursively removes those keys from both the `attribute_changes` and `properties` JSON columns.
+
+The migration ships **inside the package** (`database/migrations/`, auto-loaded like the rest of the kit's schema), so it is delivered by `composer update` alone — `sk:install` / `sk:update` are not required to receive it. It runs on the next `php artisan migrate`, which is why the backup below is not optional.
+
+This redaction is **IRREVERSIBLE**. A database backup is **REQUIRED before running `php artisan migrate`**. The migration's `down()` method is intentionally a no-op because deleted credential material cannot be reconstructed.
+
+After taking the backup, run the normal migration:
+
+```bash
+php artisan migrate
+```
+
+The migration scans every row rather than using the sensitive-key prefilter, because on MySQL a JSON column compares case-sensitively and a differently-cased key (`Password`) would otherwise be skipped. On a very large `activity_log` the step therefore takes a while; it holds no table lock and commits one short transaction per 500-row page.
+
+`php artisan sk:doctor` includes an `activity-log-secrets` check, so an installation that never ran the migration reports a FAIL instead of staying silent. The check is a bounded, read-only probe rather than a second full pass: it reads the first 500 rows by primary key — the same fixed cost on every driver, PostgreSQL included — and decides in PHP, so a differently-cased key is caught regardless of collation. Because it stops at that window, a finding on a large table is reported as a floor ("at least N") and a clean result names the window it covered. Use `php artisan sk:redact-activity-secrets --dry-run --all` when you need the exhaustive count. The `--all` flag matters: without it the command falls back to a SQL key-name prefilter on MySQL, MariaDB and SQLite, which a differently-cased key can slip past.
+
+The underlying command is idempotent and can be run separately, including after restoring an older backup:
+
+```bash
+php artisan sk:redact-activity-secrets --dry-run
+php artisan sk:redact-activity-secrets
+php artisan sk:redact-activity-secrets --chunk=500
+php artisan sk:redact-activity-secrets --all
+```
+
+- `--dry-run` reports rows that would change without writing them.
+- `--chunk=` controls rows processed per round trip (default 500, maximum 5000).
+- `--all` scans every row instead of using the sensitive-key prefilter.
+
+If the command warns that a JSON payload could not be decoded, that payload is left unchanged and may still contain a credential. Inspect and redact every reported row manually before treating the upgrade as complete.
+
+### FileManager context abilities — BREAKING
+
+Consumer-registered FileManager context closures now receive exactly one of `read`, `create`, `update`, or `delete`. The kit **never passes `write`** anymore.
+
+A closure using the documented read-versus-mutation shape remains safe:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool =>
+    $ability === 'read' ? $readCheck : $writeCheck,
+```
+
+However, the inverse legacy shape is dangerous:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool =>
+    $ability === 'write' ? $writeCheck : $readCheck,
+```
+
+Because `write` is never passed, every mutation now falls into that closure's **read branch**. If `$readCheck` is broader than `$writeCheck`, create, update, and delete requests can be silently **over-permitted**.
+
+Rewrite every consumer-registered closure to match all four ability names explicitly:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool => match ($ability) {
+    'read' => $readCheck,
+    'create' => $createCheck,
+    'update' => $updateCheck,
+    'delete' => $deleteCheck,
+    default => false,
+},
+```
+
+The built-in `global` context now maps these abilities one-to-one to `files.read`, `files.create`, `files.update`, and `files.delete`. Consequently, a role that held only `files.create` no longer has delete or empty-trash access, and a role that held only `files.update` no longer has read access. Grant each role the specific `files.*` abilities it needs, then rebuild the seeded permissions:
+
+```bash
+php artisan sk:seed-permissions
+```
+
 ## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` is now fail-closed on staging/demo (behavior change)
@@ -60,6 +133,7 @@ If you have your own project-specific reason to allow a fully unthrottled login 
 
 - **`stubs/eslint.config.js` ruleset raised** — `pluginVue` flat config moved from `essential` to `strongly-recommended`. `sk:update` delivers the new file; if you have not customised it, `npm run lint` may report new (pre-existing) Vue style warnings the first time you run it after updating. Fix them at your own pace or pin the rule back to `warn` in your own copy.
 - **Vitest config split out of `vite.config.ts`** — the inline `test: {...}` block moved to a new `stubs/vitest.config.ts`. `sk:update` delivers both files together; if you customised `vite.config.ts`, add the new `vitest.config.ts` alongside it manually (see the vendor stub for the `environment`/`globals` defaults it carries).
+- **API two-factor challenges are claimed atomically** — `app/Domain/Auth/Actions/TwoFactorChallengeAction.php` no longer treats `Cache::pull()` as the claim. `Cache::pull()` is a separate get and forget on every cache driver, so two concurrent redemptions of one challenge id could both read the user id and both mint an access token; the route's `throttle:5,1` narrows that race without serializing it. The action now claims the challenge with `Cache::add()` on a companion key (`api:2fa_challenge_claimed:{uuid}`) — add-if-absent, atomic inside the store — and only the winner reads the payload. `Cache::add()` was chosen over `Cache::lock()` deliberately: a lock on the `database` cache driver needs the separate `cache_locks` table, and an install without it would get a hard failure on the 2FA endpoint. No configuration change and no new table is required, and single-use behaviour is unchanged (a wrong code still burns the challenge). **If you customised either `TwoFactorChallengeAction.php` or `LoginUserAction.php`,** `sk:update` preserves your copies and reports a hash difference — port the change by hand: `LoginUserAction` gains a public `TWO_FACTOR_CHALLENGE_TTL` constant and a `challengeClaimKey()` helper, and `TwoFactorChallengeAction::execute()` must return `null` when `Cache::add(LoginUserAction::challengeClaimKey($challenge), true, LoginUserAction::TWO_FACTOR_CHALLENGE_TTL)` is false, before it reads anything else.
 - **`Definition` model gained a cache-flush observer** — `app/Models/Definition.php` now flushes the definition cache on every write path (`saved`/`deleted`/`restored`/`forceDeleted`), fixing a bug where writing a Definition through anything other than the seeder could leave stale cached values for up to the ~1h TTL. No visible change unless you were relying on the old (buggy) staleness.
 - **Datatable inline search-clear / filter-remove markup** — `stubs/resources/css/theme/main/components/datatable.css` swapped the underlying icon-only `<span>` for a real `<button>` for keyboard accessibility; the CSS reset keeps it visually identical. No action needed beyond the standard `sk:update && npm run build`.
 

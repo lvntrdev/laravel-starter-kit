@@ -96,6 +96,12 @@ it('does not contain unexpected migration files in the vendor directory', functi
         // and Spatie Permission/Role (bigint) keys. Additive convert; no edit of
         // a committed migration.
         '2026_06_20_000000_widen_activity_log_morphs_to_string.php',
+        // Unreleased: activity-log credential redaction. DATA-only migration
+        // (no schema change) that strips credentials out of rows written before
+        // the deny list existed. Vendor-resident on purpose: activity_log is a
+        // kit-owned table, so the cleanup must land on the same `migrate` run
+        // as the composer update rather than waiting for an sk:update file sync.
+        '2026_08_15_120000_redact_secrets_from_activity_log.php',
     ];
 
     $actual = collect(scandir($migrationDir))

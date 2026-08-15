@@ -105,7 +105,13 @@ php artisan migrate
 php artisan env:sync
 ```
 
-If you changed permission resources or roles, also run:
+Then check whether the update expects permissions your matrix does not declare yet:
+
+```bash
+php artisan sk:doctor --only=permission-matrix
+```
+
+If you changed permission resources or roles — or the check above listed anything — also run:
 
 ```bash
 php artisan sk:seed-permissions --fresh
@@ -120,9 +126,9 @@ If the update introduced new settings groups or auth behavior, also review these
 
 ## File Update Strategy Summary
 
-- Safe core paths are overwritten automatically.
+- Package-owned core paths are refreshed automatically — but only when your copy still matches the hash recorded at install/update time. `app/Enums/PermissionEnum.php` is the one entry here, and an ability case you added to it is preserved and reported instead of overwritten. Merge the package's new cases by hand (diff against the same relative path under `vendor/lvntr/laravel-starter-kit/stubs/`) or re-run with `--force` to take the package version and discard your edits.
 - Customizable files are protected unless unchanged.
-- `config/permission-resources.php` is treated as a user-owned file.
+- `config/permission-resources.php` is treated as a user-owned file and is never written to. The flip side: resources and abilities the package adds do not arrive on their own. `php artisan sk:doctor --only=permission-matrix` reports what your matrix is missing.
 - New package files are added automatically.
 
 ## Rolling Back a Customized File

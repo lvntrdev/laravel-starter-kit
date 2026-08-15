@@ -27,8 +27,14 @@ class UpdateCommand extends Command
     private Filesystem $files;
 
     /**
-     * Files/directories that are always safe to update (not user-customized).
-     * These are core package files the user should not modify.
+     * Files/directories the package owns and refreshes on every update.
+     *
+     * "The user should not modify" was the design intent, never an enforced
+     * one — and `app/Enums/PermissionEnum.php` actively invites the opposite:
+     * it is a backed enum with public `for()` / `allFor()` helpers, so adding a
+     * project ability (`case Approve = 'approve';`) is the obvious thing to do.
+     * See `updateSafePaths()` for what happens to such an edit now, and why the
+     * copy is no longer unconditional.
      *
      * v13.5.0+: runtime files (Domain/Shared, Traits, Helpers, ApiResponse,
      * Middleware/SecurityHeaders, Exceptions) are now vendor-resident and are
@@ -509,6 +515,9 @@ class UpdateCommand extends Command
     /** @var list<string> Deprecated files left in place because the user modified them */
     private array $preservedDeprecated = [];
 
+    /** @var list<string> Package-owned (safe-path) files left in place because the user modified them */
+    private array $safePathConflicts = [];
+
     public function handle(): int
     {
         $this->files = new Filesystem;
@@ -523,8 +532,8 @@ class UpdateCommand extends Command
         $force = (bool) $this->option('force');
         $dryRun = (bool) $this->option('dry-run');
 
-        // 1. Always update safe paths (core files)
-        $this->updateSafePaths($dryRun);
+        // 1. Refresh package-owned files — but never over a consumer edit
+        $this->updateSafePaths($force, $dryRun);
 
         // 1b. Remove deprecated files
         $this->removeDeprecatedPaths($dryRun);
@@ -634,15 +643,43 @@ class UpdateCommand extends Command
     }
 
     /**
-     * Update files that are always safe to overwrite.
+     * Refresh the package-owned files listed in SAFE_UPDATE_PATHS.
+     *
+     * This loop used to copy the stub over whatever was on disk unless the two
+     * files happened to be byte-identical — no registry lookup, no backup, no
+     * prompt, and no line in the summary. A consumer who had added an ability
+     * case to `app/Enums/PermissionEnum.php` therefore lost it on the next
+     * `sk:update` and had no way to notice: the enum feeds
+     * `config/permission-resources.php`, so the loss surfaces later as
+     * permissions that no longer seed.
+     *
+     * The decision rule is now the SAME one every consumer-owned file already
+     * gets from `updateModifiableFiles()` — the hash recorded at install/update
+     * time is the only trusted "unmodified" signal:
+     *
+     *   - identical to the stub  → nothing to do
+     *   - target missing         → copy (first install of that file)
+     *   - `--force`              → copy, as documented
+     *   - `__skipped__` record   → an install-time opt-out; honoured, untouched
+     *   - hash === recorded      → provably untouched, copy
+     *   - no record (or the file was re-created after a recorded deletion)
+     *                            → untracked: routed to the same multiselect
+     *                              prompt the rest of the update uses, because
+     *                              guessing here is what caused the data loss
+     *   - hash differs           → consumer-edited: PRESERVE and report
+     *
+     * Preserving does leave the copy stale, and stale is not free — the package
+     * expects its own cases to exist. That is why a preserved safe path is
+     * reported separately from the generic skip list, with the merge
+     * instruction attached (`printSummary()`).
      */
-    private function updateSafePaths(bool $dryRun): void
+    private function updateSafePaths(bool $force, bool $dryRun): void
     {
         $stubsPath = StarterKitServiceProvider::stubsPath();
+        $hashes = $this->loadHashRegistry();
 
         foreach (self::SAFE_UPDATE_PATHS as $safePath) {
             $stubSource = $stubsPath.DIRECTORY_SEPARATOR.$safePath;
-            $appTarget = base_path($safePath);
 
             if (str_ends_with($safePath, '/')) {
                 // Directory
@@ -651,38 +688,72 @@ class UpdateCommand extends Command
                 }
 
                 foreach ($this->files->allFiles($stubSource, true) as $file) {
-                    $relativePath = $safePath.$file->getRelativePathname();
-                    $targetPath = base_path($relativePath);
+                    $relativePath = $safePath.str_replace('\\', '/', $file->getRelativePathname());
 
-                    if ($this->filesAreIdentical($file->getPathname(), $targetPath)) {
-                        continue;
-                    }
-
-                    if (! $dryRun) {
-                        $this->ensureDirectoryExists(dirname($targetPath));
-                        $this->files->copy($file->getPathname(), $targetPath);
-                    }
-
-                    $this->updated[] = $relativePath;
-                }
-            } else {
-                // Single file
-                if (! $this->files->exists($stubSource)) {
-                    continue;
+                    $this->updateSafePath($relativePath, $file->getPathname(), $hashes, $force, $dryRun);
                 }
 
-                if ($this->filesAreIdentical($stubSource, $appTarget)) {
-                    continue;
-                }
+                continue;
+            }
 
-                if (! $dryRun) {
-                    $this->ensureDirectoryExists(dirname($appTarget));
-                    $this->files->copy($stubSource, $appTarget);
-                }
+            // Single file
+            if (! $this->files->exists($stubSource)) {
+                continue;
+            }
 
-                $this->updated[] = $safePath;
+            $this->updateSafePath($safePath, $stubSource, $hashes, $force, $dryRun);
+        }
+    }
+
+    /**
+     * Apply the safe-path decision rule to a single file.
+     *
+     * Split out so the directory and single-file branches cannot drift apart:
+     * the guard is worth nothing if only one of the two paths through the loop
+     * consults it.
+     *
+     * @param  array<string, string>  $hashes  registry, path => stub hash at install/update time
+     */
+    private function updateSafePath(string $relativePath, string $stubSource, array $hashes, bool $force, bool $dryRun): void
+    {
+        $target = base_path($relativePath);
+
+        if ($this->filesAreIdentical($stubSource, $target)) {
+            return;
+        }
+
+        if ($this->files->exists($target) && ! $force) {
+            $recordedHash = $hashes[$relativePath] ?? null;
+
+            // Opted out at install time (e.g. --without-ai-skill). The file on
+            // disk is the consumer's business, not ours.
+            if ($recordedHash === '__skipped__') {
+                return;
+            }
+
+            // No usable record: the copy predates hash tracking, or it was
+            // re-created after a recorded deletion. Either way we cannot tell a
+            // stale stock file from an edited one — so we ask.
+            if ($recordedHash === null || $recordedHash === '__deleted__') {
+                $this->untracked[] = $relativePath;
+
+                return;
+            }
+
+            if ($recordedHash !== md5_file($target)) {
+                $this->skipped[] = $relativePath;
+                $this->safePathConflicts[] = $relativePath;
+
+                return;
             }
         }
+
+        if (! $dryRun) {
+            $this->ensureDirectoryExists(dirname($target));
+            $this->files->copy($stubSource, $target);
+        }
+
+        $this->updated[] = $relativePath;
     }
 
     /**
@@ -1909,7 +1980,7 @@ PHP;
     {
         $prefix = $dryRun ? '[DRY RUN] ' : '';
 
-        $hasChanges = ! empty($this->updated) || ! empty($this->added) || ! empty($this->removed) || ! empty($this->skipped) || ! empty($this->untracked) || ! empty($this->preservedDeprecated);
+        $hasChanges = ! empty($this->updated) || ! empty($this->added) || ! empty($this->removed) || ! empty($this->skipped) || ! empty($this->untracked) || ! empty($this->preservedDeprecated) || ! empty($this->safePathConflicts);
 
         if (! $hasChanges) {
             $this->components->info($prefix.'Everything is up to date!');
@@ -1965,6 +2036,19 @@ PHP;
             }
             $this->newLine();
             $this->line('  <fg=gray>Run without --dry-run to choose which files to update.</>');
+        }
+
+        if (! empty($this->safePathConflicts)) {
+            $this->newLine();
+            $this->components->warn('These files ship with the package but YOUR copy differs — they were NOT overwritten:');
+            foreach ($this->safePathConflicts as $path) {
+                $this->line("  <fg=yellow>~</> {$path}");
+            }
+            $this->newLine();
+            $this->line('  <fg=gray>The kit keeps these in sync with its own constants, so a preserved copy goes stale: config/permission-resources.php</>');
+            $this->line('  <fg=gray>is type-hinted against the enum cases the package ships. Diff your file against the same relative path under</>');
+            $this->line('  <fg=gray>vendor/lvntr/laravel-starter-kit/stubs/ and merge the new cases by hand, or re-run with --force to take the</>');
+            $this->line('  <fg=gray>package version and DISCARD your edits.</>');
         }
 
         if (! empty($this->skipped)) {

@@ -64,7 +64,7 @@ export interface ColumnConfig {
     visible?: boolean;
     /** Locked columns are always visible and cannot be hidden from the column menu. */
     locked?: boolean;
-    render?: (row: unknown, escape: (str: string) => string) => string;
+    render?: (row: unknown, escape: (value: unknown) => string) => string;
     /** 'definition': label/severity resolved from DB definitions. 'value': raw cell value, optionally mapped via tagLabels. */
     tag?: 'definition' | 'value';
     tagKey?: string;

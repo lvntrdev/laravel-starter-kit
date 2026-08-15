@@ -64,7 +64,7 @@ class MediaPolicy
      * 1. Owner ise (kendi dosyası) her zaman izinli — registry'ye bağımlı
      *    olmadan kişisel `user` context'ini kapsar.
      * 2. Aksi halde dosyanın context'i çözülür ve o context'in authorizer'ına
-     *    'write' yetkisiyle delege edilir (global bucket → files.update vb.).
+     *    'update' yetkisiyle delege edilir (global bucket → files.update).
      *    Context çözülemezse veya owner kaydı bulunamazsa güvenli tarafta
      *    kalınır ve reddedilir.
      */
@@ -90,8 +90,11 @@ class MediaPolicy
             $definition = $registry->get($contextKey);
             $owner = $definition->resolveOwner((string) $media->model_id);
 
-            // Paylaşma/revoke bir yönetim ('write') işlemidir.
-            return $definition->authorize($user, 'write', $owner);
+            // Paylaşma/revoke mevcut bir dosya üzerinde yönetim işlemidir:
+            // hiçbir şey yaratmaz ve hiçbir şey silmez → 'update'. Eski
+            // toplu 'write' yeteneği kaldırıldı; context closure'ları artık
+            // read/create/update/delete adlarından birini görür.
+            return $definition->authorize($user, 'update', $owner);
         } catch (\Throwable) {
             // Owner kaydı silinmiş / context bozuk → 404 yerine güvenli reddet.
             return false;

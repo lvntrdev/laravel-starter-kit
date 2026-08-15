@@ -110,6 +110,10 @@ jobs:
         working-directory: stubs
         run: npm ci
 
+      - name: Security audit
+        working-directory: stubs
+        run: npm audit --audit-level=high --omit=dev
+
       - name: Create vendor symlink for @lvntr resolution
         working-directory: stubs
         run: mkdir -p vendor/lvntr && ln -s ${{ github.workspace }} vendor/lvntr/laravel-starter-kit

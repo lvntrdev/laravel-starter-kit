@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsurePasswordNotExpired;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
 use Lvntr\StarterKit\Http\Controllers\Api\MediaUploadController;
 
 Route::redirect('/', '/dashboard');
@@ -29,7 +30,31 @@ foreach (File::files(__DIR__.'/web') as $file) {
 // confirm/reset) register outside it, and the middleware additionally
 // exempts the profile + logout routes by name, so an expired user can
 // always reach the password form (no redirect loop).
-Route::middleware(['auth', 'verified', EnsurePasswordNotExpired::class])->group(function () use ($excludedFiles, $publicRouteFiles) {
+//
+// `verified` is CONDITIONAL, and it has to be. The alias resolves to
+// Illuminate\Auth\Middleware\EnsureEmailIsVerified, whose deny branch calls
+// URL::route('verification.notice') — a route Fortify only registers while
+// Features::emailVerification() is in config('fortify.features'). Since
+// SettingsServiceProvider gates that array from a booting() callback, the
+// admin toggle `auth.email_verification` (seeded '0' on a fresh install) now
+// really does unbind verification.notice/verify/send. Hardcoding 'verified'
+// here would leave one RouteNotFoundException between the panel and a 500 the
+// moment anything makes the middleware take its deny branch (a consumer that
+// drops the User::hasVerifiedEmail() override, a stale route:cache, a custom
+// user model). Keeping the middleware in lockstep with the feature that owns
+// its redirect target is the only stack that cannot dereference a route that
+// does not exist.
+//
+// Ordering is safe: this file is loaded from RouteServiceProvider's booted()
+// callback, i.e. after every provider boot() and therefore long after the
+// SettingsServiceProvider booting() bridge rewrote config('fortify.features').
+$panelMiddleware = array_values(array_filter([
+    'auth',
+    Features::enabled(Features::emailVerification()) ? 'verified' : null,
+    EnsurePasswordNotExpired::class,
+]));
+
+Route::middleware($panelMiddleware)->group(function () use ($excludedFiles, $publicRouteFiles) {
     Route::delete('/media/{media}', [MediaUploadController::class, 'destroy'])->name('media.destroy');
 
     // Web route files inside this group are authenticated.

@@ -1056,6 +1056,7 @@ class StarterKitServiceProvider extends ServiceProvider
                 Console\Commands\RemoveDomainCommand::class,
                 Console\Commands\EnvSyncCommand::class,
                 Console\Commands\SeedPermissionsCommand::class,
+                Console\Commands\RedactActivityLogSecretsCommand::class,
             ];
 
             // Register the vendor PurgeFileManagerTrashCommand only when the

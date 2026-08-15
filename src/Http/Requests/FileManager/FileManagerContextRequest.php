@@ -7,8 +7,8 @@ use Lvntr\StarterKit\Domain\FileManager\Services\FileManagerAuthorizer;
 /**
  * Read-only FileManager requests that only need context resolution.
  *
- * Authorization is handled by route-level permission middleware and
- * {@see FileManagerAuthorizer}. This request
+ * FileManager routes deliberately bypass route-level permission middleware;
+ * {@see FileManagerAuthorizer} is the only authorization gate. This request
  * only ensures the context payload is structurally valid before it reaches the
  * controller, turning InvalidArgumentException (500) into a proper 422 envelope.
  */

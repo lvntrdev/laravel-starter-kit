@@ -31,6 +31,13 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail, OAuthen
     /**
      * The attributes that are mass assignable.
      *
+     * `password` stays here on purpose — every registration/reset path mass
+     * assigns it. It is kept OUT of the activity log by the deny list in
+     * Lvntr\StarterKit\Traits\HasActivityLogging (SENSITIVE_LOG_ATTRIBUTES),
+     * not by this array. Do not "fix" a hash appearing in an audit row by
+     * removing the field here — that only breaks mass assignment; extend
+     * the trait's list instead.
+     *
      * @var list<string>
      */
     protected $fillable = [

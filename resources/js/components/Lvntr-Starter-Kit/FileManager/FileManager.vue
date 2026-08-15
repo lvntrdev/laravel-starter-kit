@@ -2,6 +2,7 @@
     import { useConfirm } from '@/composables/useConfirm';
     import { useDialog } from '@/composables/useDialog';
     import { useImageLightbox } from '@/composables/useImageLightbox';
+    import { withBasePath } from '@/composables/useBasePath';
     import { trans } from 'laravel-vue-i18n';
     import Button from 'primevue/button';
     import ContextMenu from 'primevue/contextmenu';
@@ -1016,7 +1017,7 @@
     function downloadFile(file: FileItem): void {
         const params = new URLSearchParams({ context: props.context });
         if (props.contextId) params.set('context_id', props.contextId);
-        window.location.href = `/file-manager/files/${file.id}/download?${params.toString()}`;
+        window.location.href = withBasePath(`/file-manager/files/${file.id}/download?${params.toString()}`);
     }
 
     // ── Selection helpers ────────────────────────────────────────

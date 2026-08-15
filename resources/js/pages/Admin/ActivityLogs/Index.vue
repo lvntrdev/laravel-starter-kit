@@ -43,11 +43,7 @@
         return parts[parts.length - 1];
     }
 
-    function escapeHtml(str: string): string {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function eventBadge(event: string | null): string {
+    function eventBadge(event: string | null, escapeHtml: (value: unknown) => string): string {
         const map: Record<string, string> = {
             created: `<span class="inline-flex items-center gap-1 text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30 px-2 py-0.5 rounded">● ${trans('sk-activity-log.event_created')}</span>`,
             updated: `<span class="inline-flex items-center gap-1  text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30 px-2 py-0.5 rounded">● ${trans('sk-activity-log.event_updated')}</span>`,
@@ -88,7 +84,7 @@
             DB.column<ActivityLog>()
                 .label(trans('sk-activity-log.event'))
                 .key('event')
-                .render((row) => eventBadge(row.event)),
+                .render((row, escapeHtml) => eventBadge(row.event, escapeHtml)),
             // DB.column<ActivityLog>().label(trans('sk-activity-log.description')).key('description'),
             DB.column<ActivityLog>().label(trans('sk-activity-log.model_id')).key('subject_id').sortable(false),
             DB.column<ActivityLog>()
@@ -100,9 +96,9 @@
                 .label(trans('sk-activity-log.causer'))
                 .key('causer')
                 .sortable(false)
-                .render((row) => {
+                .render((row, escapeHtml) => {
                     if (!row.causer) return '<span class="text-surface-400">System</span>';
-                    return row.causer.name ?? row.causer.email ?? String(row.causer_id);
+                    return escapeHtml(row.causer.name ?? row.causer.email ?? row.causer_id);
                 }),
             DB.column<ActivityLog>()
                 .label(trans('sk-activity-log.date'))

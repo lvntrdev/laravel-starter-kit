@@ -261,7 +261,7 @@ class VehiclePolicy
 <FileManager context="vehicle" :context-id="vehicle.id" height="100%" />
 ```
 
-Arka planda auto-resolve edilen context `vehicle/{id}/files` path'ini kullanır. Varsayılan authorizer önce self-ownership kısa-yolunu uygular (actor'un kendi kaydı → izin — bu sayede `context="user"` ekstra konfig olmadan çalışır), değilse Laravel policy'lerine delegate eder: okuma `$user->can('view', $vehicle)`, yazma `$user->can('update', $vehicle)`. Policy yoksa Laravel varsayılan olarak reddeder; storage güvende.
+Arka planda auto-resolve edilen context `vehicle/{id}/files` path'ini kullanır. Varsayılan authorizer önce self-ownership kısa-yolunu uygular (actor'un kendi kaydı → izin — bu sayede `context="user"` ekstra konfig olmadan çalışır), değilse Laravel policy'lerine delegate eder: `read` için `$user->can('view', $vehicle)`, `create`, `update` ve `delete` için `$user->can('update', $vehicle)`. Policy yoksa Laravel varsayılan olarak reddeder; storage güvende.
 
 > Starter kit `app/Policies/UserPolicy.php`'i hazır getirir (self + `users.read` / `users.update`), bu sayede `context="user"` kutusundan çıkar çıkmaz çalışır. Kendi context'leriniz için policy yazarken bunu şablon olarak kullanabilirsiniz.
 
@@ -290,7 +290,7 @@ app(ContextRegistry::class)->register('vehicle', [
 | `model`     | `class-string<Model>`                                        | Polymorphic owner olarak saklanan Eloquent class                                       |
 | `path`      | `string`                                                     | Disk path şablonu; `{id}` owner primary key'i ile değişir (singleton'lar için atlayın) |
 | `resolve`   | `Closure(?string $id): Model`                                | Gelen `context_id`'den owner model'i yükleyen closure                                  |
-| `authorize` | `Closure(Model $actor, string $ability, Model $owner): bool` | `$ability` → `'read'` veya `'write'`                                                   |
+| `authorize` | `Closure(Model $actor, string $ability, Model $owner): bool` | `$ability` → `'read'`, `'create'`, `'update'` veya `'delete'`; kit hiçbir zaman `'write'` göndermez |
 
 Validation registry üzerinden sürer — auto-resolve de edilemeyen tanımsız anahtar 422 döner. `path` içinde `{id}` bulunan context'ler otomatik olarak `context_id` zorunlu kılar.
 
@@ -363,17 +363,21 @@ Hem backend action'ları (`DeleteFileAction`, `DeleteFolderAction`) hem de Vue b
 
 ## İzinler
 
-Component izin kontrolü yapmaz — backend'deki `FileManagerAuthorizer` çözümlenen context definition'ının `authorize` closure'una delegate eder. İki ability kullanılır:
+Component izin kontrolü yapmaz — bu route'ların tek backend kapısı olan `FileManagerAuthorizer` her isteği kontrol eder. Çözümlenen context definition'ının `authorize` closure'una tam olarak dört ability'den biri gönderilir:
 
-- `read` — `/tree`, `/contents`, `/files/{media}/download`
-- `write` — upload, rename, move, delete, bulk-delete
+| Ability | İşlemler | Built-in `global` yetkisi |
+| --- | --- | --- |
+| `read` | tree, klasör içeriği, favoriler/çöp listeleri, indirme | `files.read` |
+| `create` | upload, klasör oluşturma, dosya kopyalama | `files.create` |
+| `update` | yeniden adlandırma, taşıma, favori değiştirme, geri yükleme, paylaşma/iptal context kontrolü | `files.update` |
+| `delete` | dosya/klasör/toplu silme, çöpü boşaltma, kalıcı silme | `files.delete` |
 
 Built-in kurallar:
 
-- **Kullanıcı bağlamı** — kimliği doğrulanmış kullanıcı bağlam kullanıcısının KENDİSİ ise, veya `users.read` / `users.update` yetkisine sahipse izinli
-- **Global bağlam** — okumalar için `files.read`, yazmalar için `files.create` / `files.update` / `files.delete` gerekli
-- **Auto-resolve context'ler** — Laravel policy'lerine delegate eder: okuma `$user->can('view', $owner)`, yazma `$user->can('update', $owner)`
-- **Özel kayıtlar** — sizin `authorize` closure'unuz ne döndürürse
+- **Kullanıcı bağlamı** — kimliği doğrulanmış kullanıcı bağlam kullanıcısının KENDİSİ ise izinlidir; değilse policy `read` için `users.read`, tüm mutasyonlar için `users.update` kullanır
+- **Global bağlam** — her ability'yi birebir eşleşen `files.*` yetkisine bağlar; bilinmeyen ability'ler fail-closed davranır
+- **Auto-resolve context'ler** — Laravel policy'lerine delegate eder: `read` için `$user->can('view', $owner)`, her mutasyon için `$user->can('update', $owner)`
+- **Özel kayıtlar** — `read`, `create`, `update` veya `delete` alır; kit deprecated `write` ability'sini hiçbir zaman göndermez
 
 `files` kaynağı `create / read / update / delete` yetenekleriyle seed edilir; bu yetkileri Roller panelinden rollere atayın. Özel context'ler için policy yazın veya register sırasında permission tabanlı bir closure geçin.
 

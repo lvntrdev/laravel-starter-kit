@@ -4,6 +4,79 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## Unreleased
+
+### Aktivite kaydı kimlik bilgisi redaksiyonu — migration öncesi yedek alın
+
+Yeni aktivite satırları artık hassas alanları kaydetmiyor; ancak mevcut `activity_log` satırları hâlâ parola hash'leri, token'lar veya secret'lar içerebilir. Yeni data-only migration bu anahtarları hem `attribute_changes` hem `properties` JSON kolonundan recursive olarak kaldırır.
+
+Migration **paketin içinde** (`database/migrations/`, kitin diğer şema dosyaları gibi otomatik yüklenir) gelir; dolayısıyla yalnızca `composer update` ile taşınır — almak için `sk:install` / `sk:update` gerekmez. İlk `php artisan migrate` çalıştırmasında devreye girer; aşağıdaki yedek bu yüzden isteğe bağlı değildir.
+
+Bu redaksiyon **GERİ DÖNDÜRÜLEMEZ**. `php artisan migrate` çalıştırmadan önce veritabanı yedeği almak **ZORUNLUDUR**. Silinen kimlik bilgisi materyali yeniden oluşturulamayacağı için migration'ın `down()` metodu bilinçli olarak no-op'tur.
+
+Yedeği aldıktan sonra normal migration'ı çalıştırın:
+
+```bash
+php artisan migrate
+```
+
+Migration, hassas anahtar ön filtresini kullanmak yerine tüm satırları tarar: MySQL'de JSON kolonu büyük/küçük harfe duyarlı karşılaştırıldığı için farklı yazılmış bir anahtar (`Password`) aksi hâlde atlanırdı. Çok büyük bir `activity_log` tablosunda bu adım bir süre çalışır; tablo kilidi almaz ve her 500 satırlık sayfa için tek bir kısa transaction commit eder.
+
+`php artisan sk:doctor` çıktısına `activity-log-secrets` kontrolü eklendi; böylece migration'ı hiç çalıştırmamış bir kurulum sessiz kalmak yerine FAIL raporlar. Bu kontrol ikinci bir tam geçiş değil, sınırlı ve salt-okunur bir sondadır: birincil anahtara göre ilk 500 satırı okur — PostgreSQL dahil her sürücüde aynı sabit maliyet — ve kararı PHP'de verir; böylece farklı yazılmış bir anahtar collation'dan bağımsız olarak yakalanır. Bu pencerede durduğu için, büyük tablolarda bulgu bir alt sınır ("en az N") olarak raporlanır ve temiz sonuç taradığı pencereyi adlandırır. Tam sayıma ihtiyacınız olduğunda `php artisan sk:redact-activity-secrets --dry-run --all` kullanın. `--all` bayrağı önemlidir: onsuz komut MySQL, MariaDB ve SQLite'ta SQL tarafında bir anahtar-adı ön filtresine düşer ve farklı yazılmış bir anahtar bu filtreden kaçabilir.
+
+Alttaki komut idempotent'tir; eski bir yedeği geri yükledikten sonra da ayrıca çalıştırılabilir:
+
+```bash
+php artisan sk:redact-activity-secrets --dry-run
+php artisan sk:redact-activity-secrets
+php artisan sk:redact-activity-secrets --chunk=500
+php artisan sk:redact-activity-secrets --all
+```
+
+- `--dry-run` yazma yapmadan değişecek satırları raporlar.
+- `--chunk=` her turda işlenen satır sayısını belirler (varsayılan 500, en fazla 5000).
+- `--all`, hassas anahtar ön filtresini kullanmak yerine tüm satırları tarar.
+
+Komut bir JSON payload'ının decode edilemediğini bildirirse o payload değiştirilmeden bırakılır ve hâlâ kimlik bilgisi içerebilir. Yükseltmeyi tamamlanmış saymadan önce bildirilen her satırı elle inceleyip redact edin.
+
+### FileManager context ability'leri — BREAKING
+
+Consumer tarafından kaydedilen FileManager context closure'ları artık yalnızca `read`, `create`, `update` veya `delete` değerlerinden birini alır. Kit artık **hiçbir zaman `write` göndermez**.
+
+Dokümante edilmiş okuma-mutasyon ayrımı biçimini kullanan closure güvenli kalır:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool =>
+    $ability === 'read' ? $readCheck : $writeCheck,
+```
+
+Ancak ters legacy biçim tehlikelidir:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool =>
+    $ability === 'write' ? $writeCheck : $readCheck,
+```
+
+`write` artık gönderilmediği için her mutasyon bu closure'ın **okuma dalına** düşer. `$readCheck`, `$writeCheck`'ten daha genişse create, update ve delete istekleri sessizce **fazla yetkilendirilebilir**.
+
+Consumer tarafından kaydedilen her closure'ı dört ability adını da açıkça eşleyecek biçimde yeniden yazın:
+
+```php
+'authorize' => fn (Model $actor, string $ability, Model $owner): bool => match ($ability) {
+    'read' => $readCheck,
+    'create' => $createCheck,
+    'update' => $updateCheck,
+    'delete' => $deleteCheck,
+    default => false,
+},
+```
+
+Built-in `global` context artık bu ability'leri birebir `files.read`, `files.create`, `files.update` ve `files.delete` ile eşler. Bu nedenle yalnız `files.create` sahibi bir rol artık silme veya çöpü boşaltma erişimine, yalnız `files.update` sahibi bir rol ise okuma erişimine sahip değildir. Her role ihtiyaç duyduğu belirli `files.*` yetkilerini verin, ardından seed edilmiş yetkileri yeniden oluşturun:
+
+```bash
+php artisan sk:seed-permissions
+```
+
 ## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` artık staging/demo'da fail-closed (davranış değişikliği)
@@ -60,6 +133,7 @@ Projenize özel bir sebepten tamamen limitsiz bir login limiter'ı isterseniz, k
 
 - **`stubs/eslint.config.js` ruleset'i yükseltildi** — `pluginVue` flat config `essential`'dan `strongly-recommended`'a taşındı. `sk:update` yeni dosyayı teslim eder; özelleştirmediyseniz, güncelledikten sonraki ilk `npm run lint` çalıştırmasında yeni (önceden var olan) Vue stil uyarıları görebilirsiniz. Kendi hızınızda düzeltin ya da kuralı kendi kopyanızda `warn`'a sabitleyin.
 - **Vitest config `vite.config.ts`'den ayrıştırıldı** — inline `test: {...}` bloğu yeni bir `stubs/vitest.config.ts`'e taşındı. `sk:update` iki dosyayı birlikte teslim eder; `vite.config.ts`'i özelleştirdiyseniz yeni `vitest.config.ts`'i elle yanına ekleyin (varsayılan `environment`/`globals` değerleri için vendor stub'a bakın).
+- **API iki faktör challenge'ları artık atomik olarak sahipleniliyor** — `app/Domain/Auth/Actions/TwoFactorChallengeAction.php` artık `Cache::pull()` çağrısını sahiplenme olarak kullanmıyor. `Cache::pull()` her cache sürücüsünde ayrı bir get + forget'tir; bu yüzden tek bir challenge id'sinin eşzamanlı iki denemesi aynı kullanıcı id'sini okuyup iki access token üretebiliyordu ve route'taki `throttle:5,1` bu yarışı daraltsa da sıraya sokmuyor. Action artık challenge'ı bir yardımcı anahtar üzerinden (`api:2fa_challenge_claimed:{uuid}`) `Cache::add()` ile sahipleniyor — store içinde atomik olan "yoksa ekle" işlemi — ve payload'ı yalnızca kazanan okuyor. `Cache::lock()` yerine `Cache::add()` bilinçli bir tercih: `database` cache sürücüsünde lock ayrı bir `cache_locks` tablosuna ihtiyaç duyar ve bu tabloyu oluşturmamış bir kurulum 2FA endpoint'inde sert bir hata alırdı. Yapılandırma değişikliği veya yeni tablo gerekmiyor; tek kullanımlık davranış da aynı kalıyor (yanlış kod challenge'ı yine tüketir). **`TwoFactorChallengeAction.php` veya `LoginUserAction.php` dosyalarını özelleştirdiyseniz,** `sk:update` kopyalarınızı korur ve hash farkı raporlar — değişikliği elle taşıyın: `LoginUserAction`, public bir `TWO_FACTOR_CHALLENGE_TTL` sabiti ile `challengeClaimKey()` yardımcısını kazandı ve `TwoFactorChallengeAction::execute()`, başka hiçbir şey okumadan önce `Cache::add(LoginUserAction::challengeClaimKey($challenge), true, LoginUserAction::TWO_FACTOR_CHALLENGE_TTL)` false döndüğünde `null` dönmelidir.
 - **`Definition` modeli bir cache-flush observer'ı kazandı** — `app/Models/Definition.php` artık her yazma yolunda (`saved`/`deleted`/`restored`/`forceDeleted`) definition cache'ini flush ediyor; bu, seeder dışında bir yolla Definition yazmanın ~1h TTL'ye kadar bayat cache bırakabildiği bir hatayı düzeltiyor. Eski (hatalı) bayatlığa güveniyorduysanız dışında görünür bir değişiklik yok.
 - **Datatable inline arama-temizle / filtre-kaldırma markup'ı** — `stubs/resources/css/theme/main/components/datatable.css`, klavye erişilebilirliği için altındaki icon-only `<span>`'i gerçek bir `<button>`'a çevirdi; CSS reset görsel olarak birebir aynı tutuyor. Standart `sk:update && npm run build` dışında bir işlem gerekmez.
 
