@@ -4,7 +4,7 @@ Settings modülü, operasyonel yapılandırmayı admin panel içinde merkezi hal
 
 ## Bölümler
 
-- `general` — uygulama adı, timezone, aktif arayüz dilleri, logo yükleme/silme, admin dashboard hoş geldin mesajı (opsiyonel WYSIWYG)
+- `general` — uygulama adı, site gösterim saat dilimi fallback'i, aktif arayüz dilleri, logo yükleme/silme, admin dashboard hoş geldin mesajı (opsiyonel WYSIWYG)
 - `auth` — kayıt, e-posta doğrulama, şifre sıfırlama, iki faktör kullanılabilirliği, giriş denemesi limiti ve parola politikası (minimum uzunluk, geçerlilik süresi, karmaşıklık kuralları)
 - `mail` — mailer, SMTP host/port, kimlik bilgileri, gönderici adres/adı
 - `storage` — media disk seçimi ve S3 uyumlu / AWS kimlik bilgileri
@@ -53,6 +53,7 @@ Admin modülü şu route'ları sunar:
 ## Çalışma Zamanı Notları
 
 - `SettingsController@index`, gruplanmış settings payload'ını timezone seçenekleri ve tanımlı dil listesiyle birlikte döner
+- **Genel** saat dilimi, `users.timezone` değeri `null` olan kullanıcıların site fallback'idir; açıkça saat dilimi seçen kullanıcı bu değeri override eder. Tam çözüm zinciri için [Saat Dilimleri](timezone.tr.md) belgesine bakın
 - yazma akışları ince tutulur: FormRequest -> DTO -> Action
 - `mail`, `storage` ve `turnstile` gruplarındaki secret alanlar artık saklanan değeri değil, `null` ve buna eşlik eden `*_is_set` bayraklarını döner
 - secret alanı boş gönderildiğinde mevcut veritabanı veya config tabanlı değer korunur

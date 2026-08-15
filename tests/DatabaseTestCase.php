@@ -148,9 +148,10 @@ abstract class DatabaseTestCase extends Orchestra
         // │ shim'dir (gerçek stub users migration'ı UUID-anahtarlı ve çok daha │
         // │ geniştir). Yalnız FK/testlerin ihtiyaç duyduğu kolonları taşır;    │
         // │ drift testi onu kolon-seti karşılaştırmasından hariç tutar, yalnız │
-        // │ kritik kolonların (id/email/password/password_changed_at) varlığını │
-        // │ doğrular. Yalnız TESPİT eklenir — test DB kurulumu migration       │
-        // │ koşumuna çevrilmez (Testbench dedupe_receipts sorunu, bkz. yukarı).│
+        // │ kritik kolonların (id / email / password / password_changed_at /   │
+        // │ timezone) varlığını doğrular. Yalnız TESPİT eklenir — test DB      │
+        // │ kurulumu migration koşumuna çevrilmez (Testbench dedupe_receipts   │
+        // │ sorunu, bkz. yukarı).                                              │
         // └────────────────────────────────────────────────────────────────────┘
 
         // 1. settings tablosu
@@ -170,6 +171,9 @@ abstract class DatabaseTestCase extends Orchestra
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            // Kullanıcı bazlı görüntüleme timezone'u. `null` anlamlıdır:
+            // "site ayarını izle" demektir, 'UTC' seçmekle aynı DEĞİLDİR.
+            $table->string('timezone', 64)->nullable();
             $table->string('password');
             $table->timestamp('password_changed_at')->nullable();
             $table->timestamps();

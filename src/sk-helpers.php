@@ -2,6 +2,7 @@
 
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -169,16 +170,69 @@ if (! function_exists('format_money')) {
     }
 }
 
+if (! function_exists('resolve_display_timezone')) {
+    /**
+     * Resolve the display timezone for a user or the current request.
+     *
+     * Usage:
+     *   resolve_display_timezone($user)  → 'Europe/Istanbul'
+     *   resolve_display_timezone()       → current user, site, app, or 'UTC'
+     */
+    function resolve_display_timezone(?object $user = null): string
+    {
+        $user ??= auth()->user();
+
+        // The memo key is the user identity, never the object handle: a
+        // spl_object_id is reused after the object is collected, so an id-less
+        // user would inherit a dead peer's timezone within the same request.
+        // No id → no memo; correctness outranks the saved lookup.
+        $userId = $user?->id;
+        $memoKey = $user !== null && $userId === null
+            ? null
+            : 'starter-kit.display-timezone.'.($user === null ? 'guest' : $user::class.':'.$userId);
+        $request = $memoKey !== null && app()->bound('request') ? app('request') : null;
+
+        if ($request instanceof Request && $request->attributes->has($memoKey)) {
+            return $request->attributes->get($memoKey);
+        }
+
+        static $validIdentifiers;
+        $validIdentifiers ??= array_fill_keys(DateTimeZone::listIdentifiers(), true);
+
+        $candidates = [
+            $user?->timezone,
+            config('app.display_timezone'),
+            config('app.timezone'),
+            'UTC',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate) || $candidate === '' || ! isset($validIdentifiers[$candidate])) {
+                continue;
+            }
+
+            if ($request instanceof Request) {
+                $request->attributes->set($memoKey, $candidate);
+            }
+
+            return $candidate;
+        }
+
+        return 'UTC';
+    }
+}
+
 if (! function_exists('format_date')) {
     /**
-     * Format a date/datetime to the application's display timezone.
+     * Format a date/datetime to the resolved display timezone.
      *
      * Usage:
      *   format_date($model->created_at)          → '14-03-2026 08:36'
      *   format_date($model->created_at, 'date')  → '14-03-2026'
      *   format_date($model->created_at, 'time')  → '08:36'
+     *   format_date($model->created_at, timezone: 'UTC')  → explicit override
      */
-    function format_date(Carbon|string|null $value, string $type = 'datetime'): ?string
+    function format_date(Carbon|string|null $value, string $type = 'datetime', ?string $timezone = null): ?string
     {
         if ($value === null) {
             return null;
@@ -186,17 +240,11 @@ if (! function_exists('format_date')) {
 
         $carbon = $value instanceof Carbon ? $value : Carbon::parse($value);
 
-        // `app.display_timezone` is pushed at boot by SettingsServiceProvider
-        // from the General settings, but it can be absent — or present-but-null
-        // — on bare installs or before settings are seeded. `config(..., $def)`
-        // only substitutes the default for a MISSING key, so a null value would
-        // slip through; the `?:` chain coalesces both null and '' down to the
-        // app timezone, then UTC, so setTimezone() never receives null (throws).
-        $timezone = config('app.display_timezone')
-            ?: config('app.timezone')
-            ?: 'UTC';
-
-        $carbon = $carbon->setTimezone($timezone);
+        // Explicit overrides win; otherwise the resolver checks the supplied
+        // or authenticated user's valid IANA timezone, then the site setting,
+        // app timezone, and finally UTC. Invalid stored values fall through,
+        // so setTimezone() never receives a stale identifier from the chain.
+        $carbon = $carbon->setTimezone($timezone ?? resolve_display_timezone());
 
         // Admin-configured date format (General settings) drives the date part;
         // defaults preserve the kit's historical 'd-m-Y' output.
@@ -207,5 +255,27 @@ if (! function_exists('format_date')) {
             'time' => $carbon->format('H:i'),
             default => $carbon->format($dateFormat.' H:i'),
         };
+    }
+}
+
+if (! function_exists('to_api_date')) {
+    /**
+     * Format a date/datetime as ISO-8601 in the resolved display timezone.
+     *
+     * The offset is carried because the client formats with Intl.DateTimeFormat
+     * and must not re-derive the timezone from a separate setting.
+     *
+     * Usage:
+     *   to_api_date($model->created_at)  → '2026-03-14T08:36:00+03:00'
+     */
+    function to_api_date(Carbon|string|null $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $carbon = $value instanceof Carbon ? $value : Carbon::parse($value);
+
+        return $carbon->setTimezone(resolve_display_timezone())->toIso8601String();
     }
 }

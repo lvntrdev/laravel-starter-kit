@@ -20,6 +20,9 @@ return [
 
     'info_title' => 'Profil Bilgileri',
     'info_subtitle' => 'Adınızı ve e-posta adresinizi güncelleyin.',
+    'timezone' => 'Zaman Dilimi',
+    'timezone_site_default' => 'Site varsayılanı (:timezone)',
+    'timezone_hint' => 'Bu yalnızca tarih ve saatlerin görünümünü değiştirir; saklanan veriler her zaman UTC olarak kalır.',
 
     'password_title' => 'Parolayı Güncelle',
     'password_subtitle' => 'Hesabınızın güçlü bir parola kullandığından emin olun.',

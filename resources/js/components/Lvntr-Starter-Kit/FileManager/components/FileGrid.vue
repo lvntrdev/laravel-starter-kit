@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { trans } from 'laravel-vue-i18n';
     import { computed, onBeforeUnmount, ref } from 'vue';
+    import { formatDate } from '../../utils/datetime';
     import { folderPaletteAt, paletteForMime } from '../palette';
     import type { FileItem, FolderSummary, PendingUpload, SelectionKey, ViewMode } from '../types';
 
@@ -70,7 +71,7 @@
         const days = Math.floor(hours / 24);
         if (days === 1) return 'yesterday';
         if (days < 7) return `${days}d`;
-        return date.toLocaleDateString();
+        return formatDate(date, { year: 'numeric', month: 'numeric', day: 'numeric' });
     }
 
     /** Rozet için uzantı — dosya adından, yoksa mime alt türünden. */

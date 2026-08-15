@@ -4,6 +4,7 @@
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import ActivityLogDetail from './components/ActivityLogDetail.vue';
     import activityLogs from '@/routes/activity-logs';
+    import { formatDateTime } from '@lvntr/components/utils/datetime';
     import { trans } from 'laravel-vue-i18n';
 
     interface FilterOption {
@@ -107,7 +108,7 @@
                 .label(trans('sk-activity-log.date'))
                 .key('created_at')
                 .render((row) =>
-                    new Date(row.created_at).toLocaleDateString(document.documentElement.lang || 'en-US', {
+                    formatDateTime(row.created_at, {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',

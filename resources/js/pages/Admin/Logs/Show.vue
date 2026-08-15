@@ -1,7 +1,8 @@
 <script setup lang="ts">
     import { computed, onMounted, reactive, ref } from 'vue';
     import { Head, router } from '@inertiajs/vue3';
-    import { getActiveLanguage, trans } from 'laravel-vue-i18n';
+    import { formatDateTime, formatTime } from '@lvntr/components/utils/datetime';
+    import { trans } from 'laravel-vue-i18n';
     import { Button } from 'primevue';
     import { useToast } from 'primevue/usetoast';
     import AdminLayout from '@/layouts/AdminLayout.vue';
@@ -52,8 +53,6 @@
     const props = defineProps<Props>();
     const api = useApi({ toast: false });
     const toast = useToast();
-    const pageLocale = getActiveLanguage() || 'en-US';
-
     const LEVEL_OPTIONS = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'];
 
     // Severity → Tailwind class sets. Full strings so Tailwind's JIT picks them up.
@@ -207,7 +206,7 @@
 
     function entryTime(entry: LogEntry): string {
         if (entry.is_raw) return '';
-        return new Date(entry.timestamp).toLocaleTimeString(pageLocale);
+        return formatTime(entry.timestamp, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
     }
 
     /** Stack string → trimmed lines for the numbered trace view. */
@@ -251,7 +250,16 @@
                         <span class="inline-flex items-center gap-1.5 text-[12px] text-surface-600 dark:text-surface-300">
                             <i class="pi pi-clock text-[12px] text-surface-400" />
                             <b class="font-semibold text-surface-900 dark:text-surface-0">
-                                {{ new Date(file.modified_at).toLocaleString(pageLocale) }}
+                                {{
+                                    formatDateTime(file.modified_at, {
+                                        year: 'numeric',
+                                        month: 'numeric',
+                                        day: 'numeric',
+                                        hour: 'numeric',
+                                        minute: 'numeric',
+                                        second: 'numeric',
+                                    })
+                                }}
                             </b>
                         </span>
                         <span

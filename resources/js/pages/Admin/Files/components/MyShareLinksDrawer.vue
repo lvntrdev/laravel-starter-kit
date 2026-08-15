@@ -17,6 +17,7 @@
      */
     import { useFileShare } from '@/composables/useFileShare';
     import type { ShareLinkResult } from '@/composables/useFileShare';
+    import { formatDateTime } from '@lvntr/components/utils/datetime';
     import { trans } from 'laravel-vue-i18n';
     import Button from 'primevue/button';
     import Column from 'primevue/column';
@@ -54,11 +55,14 @@
     }
 
     function formatExpiry(iso: string): string {
-        try {
-            return new Date(iso).toLocaleString();
-        } catch {
-            return iso;
-        }
+        return formatDateTime(iso, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+        });
     }
 
     async function handleRevoke(link: ShareLinkResult): Promise<void> {

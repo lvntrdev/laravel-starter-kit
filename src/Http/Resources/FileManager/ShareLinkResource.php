@@ -33,7 +33,7 @@ class ShareLinkResource extends JsonResource
     {
         return [
             'url' => $this->resource['url'],
-            'expires_at' => $this->resource['expires_at'],
+            'expires_at' => to_api_date($this->resource['expires_at']),
             'token_hash' => $this->resource['token_hash'],
         ];
     }

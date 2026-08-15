@@ -25,8 +25,8 @@ class RoleResource extends JsonResource
             'sort_order' => $this->sort_order,
             'guard_name' => $this->guard_name,
             'seeded_permissions' => $this->seeded_permissions,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => to_api_date($this->created_at),
+            'updated_at' => to_api_date($this->updated_at),
 
             'permissions' => $this->whenLoaded('permissions', fn () => $this->permissions->pluck('name')),
         ];

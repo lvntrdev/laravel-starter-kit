@@ -147,6 +147,10 @@ Commit before `--force` so Git keeps the old version reachable. For whole-projec
 
 Use `sk:upgrade` when you are crossing a starter-kit or Laravel major line, such as Laravel 12 -> 13. Use normal `sk:update` for same-line package updates.
 
+For the timezone behavior change, existing installs must run `sk:upgrade` once even when staying on the same Laravel line. Its idempotent AST steps rewrite a legacy `config/app.php` entry from `'display_timezone' => env('APP_TIMEZONE', ...)` to `env('APP_DISPLAY_TIMEZONE', ...)` and add literal `'timezone' => '+00:00'` entries to existing `mysql` and `mariadb` connection arrays in `config/database.php`. An existing `timezone` value is left unchanged; missing connections and `sqlite`/`pgsql`/`sqlsrv` are skipped. Add `APP_DISPLAY_TIMEZONE` to `.env` and keep `APP_TIMEZONE=UTC`.
+
+Before applying the database edit, the upgrade inspects the default MySQL/MariaDB session and whether the `users` table contains data. If data exists and the session offset is not UTC, it warns that the two `TIMESTAMP` write classes move in opposite directions, links the [one-time conversion guide](timezone.md#one-time-conversion-for-existing-data), and asks `Pin the MySQL/MariaDB connection timezone to +00:00 now?`. Declining skips the database edit and prints the manual follow-up. An unattended run without the explicit `--force` override — including `--no-interaction` or a non-TTY shell — also skips it; failure to inspect the session/data skips it as well. `--force` is an explicit consent bypass and should be used only after the offset and conversion plan have been verified. Re-running `sk:upgrade` is safe for the config rewrite, but **the command does not convert existing rows and never will**. Applying only the config change to a live database creates a mixed dataset until the documented conversion reconciles the old rows.
+
 ```bash
 php artisan sk:upgrade
 php artisan sk:upgrade --force

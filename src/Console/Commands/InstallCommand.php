@@ -311,6 +311,11 @@ class InstallCommand extends Command
                 $this->injectAppConfig();
             });
 
+            // 4b-2. Pin MySQL/MariaDB sessions to UTC in config/database.php
+            $this->step('Configuring database timezone', function () {
+                $this->injectDatabaseTimezoneConfig();
+            });
+
             // 4c. Inject DigitalOcean Spaces disk into config/filesystems.php
             $this->step('Configuring filesystem disks', function () {
                 $this->injectFilesystemsConfig();
@@ -1936,7 +1941,7 @@ class InstallCommand extends Command
             }
 
             $array->items[] = new Node\ArrayItem(
-                $this->envCallNode('APP_TIMEZONE', 'UTC'),
+                $this->envCallNode('APP_DISPLAY_TIMEZONE', 'UTC'),
                 new Node\Scalar\String_('display_timezone'),
             );
 
@@ -1960,10 +1965,157 @@ class InstallCommand extends Command
 
         // Also set in runtime config so seeders can use it immediately.
         config([
-            'app.display_timezone' => 'UTC',
+            'app.display_timezone' => env('APP_DISPLAY_TIMEZONE', 'UTC'),
             'app.available_languages' => ['en' => 'English', 'tr' => 'Türkçe'],
             'app.languages' => ['en' => 'English'],
         ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // DATABASE CONFIG INJECTION
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Pin existing MySQL and MariaDB connection definitions to UTC.
+     */
+    private function injectDatabaseTimezoneConfig(): void
+    {
+        $configPath = config_path('database.php');
+
+        if (! $this->files->exists($configPath)) {
+            $this->components->warn('Could not find config/database.php — automatic database timezone edit skipped.');
+
+            return;
+        }
+
+        // sk:install is also the documented recovery path on an existing project, so it can meet
+        // a populated database whose session is not UTC. Pinning it there shifts every stored
+        // application-written TIMESTAMP in the UI, which is sk:upgrade's consent-gated territory.
+        if ($this->databaseHoldsOffsetTimestamps()) {
+            $this->components->warn('This database already holds data on a non-UTC session — database timezone pin skipped.');
+            $this->line('    Pinning it here would shift how existing timestamps render.');
+            $this->line('    Run <fg=cyan>php artisan sk:upgrade</> and follow the one-time conversion guide in <fg=cyan>docs/timezone.md</>.');
+
+            return;
+        }
+
+        $results = $this->rewriteDatabaseTimezoneConfig($configPath);
+
+        if ($results === null) {
+            $this->components->warn("Could not locate the connections array in config/database.php — add 'timezone' => '+00:00' to the mysql/mariadb connections manually.");
+
+            return;
+        }
+
+        foreach ($results as $connection => $result) {
+            if ($result === 'changed') {
+                config()->set("database.connections.{$connection}.timezone", '+00:00');
+                DB::purge($connection);
+            }
+
+            $message = match ($result) {
+                'changed' => "{$connection}: timezone pinned to +00:00.",
+                'existing' => "{$connection}: existing timezone left unchanged.",
+                'unreadable' => "{$connection}: connections array is not a literal; add 'timezone' => '+00:00' manually.",
+                default => "{$connection}: connection not found; skipped.",
+            };
+
+            $this->line('    <fg=gray>config/database.php: '.$message.'</>');
+        }
+    }
+
+    /**
+     * Report whether the default connection already holds rows written through a non-UTC session.
+     *
+     * An unreachable or unreadable database answers false: a fresh install must not be blocked by
+     * a database that is not up yet, and there is no stored data to protect in that case.
+     */
+    private function databaseHoldsOffsetTimestamps(): bool
+    {
+        $defaultConnection = (string) config('database.default');
+        $driver = strtolower((string) config("database.connections.{$defaultConnection}.driver"));
+
+        if (! in_array($driver, ['mysql', 'mariadb'], true)) {
+            return false;
+        }
+
+        try {
+            $connection = DB::connection($defaultConnection);
+            $timezone = $connection->selectOne('SELECT @@session.time_zone AS time_zone');
+            $sessionTimezone = (string) (is_array($timezone)
+                ? ($timezone['time_zone'] ?? 'unknown')
+                : ($timezone->time_zone ?? 'unknown'));
+
+            if (in_array($sessionTimezone, ['+00:00', 'UTC'], true)) {
+                return false;
+            }
+
+            return $connection->getSchemaBuilder()->hasTable('users')
+                && $connection->table('users')->exists();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Add the UTC timezone literal to supported database connection arrays.
+     *
+     * @return array{mysql: 'changed'|'existing'|'missing'|'unreadable', mariadb: 'changed'|'existing'|'missing'|'unreadable'}|null
+     */
+    private function rewriteDatabaseTimezoneConfig(string $configPath): ?array
+    {
+        $results = ['mysql' => 'missing', 'mariadb' => 'missing'];
+        $inspected = false;
+
+        $this->modifyPhpFileAst($configPath, function (array $stmts) use (&$results, &$inspected): bool {
+            $root = $this->findConfigRootArray($stmts);
+
+            if ($root === null) {
+                return false;
+            }
+
+            $inspected = true;
+            $connections = $this->findArrayItem($root, 'connections');
+
+            if ($connections !== null && ! $connections->value instanceof Node\Expr\Array_) {
+                // The key is there but is built dynamically (variable, spread, function call) —
+                // report it as unreadable rather than as an absent connection.
+                $results = array_fill_keys(array_keys($results), 'unreadable');
+
+                return false;
+            }
+
+            if (! $connections?->value instanceof Node\Expr\Array_) {
+                return false;
+            }
+
+            $changed = false;
+
+            foreach (array_keys($results) as $connection) {
+                $connectionItem = $this->findArrayItem($connections->value, $connection);
+
+                if (! $connectionItem?->value instanceof Node\Expr\Array_) {
+                    continue;
+                }
+
+                if ($this->configArrayHasKey($connectionItem->value, 'timezone')) {
+                    $results[$connection] = 'existing';
+
+                    continue;
+                }
+
+                $connectionItem->value->items[] = new Node\ArrayItem(
+                    new Node\Scalar\String_('+00:00'),
+                    new Node\Scalar\String_('timezone'),
+                );
+                $results[$connection] = 'changed';
+                $changed = true;
+            }
+
+            return $changed;
+        });
+
+        return $inspected ? $results : null;
     }
 
     // ══════════════════════════════════════════════════════════════════════

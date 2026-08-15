@@ -4,6 +4,7 @@
 
     interface Props {
         roleOptions: { label: string; value: string }[];
+        timezones: string[];
     }
 
     defineProps<Props>();
@@ -11,6 +12,6 @@
 
 <template>
     <AdminLayout :title="$t('sk-user.create')" :back-url="true" :header-in-card="true">
-        <UserForm :role-options="roleOptions" />
+        <UserForm :role-options="roleOptions" :timezones="timezones" />
     </AdminLayout>
 </template>

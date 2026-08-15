@@ -64,6 +64,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Create', [
             'roleOptions' => $roleOptions->get(Auth::user()),
+            'timezones' => \DateTimeZone::listIdentifiers(),
         ]);
     }
 
@@ -101,6 +102,7 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Edit', [
             'userId' => $user->id,
             'roleOptions' => $roleOptions->get(Auth::user()),
+            'timezones' => \DateTimeZone::listIdentifiers(),
         ]);
     }
 

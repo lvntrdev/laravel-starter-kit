@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             return [
                 ...parent::share($request),
                 'appName' => config('app.name'),
+                'timezone' => config('app.display_timezone'),
                 'locale' => app()->getLocale(),
                 'availableLocales' => config('app.languages', []),
                 // No DB on the installer: hand the boot a static appearance
@@ -66,6 +67,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'appName' => config('app.name'),
+            'timezone' => resolve_display_timezone($request->user()),
             'appLogo' => fn () => ($logo = Setting::getValue('general.logo')) ? Storage::disk('public')->url($logo) : null,
             // Global appearance defaults (theme/accent/dark/sidebar + logo &
             // favicon URLs) shared to EVERY page — including the login screen —
@@ -96,6 +98,10 @@ class HandleInertiaRequests extends Middleware
             // on every save/delete, so CRUD reflects immediately.
             'availableContentLocales' => fn () => $this->availableContentLocales(),
             'auth' => [
+                // `timezone` needs no explicit entry: it is fillable and not
+                // in the model's $hidden, so the model's own serialization
+                // already carries it. Flattening to toArray() here would add
+                // no field and only trade the model for an array.
                 'user' => $request->user()?->loadMissing('media'),
                 'role' => (function () use ($request) {
                     $role = $request->user()?->roles->first();

@@ -20,6 +20,9 @@ return [
 
     'info_title' => 'Profile Information',
     'info_subtitle' => 'Update your name and email address.',
+    'timezone' => 'Timezone',
+    'timezone_site_default' => 'Site default (:timezone)',
+    'timezone_hint' => 'This changes how dates and times are displayed; stored data always remains in UTC.',
 
     'password_title' => 'Update Password',
     'password_subtitle' => 'Ensure your account uses a strong password.',

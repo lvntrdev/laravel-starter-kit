@@ -30,6 +30,7 @@ Runs a series of environment health checks and reports the result of each.
 php artisan sk:doctor
 php artisan sk:doctor --json
 php artisan sk:doctor --only=database-connection,redis-connection
+php artisan sk:doctor --only=timezone-storage
 ```
 
 - `--json` outputs machine-readable JSON instead of a table
@@ -56,6 +57,9 @@ Checks (name → `--only` selector):
 | Config Cache           | `config-cache`           |
 | FileManager Disk       | `filemanager-disk`       |
 | Theme Manifest         | `theme-manifest`         |
+| Timezone Storage       | `timezone-storage`       |
+
+`TimezoneStorageCheck` returns FAIL when `config('app.timezone')` is not exactly `UTC`. When that setting is correct, it also reads `SELECT @@session.time_zone` from the default connection. For a MySQL/MariaDB connection, only `+00:00` and `UTC` pass; `SYSTEM` and every other value FAIL because `TIMESTAMP` rows can be offset on disk even while the application reads them back consistently. A query failure or missing result returns WARN, never a pass. Other database drivers report OK with the session check marked inapplicable. Keep display configuration separate through `APP_DISPLAY_TIMEZONE`, and see [Timezones](timezone.md) for the connection contract and existing-data conversion guide.
 
 Exit codes:
 
@@ -84,6 +88,8 @@ php artisan sk:install --resume
 - `--without-eject` skips the default `User` and `Role` domain eject on a first install; the runtime stays in vendor and resolves via `class_alias`. Omit this flag to have `app/Domain/User/` and `app/Domain/Role/` created automatically. See [install.md](./install.md) for the ownership trade-off.
 - `--resume` resumes a previously interrupted install, skipping steps already checkpointed as completed. See [install.md](./install.md) for the full resume workflow.
 
+The config phase idempotently adds `'timezone' => '+00:00'` to existing `mysql` and `mariadb` arrays in `config/database.php`. It preserves an existing value, skips a missing connection, and does not touch other drivers. On a re-run against a database that already holds data on a non-UTC session, the step is skipped and points at `sk:upgrade` instead. See [install.md](./install.md) and [Timezones](timezone.md).
+
 ## `sk:update`
 
 Use this after `composer update`.
@@ -100,6 +106,10 @@ php artisan sk:update --without-ai-skill
 ## `sk:upgrade`
 
 Use this when moving between major starter-kit/Laravel lines, such as Laravel 12 -> 13.
+
+The command also runs idempotent AST config steps for existing installs: a legacy `'display_timezone' => env('APP_TIMEZONE', ...)` entry in `config/app.php` is rewritten to read `APP_DISPLAY_TIMEZONE`, and missing UTC `timezone` entries are added to existing MySQL/MariaDB arrays in `config/database.php` without overwriting consumer values.
+
+If the default MySQL/MariaDB session is not UTC and the `users` table holds data, the command warns and asks for explicit consent before pinning the connection. Declining, an inspection failure, or an unattended run without `--force` (`--no-interaction` or non-TTY) skips the edit and reports how to apply it later. `--force` bypasses this consent gate. The command never converts stored rows; follow the [one-time conversion guide](timezone.md#one-time-conversion-for-existing-data) first. Re-running the upgrade does not duplicate the config entries.
 
 ```bash
 php artisan sk:upgrade

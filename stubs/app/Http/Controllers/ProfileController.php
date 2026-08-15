@@ -37,6 +37,7 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         return Inertia::render('Profile/Index', [
+            'timezones' => \DateTimeZone::listIdentifiers(),
             'twoFactorEnabled' => ! is_null($user->two_factor_secret),
             'twoFactorConfirmed' => ! is_null($user->two_factor_confirmed_at),
             'twoFactorConfirmedAt' => $user->two_factor_confirmed_at

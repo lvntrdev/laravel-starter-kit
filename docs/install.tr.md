@@ -51,6 +51,11 @@ DB_PASSWORD=
 Installer, yeni kurulumların gözden geçirmesi gereken birkaç anahtar taşıyan başlangıç `.env.example` yazar:
 
 ```env
+# Timestamp saklama UTC olarak kalmalıdır. Sitenin gösterim fallback'i için
+# APP_DISPLAY_TIMEZONE kullanın; kullanıcılar profilinden override edebilir.
+APP_TIMEZONE=UTC
+APP_DISPLAY_TIMEZONE=UTC
+
 # Log seviyesi — local dev için 'debug' uygundur; production 'error' veya 'warning' göndermeli.
 LOG_LEVEL=error
 
@@ -71,6 +76,8 @@ SESSION_SECURE_COOKIE=true
 # PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 # PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
+
+`APP_TIMEZONE` değerini sitenin bölgesel saat dilimine ayarlamayın: bu değişken Laravel'in saklama saat dilimini yönetir. Bunun yerine `APP_DISPLAY_TIMEZONE` kullanın veya kurulumdan sonra **Ayarlar → Genel** bölümünden site fallback'ini seçin. Kullanıcı override'ları ve tam çözüm zinciri için [Saat Dilimleri](timezone.tr.md) belgesine bakın.
 
 ## 2. Paketi Ekleyin
 
@@ -96,7 +103,7 @@ Sihirbaz ardından her adımda sizinle interaktif olarak ilerler:
 | 4    | Veritabanı bağlantısını yapılandırır (sürücü, host, port, veritabanı, kimlik bilgileri) — `--no-interaction`'da atlanır |
 | 5    | Çakışan varsayılan Laravel dosyalarını siler (`vite.config.js`, `welcome.blade.php`, vb.)            |
 | 6    | Kit'in `.gitignore` girdilerini projenin mevcut dosyasıyla birleştirir                                |
-| 7    | Config dosyalarını yayınlar ve enjekte eder (`app.php`, `filesystems.php`, Turnstile için `services.php`, `media-library.php`), `bootstrap/app.php`'yi bağlar, service provider'ları kaydeder ve custom-helpers autoload girdisini ekler |
+| 7    | Config dosyalarını yayınlar ve enjekte eder (`APP_DISPLAY_TIMEZONE` tabanlı `display_timezone` dahil `app.php`; mevcut MySQL/MariaDB bağlantı dizilerini `+00:00` değerine sabitleyen `database.php`; `filesystems.php`; Turnstile için `services.php`; `media-library.php`), `bootstrap/app.php`'yi bağlar, service provider'ları kaydeder ve custom-helpers autoload girdisini ekler |
 | 8    | `User` + `Role` domain runtime'ını `app/Domain/` altına eject eder (`--without-eject` verildiğinde ya da `storage/starter-kit/hashes.json` zaten mevcutsa atlanır) |
 | 9    | Composer autoload'u yeniden oluşturur                                                                |
 | 10   | Veritabanı migration'larını çalıştırır — veritabanına ulaşılamıyorsa uyarıyla atlanır; bağlantıyı düzelt, `--resume` ile tekrar çalıştır |
@@ -106,6 +113,10 @@ Sihirbaz ardından her adımda sizinle interaktif olarak ilerler:
 | 14   | Varsayılan admin kullanıcısı oluşturur (`admin@lvntr.dev` / sonunda ekrana basılan rastgele parola)   |
 | 15   | npm bağımlılıklarını yükler ve frontend'i derler                                                     |
 | 16   | Uygulama anahtarını sonlandırır ve `sk:update` takibi için stub hash'lerini kaydeder                 |
+
+Config adımında `sk:install`, `config/database.php` içindeki mevcut `mysql` ve `mariadb` dizilerine literal `'timezone' => '+00:00'` sözleşmesini ekler. Consumer'ın tanımladığı bir `timezone` değerinin üzerine yazmaz, eksik bir bağlantı oluşturmaz; `sqlite`, `pgsql` veya `sqlsrv` bağlantılarına dokunmaz.
+
+Sıfır kurulumlarda veri dönüşümü gerekmez. `sk:install` mevcut bir projede kurtarma yolu olarak da belgelendiği için, önce varsayılan MySQL/MariaDB bağlantısının UTC dışı bir oturumda veri taşıyıp taşımadığını kontrol eder — taşıyorsa pin adımını **atlar** ve bu durumu onay kapısıyla ele alan `sk:upgrade` komutunu, [tek seferlik dönüşüm rehberini](timezone.tr.md#mevcut-veriler-için-tek-seferlik-dönüşüm) okuduktan sonra çalıştırmanızı söyler. Ulaşılamayan bir veritabanı sıfır kurulum gibi değerlendirilir ve adımı bloke etmez.
 
 ### Varsayılan domain eject'i (User + Role)
 

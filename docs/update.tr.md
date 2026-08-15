@@ -147,6 +147,10 @@ diff -ru resources/js/components/Lvntr-Starter-Kit/FormBuilder /tmp/sk-compare/r
 
 Laravel 12 -> 13 gibi starter-kit veya Laravel major geçişlerinde `sk:update` yerine `sk:upgrade` kullanın. Aynı ana sürüm hattındaki paket güncellemelerinde normal akış `sk:update`'tir.
 
+Saat dilimi davranış değişikliği için mevcut kurulumlar aynı Laravel hattında kalsa bile `sk:upgrade` komutunu bir kez çalıştırmalıdır. İdempotent AST adımları, `config/app.php` içindeki eski `'display_timezone' => env('APP_TIMEZONE', ...)` girdisini `env('APP_DISPLAY_TIMEZONE', ...)` olarak yeniden yazar ve `config/database.php` içindeki mevcut `mysql` ile `mariadb` bağlantı dizilerine literal `'timezone' => '+00:00'` girdileri ekler. Mevcut bir `timezone` değeri değiştirilmez; eksik bağlantılar ile `sqlite`/`pgsql`/`sqlsrv` atlanır. `.env` dosyasına `APP_DISPLAY_TIMEZONE` ekleyin ve `APP_TIMEZONE=UTC` değerini koruyun.
+
+Upgrade, veritabanı düzenlemesini uygulamadan önce varsayılan MySQL/MariaDB oturumunu ve `users` tablosunda veri bulunup bulunmadığını inceler. Veri varsa ve oturum offset'i UTC değilse iki `TIMESTAMP` yazma sınıfının zıt yönlerde hareket ettiğini bildirir, [tek seferlik dönüşüm rehberine](timezone.tr.md#mevcut-veriler-için-tek-seferlik-dönüşüm) yönlendirir ve `Pin the MySQL/MariaDB connection timezone to +00:00 now?` diye sorar. Onayı reddetmek veritabanı düzenlemesini atlar ve sonradan uygulanacak manuel adımı gösterir. Açık `--force` override'ı bulunmayan etkileşimsiz bir çalışma — `--no-interaction` veya TTY olmayan shell dahil — düzenlemeyi yine atlar; oturum/veri incelemesi başarısız olursa da işlem uygulanmaz. `--force` açık bir onay bypass'ıdır ve yalnız offset ile dönüşüm planı doğrulandıktan sonra kullanılmalıdır. Config rewrite açısından `sk:upgrade` komutunu yeniden çalıştırmak güvenlidir; ancak **komut mevcut satırları dönüştürmez ve hiçbir zaman dönüştürmeyecektir**. Yalnız config değişikliğini canlı bir veritabanına uygulamak, belgelenen dönüşüm eski satırları uzlaştırana kadar karışık bir veri seti oluşturur.
+
 ```bash
 php artisan sk:upgrade
 php artisan sk:upgrade --force

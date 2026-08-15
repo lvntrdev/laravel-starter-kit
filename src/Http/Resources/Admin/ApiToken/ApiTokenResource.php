@@ -72,8 +72,8 @@ class ApiTokenResource extends JsonResource
             'name' => $this->name,
             'scopes' => $this->scopes ?? [],
             'revoked' => $this->revoked,
-            'expires_at' => $this->expires_at?->toIso8601String(),
-            'created_at' => format_date($this->created_at),
+            'expires_at' => to_api_date($this->expires_at),
+            'created_at' => to_api_date($this->created_at),
             'user_id' => $this->user_id,
             'user' => $this->whenLoaded('user', fn () => $this->user ? [
                 'id' => $this->user->getKey(),

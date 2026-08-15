@@ -2,6 +2,7 @@
 
 namespace Lvntr\StarterKit\Http\Responses;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -114,6 +115,31 @@ class DatatableQueryBuilder
         $this->filterFields = $fields;
 
         return $this;
+    }
+
+    /**
+     * Create inclusive local-calendar date filters for a UTC datetime column.
+     *
+     * @return list<AllowedFilter>
+     */
+    public static function dateRangeFilters(string $column): array
+    {
+        return [
+            AllowedFilter::callback("{$column}_from", function (Builder $query, mixed $value) use ($column): void {
+                $date = self::parseCalendarDate($value);
+
+                if ($date !== null) {
+                    $query->where($column, '>=', $date->startOfDay()->utc());
+                }
+            }),
+            AllowedFilter::callback("{$column}_to", function (Builder $query, mixed $value) use ($column): void {
+                $date = self::parseCalendarDate($value);
+
+                if ($date !== null) {
+                    $query->where($column, '<', $date->startOfDay()->addDay()->utc());
+                }
+            }),
+        ];
     }
 
     /**
@@ -339,5 +365,16 @@ class DatatableQueryBuilder
         }
 
         return $filters;
+    }
+
+    private static function parseCalendarDate(mixed $value): ?Carbon
+    {
+        if (! is_string($value)
+            || preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts) !== 1
+            || ! checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])) {
+            return null;
+        }
+
+        return Carbon::parse($value, resolve_display_timezone());
     }
 }

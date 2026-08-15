@@ -41,8 +41,8 @@ class ApiClientResource extends JsonResource
             'revoked' => $this->revoked,
             'personal_access_client' => in_array('personal_access', $grantTypes, true),
             'confidential' => $this->secret !== null,
-            'created_at' => format_date($this->created_at),
-            'updated_at' => format_date($this->updated_at),
+            'created_at' => to_api_date($this->created_at),
+            'updated_at' => to_api_date($this->updated_at),
 
             // plainSecret yalnızca Passport'un create sırasında set ettiği
             // geçici değerdir. Sonraki okuma isteklerinde null gelir — bu kasıtlı.

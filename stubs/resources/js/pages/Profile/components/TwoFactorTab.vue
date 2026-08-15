@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { useForm, router } from '@inertiajs/vue3';
-    import { getActiveLanguage } from 'laravel-vue-i18n';
+    import { formatDate } from '@lvntr/components/utils/datetime';
     import axios, { type AxiosError } from 'axios';
     import SkCard from '@lvntr/components/ui/SkCard.vue';
 
@@ -26,13 +26,11 @@
     // Activation date badge (e.g. "12 Haz 2026"), localised to the active app locale.
     const confirmedAtLabel = computed<string>(() => {
         if (!props.twoFactorConfirmedAt) return '';
-        const date = new Date(props.twoFactorConfirmedAt);
-        if (Number.isNaN(date.getTime())) return '';
-        return new Intl.DateTimeFormat(getActiveLanguage(), {
+        return formatDate(props.twoFactorConfirmedAt, {
             day: 'numeric',
             month: 'short',
             year: 'numeric',
-        }).format(date);
+        });
     });
 
     // Real codes once loaded; otherwise masked placeholders so the grid keeps its shape.

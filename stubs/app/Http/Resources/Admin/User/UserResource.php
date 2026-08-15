@@ -27,9 +27,10 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'status' => $this->status,
             'avatar_url' => $this->avatar_url,
-            'email_verified_at' => $this->email_verified_at,
-            'created_at' => format_date($this->created_at),
-            'updated_at' => format_date($this->updated_at),
+            'timezone' => $this->timezone,
+            'email_verified_at' => to_api_date($this->email_verified_at),
+            'created_at' => to_api_date($this->created_at),
+            'updated_at' => to_api_date($this->updated_at),
 
             // Conditional: only when loaded
             'role' => $this->whenLoaded('roles', fn () => $this->roles->first()?->name),

@@ -5,6 +5,7 @@
     import { useRefreshBus } from '@/composables/useRefreshBus';
     import { router } from '@inertiajs/vue3';
     import { DB } from '@lvntr/components/DatatableBuilder/core';
+    import { formatDate } from '@lvntr/components/utils/datetime';
     import { trans } from 'laravel-vue-i18n';
 
     import CreateTokenModal from './CreateTokenModal.vue';
@@ -82,8 +83,7 @@
                     if (!token.expires_at) return `<span class="text-surface-400">—</span>`;
                     const date = new Date(token.expires_at);
                     const isExpired = date < new Date();
-                    const locale = document.documentElement.lang || 'en-US';
-                    const formatted = date.toLocaleDateString(locale, {
+                    const formatted = formatDate(token.expires_at, {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',

@@ -8,6 +8,9 @@ return [
     'edit' => 'Edit User',
     'delete' => 'Delete User',
     'delete_confirm' => 'Are you sure you want to delete the user ":name"?',
+    'timezone' => 'Timezone',
+    'timezone_site_default' => 'Site default (:timezone)',
+    'timezone_hint' => 'This changes how dates and times are displayed; stored data always remains in UTC.',
     'tabs' => [
         'general' => 'General',
         'files' => 'Files',

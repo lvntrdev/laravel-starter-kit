@@ -39,6 +39,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail, OAuthen
         'email',
         'password',
         'status',
+        'timezone',
     ];
 
     /**

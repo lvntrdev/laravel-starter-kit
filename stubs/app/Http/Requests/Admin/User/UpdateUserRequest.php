@@ -15,6 +15,16 @@ use Illuminate\Validation\Rules\Password;
 class UpdateUserRequest extends FormRequest
 {
     /**
+     * Normalize the site-default selection before applying the timezone rule.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('timezone') === '') {
+            $this->merge(['timezone' => null]);
+        }
+    }
+
+    /**
      * Delegates to UserPolicy::update which enforces `users.update` plus the
      * rank-hierarchy guard (lower-ranked actors cannot edit higher-ranked
      * targets). The role validation rule below separately prevents privilege
@@ -50,6 +60,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'status' => ['required', 'string', Rule::in(['active', 'inactive', 'banned'])],
             'role' => ['required', 'string', Rule::in($allowedRoles)],
+            'timezone' => ['nullable', 'string', 'timezone'],
         ];
     }
 }

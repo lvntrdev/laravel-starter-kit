@@ -5,6 +5,14 @@ namespace Lvntr\StarterKit\Console\Commands;
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
+use PhpParser\Error;
+use PhpParser\Node;
+use PhpParser\Node\Stmt;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter;
 use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
@@ -63,7 +71,19 @@ class UpgradeCommand extends Command
             });
         }
 
-        // 5. Clear cached bootstrap artefacts so new service bindings pick up.
+        // 5. Repair the legacy display-timezone env binding in existing apps.
+        $this->step('Pinning display timezone configuration', function () {
+            if ($this->rewriteDisplayTimezoneConfig(config_path('app.php'))) {
+                $this->line('    <fg=gray>config/app.php: display_timezone now reads APP_DISPLAY_TIMEZONE.</>');
+            }
+        });
+
+        // 6. Pin MySQL/MariaDB sessions to UTC after checking existing data safety.
+        $this->step('Pinning database connection timezone', function () {
+            $this->upgradeDatabaseTimezoneConfig();
+        });
+
+        // 7. Clear cached bootstrap artefacts so new service bindings pick up.
         $this->step('Clearing framework caches', function () {
             $this->callSilently('config:clear');
             $this->callSilently('route:clear');
@@ -78,27 +98,27 @@ class UpgradeCommand extends Command
             }
         });
 
-        // 6. Regenerate composer autoload so any new classes resolve.
+        // 8. Regenerate composer autoload so any new classes resolve.
         $this->step('Regenerating autoload', function () {
             $process = new Process(['composer', 'dump-autoload', '-q'], base_path(), null, null, 120);
             $process->run();
         });
 
-        // 7. Run any new migrations shipped with the v13 package line.
+        // 9. Run any new migrations shipped with the v13 package line.
         if ($this->confirmStep('Run database migrations?')) {
             $this->step('Running migrations', function () {
                 $this->call('migrate', ['--force' => true]);
             });
         }
 
-        // 8. Re-seed permissions in case the package added new abilities.
+        // 10. Re-seed permissions in case the package added new abilities.
         if ($this->confirmStep('Re-seed roles and permissions from config?')) {
             $this->step('Seeding permissions', function () {
                 $this->call('sk:seed-permissions');
             });
         }
 
-        // 9. Rebuild frontend assets.
+        // 11. Rebuild frontend assets.
         if (! $this->option('skip-build') && $this->confirmStep('Reinstall npm dependencies and rebuild assets?')) {
             $this->step('Installing npm dependencies', function () {
                 $process = new Process(['npm', 'install'], base_path(), null, null, 600);
@@ -219,6 +239,362 @@ class UpgradeCommand extends Command
     // ══════════════════════════════════════════════════════════════════════
     // HELPERS
     // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Rewrite only the legacy display_timezone env binding in config/app.php.
+     */
+    private function rewriteDisplayTimezoneConfig(string $configPath): bool
+    {
+        return $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+            $array = $this->findConfigRootArray($stmts);
+
+            if ($array === null) {
+                return false;
+            }
+
+            foreach ($array->items as $item) {
+                if (! $item instanceof Node\ArrayItem
+                    || ! $item->key instanceof Node\Scalar\String_
+                    || $item->key->value !== 'display_timezone'
+                    || ! $item->value instanceof Node\Expr\FuncCall
+                    || ! $item->value->name instanceof Node\Name
+                    || strtolower($item->value->name->toString()) !== 'env'
+                ) {
+                    continue;
+                }
+
+                $envKey = $item->value->args[0]->value ?? null;
+
+                if (! $envKey instanceof Node\Scalar\String_ || $envKey->value !== 'APP_TIMEZONE') {
+                    return false;
+                }
+
+                $item->value->args[0]->value = new Node\Scalar\String_(
+                    'APP_DISPLAY_TIMEZONE',
+                    $envKey->getAttributes(),
+                );
+
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Inspect, consent to, and apply the database connection timezone pin.
+     */
+    private function upgradeDatabaseTimezoneConfig(): void
+    {
+        $configPath = config_path('database.php');
+
+        if (! $this->files->exists($configPath)) {
+            $this->components->warn('Could not find config/database.php — automatic database timezone edit skipped.');
+
+            return;
+        }
+
+        $assessment = $this->rewriteDatabaseTimezoneConfig($configPath, false);
+
+        if ($assessment === null) {
+            $this->components->warn("Could not locate the connections array in config/database.php — add 'timezone' => '+00:00' to the mysql/mariadb connections manually.");
+
+            return;
+        }
+
+        $needsChange = in_array('changed', $assessment, true);
+        $apply = $needsChange && $this->shouldApplyDatabaseTimezoneConfig($assessment);
+        $results = $apply
+            ? ($this->rewriteDatabaseTimezoneConfig($configPath) ?? $assessment)
+            : $assessment;
+
+        foreach ($results as $connection => $result) {
+            if ($apply && $result === 'changed') {
+                config()->set("database.connections.{$connection}.timezone", '+00:00');
+                DB::purge($connection);
+            }
+
+            $message = match ($result) {
+                'changed' => $apply
+                    ? "{$connection}: timezone pinned to +00:00."
+                    : "{$connection}: timezone pin skipped; apply it after following docs/timezone.md.",
+                'existing' => "{$connection}: existing timezone left unchanged.",
+                'unreadable' => "{$connection}: connections array is not a literal; add 'timezone' => '+00:00' manually.",
+                default => "{$connection}: connection not found; skipped.",
+            };
+
+            $this->line('    <fg=gray>config/database.php: '.$message.'</>');
+        }
+
+        if ($needsChange && ! $apply) {
+            $this->line('    <fg=yellow>Apply later by following docs/timezone.md, then add \'timezone\' => \'+00:00\' to the mysql/mariadb connection arrays that need it.</>');
+        }
+    }
+
+    /**
+     * Decide whether it is safe to pin an existing installation without data conversion.
+     *
+     * Every connection this edit would actually change is inspected — not just the default one.
+     * An app whose default is sqlite can still define a data-holding mysql connection, and that
+     * connection is the one whose rows would shift.
+     *
+     * @param  array<string, string>  $assessment
+     */
+    private function shouldApplyDatabaseTimezoneConfig(array $assessment): bool
+    {
+        foreach ($assessment as $connection => $result) {
+            if ($result !== 'changed') {
+                continue;
+            }
+
+            $driver = strtolower((string) config("database.connections.{$connection}.driver"));
+
+            if (! in_array($driver, ['mysql', 'mariadb'], true)) {
+                continue;
+            }
+
+            if (! $this->confirmDatabaseTimezonePin($connection, $driver)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Inspect one connection and, when its rows would shift, ask before pinning it.
+     */
+    private function confirmDatabaseTimezonePin(string $connection, string $driver): bool
+    {
+        try {
+            $link = DB::connection($connection);
+            $timezone = $link->selectOne(
+                'SELECT @@session.time_zone AS time_zone, TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) AS offset_seconds',
+            );
+            $sessionTimezone = (string) (is_array($timezone)
+                ? ($timezone['time_zone'] ?? 'unknown')
+                : ($timezone->time_zone ?? 'unknown'));
+            $rawOffsetSeconds = is_array($timezone)
+                ? ($timezone['offset_seconds'] ?? null)
+                : ($timezone->offset_seconds ?? null);
+            $offsetSeconds = is_numeric($rawOffsetSeconds) ? (int) $rawOffsetSeconds : null;
+            $hasData = $link->getSchemaBuilder()->hasTable('users')
+                && $link->table('users')->exists();
+        } catch (\Throwable) {
+            $this->components->warn("Could not inspect the {$connection} session timezone and existing data — automatic database timezone edit skipped.");
+
+            return false;
+        }
+
+        // The session counts as UTC only when it SAYS so. A `SYSTEM` session that happens to
+        // resolve to a zero offset right now — a DST zone in its winter, or a host retimed after
+        // the rows were written — still wrote offset rows earlier.
+        if (in_array($sessionTimezone, ['+00:00', 'UTC'], true) || ! $hasData) {
+            return true;
+        }
+
+        $this->components->warn("The {$connection} connection uses session timezone {$sessionTimezone} and the users table contains data.");
+
+        if ($offsetSeconds === null || $offsetSeconds === 0) {
+            $this->line('    The session currently resolves to a zero offset, but a non-UTC zone can have written');
+            $this->line('    older rows at a different offset (daylight saving, or a host timezone change).');
+        } else {
+            $absoluteOffset = abs($offsetSeconds);
+            $hours = intdiv($absoluteOffset, 3600);
+            $minutes = intdiv($absoluteOffset % 3600, 60);
+            $shift = trim(($hours > 0 ? "{$hours} hour".($hours === 1 ? '' : 's') : '').
+                ($minutes > 0 ? " {$minutes} minute".($minutes === 1 ? '' : 's') : ''));
+            $direction = $offsetSeconds > 0 ? 'earlier' : 'later';
+
+            $this->line("    Existing application-written TIMESTAMP values will render {$shift} {$direction} after pinning the session to UTC.");
+        }
+
+        $this->line('    DEFAULT CURRENT_TIMESTAMP values move in the opposite direction and self-heal.');
+        $this->line('    Follow the one-time conversion guide before or with this change: <fg=cyan>docs/timezone.md</>.');
+
+        // A non-TTY shell is just as unattended as an explicit --no-interaction: the prompt would
+        // fall back to its "yes" default there, applying the pin without consent. Symfony's
+        // isInteractive() only reflects the --no-interaction/-n flags, so stdin is checked
+        // directly — a CI or deploy shell that never passed -n still counts as unattended.
+        if (! $this->option('force')
+            && ($this->option('no-interaction') || ! $this->input->isInteractive() || ! $this->hasInteractiveTerminal())
+        ) {
+            $this->components->warn('Non-interactive run detected — database timezone pin skipped for safety.');
+
+            return false;
+        }
+
+        return $this->confirmStep('Pin the MySQL/MariaDB connection timezone to +00:00 now?');
+    }
+
+    /**
+     * Report whether stdin is a real terminal a person could answer a prompt on.
+     */
+    private function hasInteractiveTerminal(): bool
+    {
+        if (! defined('STDIN')) {
+            return false;
+        }
+
+        if (function_exists('stream_isatty')) {
+            return @stream_isatty(STDIN);
+        }
+
+        return function_exists('posix_isatty') && @posix_isatty(STDIN);
+    }
+
+    /**
+     * Add the UTC timezone literal to supported database connection arrays.
+     *
+     * @return array{mysql: 'changed'|'existing'|'missing'|'unreadable', mariadb: 'changed'|'existing'|'missing'|'unreadable'}|null
+     */
+    private function rewriteDatabaseTimezoneConfig(string $configPath, bool $write = true): ?array
+    {
+        $results = ['mysql' => 'missing', 'mariadb' => 'missing'];
+        $inspected = false;
+
+        $this->modifyPhpFileAst($configPath, function (array $stmts) use (&$results, &$inspected, $write): bool {
+            $root = $this->findConfigRootArray($stmts);
+
+            if ($root === null) {
+                return false;
+            }
+
+            $inspected = true;
+            $connections = $this->findArrayItem($root, 'connections');
+
+            if ($connections !== null && ! $connections->value instanceof Node\Expr\Array_) {
+                // The key is there but is built dynamically (variable, spread, function call) —
+                // report it as unreadable rather than as an absent connection.
+                $results = array_fill_keys(array_keys($results), 'unreadable');
+
+                return false;
+            }
+
+            if (! $connections?->value instanceof Node\Expr\Array_) {
+                return false;
+            }
+
+            $changed = false;
+
+            foreach (array_keys($results) as $connection) {
+                $connectionItem = $this->findArrayItem($connections->value, $connection);
+
+                if (! $connectionItem?->value instanceof Node\Expr\Array_) {
+                    continue;
+                }
+
+                if ($this->findArrayItem($connectionItem->value, 'timezone') !== null) {
+                    $results[$connection] = 'existing';
+
+                    continue;
+                }
+
+                if ($write) {
+                    $connectionItem->value->items[] = new Node\ArrayItem(
+                        new Node\Scalar\String_('+00:00'),
+                        new Node\Scalar\String_('timezone'),
+                    );
+                }
+
+                $results[$connection] = 'changed';
+                $changed = true;
+            }
+
+            return $write && $changed;
+        });
+
+        return $inspected ? $results : null;
+    }
+
+    /**
+     * Parse and update a PHP file with format-preserving AST printing.
+     *
+     * @param  callable(array<Stmt>): bool  $mutator
+     */
+    private function modifyPhpFileAst(string $path, callable $mutator): bool
+    {
+        if (! $this->files->exists($path)) {
+            return false;
+        }
+
+        $code = $this->files->get($path);
+        $parser = (new ParserFactory)->createForHostVersion();
+
+        try {
+            $oldStmts = $parser->parse($code);
+        } catch (Error $e) {
+            $this->components->warn('Could not parse '.$this->relativePath($path).' — automatic timezone edit skipped. ('.$e->getMessage().')');
+
+            return false;
+        }
+
+        if ($oldStmts === null) {
+            $this->components->warn('Could not parse '.$this->relativePath($path).' — automatic timezone edit skipped.');
+
+            return false;
+        }
+
+        $oldTokens = $parser->getTokens();
+        $traverser = new NodeTraverser(new CloningVisitor);
+        /** @var array<Stmt> $newStmts */
+        $newStmts = $traverser->traverse($oldStmts);
+
+        if (! $mutator($newStmts)) {
+            return false;
+        }
+
+        $printer = new PrettyPrinter\Standard;
+        $this->files->put(
+            $path,
+            $printer->printFormatPreserving($newStmts, $oldStmts, $oldTokens),
+        );
+
+        return true;
+    }
+
+    /**
+     * Locate the top-level return array used by Laravel config files.
+     *
+     * @param  array<Stmt>  $stmts
+     */
+    private function findConfigRootArray(array $stmts): ?Node\Expr\Array_
+    {
+        foreach ($stmts as $stmt) {
+            if ($stmt instanceof Stmt\Return_ && $stmt->expr instanceof Node\Expr\Array_) {
+                return $stmt->expr;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find an ArrayItem by its string key, or null when absent.
+     */
+    private function findArrayItem(Node\Expr\Array_ $array, string $key): ?Node\ArrayItem
+    {
+        foreach ($array->items as $item) {
+            if ($item instanceof Node\ArrayItem
+                && $item->key instanceof Node\Scalar\String_
+                && $item->key->value === $key
+            ) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Render an absolute path relative to the app base for user-facing messages.
+     */
+    private function relativePath(string $path): string
+    {
+        $base = base_path().DIRECTORY_SEPARATOR;
+
+        return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
+    }
 
     /**
      * Run a labelled step with before/after output.

@@ -34,6 +34,9 @@ uses(DatabaseTestCase::class)->in('Feature/Datatable');
 // yazım + rollback doğrulaması için DB gerekli.
 uses(DatabaseTestCase::class)->in('Feature/Shared');
 
+// User model/request/profile/shared-prop tests use the inline users table.
+uses(DatabaseTestCase::class)->in('Feature/User');
+
 // Cross-page bulk selection scope/allow-list testleri: roles + pivot şeması
 // inline kurulur, users tablosu üzerinden DB gerekli.
 uses(DatabaseTestCase::class)->in('Feature/BulkSelection');

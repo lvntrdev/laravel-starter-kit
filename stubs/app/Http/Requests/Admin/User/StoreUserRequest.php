@@ -14,6 +14,16 @@ use Illuminate\Validation\Rules\Password;
 class StoreUserRequest extends FormRequest
 {
     /**
+     * Normalize the site-default selection before applying the timezone rule.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('timezone') === '') {
+            $this->merge(['timezone' => null]);
+        }
+    }
+
+    /**
      * Determine if the user is authorized to make this request.
      *
      * Defense in depth — CheckResourcePermission middleware also gates this
@@ -43,6 +53,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'confirmed', Password::defaults()],
             'status' => ['required', 'string', Rule::in(['active', 'inactive', 'banned'])],
             'role' => ['required', 'string', Rule::in($allowedRoles)],
+            'timezone' => ['nullable', 'string', 'timezone'],
         ];
     }
 }

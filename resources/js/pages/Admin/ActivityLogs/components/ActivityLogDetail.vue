@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import { formatDateTime } from '@lvntr/components/utils/datetime';
+
     interface ActivityLog {
         id: number;
         log_name: string;
@@ -24,8 +26,6 @@
     }
 
     const props = defineProps<Props>();
-
-    const pageLocale = document.documentElement.lang || 'en-US';
 
     function modelShortName(fqcn: string | null): string {
         if (!fqcn) return '—';
@@ -106,7 +106,7 @@
                 }}</span>
                 <span class="mt-1 block text-sm text-surface-800 dark:text-surface-200">
                     {{
-                        new Date(data.created_at).toLocaleDateString(pageLocale, {
+                        formatDateTime(data.created_at, {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',

@@ -17,6 +17,8 @@ readonly class UserDTO extends BaseDTO
         public ?string $password = null,
         public string $status = 'active',
         public ?string $role = null,
+        public ?string $timezone = null,
+        public bool $timezoneProvided = false,
     ) {}
 
     /**
@@ -33,6 +35,8 @@ readonly class UserDTO extends BaseDTO
             password: $data['password'] ?? null,
             status: $data['status'] ?? 'active',
             role: $data['role'] ?? null,
+            timezone: $data['timezone'] ?? null,
+            timezoneProvided: array_key_exists('timezone', $data),
         );
     }
 
@@ -52,6 +56,10 @@ readonly class UserDTO extends BaseDTO
 
         if ($this->password !== null) {
             $data['password'] = $this->password;
+        }
+
+        if ($this->timezoneProvided) {
+            $data['timezone'] = $this->timezone;
         }
 
         return $data;

@@ -2092,8 +2092,8 @@ class {$this->dn}Resource extends JsonResource
         return [
             'id' => \$this->id,
 {$resourceFields}
-            'created_at' => format_date(\$this->created_at),
-            'updated_at' => format_date(\$this->updated_at),
+            'created_at' => to_api_date(\$this->created_at),
+            'updated_at' => to_api_date(\$this->updated_at),
         ];
     }
 }

@@ -14,7 +14,7 @@
         ServerColumn,
     } from './core';
     import type { UseDatatableSelectionReturn } from './selection';
-    import { trans } from 'laravel-vue-i18n';
+    import { getActiveLanguage, trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
     import Ripple from 'primevue/ripple';
     import Tooltip from 'primevue/tooltip';
@@ -807,7 +807,26 @@
         return str.replace(/[&<>"']/g, (c) => map[c]);
     }
 
+    /**
+     * Label a date the user picked in the calendar.
+     *
+     * A picked date is a CALENDAR DAY, not an instant, so it must not go
+     * through the timezone-converting formatter: the picker hands back local
+     * midnight, and re-rendering that in a different timezone would show a
+     * day the user did not pick — while `formatDateParam()` below still sends
+     * the local one to the server. The label and the filter have to name the
+     * same day, so both read the Date's local fields.
+     */
+    function formatPickedDay(date: Date): string {
+        return new Intl.DateTimeFormat(getActiveLanguage() || undefined, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+        }).format(date);
+    }
+
     function formatDateParam(date: Date): string {
+        // Calendar filters use local Y-m-d values by backend contract, not ISO instants.
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
@@ -1032,15 +1051,14 @@
 
         if (filter.type === 'daterange' && Array.isArray(val)) {
             const [from, to] = val as [Date | null, Date | null];
-            const fmt = (d: Date) => d.toLocaleDateString('tr-TR');
-            if (from && to) return `${fmt(from)} – ${fmt(to)}`;
-            if (from) return `${fmt(from)} –`;
-            if (to) return `– ${fmt(to)}`;
+            if (from && to) return `${formatPickedDay(from)} – ${formatPickedDay(to)}`;
+            if (from) return `${formatPickedDay(from)} –`;
+            if (to) return `– ${formatPickedDay(to)}`;
             return null;
         }
 
         if (filter.type === 'date' && val instanceof Date) {
-            return val.toLocaleDateString('tr-TR');
+            return formatPickedDay(val);
         }
 
         return String(val);

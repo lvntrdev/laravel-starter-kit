@@ -4,7 +4,7 @@ The settings module centralizes operational configuration inside the admin panel
 
 ## Sections
 
-- `general` — app name, timezone, active interface languages, logo upload/remove, dashboard welcome message (optional WYSIWYG)
+- `general` — app name, site display-timezone fallback, active interface languages, logo upload/remove, dashboard welcome message (optional WYSIWYG)
 - `auth` — registration, email verification, password reset, two-factor availability, login throttle, and password policy (min length, expiry, complexity rules)
 - `mail` — mailer, SMTP host/port, credentials, from address/name
 - `storage` — media disk selection and S3-compatible / AWS credentials
@@ -53,6 +53,7 @@ The admin module exposes routes such as:
 ## Runtime Notes
 
 - `SettingsController@index` delivers the grouped settings payload plus timezone options and the configured language list
+- the **General** timezone is the site fallback for users whose `users.timezone` is `null`; a user who explicitly selects a timezone overrides it. See [Timezones](timezone.md) for the full resolution chain
 - write operations stay thin: FormRequest -> DTO -> Action
 - secret fields in `mail`, `storage`, and `turnstile` return `null` plus `*_is_set` flags instead of the stored values
 - submitting an empty secret field keeps the current stored or config-backed value

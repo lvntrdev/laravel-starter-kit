@@ -21,6 +21,7 @@ use Lvntr\StarterKit\Console\Doctor\Checks\RedisConnectionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\StorageSymlinkCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ThemeManifestCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\TimezoneStorageCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\WritableDirectoriesCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorReport;
@@ -85,6 +86,7 @@ class DoctorCommand extends Command
             new QueueDriverCheck,
             new QueueWorkerCheck,
             new ScheduleConfiguredCheck,
+            new TimezoneStorageCheck,
             new MailDriverCheck,
             new NpmBuildArtifactsCheck,
             new ConfigCacheCheck,

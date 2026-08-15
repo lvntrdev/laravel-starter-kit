@@ -12,6 +12,7 @@ export interface User {
     role?: string | null;
     role_color?: string | null;
     avatar_url: string | null;
+    timezone: string | null;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

@@ -167,6 +167,49 @@ The slot name must match `tab.key` exactly. The active tab is synchronized to th
 
 ---
 
+## §3.5 — Back button (Aura) — a standalone box is FORBIDDEN
+
+Under the Aura theme the page title lives in the **topbar**; a boxed **"← Back"** button sitting in
+its own block above the content **does not exist and is not added**. On a detail/edit page the back
+button **always** lives in the first card's title-right (action) slot:
+
+- **Tab / form page** → `SkForm`/`SkCard` `#title-end` (right of the form/card title).
+- **Datatable page** → right of the datatable/card title (`#title-end`).
+- **Plain page** → wrap the content in an `SkCard`; the back button goes in that card's `#title-end`.
+
+**Mechanism:** the page passes `AdminLayout` both `:back-url="..."` **and** `:header-in-card="true"`
+→ under Aura `showPageHeader` turns off (no standalone box is rendered) and the `usePageHeader()`
+context becomes `active: true`.
+
+**⚠ Inject context — the part that actually bites:** `usePageHeader()` reads `AdminLayout`'s
+`provide`. Vue inject only flows **down**, so the `provide` reaches only AdminLayout's
+**descendants**. The page itself — the component that renders the `AdminLayout` element, e.g.
+`Account/Show.vue` — is AdminLayout's **ANCESTOR**: calling `usePageHeader()` in its own `setup`
+returns **INACTIVE** (`active` stays false, no button appears, and nothing throws). So the back
+button must be consumed by a **child component living inside AdminLayout's slot**:
+
+- Tab/card content is a separate component (e.g. `ProductForm.vue`, `LoginMethodsTab.vue`) → that
+  component calls `usePageHeader()` and renders `#title-end` in its own card.
+- Content is inline on the page (e.g. `Account/Show.vue`'s tabs) → use the shared
+  **`@/components/HeaderBackButton.vue`**; being a descendant, its inject resolves correctly:
+
+```vue
+<!-- page (Account/Show.vue) — do NOT call usePageHeader in SETUP -->
+<AdminLayout :title="title" :subtitle="..." :back-url="index.url()" :header-in-card="true">
+  <SkCard :title="$t('...')">
+    <template #title-end><HeaderBackButton /></template>
+    <!-- content -->
+  </SkCard>
+</AdminLayout>
+```
+
+On `SkTabs` pages the back button sits in the active tab's card (SkTabs renders one tab at a time).
+Omit `:header-in-card="true"` and Aura prints the standalone "← Back" box — which is exactly what
+this rule forbids. Reference: `Product/Edit.vue` (component tabs), `Account/Show.vue` (inline tab +
+`HeaderBackButton`).
+
+---
+
 ## §4 — Composables
 
 The kit composables **run from the vendor package** and resolve local-first:

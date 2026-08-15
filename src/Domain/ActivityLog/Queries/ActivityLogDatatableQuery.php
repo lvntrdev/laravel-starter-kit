@@ -23,8 +23,7 @@ class ActivityLogDatatableQuery
                 'log_name',
                 'event',
                 AllowedFilter::exact('subject_type'),
-                AllowedFilter::callback('created_at_from', fn ($query, $value) => $query->whereDate('created_at', '>=', $value)),
-                AllowedFilter::callback('created_at_to', fn ($query, $value) => $query->whereDate('created_at', '<=', $value)),
+                ...DatatableQueryBuilder::dateRangeFilters('created_at'),
             ])
             ->defaultSort('-created_at')
             ->response();

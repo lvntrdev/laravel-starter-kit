@@ -17,6 +17,7 @@
     const vTooltip = Tooltip;
     import { usePage } from '@inertiajs/vue3';
     import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+    import { formatDateTime } from '../utils/datetime';
     import FilePreviewModal, { suggestedPreviewWidth } from '../ui/FilePreviewModal.vue';
     import FileDetailsDialog from './components/FileDetailsDialog.vue';
     import FileGrid from './components/FileGrid.vue';
@@ -237,7 +238,14 @@
     // ── Çöp kutusu satırları ─────────────────────────────────────
     function formatDeletedAt(deletedAt: string | null | undefined): string {
         if (!deletedAt) return '';
-        return new Date(deletedAt).toLocaleString();
+        return formatDateTime(deletedAt, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+        });
     }
 
     const trashIsEmpty = computed(

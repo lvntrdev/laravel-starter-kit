@@ -51,6 +51,11 @@ DB_PASSWORD=
 The installer writes a starter `.env.example` that carries a few keys new installs should review:
 
 ```env
+# Timestamp storage must stay UTC. Use APP_DISPLAY_TIMEZONE for the site's
+# display fallback; users can override it from their profile.
+APP_TIMEZONE=UTC
+APP_DISPLAY_TIMEZONE=UTC
+
 # Log level — 'debug' is fine for local dev; production should ship 'error' or 'warning'.
 LOG_LEVEL=error
 
@@ -71,6 +76,8 @@ SESSION_SECURE_COOKIE=true
 # PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 # PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
+
+Do not set `APP_TIMEZONE` to the site's regional timezone: it controls Laravel's storage timezone. Set `APP_DISPLAY_TIMEZONE` instead, or choose the site fallback in **Settings → General** after installation. See [Timezones](timezone.md) for per-user overrides and the complete resolution chain.
 
 ## 2. Require The Package
 
@@ -96,7 +103,7 @@ The installer then walks through each step interactively:
 | 4    | Configure database connection (driver, host, port, database, credentials) — skipped in `--no-interaction` |
 | 5    | Remove conflicting default Laravel files (`vite.config.js`, `welcome.blade.php`, etc.)           |
 | 6    | Merge kit `.gitignore` entries into the project's existing file                                  |
-| 7    | Publish and inject config files (`app.php`, `filesystems.php`, `services.php` for Turnstile, `media-library.php`), wire `bootstrap/app.php`, register service providers, and register the custom-helpers autoload entry |
+| 7    | Publish and inject config files (`app.php`, including `display_timezone` backed by `APP_DISPLAY_TIMEZONE`; `database.php`, pinning existing MySQL/MariaDB connection arrays to `+00:00`; `filesystems.php`; `services.php` for Turnstile; `media-library.php`), wire `bootstrap/app.php`, register service providers, and register the custom-helpers autoload entry |
 | 8    | Eject `User` + `Role` domain runtime into `app/Domain/` (skipped when `--without-eject` is passed or when `storage/starter-kit/hashes.json` already exists) |
 | 9    | Regenerate Composer autoload                                                                     |
 | 10   | Run database migrations — skipped with a warning if the database is unreachable; fix the connection and re-run with `--resume` |
@@ -106,6 +113,10 @@ The installer then walks through each step interactively:
 | 14   | Create default admin user (`admin@lvntr.dev` / random password printed at the end)                |
 | 15   | Install npm dependencies and build frontend assets                                               |
 | 16   | Finalize the application key and save stub hashes for `sk:update` tracking                       |
+
+During the config step, `sk:install` adds the literal `'timezone' => '+00:00'` contract to the existing `mysql` and `mariadb` arrays in `config/database.php`. It does not replace a consumer-defined `timezone`, create a missing connection, or touch `sqlite`, `pgsql`, or `sqlsrv`.
+
+Fresh installs do not need a data conversion. Because `sk:install` is also the documented recovery path on an existing project, it first checks whether the default MySQL/MariaDB connection already holds data on a non-UTC session — if it does, it **skips** the pin and tells you to run `sk:upgrade`, whose consent gate handles that case, after reading the [one-time conversion guide](timezone.md#one-time-conversion-for-existing-data). An unreachable database is treated as a fresh install and does not block the step.
 
 ### Default domain eject (User + Role)
 

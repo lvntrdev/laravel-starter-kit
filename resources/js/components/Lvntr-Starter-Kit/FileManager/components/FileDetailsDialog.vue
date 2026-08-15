@@ -2,6 +2,7 @@
     import { trans } from 'laravel-vue-i18n';
     import Button from 'primevue/button';
     import { computed, onMounted, ref } from 'vue';
+    import { formatDateTime } from '../../utils/datetime';
     import type { FileItem } from '../types';
 
     interface Props {
@@ -22,8 +23,14 @@
 
     function formatDate(iso: string | null): string {
         if (!iso) return '—';
-        const date = new Date(iso);
-        return date.toLocaleString();
+        return formatDateTime(iso, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+        });
     }
 
     const isImage = computed(() => props.file.mime_type.startsWith('image/'));

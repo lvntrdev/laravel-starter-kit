@@ -7,6 +7,7 @@
     interface Props {
         userId: string;
         roleOptions: { label: string; value: string }[];
+        timezones: string[];
     }
 
     defineProps<Props>();
@@ -23,7 +24,7 @@
     <AdminLayout :title="$t('sk-user.edit')" :subtitle="userId" :back-url="true">
         <SkTabs :config="tabConfig">
             <template #general>
-                <UserForm :user-id="userId" :role-options="roleOptions" />
+                <UserForm :user-id="userId" :role-options="roleOptions" :timezones="timezones" />
             </template>
 
             <template #files>

@@ -1,8 +1,10 @@
 <!-- resources/js/components/Admin/UserForm.vue -->
 <script setup lang="ts">
     import adminUsers from '@/routes/users';
+    import { usePage } from '@inertiajs/vue3';
     import { FB } from '@lvntr/components/FormBuilder/core';
     import SkForm from '@lvntr/components/FormBuilder/SkForm.vue';
+    import { trans } from 'laravel-vue-i18n';
     import { Button } from 'primevue';
     import { usePageHeader } from '@/composables/usePageHeader';
 
@@ -15,6 +17,7 @@
         inDialog?: boolean;
         showBack?: boolean;
         roleOptions?: { label: string; value: string }[];
+        timezones?: string[];
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +25,7 @@
         inDialog: false,
         showBack: false,
         roleOptions: () => [],
+        timezones: () => [],
     });
 
     const emit = defineEmits<{
@@ -30,7 +34,15 @@
     }>();
 
     const formRef = ref<InstanceType<typeof SkForm>>();
+    const page = usePage<{ timezone: string }>();
     const isEdit = computed(() => !!props.userId);
+    const timezoneOptions = computed(() => [
+        {
+            label: trans('sk-user.timezone_site_default', { timezone: page.props.timezone }),
+            value: null,
+        },
+        ...props.timezones.map((timezone) => ({ label: timezone, value: timezone })),
+    ]);
 
     const formConfig = computed(() => {
         const builder = FB.form()
@@ -54,6 +66,16 @@
                 FB.inputText().key('email').inputType('email').class('col-span-full'),
                 FB.select().key('role').options(props.roleOptions).filter(true),
                 FB.select().key('status').default('active').definitionOptions('userStatus'),
+                FB.select()
+                    .key('timezone')
+                    .label('sk-user.timezone')
+                    .options(timezoneOptions.value)
+                    .filter(true)
+                    .icon('pi pi-clock')
+                    .hint('sk-user.timezone_hint')
+                    .optional()
+                    .default(null)
+                    .class('col-span-full'),
                 FB.password()
                     .key('password')
                     .generator()

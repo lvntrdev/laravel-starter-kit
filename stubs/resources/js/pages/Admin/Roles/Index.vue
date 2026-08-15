@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { DB } from '@lvntr/components/DatatableBuilder/core';
+    import { formatDate } from '@lvntr/components/utils/datetime';
     import { useCan } from '@/composables/useCan';
     import { useConfirm } from '@/composables/useConfirm';
     import { useRefreshBus } from '@/composables/useRefreshBus';
@@ -151,7 +152,7 @@
                 .label(trans('sk-common.created_at'))
                 .key('created_at')
                 .render((role) =>
-                    new Date(role.created_at).toLocaleDateString(document.documentElement.lang || 'en-US', {
+                    formatDate(role.created_at, {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',

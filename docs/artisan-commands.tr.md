@@ -30,6 +30,7 @@ Bir dizi ortam sağlık kontrolü çalıştırır ve her birinin sonucunu raporl
 php artisan sk:doctor
 php artisan sk:doctor --json
 php artisan sk:doctor --only=database-connection,redis-connection
+php artisan sk:doctor --only=timezone-storage
 ```
 
 - `--json` tablo yerine makine okunabilir JSON çıktı üretir
@@ -56,6 +57,9 @@ Kontroller (ad → `--only` seçicisi):
 | Config Cache           | `config-cache`           |
 | FileManager Disk       | `filemanager-disk`       |
 | Theme Manifest         | `theme-manifest`         |
+| Timezone Storage       | `timezone-storage`       |
+
+`TimezoneStorageCheck`, `config('app.timezone')` tam olarak `UTC` değilse FAIL döndürür. Bu ayar doğruysa varsayılan bağlantıdan ayrıca `SELECT @@session.time_zone` değerini okur. MySQL/MariaDB bağlantısında yalnız `+00:00` ve `UTC` başarılıdır; `SYSTEM` ve diğer tüm değerler FAIL döndürür, çünkü uygulama satırları tutarlı okurken bile `TIMESTAMP` değerleri diskte offset'li olabilir. Sorgu hatası veya eksik sonuç hiçbir zaman başarı sayılmaz, WARN döndürür. Diğer veritabanı sürücüleri oturum kontrolünü uygulanamaz olarak belirten OK sonucu verir. Gösterim yapılandırmasını `APP_DISPLAY_TIMEZONE` ile ayrı tutun; bağlantı sözleşmesi ve mevcut veri dönüşüm rehberi için [Saat Dilimleri](timezone.tr.md) belgesine bakın.
 
 Çıkış kodları:
 
@@ -84,6 +88,8 @@ php artisan sk:install --resume
 - `--without-eject` ilk kurulumda varsayılan `User` ve `Role` domain eject'ini atlar; runtime vendor'da kalır ve `class_alias` ile çözülür. Bu flag'i atlarsanız `app/Domain/User/` ve `app/Domain/Role/` otomatik oluşturulur. Sahiplik takası için [install.tr.md](./install.tr.md) belgesine bakın.
 - `--resume` daha önce yarıda kalmış bir kurulumu, zaten tamamlandığı işaretlenmiş adımları atlayarak devam ettirir. Tam resume akışı için [install.tr.md](./install.tr.md) belgesine bakın.
 
+Config aşaması, `config/database.php` içindeki mevcut `mysql` ve `mariadb` dizilerine idempotent biçimde `'timezone' => '+00:00'` ekler. Mevcut bir değeri korur, eksik bağlantıyı atlar ve diğer sürücülere dokunmaz. UTC dışı bir oturumda zaten veri taşıyan bir veritabanına karşı yeniden çalıştırıldığında adım atlanır ve `sk:upgrade` komutuna yönlendirir. Bkz. [install.tr.md](./install.tr.md) ve [Saat Dilimleri](timezone.tr.md).
+
 ## `sk:update`
 
 `composer update` sonrasında kullanılır.
@@ -100,6 +106,10 @@ php artisan sk:update --without-ai-skill
 ## `sk:upgrade`
 
 Laravel 12 -> 13 gibi starter-kit veya Laravel major geçişlerinde kullanılır.
+
+Komut ayrıca mevcut kurulumlar için idempotent AST config adımları çalıştırır: `config/app.php` içindeki eski `'display_timezone' => env('APP_TIMEZONE', ...)` girdisi `APP_DISPLAY_TIMEZONE` okuyacak şekilde yeniden yazılır; `config/database.php` içindeki mevcut MySQL/MariaDB dizilerine, consumer değerlerinin üzerine yazılmadan eksik UTC `timezone` girdileri eklenir.
+
+Varsayılan MySQL/MariaDB oturumu UTC değilse ve `users` tablosunda veri varsa komut uyarı verir ve bağlantıyı sabitlemeden önce açık onay ister. Reddetme, inceleme hatası veya `--force` bulunmayan etkileşimsiz çalışma (`--no-interaction` ya da TTY olmayan shell) düzenlemeyi atlar ve daha sonra nasıl uygulanacağını bildirir. `--force` bu onay kapısını bypass eder. Komut saklanan satırları hiçbir zaman dönüştürmez; önce [tek seferlik dönüşüm rehberini](timezone.tr.md#mevcut-veriler-için-tek-seferlik-dönüşüm) izleyin. Upgrade tekrar çalıştırıldığında config girdileri çoğaltılmaz.
 
 ```bash
 php artisan sk:upgrade

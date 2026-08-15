@@ -42,17 +42,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Re-derive the real column set for a table by running the given package
- * migration files against a disposable in-memory SQLite connection.
+ * Run the given package migration files against a disposable in-memory SQLite
+ * connection, then hand control to $inspect while that connection is still the
+ * default one, and return whatever $inspect returns.
  *
  * FK enforcement is disabled so create-time references to tables that are not
  * present on the scratch connection (users, media, self) do not matter — we
- * only care about the resulting column list.
+ * only care about the resulting schema.
+ *
+ * The scratch connection is always torn down (finally), so a failing
+ * expectation inside $inspect cannot leak the default connection into the rest
+ * of the suite.
  *
  * @param  list<string>  $files  absolute migration paths, in apply order
- * @return list<string> column names produced on the scratch connection
+ * @param  Closure():mixed  $inspect  runs against the scratch connection
  */
-function driftScratchColumns(array $files, string $table): array
+function driftScratchRun(array $files, Closure $inspect): mixed
 {
     config(['database.connections.drift_scratch' => [
         'driver' => 'sqlite',
@@ -74,12 +79,41 @@ function driftScratchColumns(array $files, string $table): array
             (require $file)->up();
         }
 
-        return Schema::getColumnListing($table);
+        return $inspect();
     } finally {
         config(['database.default' => $previousDefault]);
         DB::setDefaultConnection($previousDefault);
         DB::purge('drift_scratch');
     }
+}
+
+/**
+ * Re-derive the real column set for a table by running the given package
+ * migration files against a disposable in-memory SQLite connection.
+ *
+ * @param  list<string>  $files  absolute migration paths, in apply order
+ * @return list<string> column names produced on the scratch connection
+ */
+function driftScratchColumns(array $files, string $table): array
+{
+    return driftScratchRun($files, fn (): array => Schema::getColumnListing($table));
+}
+
+/**
+ * Full definition (nullable / default / type) of a single column on the
+ * connection that is currently default.
+ *
+ * @return array<string, mixed>|null
+ */
+function driftColumnDefinition(string $table, string $column): ?array
+{
+    foreach (Schema::getColumns($table) as $definition) {
+        if ($definition['name'] === $column) {
+            return $definition;
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -151,7 +185,7 @@ it('keeps the users shim carrying the columns the kit depends on', function (): 
     // excluded from the auto-comparison above. Still pin the columns the
     // file-manager FKs and password-expiry policy actually read, so silent
     // removal from the shim is caught.
-    $required = ['id', 'email', 'password', 'password_changed_at'];
+    $required = ['id', 'email', 'password', 'password_changed_at', 'timezone'];
 
     $inline = Schema::getColumnListing('users');
 
@@ -161,4 +195,69 @@ it('keeps the users shim carrying the columns the kit depends on', function (): 
             .'Restore it in tests/DatabaseTestCase::defineDatabaseMigrations().'
         );
     }
+});
+
+it('keeps the inline users shim timezone column nullable with no default', function (): void {
+    // The shim is what every later timezone test actually writes to, so pin
+    // its nullability here as well — a shim that drifted to NOT NULL
+    // DEFAULT 'UTC' would make the fallback tests pass for the wrong reason.
+    $definition = driftColumnDefinition('users', 'timezone');
+
+    expect($definition)->not->toBeNull(
+        'The inline `users` shim lost the `timezone` column. '
+        .'Restore it in tests/DatabaseTestCase::defineDatabaseMigrations().'
+    );
+    expect($definition['nullable'])->toBeTrue('Inline `users.timezone` must stay nullable.');
+    expect($definition['default'])->toBeNull('Inline `users.timezone` must have no default (null means "follow the site setting").');
+});
+
+it('adds users.timezone as a nullable, defaultless column', function (): void {
+    // Asserted against the REAL migration files (not the inline shim), because
+    // the nullability is a product decision, not an implementation detail:
+    // `null` means "follow the site setting" and must stay distinguishable
+    // from a user who deliberately picked 'UTC'. A NOT NULL column defaulting
+    // to 'UTC' would silently opt every existing user out of the site setting.
+    $migrations = dirname(__DIR__, 3).'/stubs/database/migrations';
+
+    $create = $migrations.'/0001_01_01_000000_create_users_table.php';
+    $addTimezone = $migrations.'/2026_08_15_100000_add_timezone_to_users_table.php';
+
+    foreach ([$create, $addTimezone] as $file) {
+        expect(is_file($file))->toBeTrue("Expected migration is missing: {$file}");
+    }
+
+    $definition = driftScratchRun([$create, $addTimezone], fn (): ?array => driftColumnDefinition('users', 'timezone'));
+
+    expect($definition)->not->toBeNull('The `users` table has no `timezone` column after the migration ran.');
+    expect($definition['nullable'])->toBeTrue(
+        '`users.timezone` must be nullable — null is the "follow the site setting" state.'
+    );
+    expect($definition['default'])->toBeNull(
+        "`users.timezone` must not carry a default — a 'UTC' default is indistinguishable from a deliberate user choice."
+    );
+});
+
+it('keeps the users.timezone migration re-runnable and reversible', function (): void {
+    // The `hasColumn` guards are what make a re-run on a partially upgraded
+    // app a no-op. Without them SQLite/MySQL raise "duplicate column".
+    $migrations = dirname(__DIR__, 3).'/stubs/database/migrations';
+
+    $create = $migrations.'/0001_01_01_000000_create_users_table.php';
+    $addTimezone = $migrations.'/2026_08_15_100000_add_timezone_to_users_table.php';
+
+    $states = driftScratchRun([$create], function () use ($addTimezone): array {
+        // Fresh instances each time, exactly as the migrator would build them.
+        (require $addTimezone)->up();
+        (require $addTimezone)->up();   // idempotent: must not throw
+        $afterUp = Schema::hasColumn('users', 'timezone');
+
+        (require $addTimezone)->down();
+        (require $addTimezone)->down(); // idempotent: must not throw
+        $afterDown = Schema::hasColumn('users', 'timezone');
+
+        return [$afterUp, $afterDown];
+    });
+
+    expect($states[0])->toBeTrue('`users.timezone` should exist after up().');
+    expect($states[1])->toBeFalse('`users.timezone` should be gone after down().');
 });

@@ -6,6 +6,7 @@
     import AdminLayout from '@/layouts/AdminLayout.vue';
     import logs from '@/routes/logs';
     import { router } from '@inertiajs/vue3';
+    import { formatDateTime } from '@lvntr/components/utils/datetime';
     import { trans } from 'laravel-vue-i18n';
     import { useToast } from 'primevue/usetoast';
 
@@ -35,8 +36,7 @@
     }
 
     function formatLocal(iso: string): string {
-        const date = new Date(iso);
-        return date.toLocaleString(document.documentElement.lang || 'en-US', { dateStyle: 'short', timeStyle: 'short' });
+        return formatDateTime(iso, { dateStyle: 'short', timeStyle: 'short' });
     }
 
     async function deleteSingle(file: LogFileRow) {
