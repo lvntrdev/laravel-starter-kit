@@ -76,9 +76,15 @@ Start from a clean Laravel install:
 ```bash
 composer create-project laravel/laravel my-app
 cd my-app
-composer require lvntr/laravel-starter-kit:^13.0
+composer require lvntr/laravel-starter-kit:^13.6
 php artisan sk:install
 ```
+
+> **Check `php -v` first — this kit requires PHP 8.4+.** The `laravel/laravel`
+> skeleton itself only requires PHP 8.3, so `create-project` succeeds on 8.3 and
+> the failure surfaces later. Always require the kit with `:^13.6` (not a looser
+> `:^13.0`): with a loose constraint Composer silently resolves down to an
+> ancient release that still fits PHP 8.3 instead of reporting the real blocker.
 
 That's it. The installer sets up migrations, seeders, Passport keys, a default admin user, and builds the frontend. It also ejects the `User` and `Role` domain runtime classes into `app/Domain/` so they are immediately project-owned and ready to customise. Pass `--without-eject` to keep them vendor-resident instead.
 
@@ -86,7 +92,7 @@ Full step-by-step guide: [starter-kit.lvntr.dev/docs/install](https://starter-ki
 
 ## Requirements
 
-- PHP 8.4+
+- PHP 8.4+ (hard floor — `spatie/laravel-activitylog:^5.0` requires it too)
 - Laravel 13
 - Node.js 20.19+ (or 22.12+) — Vite 7 engine floor
 - MySQL or MariaDB
@@ -100,7 +106,7 @@ receive breaking changes from a newer Laravel target.
 
 | Laravel | Constraint                                            | Branch  | Status      |
 |---------|-------------------------------------------------------|---------|-------------|
-| 13.x    | `composer require lvntr/laravel-starter-kit:^13.0`    | `13.x`  | active      |
+| 13.x    | `composer require lvntr/laravel-starter-kit:^13.6`    | `13.x`  | active      |
 
 `main` tracks the currently active major (today: `13.x`). When a future
 Laravel release is targeted, `main` will move to that next-major dev

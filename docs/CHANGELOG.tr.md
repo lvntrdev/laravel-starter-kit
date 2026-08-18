@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## Yayınlanmamış
+
+### Düzeltildi
+
+- **Kurulum dokümanları artık yeni projeleri çok eski bir sürüme yönlendirmiyor.** Belgelenen akış paketi `:^13.0` ile ekliyordu; bu aralık, `spatie/laravel-activitylog:^4.9` kabul eden son sürüm olan `v13.0.1`'i de kapsayacak kadar geniş. `laravel/laravel` iskeleti yalnızca PHP 8.3 isterken bu kit (ve `activitylog:^5.0`) PHP 8.4 istediği için `composer create-project` PHP 8.3'te başarıyla tamamlanıyor, ardından Composer platform uyuşmazlığını bildirmek yerine sessizce `v13.0.1`'e iniyordu; sonrasında `composer update` de haklı olarak "nothing to update" diyordu. README ve kurulum kılavuzları artık `:^13.6` kullanıyor — böylece Composer gerçek sebebi hata olarak veriyor — ve PHP 8.4 tabanını açıkça belirtip beklenmedik bir sürüm çözümlendiğinde `composer why-not lvntr/laravel-starter-kit 13.6.14` komutunu gösteriyor.
+
 ## 2026-08-15 — v13.6.14
 
 ### Güvenlik

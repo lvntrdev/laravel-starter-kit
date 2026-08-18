@@ -17,9 +17,18 @@ This guide explains the recommended installation flow for a fresh project.
 > ```bash
 > composer create-project laravel/laravel my-app
 > cd my-app
-> composer require lvntr/laravel-starter-kit:^13.0
+> composer require lvntr/laravel-starter-kit:^13.6
 > php artisan sk:install
 > ```
+>
+> **Verify `php -v` reports 8.4 or newer before you start.** `composer
+> create-project laravel/laravel` only requires PHP 8.3, so it succeeds on 8.3
+> and leaves you one step short of this kit's floor. Require the kit with
+> `:^13.6` rather than a looser `:^13.0` — a loose constraint lets Composer
+> silently install an old release that still fits PHP 8.3 (`composer update`
+> then reports "nothing to update") instead of failing with the real reason.
+> If an install resolves to an unexpected version, run
+> `composer why-not lvntr/laravel-starter-kit 13.6.14` to see what blocks it.
 
 ## Requirements
 
@@ -82,7 +91,7 @@ Do not set `APP_TIMEZONE` to the site's regional timezone: it controls Laravel's
 ## 2. Require The Package
 
 ```bash
-composer require lvntr/laravel-starter-kit:^13.0
+composer require lvntr/laravel-starter-kit:^13.6
 ```
 
 ## 3. Run The Installer
@@ -292,7 +301,7 @@ If you have an existing Starter Kit project on Laravel 12:
 
 ```bash
 # 1. Update composer.json to require Laravel 13
-composer require laravel/framework:^13.0 lvntr/laravel-starter-kit:^13.0 -W
+composer require laravel/framework:^13.0 lvntr/laravel-starter-kit:^13.6 -W
 
 # 2. Run the upgrade wizard
 php artisan sk:upgrade

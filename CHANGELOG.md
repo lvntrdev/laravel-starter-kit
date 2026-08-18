@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Install docs no longer steer new projects onto an ancient release.** The documented flow required the package with `:^13.0`, a range wide enough to include `v13.0.1` — the last release that still accepted `spatie/laravel-activitylog:^4.9`. Because `laravel/laravel` itself only requires PHP 8.3 while this kit (and `activitylog:^5.0`) requires PHP 8.4, `composer create-project` succeeds on PHP 8.3 and Composer then resolves quietly down to `v13.0.1` instead of reporting the platform mismatch; `composer update` afterwards correctly answers "nothing to update". README and the install guides now require `:^13.6`, so Composer fails with the real reason, and they state the PHP 8.4 floor explicitly alongside `composer why-not lvntr/laravel-starter-kit 13.6.14` for diagnosing an unexpected resolved version.
+
 ## [13.6.14] - 2026-08-15
 
 ### Security

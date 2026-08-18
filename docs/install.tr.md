@@ -17,9 +17,18 @@ Bu rehber, sıfır bir proje için önerilen kurulum akışını anlatır.
 > ```bash
 > composer create-project laravel/laravel my-app
 > cd my-app
-> composer require lvntr/laravel-starter-kit:^13.0
+> composer require lvntr/laravel-starter-kit:^13.6
 > php artisan sk:install
 > ```
+>
+> **Başlamadan önce `php -v` çıktısının 8.4 veya üzeri olduğunu doğrulayın.**
+> `composer create-project laravel/laravel` yalnızca PHP 8.3 ister; bu yüzden
+> 8.3'te sorunsuz tamamlanır ve sizi bu kit'in tabanının bir adım altında
+> bırakır. Paketi gevşek bir `:^13.0` yerine `:^13.6` ile ekleyin — gevşek
+> constraint, Composer'ın gerçek engeli bildirmek yerine PHP 8.3'e uyan eski bir
+> sürümü sessizce kurmasına yol açar (ardından `composer update` "nothing to
+> update" der). Kurulum beklenmedik bir sürüme düşerse
+> `composer why-not lvntr/laravel-starter-kit 13.6.14` komutu engeli gösterir.
 
 ## Gereksinimler
 
@@ -82,7 +91,7 @@ SESSION_SECURE_COOKIE=true
 ## 2. Paketi Ekleyin
 
 ```bash
-composer require lvntr/laravel-starter-kit:^13.0
+composer require lvntr/laravel-starter-kit:^13.6
 ```
 
 ## 3. Kurulum Komutunu Çalıştırın
@@ -293,7 +302,7 @@ Mevcut bir Starter Kit projeniz Laravel 12 üzerindeyse:
 
 ```bash
 # 1. composer.json'da Laravel 13 gereksinimini güncelleyin
-composer require laravel/framework:^13.0 lvntr/laravel-starter-kit:^13.0 -W
+composer require laravel/framework:^13.0 lvntr/laravel-starter-kit:^13.6 -W
 
 # 2. Yükseltme sihirbazını çalıştırın
 php artisan sk:upgrade
