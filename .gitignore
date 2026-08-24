@@ -29,6 +29,7 @@ package-audit-notes/
 /plan-docs/
 /PROJECT_MAP.md
 /PROJECT_MAP-sync-log.md
+/.bosun-secret-allow
 /.claude/
 /.ai/
 /CLAUDE.local.md
