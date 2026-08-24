@@ -68,6 +68,12 @@ APP_DISPLAY_TIMEZONE=UTC
 # Log seviyesi — local dev için 'debug' uygundur; production 'error' veya 'warning' göndermeli.
 LOG_LEVEL=error
 
+# Route adından izni türetilemeyen bir isteği controller'a gate'siz ulaştırmak
+# yerine reddeder. YENİ bir proje için bilerek false yazılır: geriye dönük
+# korunması gereken eski bir route yoktur, dolayısıyla gate'siz kalan bir
+# route'unuz production'da değil geliştirme sırasında yakalanır.
+STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false
+
 # Cloudflare Turnstile (bot / captcha). TURNSTILE_ENABLED=false iken
 # `turnstile` middleware'i no-op olduğu için lokal olarak anahtarları boş bırakmak güvenli.
 TURNSTILE_ENABLED=false
@@ -85,6 +91,8 @@ SESSION_SECURE_COOKIE=true
 # PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 # PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
+
+`STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` yalnızca **yeni** bir `.env` dosyasına yazılır. Paketi güncelleyen mevcut bir uygulama izin veren varsayılanla kalır; hiçbir sürüm bu değeri sizin yerinize çevirmez — bkz. [Yükseltme Notları](UPGRADE.tr.md#çözülemeyen-routelarda-fail-closed-mevcut-kurulum-için-opt-in). Temiz kurulumdan sonra bir route'unuz 403 dönmeye başlarsa `php artisan sk:doctor --only=unresolved-routes` izni türetilemeyen tüm route'ları listeler; route'a `resource.action` biçiminde bir isim verin, bilerek izinsiz bırakılacaksa `config/starter-kit.php` içindeki `permissions.unrestricted_routes` listesine ekleyin ya da düzeltene kadar anahtarı `true` yapın.
 
 `APP_TIMEZONE` değerini sitenin bölgesel saat dilimine ayarlamayın: bu değişken Laravel'in saklama saat dilimini yönetir. Bunun yerine `APP_DISPLAY_TIMEZONE` kullanın veya kurulumdan sonra **Ayarlar → Genel** bölümünden site fallback'ini seçin. Kullanıcı override'ları ve tam çözüm zinciri için [Saat Dilimleri](timezone.tr.md) belgesine bakın.
 

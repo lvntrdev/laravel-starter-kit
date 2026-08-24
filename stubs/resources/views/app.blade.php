@@ -83,7 +83,8 @@
             }
         </style>
 
-        <title data-inertia>{{ config('app.name', 'Starter Kit 12') }}</title>
+        {{-- Fallback carries no version number on purpose: it went stale at every release. --}}
+        <title data-inertia>{{ config('app.name', 'Starter Kit') }}</title>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">

@@ -77,7 +77,7 @@ The built-in `global` context now maps these abilities one-to-one to `files.read
 php artisan sk:seed-permissions
 ```
 
-### Deprecation — unresolved-route fail-closed default flips in the next minor
+### Unresolved-route fail-closed is opt-in for an existing install
 
 **Nothing breaks in this release.** A route whose permission cannot be resolved by `CheckResourcePermission` still **passes through today**, exactly as before — the middleware now additionally logs a throttled warning naming the route, so the gap is visible instead of silent. No request that currently succeeds starts failing because of this release.
 
@@ -94,11 +94,17 @@ One case is deliberately left ungated at the middleware layer: `roles.bulk` and 
    - Give it a `<resource>.<action>` route name whose action segment is in the middleware's ability map, so a permission resolves automatically.
    - Gate it with an explicit permission argument, e.g. `check.permission:reports.read`.
    - If the route is deliberately permission-free (a public webhook, a health check, …), declare it under `starter-kit.permissions.unrestricted_routes` (tight `Str::is` patterns — prefer listing endpoints over whole trees, since a broad pattern silently exempts routes added later too).
-3. Before the next minor ships, set `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (or `starter-kit.permissions.allow_unresolved` = `false`) in a staging environment and confirm nothing you rely on gets denied.
+3. With steps 1–2 done, set `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (or `starter-kit.permissions.allow_unresolved` = `false`) in a staging environment and confirm nothing you rely on gets denied. Once staging is clean, set the same value in production. That line is the whole opt-in — nothing else has to change, and nothing will do it for you.
 
 **If you published the kit's config** (`php artisan sk:publish --tag=config`), your `config/starter-kit.php` predates both new keys, and `mergeConfigFrom` merges only the top level — the package's `permissions` array does not fill gaps inside yours. Nothing breaks: `allow_unresolved` falls back to the package default in code, and an absent `unrestricted_routes` reads as an empty list. But step 2's third option does nothing until you add `'unrestricted_routes' => [...]` to your published `permissions` array yourself. Diff your copy against `vendor/lvntr/laravel-starter-kit/config/starter-kit.php` to pick up both keys.
 
-**The flip:** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) currently defaults to `true` and will default to `false` in the next minor release. After the flip, the env var remains the production-valid escape hatch — set it back to `true` if you need more time to finish remediation, keeping in mind that every route left unresolved is, by definition, ungated for as long as it stays that way.
+**No release will flip this for you.** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) defaults to `true` for an app that does not set it, and that default does not change anywhere in 13.x. There is no scheduled release in which your app starts denying on its own; step 3 is the only thing that turns it on, and you choose when.
+
+The reason it is not simply switched is how far the switch would reach. An installation that never published the config, and one whose published copy predates the key, both fall through to the package's own constant — so changing that constant would alter authorization on a plain `composer update`, for every app, without anyone editing a file. A default with that reach is not a default anyone can change safely inside a release line; if it is ever revisited, it belongs in a major, with its own upgrade note.
+
+**A brand-new project is different, and already strict.** `sk:install` writes `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` into the `.env` it creates: a fresh app has no legacy route to grandfather in, so it starts fail-closed and its first ungated route is caught during development instead of in production. This applies to first installs only — re-running `sk:install` on an existing app will not add the key, and neither will `sk:update` or `sk:upgrade`.
+
+Whichever way you set it, the env var stays a valid production escape hatch: set it back to `true` if you need more time to finish remediation, keeping in mind that every route left unresolved is, by definition, ungated for as long as it stays that way.
 
 ## v13.6.8 → v13.6.9
 

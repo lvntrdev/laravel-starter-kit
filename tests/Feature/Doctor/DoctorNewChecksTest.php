@@ -13,6 +13,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Lvntr\StarterKit\Console\Commands\DoctorCommand;
+use Lvntr\StarterKit\Console\Doctor\Checks\LogStackCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\NodeVersionCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\QueueWorkerCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
@@ -310,4 +311,113 @@ test('runGuarded normal bir check sonucunu değiştirmeden döner', function () 
 
     expect($report->isOk())->toBeTrue()
         ->and($report->message)->toBe('all good');
+});
+
+/*
+| LogStackCheck — yalnizca AKTIF kanala bakar.
+|
+| Regresyon: check eskiden logging.default degerine bakmadan logging.channels.stack
+| icindeki "single" degerini okuyordu; LOG_CHANNEL=daily olan dogru yapilandirilmis
+| bir uygulamada bile uyari uretiyordu.
+*/
+
+test('LogStackCheck aktif kanal stack ve icinde single varsa uyarir', function () {
+    config()->set('logging.default', 'stack');
+    config()->set('logging.channels.stack', ['driver' => 'stack', 'channels' => ['single']]);
+    config()->set('logging.channels.single', ['driver' => 'single']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->message)->toContain('single')
+        ->and($report->hint)->toContain('LOG_STACK=daily');
+});
+
+test('LogStackCheck aktif kanal daily iken stack icindeki single icin uyarmaz', function () {
+    config()->set('logging.default', 'daily');
+    config()->set('logging.channels.stack', ['driver' => 'stack', 'channels' => ['single']]);
+    config()->set('logging.channels.single', ['driver' => 'single']);
+    config()->set('logging.channels.daily', ['driver' => 'daily']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->isOk())->toBeTrue()
+        ->and($report->message)->toContain('daily');
+});
+
+test('LogStackCheck aktif kanal dogrudan single ise uyarir ve LOG_CHANNEL onerir', function () {
+    config()->set('logging.default', 'single');
+    config()->set('logging.channels.single', ['driver' => 'single']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->hint)->toContain('LOG_CHANNEL=daily');
+});
+
+test('LogStackCheck stack icindeki tum kanallar rotasyonluysa OK doner', function () {
+    config()->set('logging.default', 'stack');
+    config()->set('logging.channels.stack', ['driver' => 'stack', 'channels' => ['daily']]);
+    config()->set('logging.channels.daily', ['driver' => 'daily']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->isOk())->toBeTrue()
+        ->and($report->message)->toContain('daily');
+});
+
+/*
+| LogManager::createStackDriver() uyumu — string channels, ic ice stack, dongu.
+*/
+
+test('LogStackCheck virgullu string channels degerini ayristirir', function () {
+    // Laravel is_string($config['channels']) durumunda explode(',') yapar;
+    // (array) cast tek elemanli "single,daily" dizisi uretip kacirilmasina yol acardi.
+    config()->set('logging.default', 'stack');
+    config()->set('logging.channels.stack', ['driver' => 'stack', 'channels' => 'single,daily']);
+    config()->set('logging.channels.single', ['driver' => 'single']);
+    config()->set('logging.channels.daily', ['driver' => 'daily']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->message)->toContain('single')
+        ->and($report->hint)->toContain('LOG_STACK=daily');
+});
+
+test('LogStackCheck ic ice stack icindeki single kanali bulur', function () {
+    config()->set('logging.default', 'outer');
+    config()->set('logging.channels.outer', ['driver' => 'stack', 'channels' => ['inner']]);
+    config()->set('logging.channels.inner', ['driver' => 'stack', 'channels' => ['single']]);
+    config()->set('logging.channels.single', ['driver' => 'single']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->status)->toBe(DoctorStatus::Warn)
+        ->and($report->message)->toContain('single')
+        // LOG_STACK yalnizca logging.channels.stack.channels degerini besler;
+        // aktif kanal baska adli bir stack ise ipucu kendi config anahtarini gosterir.
+        ->and($report->hint)->toContain('logging.channels.outer.channels')
+        ->and($report->hint)->not->toContain('LOG_STACK=daily');
+});
+
+test('LogStackCheck dongusel stack yapilandirmasinda sonsuz ozyinelemeye girmez', function () {
+    config()->set('logging.default', 'loop');
+    config()->set('logging.channels.loop', ['driver' => 'stack', 'channels' => ['loop', 'daily']]);
+    config()->set('logging.channels.daily', ['driver' => 'daily']);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->isOk())->toBeTrue()
+        ->and($report->message)->toContain('daily');
+});
+
+test('LogStackCheck kanali olmayan stack icin OK doner ve mesaji bozulmaz', function () {
+    config()->set('logging.default', 'empty');
+    config()->set('logging.channels.empty', ['driver' => 'stack', 'channels' => []]);
+
+    $report = (new LogStackCheck)->run();
+
+    expect($report->isOk())->toBeTrue()
+        ->and($report->message)->toContain('no channel resolved');
 });

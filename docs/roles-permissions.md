@@ -184,7 +184,7 @@ The two failure modes above are easy to conflate but are governed by separate co
 
 `starter-kit.permissions.unrestricted_routes` lists route-name patterns (`Str::is` wildcards, e.g. `'api.v1.auth.*'`) that are deliberately permission-free: they pass with no warning and are never denied, regardless of `allow_unresolved`. It is consulted only on the unresolved axis — it can never exempt a route whose permission does resolve — and it is checked once per request rather than for every pattern, so keep entries tight (list endpoints, not whole trees) to avoid silently exempting routes added later.
 
-**Scheduled flip:** `allow_unresolved` defaults to `true` today and will default to `false` in the next minor release. See [UPGRADE.md](./UPGRADE.md) for the ordered remediation path to run before then.
+**Who gets which default:** `sk:install` writes `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` into a **new** project's `.env`, so a fresh app is fail-closed from the first request. An app that does not set the key falls through to the package's own constant, which is `true` — and no release changes that on its own, because a published config predating the key lands on the same constant and flipping it would alter authorization on a plain `composer update`. An existing install opts in by writing the line itself. See [UPGRADE.md](./UPGRADE.md) for the ordered remediation path to run first.
 
 ### Octane / Long-Running Worker Deployments
 

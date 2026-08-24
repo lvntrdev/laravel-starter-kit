@@ -40,8 +40,9 @@ use Symfony\Component\HttpFoundation\Response;
  *        gap is visible in the log instead of invisible.
  *      - `starter-kit.permissions.allow_unresolved` (default true, see
  *        self::ALLOW_UNRESOLVED_DEFAULT) switches that to deny. The deny path
- *        is fully implemented and reachable by config today; the DEFAULT flip
- *        to false is scheduled for the next minor.
+ *        is fully implemented and reachable by config today. A NEW project is
+ *        seeded with false by sk:install; an existing one keeps the permissive
+ *        default until its operator sets the key.
  *      - self::PACKAGE_UNRESTRICTED_ROUTES (exact names, shipped) and
  *        `starter-kit.permissions.unrestricted_routes` (Str::is patterns,
  *        consumer-owned) together list routes that are deliberately
@@ -83,11 +84,26 @@ class CheckResourcePermission
     /**
      * Fallback for `starter-kit.permissions.allow_unresolved`.
      *
-     * SCHEDULED FLIP — changing this single line to `false` turns an
-     * unresolved route from "allow + warn" into "deny". config/starter-kit.php
-     * references this constant as its env() fallback rather than repeating a
-     * literal, so the flip also reaches consumer copies of the published
-     * config that never got re-published.
+     * DO NOT CHANGE THIS LINE TO `false` AS PART OF A RELEASE.
+     *
+     * config/starter-kit.php references this constant as its env() fallback
+     * rather than repeating a literal, which is what makes the value consistent
+     * — and also what makes editing it dangerous. Both populations land here:
+     * an app with no published config, and an app whose published copy predates
+     * the key (mergeConfigFrom is shallow, so their `permissions` array hides
+     * the package's entirely). Editing this constant would therefore turn
+     * previously-passing requests into 403s on a plain `composer update`, in
+     * apps that changed nothing of their own. There is no release note that
+     * makes that acceptable inside a release line; if the default is ever
+     * revisited it belongs in a major, with its own upgrade path.
+     *
+     * The asymmetry consumers actually want is delivered at install time
+     * instead: InstallCommand seeds STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false
+     * into a NEW project's .env (see its FIRST_INSTALL_ONLY_ENV_KEYS, which
+     * keeps the re-install merge path from leaking the key into an existing
+     * app). A fresh install is strict; a live app opts in when its operator
+     * decides. Locked by tests/Feature/BackwardCompat/LegacyPublishedConfigTest
+     * and tests/Feature/Install/EnvMergeTest.
      */
     public const ALLOW_UNRESOLVED_DEFAULT = true;
 

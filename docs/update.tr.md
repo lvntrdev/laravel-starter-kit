@@ -123,7 +123,7 @@ Ardından, hiçbir izin kontrolünden geçmeden controller'a ulaşan route'ları
 php artisan sk:doctor --only=unresolved-routes
 ```
 
-Bu kontrol, `CheckResourcePermission` bir izin türetemediği her route için FAIL raporlar. Böyle bir route **bugün geçiyor** — middleware yalnızca kısıtlanmış bir uyarı logluyor — ama varsayılan bir sonraki minor sürümde reddetmeye dönecek ve o noktada her biri 403 döndürmeye başlayacak. Kitin kendi gönderdiği route'lar paket içinde zaten çözülmüş durumda; bu kontrolün listelediği şey sizin kendi route'larınız ve kendi kopyanızda adını değiştirdiğiniz kit route'ları. Sıralı düzeltme yolu için [UPGRADE.tr.md](UPGRADE.tr.md) belgesine bakın.
+Bu kontrol, `CheckResourcePermission` bir izin türetemediği her route için FAIL raporlar. Böyle bir route **bugün geçiyor** — middleware yalnızca kısıtlanmış bir uyarı logluyor — ve siz aksini söyleyene kadar geçmeye devam edecek — **hiçbir sürüm mevcut bir kurulumda bunu 403'e çevirmiyor**. Bu kontrol temiz çıktığında `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` vererek opt-in yapın; yeni kurulan bir proje bu satırla zaten geliyor. Kitin kendi gönderdiği route'lar paket içinde zaten çözülmüş durumda; bu kontrolün listelediği şey sizin kendi route'larınız ve kendi kopyanızda adını değiştirdiğiniz kit route'ları. Sıralı düzeltme yolu için [UPGRADE.tr.md](UPGRADE.tr.md) belgesine bakın.
 
 Güncellemeyle yeni ayar grupları veya auth davranışları geldiyse şu ekranları bir kez açıp doğrulayın:
 

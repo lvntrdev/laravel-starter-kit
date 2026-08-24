@@ -1,5 +1,7 @@
 <?php
 
+use Lvntr\StarterKit\Http\Middleware\CheckResourcePermission;
+
 return [
 
     /*
@@ -130,12 +132,18 @@ return [
     | throttled warning naming the route, so the gap is visible. Set it to
     | false to deny instead.
     |
-    | SCHEDULED FLIP: the default becomes false in the next minor. The default
-    | itself is the CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT constant
-    | referenced below rather than a literal, so the flip is one line in the
-    | package and reaches published copies of this file too. Audit your routes
-    | before then — `php artisan sk:doctor` reports the ones that would start
-    | denying.
+    | WHO GETS WHICH DEFAULT: `sk:install` seeds
+    | STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false into a NEW project's .env, so a
+    | fresh app is fail-closed from the first request. An app that sets nothing
+    | falls through to CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT, which
+    | is true.
+    |
+    | NO RELEASE FLIPS THAT CONSTANT ON A LIVE APP. A published copy of this
+    | file predating the key lands on the same constant, so changing it would
+    | alter authorization on a plain `composer update` for apps that edited
+    | nothing. An existing install opts in itself: audit with
+    | `php artisan sk:doctor --only=unresolved-routes`, then set the env var
+    | (or this key) to false.
     |
     | ASYMMETRY, deliberate: unlike `allow_unmapped`, `allow_unresolved` keeps
     | applying in production once flipped. An unmapped permission is a DATA gap
@@ -163,7 +171,7 @@ return [
 
         'allow_unresolved' => (bool) env(
             'STARTER_KIT_ALLOW_UNRESOLVED_ROUTES',
-            \Lvntr\StarterKit\Http\Middleware\CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT,
+            CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT,
         ),
 
         'unrestricted_routes' => [],

@@ -184,7 +184,7 @@ Yukarıdaki iki başarısızlık modu birbirine karıştırılmaya müsaittir am
 
 `starter-kit.permissions.unrestricted_routes`, bilinçli olarak izinsiz kalacak route-adı desenlerini listeler (`Str::is` wildcard'ları, örn. `'api.v1.auth.*'`): bunlar `allow_unresolved` ne olursa olsun uyarısız geçer ve asla reddedilmez. Yalnızca unresolved ekseninde devreye girer — izni zaten çözülen bir route'u asla muaf tutamaz — ve istek başına bir kez kontrol edilir; bu yüzden desenleri dar tutun (ağaç yerine tek tek endpoint listeleyin) ki sonradan eklenen route'lar sessizce muaf kalmasın.
 
-**Değişecek olan:** `allow_unresolved` bugün varsayılan olarak `true`'dur ve bir sonraki minor sürümde varsayılanı `false` olacaktır. Değişimden önce izlenecek sıralı düzeltme yolu için [UPGRADE.tr.md](./UPGRADE.tr.md) dosyasına bakın.
+**Hangi kurulum hangi varsayılanı alır:** `sk:install`, **yeni** bir projenin `.env` dosyasına `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` yazar; yani sıfırdan kurulan bir uygulama ilk istekten itibaren fail-closed'dır. Anahtarı vermeyen bir uygulama paketin kendi sabitine düşer ve o sabit `true`'dur — hiçbir sürüm bunu kendiliğinden değiştirmez, çünkü bu anahtardan önce publish edilmiş bir config de aynı sabite düşer ve sabiti çevirmek yalnızca `composer update` ile yetkilendirmeyi değiştirirdi. Mevcut bir kurulum satırı kendisi yazarak opt-in yapar. Önce izlenecek sıralı düzeltme yolu için [UPGRADE.tr.md](./UPGRADE.tr.md) dosyasına bakın.
 
 ### Octane / Long-Running Worker Ortamları
 

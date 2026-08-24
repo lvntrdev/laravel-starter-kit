@@ -54,6 +54,52 @@ it('ignores comment and blank lines in the example', function (): void {
     expect(mergeEnv($env, $example))->toBeNull();
 });
 
+/*
+| First-install-only keys.
+|
+| The merge path runs on a RE-install; ensureEnvFile() copies .env.example
+| wholesale on a first install and never reaches here. So a key skipped below
+| lands in a brand-new project and in no existing one — which is the whole
+| mechanism behind "a fresh app is fail-closed, an upgraded app is untouched".
+*/
+
+it('never merges a first-install-only key into an existing .env', function (): void {
+    $env = "APP_NAME=Acme\n";
+    $example = "APP_NAME=\nSTARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false\n";
+
+    // The only other example key is already present, so a leaked key would be
+    // the sole reason this returns non-null.
+    expect(mergeEnv($env, $example))->toBeNull();
+});
+
+it('does not let a first-install-only key drag other missing keys along', function (): void {
+    $env = "APP_NAME=Acme\n";
+    $example = "APP_NAME=\nSTARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false\nCACHE_STORE=redis\n";
+
+    $result = mergeEnv($env, $example);
+
+    expect($result)
+        ->toContain('CACHE_STORE=redis')
+        ->not->toContain('STARTER_KIT_ALLOW_UNRESOLVED_ROUTES');
+});
+
+it('leaves an operator-set value for a first-install-only key alone', function (): void {
+    $env = "APP_NAME=Acme\nSTARTER_KIT_ALLOW_UNRESOLVED_ROUTES=true\n";
+    $example = "APP_NAME=\nSTARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false\n";
+
+    // Skipping happens before the "is it missing?" test, so an app that
+    // deliberately opted back out keeps its own value either way.
+    expect(mergeEnv($env, $example))->toBeNull();
+});
+
+it('ships the fresh-install default as false in the example env', function (): void {
+    $example = file_get_contents(dirname(__DIR__, 3).'/stubs/.env.example');
+
+    // A fresh install copies this file verbatim, so the line here IS the
+    // fresh-install default. Commenting it out would silently undo the feature.
+    expect($example)->toContain("\nSTARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false");
+});
+
 it('copies missing lines verbatim, keeping inline defaults', function (): void {
     $env = "APP_NAME=Acme\n";
     $example = "APP_NAME=\nSESSION_DOMAIN=null\nBCRYPT_ROUNDS=12\n";

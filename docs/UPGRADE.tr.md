@@ -77,7 +77,7 @@ Built-in `global` context artık bu ability'leri birebir `files.read`, `files.cr
 php artisan sk:seed-permissions
 ```
 
-### Deprecation — çözülemeyen route'larda fail-closed varsayılan bir sonraki minor'da değişecek
+### Çözülemeyen route'larda fail-closed, mevcut kurulum için opt-in
 
 **Bu sürümde hiçbir şey kırılmıyor.** `CheckResourcePermission` tarafından izni çözülemeyen bir route bugün **hâlâ geçer** — tıpkı önceki gibi; middleware artık ayrıca route'u adlandıran, throttle edilmiş bir uyarı logu basar; böylece boşluk sessiz kalmak yerine görünür olur. Şu anda başarılı olan hiçbir istek bu sürüm yüzünden başarısız olmaya başlamaz.
 
@@ -94,11 +94,17 @@ Varsayılan değişmeden önce izlenecek **sıralı düzeltme yolu**:
    - Action segmenti middleware'in ability haritasında olan bir `<resource>.<action>` route adı verin; böylece izin otomatik çözülür.
    - Açık bir izin argümanıyla gate edin, örn. `check.permission:reports.read`.
    - Route bilinçli olarak izinsiz kalacaksa (public bir webhook, health check, …) `starter-kit.permissions.unrestricted_routes` altında tanımlayın (dar `Str::is` desenleri — geniş bir desen sonradan eklenen route'ları da sessizce muaf tuttuğu için, ağaç yerine tek tek endpoint listelemeyi tercih edin).
-3. Bir sonraki minor çıkmadan önce staging ortamında `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (ya da `starter-kit.permissions.allow_unresolved` = `false`) ayarlayıp güvendiğiniz hiçbir şeyin reddedilmediğini doğrulayın.
+3. 1-2. adımlar bittiğinde staging ortamında `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (ya da `starter-kit.permissions.allow_unresolved` = `false`) ayarlayıp güvendiğiniz hiçbir şeyin reddedilmediğini doğrulayın. Staging temiz çıktığında aynı değeri production'da da verin. Opt-in'in tamamı bu satır — başka hiçbir şeyin değişmesi gerekmiyor ve bunu sizin yerinize kimse yapmayacak.
 
 **Kitin config'ini publish ettiyseniz** (`php artisan sk:publish --tag=config`), `config/starter-kit.php` kopyanız iki yeni anahtardan da önce oluşmuştur ve `mergeConfigFrom` yalnızca en üst seviyede birleştirir — paketin `permissions` dizisi sizinkinin içindeki boşlukları doldurmaz. Bir şey kırılmaz: `allow_unresolved` kod tarafında paket varsayılanına düşer, olmayan `unrestricted_routes` ise boş liste olarak okunur. Ancak 2. adımdaki üçüncü seçenek, publish edilmiş `permissions` dizinize `'unrestricted_routes' => [...]` anahtarını kendiniz eklemeden hiçbir işe yaramaz. İki anahtarı da almak için kopyanızı `vendor/lvntr/laravel-starter-kit/config/starter-kit.php` ile karşılaştırın.
 
-**Değişecek olan:** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) şu an varsayılan olarak `true`'dur ve bir sonraki minor sürümde varsayılanı `false` olacaktır. Değişimden sonra env değişkeni production'da geçerli kaçış kapısı olarak kalır — düzeltmeyi bitirmek için daha fazla zamana ihtiyacınız varsa `true`'ya geri alabilirsiniz; ancak çözülememiş her route, tanımı gereği, o hâlde kaldığı sürece izinsiz (ungated) demektir.
+**Hiçbir sürüm bunu sizin yerinize çevirmeyecek.** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`), değeri kendisi vermeyen bir uygulama için varsayılan olarak `true`'dur ve bu varsayılan 13.x'in hiçbir yerinde değişmiyor. Uygulamanızın kendiliğinden reddetmeye başlayacağı planlı bir sürüm yok; bunu açan tek şey 3. adım ve zamanlamasına siz karar veriyorsunuz.
+
+Öylece değiştirilmemesinin gerekçesi, değişimin erişim alanı. Config'i hiç publish etmemiş bir kurulum da, publish edilmiş kopyası bu anahtardan önce oluşmuş bir kurulum da paketin kendi sınıf sabitine düşer; o sabiti çevirmek, hiç kimse bir dosyaya dokunmadan, yalnızca `composer update` çalıştıran her uygulamada yetkilendirme davranışını değiştirirdi. Bu erişime sahip bir varsayılan, bir sürüm hattının içinde güvenle değiştirilebilecek bir varsayılan değildir; ileride tekrar ele alınırsa yeri kendi upgrade notuyla birlikte bir major sürümdür.
+
+**Yepyeni bir proje farklı ve zaten sıkı.** `sk:install`, oluşturduğu `.env` dosyasına `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` yazıyor: sıfırdan kurulan bir uygulamada geçmişten devralınacak route yok, dolayısıyla fail-closed başlıyor ve ilk izinsiz route'u production'da değil geliştirme sırasında yakalanıyor. Bu yalnızca ilk kurulum için geçerli — mevcut bir uygulamada `sk:install`'ı yeniden çalıştırmak bu anahtarı eklemez; `sk:update` ve `sk:upgrade` da eklemez.
+
+Değeri hangi yöne verirseniz verin, env değişkeni production'da geçerli kaçış kapısı olarak kalır — düzeltmeyi bitirmek için daha fazla zamana ihtiyacınız varsa `true`'ya geri alabilirsiniz; ancak çözülememiş her route, tanımı gereği, o hâlde kaldığı sürece izinsiz (ungated) demektir.
 
 ## v13.6.8 → v13.6.9
 

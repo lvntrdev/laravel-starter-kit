@@ -930,9 +930,34 @@ class InstallCommand extends Command
     }
 
     /**
+     * Keys the kit seeds ONLY into a brand-new .env, never into an existing one.
+     *
+     * The merge below exists to hand an installed app the new settings a kit
+     * release added, which is right for a knob whose value is a preference. It
+     * is wrong for a knob that decides whether a request is authorized: an app
+     * that has been running for two years would silently acquire a stricter
+     * gate from a command it ran for an unrelated reason, which is exactly the
+     * "an upgrade must not change who gets a 403" guarantee the kit sells.
+     *
+     * A key listed here therefore reaches a fresh install (which copies
+     * .env.example wholesale) and no one else. An existing app opts in by
+     * writing the line itself — see docs/UPGRADE.md.
+     *
+     * @var list<string>
+     */
+    private const FIRST_INSTALL_ONLY_ENV_KEYS = [
+        'STARTER_KIT_ALLOW_UNRESOLVED_ROUTES',
+    ];
+
+    /**
      * Compute the merged .env body, appending any example key absent from the
      * current .env under a kit header. Returns null when nothing is missing so
      * the caller can skip the write (making the operation idempotent).
+     *
+     * Keys in self::FIRST_INSTALL_ONLY_ENV_KEYS are skipped: this method runs
+     * only on the re-install path (ensureEnvFile copies the example outright on
+     * a first install), so skipping here is precisely "new installs get it,
+     * existing ones do not".
      *
      * Pure string-in / string-out — no filesystem access — so it can be unit
      * tested in isolation.
@@ -951,6 +976,10 @@ class InstallCommand extends Command
             }
 
             $key = trim(explode('=', $trimmed, 2)[0]);
+
+            if (in_array($key, self::FIRST_INSTALL_ONLY_ENV_KEYS, strict: true)) {
+                continue;
+            }
 
             if ($key !== '' && ! array_key_exists($key, $existing)) {
                 $missing[] = $line;

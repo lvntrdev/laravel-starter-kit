@@ -68,6 +68,12 @@ APP_DISPLAY_TIMEZONE=UTC
 # Log level — 'debug' is fine for local dev; production should ship 'error' or 'warning'.
 LOG_LEVEL=error
 
+# Deny a request whose permission cannot be derived from its route name, rather
+# than letting it reach the controller ungated. Seeded as false for a NEW
+# project on purpose — there is no legacy route to grandfather in, so an
+# ungated route of yours is caught in development instead of in production.
+STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false
+
 # Cloudflare Turnstile (bot / captcha). When TURNSTILE_ENABLED=false the
 # `turnstile` middleware is a no-op, so leaving the keys empty locally is safe.
 TURNSTILE_ENABLED=false
@@ -85,6 +91,8 @@ SESSION_SECURE_COOKIE=true
 # PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 # PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
+
+`STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` reaches a **new** `.env` only. An existing app upgrading the package keeps the permissive default and is never flipped by a release — see [Upgrade Notes](UPGRADE.md#unresolved-route-fail-closed-is-opt-in-for-an-existing-install). If a route of yours starts returning 403 after a fresh install, `php artisan sk:doctor --only=unresolved-routes` names every route whose permission cannot be derived; give the route a `resource.action` name, list it under `permissions.unrestricted_routes` in `config/starter-kit.php` if it is deliberately permission-free, or set the key back to `true` while you sort it out.
 
 Do not set `APP_TIMEZONE` to the site's regional timezone: it controls Laravel's storage timezone. Set `APP_DISPLAY_TIMEZONE` instead, or choose the site fallback in **Settings → General** after installation. See [Timezones](timezone.md) for per-user overrides and the complete resolution chain.
 

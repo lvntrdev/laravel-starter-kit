@@ -28,6 +28,7 @@ package-audit-notes/
 # AI tooling (local, not shipped to package consumers)
 /plan-docs/
 /PROJECT_MAP.md
+/PROJECT_MAP-sync-log.md
 /.claude/
 /.ai/
 /CLAUDE.local.md
