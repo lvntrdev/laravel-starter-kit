@@ -96,6 +96,8 @@ One case is deliberately left ungated at the middleware layer: `roles.bulk` and 
    - If the route is deliberately permission-free (a public webhook, a health check, …), declare it under `starter-kit.permissions.unrestricted_routes` (tight `Str::is` patterns — prefer listing endpoints over whole trees, since a broad pattern silently exempts routes added later too).
 3. Before the next minor ships, set `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (or `starter-kit.permissions.allow_unresolved` = `false`) in a staging environment and confirm nothing you rely on gets denied.
 
+**If you published the kit's config** (`php artisan sk:publish --tag=config`), your `config/starter-kit.php` predates both new keys, and `mergeConfigFrom` merges only the top level — the package's `permissions` array does not fill gaps inside yours. Nothing breaks: `allow_unresolved` falls back to the package default in code, and an absent `unrestricted_routes` reads as an empty list. But step 2's third option does nothing until you add `'unrestricted_routes' => [...]` to your published `permissions` array yourself. Diff your copy against `vendor/lvntr/laravel-starter-kit/config/starter-kit.php` to pick up both keys.
+
 **The flip:** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) currently defaults to `true` and will default to `false` in the next minor release. After the flip, the env var remains the production-valid escape hatch — set it back to `true` if you need more time to finish remediation, keeping in mind that every route left unresolved is, by definition, ungated for as long as it stays that way.
 
 ## v13.6.8 → v13.6.9

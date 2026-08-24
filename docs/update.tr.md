@@ -117,6 +117,14 @@ Permission kaynakları veya roller değiştiyse — ya da yukarıdaki kontrol bi
 php artisan sk:seed-permissions --fresh
 ```
 
+Ardından, hiçbir izin kontrolünden geçmeden controller'a ulaşan route'ları listeleyin:
+
+```bash
+php artisan sk:doctor --only=unresolved-routes
+```
+
+Bu kontrol, `CheckResourcePermission` bir izin türetemediği her route için FAIL raporlar. Böyle bir route **bugün geçiyor** — middleware yalnızca kısıtlanmış bir uyarı logluyor — ama varsayılan bir sonraki minor sürümde reddetmeye dönecek ve o noktada her biri 403 döndürmeye başlayacak. Kitin kendi gönderdiği route'lar paket içinde zaten çözülmüş durumda; bu kontrolün listelediği şey sizin kendi route'larınız ve kendi kopyanızda adını değiştirdiğiniz kit route'ları. Sıralı düzeltme yolu için [UPGRADE.tr.md](UPGRADE.tr.md) belgesine bakın.
+
 Güncellemeyle yeni ayar grupları veya auth davranışları geldiyse şu ekranları bir kez açıp doğrulayın:
 
 - Ayarlar -> Auth

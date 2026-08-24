@@ -117,6 +117,14 @@ If you changed permission resources or roles — or the check above listed anyth
 php artisan sk:seed-permissions --fresh
 ```
 
+Then list the routes that reach a controller without any permission being checked:
+
+```bash
+php artisan sk:doctor --only=unresolved-routes
+```
+
+This check reports FAIL for every route `CheckResourcePermission` cannot resolve a permission for. Such a route **passes through today** — the middleware only logs a throttled warning — but the default flips to deny in the next minor, at which point each one starts returning 403. Routes the kit itself ships are already handled inside the package; what this check lists is your own routes, plus any kit route you renamed in your copy. See [UPGRADE.md](UPGRADE.md) for the ordered remediation path.
+
 If the update introduced new settings groups or auth behavior, also review these screens once:
 
 - Settings -> Auth
