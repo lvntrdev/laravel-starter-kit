@@ -2,7 +2,7 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## Yayınlanmamış
+## 2026-08-24 — v13.6.15
 
 ### Değişti
 
