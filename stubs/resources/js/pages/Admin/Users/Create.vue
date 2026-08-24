@@ -11,7 +11,14 @@
 </script>
 
 <template>
-    <AdminLayout :title="$t('sk-user.create')" :back-url="true" :header-in-card="true">
-        <UserForm :role-options="roleOptions" :timezones="timezones" />
-    </AdminLayout>
+  <AdminLayout
+    :title="$t('sk-user.create')"
+    :back-url="true"
+    :header-in-card="true"
+  >
+    <UserForm
+      :role-options="roleOptions"
+      :timezones="timezones"
+    />
+  </AdminLayout>
 </template>

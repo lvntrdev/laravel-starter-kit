@@ -18,11 +18,15 @@
 </script>
 
 <template>
-    <AdminLayout :title="trans('sk-role.create')" :back-url="true" :header-in-card="true">
-        <RoleForm
-            :permissions-by-group="permissionsByGroup"
-            :available-locales="availableLocales"
-            :user-permissions="userPermissions"
-        />
-    </AdminLayout>
+  <AdminLayout
+    :title="trans('sk-role.create')"
+    :back-url="true"
+    :header-in-card="true"
+  >
+    <RoleForm
+      :permissions-by-group="permissionsByGroup"
+      :available-locales="availableLocales"
+      :user-permissions="userPermissions"
+    />
+  </AdminLayout>
 </template>

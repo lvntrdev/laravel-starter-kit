@@ -109,15 +109,64 @@ return [
     | denies it. This stops a forgotten permission row from silently exposing
     | an endpoint on a public non-production host.
     |
-    | Set `allow_unmapped` to true (env: STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS)
-    | to restore the legacy behavior where ANY non-production environment lets
-    | the unmapped permission through with a warning. Production always denies
-    | regardless of this flag; local always allows.
+    | Two DIFFERENT failure axes live here — do not confuse them:
+    |
+    |   UNMAPPED   — a permission WAS derived from the route name, but no row
+    |                with that name is seeded in the database.
+    |   UNRESOLVED — NO permission could be derived at all: the route has no
+    |                name, its name has fewer than two segments, or its action
+    |                segment is not in the middleware's ACTION_ABILITY_MAP.
+    |
+    | `allow_unmapped` (env: STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS) covers the
+    | first. Set it to true to restore the legacy behavior where ANY
+    | non-production environment lets the unmapped permission through with a
+    | warning. Production always denies regardless of this flag; local always
+    | allows.
+    |
+    | `allow_unresolved` (env: STARTER_KIT_ALLOW_UNRESOLVED_ROUTES) covers the
+    | second. Historically an unresolved route passed through in TOTAL SILENCE,
+    | which is exactly how an ungated endpoint hides. With this flag true (the
+    | shipped default) the request still passes but the middleware logs a
+    | throttled warning naming the route, so the gap is visible. Set it to
+    | false to deny instead.
+    |
+    | SCHEDULED FLIP: the default becomes false in the next minor. The default
+    | itself is the CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT constant
+    | referenced below rather than a literal, so the flip is one line in the
+    | package and reaches published copies of this file too. Audit your routes
+    | before then — `php artisan sk:doctor` reports the ones that would start
+    | denying.
+    |
+    | ASYMMETRY, deliberate: unlike `allow_unmapped`, `allow_unresolved` keeps
+    | applying in production once flipped. An unmapped permission is a DATA gap
+    | the operator fixes on the host by seeding the row; an unresolved route is
+    | a STRUCTURAL mismatch between the route table and the ability map, fixable
+    | only by renaming a route or shipping code. The escape hatch therefore has
+    | to exist on the host where it breaks.
+    |
+    | `unrestricted_routes` lists route-name patterns (Str::is wildcards, e.g.
+    | 'api.v1.auth.*') that are DELIBERATELY permission-free: they pass with no
+    | warning and are never denied. This is the supported way to declare intent.
+    | Two limits worth knowing:
+    |   - It is consulted ONLY on the UNRESOLVED axis. It can never disable the
+    |     check for a route whose permission DOES resolve, so it cannot be used
+    |     to bypass a real gate.
+    |   - Keep the patterns TIGHT. A broad entry such as 'admin.*' exempts every
+    |     unresolved admin route at once — including ones added later that you
+    |     never reviewed — and permanently opts them out of the flip above.
+    |     Prefer listing endpoints, not trees.
     |
     */
 
     'permissions' => [
         'allow_unmapped' => (bool) env('STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS', false),
+
+        'allow_unresolved' => (bool) env(
+            'STARTER_KIT_ALLOW_UNRESOLVED_ROUTES',
+            \Lvntr\StarterKit\Http\Middleware\CheckResourcePermission::ALLOW_UNRESOLVED_DEFAULT,
+        ),
+
+        'unrestricted_routes' => [],
     ],
 
     /*
@@ -165,6 +214,24 @@ return [
         ],
 
         'default_scopes' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Security headers (SecurityHeaders middleware)
+    |--------------------------------------------------------------------------
+    |
+    | Extra origins appended to the img-src / media-src / connect-src CSP
+    | directives, on top of the origins derived automatically from the
+    | media-library disk and the public disk (a disk `url`, an s3 `endpoint`,
+    | or plain-AWS region/bucket). Use full origins, e.g.:
+    |
+    |   'csp_extra_origins' => ['https://cdn.example.com'],
+    |
+    */
+
+    'security' => [
+        'csp_extra_origins' => [],
     ],
 
 ];

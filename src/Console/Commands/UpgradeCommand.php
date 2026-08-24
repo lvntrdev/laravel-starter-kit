@@ -211,7 +211,7 @@ class UpgradeCommand extends Command
         $this->line("  Current version: <fg=yellow>{$installed}</>");
         $this->newLine();
         $this->line('  <fg=gray>Bump the constraint and update the package:</>');
-        $this->line('    <fg=cyan>composer require lvntr/laravel-starter-kit:^13.0</>');
+        $this->line('    <fg=cyan>composer require lvntr/laravel-starter-kit:^13.6</>');
         $this->newLine();
 
         return false;

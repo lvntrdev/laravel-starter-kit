@@ -16,8 +16,14 @@ class LogStackCheck implements DoctorCheck
 
     public function run(): DoctorReport
     {
-        $logStack = env('LOG_STACK', 'single');
-        $channels = array_map('trim', explode(',', (string) $logStack));
+        // config(), not env(): once the configuration is cached, .env is not
+        // loaded and env() would report the default instead of the effective
+        // runtime setting. logging.channels.stack.channels is the array
+        // LOG_STACK is exploded into by the framework's logging config.
+        $channels = array_map(
+            static fn ($channel): string => trim((string) $channel),
+            (array) config('logging.channels.stack.channels', ['single'])
+        );
 
         if (in_array('single', $channels, strict: true)) {
             return DoctorReport::warn(

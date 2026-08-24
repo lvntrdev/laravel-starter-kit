@@ -38,6 +38,7 @@ return [
     'confirm_leave' => 'Kaydedilmemiş değişiklikler var. Bu sayfadan ayrılmak istediğinize emin misiniz?',
     'data_load_error' => 'Veri yüklenemedi. Lütfen tekrar deneyin.',
     'options_load_error' => 'Seçenekler yüklenemedi.',
+    'demo_banner' => 'Demo verisi — bu paneldeki metrikler örnek içeriktir. Bunları projenin kendi widget\'larıyla değiştirin.',
 
     'confirmation' => 'Onay',
     'confirm_delete_header' => 'Silme Onayı',

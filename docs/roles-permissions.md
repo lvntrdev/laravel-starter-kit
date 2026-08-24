@@ -173,6 +173,19 @@ If the resolved permission does not exist in the database, the middleware's beha
 
 **Opt-out:** set `config('starter-kit.permissions.allow_unmapped')` to `true` (env `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`) to restore the pre-v13.6.9 "allow on any non-production environment" behavior. `production` always denies regardless of this flag. See [UPGRADE.md](./UPGRADE.md) for the full migration note.
 
+### Unmapped vs. Unresolved
+
+The two failure modes above are easy to conflate but are governed by separate config keys:
+
+- **`allow_unmapped`** — a permission WAS derived from the route name (`admin.users.index` → `users.read`), but no row with that name is seeded in the database. Covered above.
+- **`allow_unresolved`** (config `starter-kit.permissions.allow_unresolved`, env `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES`, default `true`) — NO permission could be derived at all: the route has no name, its name has fewer than two segments, or its action segment is not in the middleware's ability map. Historically this passed in total silence; with the default `true` it still passes, but the middleware logs a throttled warning naming the route so the gap is visible. Setting it to `false` denies the request instead. `php artisan sk:doctor --only=unresolved-routes` lists every route currently in this state.
+
+**Production asymmetry, deliberate:** unlike `allow_unmapped`, which production always clamps to deny, `allow_unresolved` keeps applying in production once flipped to `false`. An unmapped permission is a per-host *data* gap (fixed by seeding the row); an unresolved route is a *structural* mismatch between the route table and the ability map, fixable only by renaming the route or shipping code — so the escape hatch has to remain available on the host where the flip could otherwise lock out a route.
+
+`starter-kit.permissions.unrestricted_routes` lists route-name patterns (`Str::is` wildcards, e.g. `'api.v1.auth.*'`) that are deliberately permission-free: they pass with no warning and are never denied, regardless of `allow_unresolved`. It is consulted only on the unresolved axis — it can never exempt a route whose permission does resolve — and it is checked once per request rather than for every pattern, so keep entries tight (list endpoints, not whole trees) to avoid silently exempting routes added later.
+
+**Scheduled flip:** `allow_unresolved` defaults to `true` today and will default to `false` in the next minor release. See [UPGRADE.md](./UPGRADE.md) for the ordered remediation path to run before then.
+
 ### Octane / Long-Running Worker Deployments
 
 `CheckResourcePermission` caches the seeded permission-name set with `Cache::remember()` under a short TTL (60 seconds) rather than for the whole request or worker lifetime. Both `php artisan sk:seed-permissions` and the Roles screen's permission sync (`RoleController::syncPermissions()` → `SyncPermissionsAction`) call `CheckResourcePermission::flushCache()` immediately after seeding, so a freshly seeded permission is honored at once instead of waiting out the TTL.

@@ -38,6 +38,7 @@ return [
     'confirm_leave' => 'You have unsaved changes. Are you sure you want to leave this page?',
     'data_load_error' => 'The data could not be loaded. Please try again.',
     'options_load_error' => 'The options could not be loaded.',
+    'demo_banner' => 'Demo data — the metrics on this dashboard are sample content. Replace them with your project\'s own widgets.',
 
     'confirmation' => 'Confirmation',
     'confirm_delete_header' => 'Delete Confirmation',

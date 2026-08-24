@@ -8,6 +8,7 @@
         "build": "vite build && vite build --ssr",
         "typecheck": "vue-tsc --noEmit",
         "lint": "eslint resources",
+        "lint:ci": "eslint resources --max-warnings=0",
         "test": "vitest run"
     },
     "devDependencies": {

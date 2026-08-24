@@ -223,12 +223,17 @@ export default defineConfig({
                     if (/[\\/]node_modules[\\/](vue|@vue)[\\/]/.test(id)) {
                         return 'vendor-vue';
                     }
-                    return 'vendor';
+                    // Geri kalan node_modules kodu için catch-all `vendor` chunk'ı YOK:
+                    // Rollup'ın kendi bölmesine bırakılıyor, böylece yalnızca tek bir
+                    // sayfada kullanılan bağımlılıklar (Tiptap, vueuse …) o sayfanın
+                    // dinamik import sınırına düşer, initial payload'a değil.
                 },
             },
         },
-        // vendor chunk 900 kB+ olabiliyor; uyarı limiti buna göre ayarlandı.
-        chunkSizeWarningLimit: 1000,
+        // Catch-all `vendor` kalkınca oradaki @primeuix modülleri vendor-primevue'ya
+        // taşındı: tek chunk ~1.1 MB (minified, gzip ~221 kB). Uyarı limiti buna göre.
+        // Asıl bekçi bu limit değil, scripts/ci/check-bundle-budget.mjs (gzip bütçesi).
+        chunkSizeWarningLimit: 1200,
     },
 
     server: {

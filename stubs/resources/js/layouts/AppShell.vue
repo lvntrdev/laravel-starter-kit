@@ -9,43 +9,43 @@
 </script>
 
 <template>
-    <div class="admin-layout">
-        <!-- Sidebar region -->
-        <slot
-            name="sidebar"
-            :collapsed="isCollapsed"
-            :mobile-open="isMobileOpen"
-            :is-mobile="isMobile"
-            :close-mobile="closeMobile"
-        />
+  <div class="admin-layout">
+    <!-- Sidebar region -->
+    <slot
+      name="sidebar"
+      :collapsed="isCollapsed"
+      :mobile-open="isMobileOpen"
+      :is-mobile="isMobile"
+      :close-mobile="closeMobile"
+    />
 
-        <!-- Main Area -->
-        <div
-            class="admin-main"
-            :class="{
-                'admin-main--expanded': !isMobile && !isCollapsed,
-                'admin-main--collapsed': !isMobile && isCollapsed,
-                'admin-main--mobile': isMobile,
-            }"
-        >
-            <!-- Header region -->
-            <slot
-                name="header"
-                :collapsed="isCollapsed"
-                :is-mobile="isMobile"
-                :toggle="toggle"
-            />
+    <!-- Main Area -->
+    <div
+      class="admin-main"
+      :class="{
+        'admin-main--expanded': !isMobile && !isCollapsed,
+        'admin-main--collapsed': !isMobile && isCollapsed,
+        'admin-main--mobile': isMobile,
+      }"
+    >
+      <!-- Header region -->
+      <slot
+        name="header"
+        :collapsed="isCollapsed"
+        :is-mobile="isMobile"
+        :toggle="toggle"
+      />
 
-            <!-- Content region -->
-            <main class="admin-content">
-                <slot />
-            </main>
+      <!-- Content region -->
+      <main class="admin-content">
+        <slot />
+      </main>
 
-            <!-- Footer region -->
-            <slot name="footer" />
-        </div>
-
-        <!-- Global overlays region -->
-        <slot name="overlays" />
+      <!-- Footer region -->
+      <slot name="footer" />
     </div>
+
+    <!-- Global overlays region -->
+    <slot name="overlays" />
+  </div>
 </template>

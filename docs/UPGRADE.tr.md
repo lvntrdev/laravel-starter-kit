@@ -77,6 +77,27 @@ Built-in `global` context artık bu ability'leri birebir `files.read`, `files.cr
 php artisan sk:seed-permissions
 ```
 
+### Deprecation — çözülemeyen route'larda fail-closed varsayılan bir sonraki minor'da değişecek
+
+**Bu sürümde hiçbir şey kırılmıyor.** `CheckResourcePermission` tarafından izni çözülemeyen bir route bugün **hâlâ geçer** — tıpkı önceki gibi; middleware artık ayrıca route'u adlandıran, throttle edilmiş bir uyarı logu basar; böylece boşluk sessiz kalmak yerine görünür olur. Şu anda başarılı olan hiçbir istek bu sürüm yüzünden başarısız olmaya başlamaz.
+
+Kitin kendi route'ları **paketin içinde** (`src/`) düzeltildi: kitin gönderdiği her route artık kendi başına bir izne çözülüyor. Mevcut bir kurulum bu düzeltmeyi yalnızca `composer update` ile alır — **route dosyası düzenlemesi yok, `sk:update` reconciliation'ı yok**. Gerekçe, route'ların pakette yaşaması değil: route'lar `stubs/routes/web/*-route.php` içinde kayıtlı ve `sk:install` onları app'inize kopyaladı. `src/` içinde yaşayan şey *sözleşme*: `CheckResourcePermission` içindeki, o dosyaların zaten kullandığı adlarla anahtarlanmış bir route-adı → izin haritası. Düzeltme bu yüzden düzenlemiş olabileceğiniz bir dosyaya dokunmadan geliyor.
+
+Madalyonun diğer yüzü de bilinmeli: **kitin route'larından birini kendi kopyanızda yeniden adlandırdıysanız harita artık onu tutmuyor**; o route uyarıyla geçmeye geri döner ve bayrak çevrildikten sonra reddedilir. `sk:doctor --only=unresolved-routes` tam olarak bunları listeler.
+
+Bir durum middleware katmanında bilinçli olarak kapatılmadı: `roles.bulk` ve `users.bulk`. Bu uçların gerektirdiği ability, route'un değil istek gövdesinde adı geçen aksiyonun bir özelliği; `BulkActionDispatcher` zaten her item'ı handler'ın kendi ability'siyle yetkilendiriyor (`BulkDeleteUserAction` `users.delete` istiyor). Route seviyesinde tek bir eşleme yalnızca fazla-reddedebilirdi — `.delete`, `.update` ve `.read`'in her biri farklı bir meşru rolü kırar, çünkü bu ability'ler `permission-resources.php` içinde birbirinden bağımsız. Bu yüzden paketin muaf listesine yazıldılar; bu aynı zamanda onları çözülemeyen ekseninden çıkarıyor, böylece bayrak çevrildiğinde bulk aksiyonları kırılamaz. Item bazlı yetkilendirme değişmedi ve asıl kapı olmayı sürdürüyor.
+
+Varsayılan değişmeden önce izlenecek **sıralı düzeltme yolu**:
+
+1. `php artisan sk:doctor --only=unresolved-routes` çalıştırarak kendi app'inizde hâlâ uyarıyla geçen her route'u listeleyin.
+2. Listelenen her route'u şu yollardan biriyle düzeltin:
+   - Action segmenti middleware'in ability haritasında olan bir `<resource>.<action>` route adı verin; böylece izin otomatik çözülür.
+   - Açık bir izin argümanıyla gate edin, örn. `check.permission:reports.read`.
+   - Route bilinçli olarak izinsiz kalacaksa (public bir webhook, health check, …) `starter-kit.permissions.unrestricted_routes` altında tanımlayın (dar `Str::is` desenleri — geniş bir desen sonradan eklenen route'ları da sessizce muaf tuttuğu için, ağaç yerine tek tek endpoint listelemeyi tercih edin).
+3. Bir sonraki minor çıkmadan önce staging ortamında `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (ya da `starter-kit.permissions.allow_unresolved` = `false`) ayarlayıp güvendiğiniz hiçbir şeyin reddedilmediğini doğrulayın.
+
+**Değişecek olan:** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) şu an varsayılan olarak `true`'dur ve bir sonraki minor sürümde varsayılanı `false` olacaktır. Değişimden sonra env değişkeni production'da geçerli kaçış kapısı olarak kalır — düzeltmeyi bitirmek için daha fazla zamana ihtiyacınız varsa `true`'ya geri alabilirsiniz; ancak çözülememiş her route, tanımı gereği, o hâlde kaldığı sürece izinsiz (ungated) demektir.
+
 ## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` artık staging/demo'da fail-closed (davranış değişikliği)

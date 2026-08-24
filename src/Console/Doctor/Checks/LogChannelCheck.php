@@ -21,7 +21,10 @@ class LogChannelCheck implements DoctorCheck
 
     public function run(): DoctorReport
     {
-        $channel = env('LOG_CHANNEL', 'stack');
+        // config(), not env(): once the configuration is cached, .env is not
+        // loaded and env() would report the default instead of the effective
+        // runtime setting.
+        $channel = (string) config('logging.default', 'stack');
 
         if ($channel === 'single') {
             return DoctorReport::fail(

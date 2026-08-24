@@ -315,9 +315,11 @@ class SettingsController extends Controller
      *
      * The public disk builds its URL from APP_URL / the disk `url` config. When
      * that base is `http://` but the page is served over HTTPS, the browser
-     * blocks the asset as mixed content. Returning a protocol-relative URL lets
-     * the browser inherit the page scheme — no dependency on proxy/`isSecure()`
-     * detection, and never a downgrade. Relative/path-only URLs pass through.
+     * blocks the asset as mixed content, so `http://` URLs are rewritten to
+     * protocol-relative `//…` and inherit the page scheme. An `https://` URL is
+     * kept as-is: an https asset is never mixed content on any page, while
+     * stripping its scheme would let an http page downgrade the request.
+     * Relative/path-only URLs pass through.
      */
     private function publicUrl(string $path): string
     {
@@ -325,10 +327,6 @@ class SettingsController extends Controller
 
         if (str_starts_with($url, 'http://')) {
             return substr($url, 5);   // 'http://...' → '//...'
-        }
-
-        if (str_starts_with($url, 'https://')) {
-            return substr($url, 6);   // 'https://...' → '//...'
         }
 
         return $url;

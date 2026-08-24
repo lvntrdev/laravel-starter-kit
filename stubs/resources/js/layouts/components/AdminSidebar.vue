@@ -40,48 +40,59 @@
 </script>
 
 <template>
-    <!-- Mobile Overlay -->
-    <Transition name="fade">
-        <div v-if="isMobile && mobileOpen" class="admin-overlay" @click="emit('closeMobile')" />
-    </Transition>
+  <!-- Mobile Overlay -->
+  <Transition name="fade">
+    <div
+      v-if="isMobile && mobileOpen"
+      class="admin-overlay"
+      @click="emit('closeMobile')"
+    />
+  </Transition>
 
-    <!-- Sidebar -->
-    <aside
-        class="admin-sidebar"
-        :class="{
-            'admin-sidebar--collapsed': isCollapsed,
-            'admin-sidebar--hidden': isMobile && !mobileOpen,
-        }"
-        @mouseenter="isHovered = true"
-        @mouseleave="isHovered = false"
-    >
-        <!-- Logo -->
-        <div class="admin-sidebar__logo">
-            <template v-if="appLogo">
-                <img :src="appLogo" alt="Logo" class="admin-sidebar__logo-img">
-            </template>
-            <template v-else>
-                <div class="admin-sidebar__logo-icon">
-                    <i class="pi pi-box" />
-                </div>
-                <span class="admin-sidebar__logo-text" :class="effectiveCollapsed ? 'opacity-0' : 'opacity-100'">
-                    {{ appName }}
-                </span>
-            </template>
+  <!-- Sidebar -->
+  <aside
+    class="admin-sidebar"
+    :class="{
+      'admin-sidebar--collapsed': isCollapsed,
+      'admin-sidebar--hidden': isMobile && !mobileOpen,
+    }"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
+    <!-- Logo -->
+    <div class="admin-sidebar__logo">
+      <template v-if="appLogo">
+        <img
+          :src="appLogo"
+          alt="Logo"
+          class="admin-sidebar__logo-img"
+        >
+      </template>
+      <template v-else>
+        <div class="admin-sidebar__logo-icon">
+          <i class="pi pi-box" />
         </div>
+        <span
+          class="admin-sidebar__logo-text"
+          :class="effectiveCollapsed ? 'opacity-0' : 'opacity-100'"
+        >
+          {{ appName }}
+        </span>
+      </template>
+    </div>
 
-        <!-- Navigation -->
-        <nav class="admin-sidebar__nav">
-            <SidebarMenuItem
-                v-for="(item, index) in menuItems"
-                :key="index"
-                :item="item"
-                :collapsed="effectiveCollapsed"
-                @nav-click="emit('closeMobile')"
-            />
-        </nav>
+    <!-- Navigation -->
+    <nav class="admin-sidebar__nav">
+      <SidebarMenuItem
+        v-for="(item, index) in menuItems"
+        :key="index"
+        :item="item"
+        :collapsed="effectiveCollapsed"
+        @nav-click="emit('closeMobile')"
+      />
+    </nav>
 
-        <!-- Footer -->
-        <AdminSidebarFooter :collapsed="effectiveCollapsed" />
-    </aside>
+    <!-- Footer -->
+    <AdminSidebarFooter :collapsed="effectiveCollapsed" />
+  </aside>
 </template>

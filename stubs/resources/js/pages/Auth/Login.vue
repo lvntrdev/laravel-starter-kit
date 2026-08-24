@@ -30,104 +30,147 @@
 </script>
 
 <template>
-    <AuthLayout :title="$t('sk-auth.login.title')">
-        <template #header>
-            <h2 class="auth-title">
-                {{ $t('sk-auth.login.heading') }}
-            </h2>
-            <p class="auth-subtitle">
-                {{ $t('sk-auth.login.subtitle') }}
-            </p>
-        </template>
+  <AuthLayout :title="$t('sk-auth.login.title')">
+    <template #header>
+      <h2 class="auth-title">
+        {{ $t('sk-auth.login.heading') }}
+      </h2>
+      <p class="auth-subtitle">
+        {{ $t('sk-auth.login.subtitle') }}
+      </p>
+    </template>
 
-        <!-- Status Message -->
-        <div v-if="props.status" class="auth-status">
-            {{ props.status }}
+    <!-- Status Message -->
+    <div
+      v-if="props.status"
+      class="auth-status"
+    >
+      {{ props.status }}
+    </div>
+
+    <form
+      class="auth-form"
+      @submit.prevent="submit"
+    >
+      <!-- Email -->
+      <div class="auth-form__field">
+        <label
+          for="email"
+          class="auth-form__label"
+        >{{ $t('sk-auth.login.email_label') }}</label>
+        <IconField class="auth-input">
+          <InputIcon class="auth-input__icon pi pi-envelope" />
+          <InputText
+            id="email"
+            v-model="form.email"
+            type="email"
+            :placeholder="$t('sk-auth.login.email_placeholder')"
+            :invalid="!!form.errors.email"
+            :aria-describedby="form.errors.email ? 'email-error' : undefined"
+            autocomplete="email"
+            autofocus
+            fluid
+            class="auth-input__control"
+          />
+        </IconField>
+        <small
+          v-if="form.errors.email"
+          id="email-error"
+          class="auth-form__error"
+        >
+          {{ form.errors.email }}
+        </small>
+      </div>
+
+      <!-- Password -->
+      <div class="auth-form__field">
+        <div class="auth-form__row">
+          <label
+            for="password"
+            class="auth-form__label"
+          >{{ $t('sk-auth.login.password_label') }}</label>
+          <Link
+            v-if="page.props.features.password_reset"
+            href="/forgot-password"
+            class="auth-link"
+          >
+            {{ $t('sk-auth.login.forgot_password_link') }}
+          </Link>
         </div>
+        <IconField class="auth-input auth-input--password">
+          <InputIcon class="auth-input__icon pi pi-lock" />
+          <Password
+            id="password"
+            v-model="form.password"
+            :invalid="!!form.errors.password"
+            :aria-describedby="form.errors.password ? 'password-error' : undefined"
+            :feedback="false"
+            autocomplete="current-password"
+            toggle-mask
+            fluid
+            input-class="auth-input__control auth-input__control--password"
+            class="auth-password"
+          />
+        </IconField>
+        <small
+          v-if="form.errors.password"
+          id="password-error"
+          class="auth-form__error"
+        >
+          {{ form.errors.password }}
+        </small>
+      </div>
 
-        <form class="auth-form" @submit.prevent="submit">
-            <!-- Email -->
-            <div class="auth-form__field">
-                <label for="email" class="auth-form__label">{{ $t('sk-auth.login.email_label') }}</label>
-                <IconField class="auth-input">
-                    <InputIcon class="auth-input__icon pi pi-envelope" />
-                    <InputText
-                        id="email"
-                        v-model="form.email"
-                        type="email"
-                        :placeholder="$t('sk-auth.login.email_placeholder')"
-                        :invalid="!!form.errors.email"
-                        :aria-describedby="form.errors.email ? 'email-error' : undefined"
-                        autocomplete="email"
-                        autofocus
-                        fluid
-                        class="auth-input__control"
-                    />
-                </IconField>
-                <small v-if="form.errors.email" id="email-error" class="auth-form__error">
-                    {{ form.errors.email }}
-                </small>
-            </div>
+      <!-- Remember -->
+      <div class="auth-form__options">
+        <div class="auth-remember">
+          <Checkbox
+            v-model="form.remember"
+            input-id="remember"
+            :binary="true"
+          />
+          <label
+            for="remember"
+            class="auth-remember__label"
+          >{{ $t('sk-auth.login.remember') }}</label>
+        </div>
+      </div>
 
-            <!-- Password -->
-            <div class="auth-form__field">
-                <div class="auth-form__row">
-                    <label for="password" class="auth-form__label">{{ $t('sk-auth.login.password_label') }}</label>
-                    <Link v-if="page.props.features.password_reset" href="/forgot-password" class="auth-link">
-                        {{ $t('sk-auth.login.forgot_password_link') }}
-                    </Link>
-                </div>
-                <IconField class="auth-input auth-input--password">
-                    <InputIcon class="auth-input__icon pi pi-lock" />
-                    <Password
-                        id="password"
-                        v-model="form.password"
-                        :invalid="!!form.errors.password"
-                        :aria-describedby="form.errors.password ? 'password-error' : undefined"
-                        :feedback="false"
-                        autocomplete="current-password"
-                        toggle-mask
-                        fluid
-                        input-class="auth-input__control auth-input__control--password"
-                        class="auth-password"
-                    />
-                </IconField>
-                <small v-if="form.errors.password" id="password-error" class="auth-form__error">
-                    {{ form.errors.password }}
-                </small>
-            </div>
+      <!-- Turnstile -->
+      <TurnstileWidget
+        ref="turnstileRef"
+        v-model="form.cf_turnstile_response"
+      />
+      <small
+        v-if="form.errors.cf_turnstile_response"
+        class="auth-form__error"
+      >
+        {{ form.errors.cf_turnstile_response }}
+      </small>
 
-            <!-- Remember -->
-            <div class="auth-form__options">
-                <div class="auth-remember">
-                    <Checkbox v-model="form.remember" input-id="remember" :binary="true" />
-                    <label for="remember" class="auth-remember__label">{{ $t('sk-auth.login.remember') }}</label>
-                </div>
-            </div>
+      <!-- Submit -->
+      <Button
+        type="submit"
+        :label="$t('sk-auth.login.submit')"
+        icon="pi pi-arrow-right"
+        icon-pos="right"
+        :loading="form.processing"
+        class="auth-form__submit"
+      />
+    </form>
 
-            <!-- Turnstile -->
-            <TurnstileWidget ref="turnstileRef" v-model="form.cf_turnstile_response" />
-            <small v-if="form.errors.cf_turnstile_response" class="auth-form__error">
-                {{ form.errors.cf_turnstile_response }}
-            </small>
-
-            <!-- Submit -->
-            <Button
-                type="submit"
-                :label="$t('sk-auth.login.submit')"
-                icon="pi pi-arrow-right"
-                icon-pos="right"
-                :loading="form.processing"
-                class="auth-form__submit"
-            />
-        </form>
-
-        <template v-if="page.props.features.registration" #footer>
-            <span>{{ $t('sk-auth.login.no_account') }}</span>
-            {{ ' ' }}
-            <Link href="/register" class="auth-link">
-                {{ $t('sk-auth.login.create_account') }}
-            </Link>
-        </template>
-    </AuthLayout>
+    <template
+      v-if="page.props.features.registration"
+      #footer
+    >
+      <span>{{ $t('sk-auth.login.no_account') }}</span>
+      {{ ' ' }}
+      <Link
+        href="/register"
+        class="auth-link"
+      >
+        {{ $t('sk-auth.login.create_account') }}
+      </Link>
+    </template>
+  </AuthLayout>
 </template>

@@ -63,6 +63,9 @@ uses(TestCase::class)->in('Feature/BackwardCompat');
 // Doctor testleri: DB gerektirmiyor, basit TestCase yeterli
 uses(TestCase::class)->in('Feature/Doctor');
 
+// Security header testleri: middleware doğrudan handle() ile çağrılır, DB gerektirmiyor
+uses(TestCase::class)->in('Feature/Security');
+
 // Bulk action testleri: DB gerektirmiyor, mock tabanlı
 uses(TestCase::class)->in('Feature/Bulk');
 

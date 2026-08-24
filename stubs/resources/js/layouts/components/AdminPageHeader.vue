@@ -38,25 +38,37 @@
 </script>
 
 <template>
-    <div v-if="showTitle || resolvedBackUrl || $slots.actions" class="admin-page-header">
-        <div v-if="showTitle" class="admin-page-header__title">
-            <h1 class="admin-page-header__heading">
-                {{ title }}
-            </h1>
-            <small v-if="subtitle" class="admin-page-header__subtitle">
-                {{ subtitle }}
-            </small>
-        </div>
-        <div v-if="resolvedBackUrl || $slots.actions" class="admin-page-header__actions">
-            <Button
-                v-if="resolvedBackUrl"
-                icon="pi pi-arrow-left"
-                :label="$t('sk-button.back')"
-                severity="secondary"
-                variant="outlined"
-                @click="goBack"
-            />
-            <slot name="actions" />
-        </div>
+  <div
+    v-if="showTitle || resolvedBackUrl || $slots.actions"
+    class="admin-page-header"
+  >
+    <div
+      v-if="showTitle"
+      class="admin-page-header__title"
+    >
+      <h1 class="admin-page-header__heading">
+        {{ title }}
+      </h1>
+      <small
+        v-if="subtitle"
+        class="admin-page-header__subtitle"
+      >
+        {{ subtitle }}
+      </small>
     </div>
+    <div
+      v-if="resolvedBackUrl || $slots.actions"
+      class="admin-page-header__actions"
+    >
+      <Button
+        v-if="resolvedBackUrl"
+        icon="pi pi-arrow-left"
+        :label="$t('sk-button.back')"
+        severity="secondary"
+        variant="outlined"
+        @click="goBack"
+      />
+      <slot name="actions" />
+    </div>
+  </div>
 </template>

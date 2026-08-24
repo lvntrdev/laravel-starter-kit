@@ -173,6 +173,19 @@ Proje, route niyetini permission kontrolüne çevirir. `users.index` gibi bir ro
 
 **Opt-out:** v13.6.9 öncesindeki "production dışı her ortamda izin ver" davranışını geri getirmek için `config('starter-kit.permissions.allow_unmapped')` değerini `true` yapın (env `STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true`). Bu bayrak ne olursa olsun `production` her zaman reddeder. Tam migration notu için [UPGRADE.tr.md](./UPGRADE.tr.md) dosyasına bakın.
 
+### Unmapped vs. Unresolved
+
+Yukarıdaki iki başarısızlık modu birbirine karıştırılmaya müsaittir ama ayrı config anahtarları tarafından yönetilir:
+
+- **`allow_unmapped`** — route adından bir izin TÜRETİLDİ (`admin.users.index` → `users.read`), ama o adda bir satır veritabanında seed edilmemiş. Yukarıda anlatıldı.
+- **`allow_unresolved`** (config `starter-kit.permissions.allow_unresolved`, env `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES`, varsayılan `true`) — HİÇBİR izin türetilemedi: route'un adı yok, adı iki segmentten az, ya da action segmenti middleware'in ability haritasında yok. Geçmişte bu durum tamamen sessizce geçerdi; varsayılan `true` iken hâlâ geçer, ama middleware artık route'u adlandıran, throttle edilmiş bir uyarı logu basar; böylece boşluk görünür olur. `false` yapıldığında istek reddedilir. `php artisan sk:doctor --only=unresolved-routes` şu an bu durumda olan her route'u listeler.
+
+**Production asimetrisi, bilinçli:** `allow_unmapped`'in aksine — ki production onu her zaman reddet'e sabitler — `allow_unresolved`, `false`'a çevrildikten sonra production'da da uygulanmaya devam eder. Unmapped bir izin host'a özgü bir *veri* boşluğudur (satırı seed ederek düzeltilir); çözülemeyen bir route ise route tablosu ile ability haritası arasındaki *yapısal* bir uyuşmazlıktır, yalnızca route'u yeniden adlandırarak ya da kod göndererek düzeltilebilir — bu yüzden kaçış kapısının, flip aksi hâlde bir route'u kilitleyebileceği host'ta hâlâ mevcut olması gerekir.
+
+`starter-kit.permissions.unrestricted_routes`, bilinçli olarak izinsiz kalacak route-adı desenlerini listeler (`Str::is` wildcard'ları, örn. `'api.v1.auth.*'`): bunlar `allow_unresolved` ne olursa olsun uyarısız geçer ve asla reddedilmez. Yalnızca unresolved ekseninde devreye girer — izni zaten çözülen bir route'u asla muaf tutamaz — ve istek başına bir kez kontrol edilir; bu yüzden desenleri dar tutun (ağaç yerine tek tek endpoint listeleyin) ki sonradan eklenen route'lar sessizce muaf kalmasın.
+
+**Değişecek olan:** `allow_unresolved` bugün varsayılan olarak `true`'dur ve bir sonraki minor sürümde varsayılanı `false` olacaktır. Değişimden önce izlenecek sıralı düzeltme yolu için [UPGRADE.tr.md](./UPGRADE.tr.md) dosyasına bakın.
+
 ### Octane / Long-Running Worker Ortamları
 
 `CheckResourcePermission`, seed edilmiş permission isim listesini request veya worker ömrü boyunca değil, kısa bir TTL (60 saniye) ile `Cache::remember()` üzerinden cache'ler. Hem `php artisan sk:seed-permissions` hem de Roles ekranının permission sync'i (`RoleController::syncPermissions()` → `SyncPermissionsAction`), seed işleminden hemen sonra `CheckResourcePermission::flushCache()` çağırır; böylece yeni seed edilen bir permission, TTL'in dolmasını beklemeden anında geçerli olur.

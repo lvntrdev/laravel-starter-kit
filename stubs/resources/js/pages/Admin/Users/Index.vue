@@ -169,42 +169,52 @@
 </script>
 
 <template>
-    <AdminLayout :title="$t('sk-menu.users')" :subtitle="$t('sk-user.subtitle')">
-        <template v-if="can('users.create') && theme !== 'aura'" #page-actions>
-            <Button :label="$t('sk-user.create')" icon="pi pi-user-plus" @click="openCreateDialog" />
-        </template>
+  <AdminLayout
+    :title="$t('sk-menu.users')"
+    :subtitle="$t('sk-user.subtitle')"
+  >
+    <template
+      v-if="can('users.create') && theme !== 'aura'"
+      #page-actions
+    >
+      <Button
+        :label="$t('sk-user.create')"
+        icon="pi pi-user-plus"
+        @click="openCreateDialog"
+      />
+    </template>
 
-        <SkDatatable
-            ref="tableRef"
-            :config="tableConfig"
-            :refresh-key="REFRESH_KEY"
-            :selection="selection"
-            @load="onTableLoad"
-        >
-            <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
-            <template #bulk-actions>
-                <!-- Select all filtered (cross-page) -->
-                <Button
-                    v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
-                    :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
-                    size="small"
-                    severity="secondary"
-                    variant="text"
-                    @click="selection.selectAllFiltered()"
-                />
+    <SkDatatable
+      ref="tableRef"
+      :config="tableConfig"
+      :refresh-key="REFRESH_KEY"
+      :selection="selection"
+      @load="onTableLoad"
+    >
+      <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
+      <template #bulk-actions>
+        <!-- Select all filtered (cross-page) -->
+        <Button
+          v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
+          :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
+          size="small"
+          severity="secondary"
+          variant="text"
+          @click="selection.selectAllFiltered()"
+        />
 
-                <!-- Bulk delete -->
-                <Button
-                    v-if="can('users.delete')"
-                    :label="$t('sk-datatable.bulk_delete')"
-                    icon="pi pi-trash"
-                    size="small"
-                    severity="danger"
-                    variant="text"
-                    :loading="selection.submitting.value"
-                    @click="confirmBulkDelete(totalFiltered)"
-                />
-            </template>
-        </SkDatatable>
-    </AdminLayout>
+        <!-- Bulk delete -->
+        <Button
+          v-if="can('users.delete')"
+          :label="$t('sk-datatable.bulk_delete')"
+          icon="pi pi-trash"
+          size="small"
+          severity="danger"
+          variant="text"
+          :loading="selection.submitting.value"
+          @click="confirmBulkDelete(totalFiltered)"
+        />
+      </template>
+    </SkDatatable>
+  </AdminLayout>
 </template>

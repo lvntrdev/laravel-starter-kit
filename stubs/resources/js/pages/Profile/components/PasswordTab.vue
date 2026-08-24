@@ -26,15 +26,15 @@
 </script>
 
 <template>
-    <SkCard>
-        <template #title>
-            {{ $t('sk-profile.password_title') }}
-        </template>
-        <template #subtitle>
-            {{ $t('sk-profile.password_subtitle') }}
-        </template>
-        <template #content>
-            <SkForm :config="formConfig" />
-        </template>
-    </SkCard>
+  <SkCard>
+    <template #title>
+      {{ $t('sk-profile.password_title') }}
+    </template>
+    <template #subtitle>
+      {{ $t('sk-profile.password_subtitle') }}
+    </template>
+    <template #content>
+      <SkForm :config="formConfig" />
+    </template>
+  </SkCard>
 </template>

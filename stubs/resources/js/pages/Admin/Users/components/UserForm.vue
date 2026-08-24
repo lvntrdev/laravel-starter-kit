@@ -92,25 +92,33 @@
 </script>
 
 <template>
-    <div>
-        <AvatarUpload
-            v-if="isEdit && formRef?.remoteData"
-            :avatar-url="(formRef.remoteData as { avatar_url?: string | null } | null)?.avatar_url"
-            :upload-url="adminUsers.uploadAvatar.url(userId!)"
-            :delete-url="adminUsers.deleteAvatar.url(userId!)"
-            :is-card="!inDialog"
-            class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
+  <div>
+    <AvatarUpload
+      v-if="isEdit && formRef?.remoteData"
+      :avatar-url="(formRef.remoteData as { avatar_url?: string | null } | null)?.avatar_url"
+      :upload-url="adminUsers.uploadAvatar.url(userId!)"
+      :delete-url="adminUsers.deleteAvatar.url(userId!)"
+      :is-card="!inDialog"
+      class="mb-6 pb-6 border-b border-surface-200 dark:border-surface-700"
+    />
+    <SkForm
+      ref="formRef"
+      :config="formConfig"
+      @success="emit('success')"
+      @cancel="emit('cancel')"
+    >
+      <template
+        v-if="pageHeader.active"
+        #title-end
+      >
+        <Button
+          icon="pi pi-arrow-left"
+          :label="$t('sk-button.back')"
+          severity="secondary"
+          variant="outlined"
+          @click="pageHeader.goBack"
         />
-        <SkForm ref="formRef" :config="formConfig" @success="emit('success')" @cancel="emit('cancel')">
-            <template v-if="pageHeader.active" #title-end>
-                <Button
-                    icon="pi pi-arrow-left"
-                    :label="$t('sk-button.back')"
-                    severity="secondary"
-                    variant="outlined"
-                    @click="pageHeader.goBack"
-                />
-            </template>
-        </SkForm>
-    </div>
+      </template>
+    </SkForm>
+  </div>
 </template>

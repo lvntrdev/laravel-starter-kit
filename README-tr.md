@@ -76,9 +76,16 @@ Temiz bir Laravel kurulumundan başla:
 ```bash
 composer create-project laravel/laravel my-app
 cd my-app
-composer require lvntr/laravel-starter-kit:^13.0
+composer require lvntr/laravel-starter-kit:^13.6
 php artisan sk:install
 ```
+
+> **Önce `php -v` kontrol edin — bu kit PHP 8.4+ gerektirir.** `laravel/laravel`
+> iskeletinin kendisi yalnızca PHP 8.3 istediği için `create-project` 8.3'te
+> sorunsuz tamamlanır ve hata daha sonra ortaya çıkar. Kiti her zaman `:^13.6`
+> ile ekleyin (daha gevşek bir `:^13.0` ile değil): gevşek constraint'te
+> Composer gerçek engeli bildirmek yerine sessizce, PHP 8.3'e hâlâ uyan çok
+> eski bir sürüme iner.
 
 Hepsi bu kadar. Kurulum sihirbazı migration, seeder, Passport anahtarları, varsayılan admin kullanıcısı ve frontend build işlemlerini otomatik yapar. Ayrıca `User` ve `Role` domain runtime sınıflarını `app/Domain/`'e eject eder, böylece anında proje-sahipli ve özelleştirmeye hazır olurlar. Bunun yerine vendor'da tutmak için `--without-eject` geçin.
 
@@ -86,9 +93,9 @@ Detaylı adım adım rehber: [starter-kit.lvntr.dev/docs/install](https://starte
 
 ## Gereksinimler
 
-- PHP 8.4+
+- PHP 8.4+ (kesin taban — `spatie/laravel-activitylog:^5.0` da bunu gerektirir)
 - Laravel 13
-- Node.js 20.19+
+- Node.js 20.19+ (veya 22.12+) — Vite 7 engine tabanı
 - MySQL veya MariaDB
 
 ## Uyumluluk & Sürümleme
@@ -100,7 +107,7 @@ daha yeni Laravel hedefinden kırıcı değişiklik almaz.
 
 | Laravel | Constraint                                            | Branch  | Durum  |
 |---------|-------------------------------------------------------|---------|--------|
-| 13.x    | `composer require lvntr/laravel-starter-kit:^13.0`    | `13.x`  | aktif  |
+| 13.x    | `composer require lvntr/laravel-starter-kit:^13.6`    | `13.x`  | aktif  |
 
 `main` şu anda aktif major hattı takip eder (`13.x`). Gelecekte yeni bir
 Laravel sürümü hedeflendiğinde `main` sonraki major geliştirme hattına

@@ -18,8 +18,14 @@
 |                  allow" davranışını geri getirir (production yine deny).
 |   4. Sub-resource — ?type=student ile users.read → users:student.read'e
 |                  yükseltilir, ancak yalnız o sub-izin seed'liyse.
-|   5. Pass-through — route adı yok / segment < 2 / bilinmeyen action /
-|                  explicit izin verilmemiş → izin çözülemez → geçilir.
+|   5. Çözülemeyen (UNRESOLVED) — route adı yok / segment < 2 / bilinmeyen
+|                  action → izin çözülemez. Varsayılan: geç + throttled warn
+|                  (`starter-kit.permissions.allow_unresolved`, default true —
+|                  route adı başına 1 kez). `allow_unresolved=false` ise HER
+|                  ortamda (production dahil, allow_unmapped'ten farklı olarak
+|                  hatch YOK) deny. Route adı PACKAGE_UNRESTRICTED_ROUTES veya
+|                  `starter-kit.permissions.unrestricted_routes`'a (Str::is)
+|                  düşüyorsa sessizce geçer (warn yok).
 |
 | Test middleware'i doğrudan handle() ile çağırır: route resolver + user
 | resolver kontrollü kurulur. Middleware KODU değiştirilmez — yalnız test.
@@ -313,35 +319,48 @@ it('denies a guest on a mapped, seeded route', function (): void {
         ->toThrow(AuthorizationException::class);
 });
 
-it('allows a guest through when the permission cannot be resolved', function (): void {
-    // Bilinmeyen action → izin çözülemez → guest bile geçer (pass-through).
+it('allows a guest through when the permission cannot be resolved, but warns', function (): void {
+    Log::spy();
+
+    // Bilinmeyen action → izin çözülemez → guest bile geçer (allow + warn,
+    // allow_unresolved default true).
     $response = runMiddleware(permRequest('admin.users.customThing', user: null));
 
     expect($response->getContent())->toBe('ok');
+    Log::shouldHaveReceived('warning')->once();
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 5. Pass-through kenar durumları
+// 5. UNRESOLVED kenar durumları — varsayılan: geç + throttled warn
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('passes through when the route has no name', function (): void {
+it('passes through (warned) when the route has no name', function (): void {
+    Log::spy();
+
     $response = runMiddleware(permRequest(null, user: makePermUser([])));
 
     expect($response->getContent())->toBe('ok');
+    Log::shouldHaveReceived('warning')->once();
 });
 
-it('passes through when the route name has fewer than two segments', function (): void {
-    // "dashboard" tek segment → resolvePermission null → geç.
+it('passes through (warned) when the route name has fewer than two segments', function (): void {
+    Log::spy();
+
+    // "dashboard" tek segment → resolvePermission null → geç + warn.
     $response = runMiddleware(permRequest('dashboard', user: makePermUser([])));
 
     expect($response->getContent())->toBe('ok');
+    Log::shouldHaveReceived('warning')->once();
 });
 
-it('passes through when the action segment is not in the ability map', function (): void {
-    // "reorder" map'te yok → izin çözülemez → geç.
+it('passes through (warned) when the action segment is not in the ability map', function (): void {
+    Log::spy();
+
+    // "reorder" map'te yok → izin çözülemez → geç + warn.
     $response = runMiddleware(permRequest('admin.users.reorder', user: makePermUser([])));
 
     expect($response->getContent())->toBe('ok');
+    Log::shouldHaveReceived('warning')->once();
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -364,4 +383,189 @@ it('denies when the explicit permission is seeded but the user lacks it', functi
 
     expect(fn () => runMiddleware(permRequest('admin.users.index', user: $user), 'reports.read'))
         ->toThrow(AuthorizationException::class);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 7. UNRESOLVED ekseni — allow_unresolved=false (deny, hatch YOK)
+//
+// allow_unmapped'ten farklı olarak: false olduğunda production dahil HER
+// ortamda deny — local exemption yok, config hatch'i production'da kapanmaz
+// (zaten hiç açılmaz). Bkz. middleware docblock'undaki "DELIBERATE ASYMMETRY".
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('denies an unresolved route in the default (testing) environment when allow_unresolved is false', function (): void {
+    config()->set('starter-kit.permissions.allow_unresolved', false);
+
+    expect(fn () => runMiddleware(permRequest('dashboard', user: makePermUser([]))))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('denies an unresolved route in production when allow_unresolved is false', function (): void {
+    app()->detectEnvironment(fn () => 'production');
+    config()->set('starter-kit.permissions.allow_unresolved', false);
+
+    expect(fn () => runMiddleware(permRequest('dashboard', user: makePermUser([]))))
+        ->toThrow(AuthorizationException::class);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 8. Muaf (unrestricted) rotalar — sessizce geçer, warn YOK
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('passes a PACKAGE_UNRESTRICTED_ROUTES-listed route with no warning at all', function (): void {
+    Log::spy();
+
+    // "system-health.run" derives no permission (action "run" is not in
+    // ACTION_ABILITY_MAP) but is exempt — must pass silently.
+    $response = runMiddleware(permRequest('system-health.run', user: makePermUser([])));
+
+    expect($response->getContent())->toBe('ok');
+    Log::shouldNotHaveReceived('warning');
+});
+
+it('passes a consumer-declared starter-kit.permissions.unrestricted_routes-matched route with no warning', function (): void {
+    Log::spy();
+    config()->set('starter-kit.permissions.unrestricted_routes', ['reporting.*']);
+
+    $response = runMiddleware(permRequest('reporting.legacy', user: makePermUser([])));
+
+    expect($response->getContent())->toBe('ok');
+    Log::shouldNotHaveReceived('warning');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 9. UNRESOLVED warn throttle — route adı başına 1 kez, istek başına değil
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('warns once per unresolved route name across repeat requests, and again for a different name', function (): void {
+    Log::spy();
+
+    runMiddleware(permRequest('admin.users.reorder', user: makePermUser([])));
+    runMiddleware(permRequest('admin.users.reorder', user: makePermUser([])));
+
+    Log::shouldHaveReceived('warning')->once();
+
+    runMiddleware(permRequest('admin.roles.reorder', user: makePermUser([])));
+
+    Log::shouldHaveReceived('warning')->twice();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 10. Over-denial guard — PACKAGE_ROUTE_PERMISSIONS'ın HER girdisi, o izne
+// sahip bir kullanıcıyı GEÇİRMELİ. Task 2'nin sabitlediği sözleşmenin çok DAR
+// olmadığının kanıtı: mevcut kurulumları bulk/settings/roles gate'i ile
+// kırmamak (over-denial, under-denial kadar regresyon riskidir).
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('allows an authorized user through every PACKAGE_ROUTE_PERMISSIONS-pinned route', function (string $routeName, string $ability): void {
+    seedPermission($ability);
+    $user = makePermUser([$ability]);
+
+    $response = runMiddleware(permRequest($routeName, user: $user));
+
+    expect($response->getContent())->toBe('ok', "route {$routeName} → {$ability} geçmeliydi (over-denial guard).");
+})->with(function (): array {
+    $cases = [];
+
+    foreach (CheckResourcePermission::PACKAGE_ROUTE_PERMISSIONS as $routeName => $ability) {
+        $cases[$routeName] = [$routeName, $ability];
+    }
+
+    return $cases;
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 11. Route sweep — kitin kendi -route.php stub'larını diskten okuyup, her
+// check.permission (parametresiz) grubu rotasının resolutionFor() ile
+// çözülebildiğini ya da açıkça muaf (PACKAGE_UNRESTRICTED_ROUTES) olduğunu
+// doğrular. Bu, Task 2'nin sözleşmesinin yeni rotalar eklendikçe sessizce
+// çürümesini engeller.
+//
+// $excludedFromPermissionGroup, stubs/routes/web.php'nin
+// $routesWithoutPermissionMiddleware + ayrı ele alınan $publicRouteFiles ile
+// SENKRON kalmalı — o dosya değişirse burası da güncellenmeli.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('every route registered inside a check.permission-protected -route.php stub resolves to a permission or is explicitly exempt', function (): void {
+    $routesDir = dirname(__DIR__, 3).'/stubs/routes/web';
+
+    $excludedFromPermissionGroup = [
+        'profile-route.php',
+        'service-route.php',
+        'file-manager-route.php',
+        'log-route.php',
+        'components-route.php',
+        'public-route.php',
+    ];
+
+    $files = glob($routesDir.'/*-route.php');
+    expect($files)->not->toBeEmpty('No -route.php stub found under '.$routesDir);
+
+    /**
+     * Extracts the route names a stub file registers, mirroring the shared
+     * shape every package -route.php file uses:
+     * Route::prefix(x)->name(y.)->group(fn () => Route::verb(...)->name(z))
+     * and/or Route::resource($name, Controller::class)->except([...]).
+     *
+     * @return list<string>
+     */
+    $namesFromStub = function (string $path): array {
+        $source = file_get_contents($path);
+        $names = [];
+
+        $prefix = '';
+        if (preg_match('/Route::prefix\([^)]*\)\s*->name\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]\s*\)/', $source, $m)) {
+            $prefix = $m[1];
+        }
+
+        preg_match_all('/->name\(\s*[\'"]([a-zA-Z0-9_.\-]+)[\'"]\s*\)/', $source, $matches);
+        foreach ($matches[1] as $name) {
+            if (str_ends_with($name, '.')) {
+                continue; // group-prefix ->name() call, not a leaf route name
+            }
+            $names[] = $prefix.$name;
+        }
+
+        if (preg_match('/Route::resource\(\s*[\'"]([a-zA-Z0-9_\-]+)[\'"]/', $source, $rm)) {
+            $resource = $rm[1];
+            $actions = ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'];
+
+            if (preg_match('/->except\(\[([^\]]*)\]\)/', $source, $em)) {
+                $excepted = array_map(
+                    fn (string $s): string => trim($s, " \t\n\r\0\x0B'\""),
+                    explode(',', $em[1]),
+                );
+                $actions = array_values(array_diff($actions, $excepted));
+            }
+
+            foreach ($actions as $action) {
+                $names[] = "{$resource}.{$action}";
+            }
+        }
+
+        return $names;
+    };
+
+    $unresolved = [];
+
+    foreach ($files as $file) {
+        $filename = basename($file);
+
+        if (in_array($filename, $excludedFromPermissionGroup, true)) {
+            continue;
+        }
+
+        foreach ($namesFromStub($file) as $routeName) {
+            $route = new Route(['GET'], '/x', ['as' => $routeName]);
+            $permission = CheckResourcePermission::resolutionFor($route);
+
+            if ($permission === null && ! in_array($routeName, CheckResourcePermission::PACKAGE_UNRESTRICTED_ROUTES, true)) {
+                $unresolved[] = "{$filename}: {$routeName}";
+            }
+        }
+    }
+
+    expect($unresolved)->toBe([], "These routes fall inside stubs/routes/web.php's parameterless check.permission group ".
+        'but resolutionFor() derives no permission for them and they are not in PACKAGE_UNRESTRICTED_ROUTES either — '.
+        'add them to PACKAGE_ROUTE_PERMISSIONS or PACKAGE_UNRESTRICTED_ROUTES: '.implode(', ', $unresolved));
 });

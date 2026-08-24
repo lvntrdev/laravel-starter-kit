@@ -192,62 +192,77 @@
 </script>
 
 <template>
-    <AdminLayout :title="$t('sk-menu.roles_permissions')" :subtitle="$t('sk-role.subtitle')">
-        <template v-if="can('roles.create') || isSystemAdmin" #page-actions>
-            <Button
-                v-if="isSystemAdmin && theme !== 'aura'"
-                :label="$t('sk-role.sync_permissions')"
-                icon="pi pi-sync"
-                severity="secondary"
-                outlined
-                :loading="syncing"
-                @click="syncPermissions"
-            />
-            <Link v-if="can('roles.create') && theme !== 'aura'" :href="roles.create.url()">
-                <Button :label="$t('sk-role.create')" icon="pi pi-plus" />
-            </Link>
-        </template>
+  <AdminLayout
+    :title="$t('sk-menu.roles_permissions')"
+    :subtitle="$t('sk-role.subtitle')"
+  >
+    <template
+      v-if="can('roles.create') || isSystemAdmin"
+      #page-actions
+    >
+      <Button
+        v-if="isSystemAdmin && theme !== 'aura'"
+        :label="$t('sk-role.sync_permissions')"
+        icon="pi pi-sync"
+        severity="secondary"
+        outlined
+        :loading="syncing"
+        @click="syncPermissions"
+      />
+      <Link
+        v-if="can('roles.create') && theme !== 'aura'"
+        :href="roles.create.url()"
+      >
+        <Button
+          :label="$t('sk-role.create')"
+          icon="pi pi-plus"
+        />
+      </Link>
+    </template>
 
-        <SkDatatable
-            :config="tableConfig"
-            :refresh-key="REFRESH_KEY"
-            :selection="selection"
-            @load="onTableLoad"
-        >
-            <!-- İzin senkronizasyon butonu aura temasında datatable toolbar'ında (slot) -->
-            <template v-if="isSystemAdmin && theme === 'aura'" #toolbar-start>
-                <Button
-                    :label="$t('sk-role.sync_permissions')"
-                    icon="pi pi-sync"
-                    severity="secondary"
-                    outlined
-                    :loading="syncing"
-                    @click="syncPermissions"
-                />
-            </template>
+    <SkDatatable
+      :config="tableConfig"
+      :refresh-key="REFRESH_KEY"
+      :selection="selection"
+      @load="onTableLoad"
+    >
+      <!-- İzin senkronizasyon butonu aura temasında datatable toolbar'ında (slot) -->
+      <template
+        v-if="isSystemAdmin && theme === 'aura'"
+        #toolbar-start
+      >
+        <Button
+          :label="$t('sk-role.sync_permissions')"
+          icon="pi pi-sync"
+          severity="secondary"
+          outlined
+          :loading="syncing"
+          @click="syncPermissions"
+        />
+      </template>
 
-            <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
-            <template #bulk-actions>
-                <Button
-                    v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
-                    :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
-                    size="small"
-                    severity="secondary"
-                    variant="text"
-                    @click="selection.selectAllFiltered()"
-                />
+      <!-- Floating bulk bar actions — the bar (count label + clear) is built into SkDatatable -->
+      <template #bulk-actions>
+        <Button
+          v-if="!selection.isAllFilteredMode.value && totalFiltered > selection.selectedCount.value"
+          :label="$t('sk-datatable.bulk_select_all_filtered', { total: String(totalFiltered) })"
+          size="small"
+          severity="secondary"
+          variant="text"
+          @click="selection.selectAllFiltered()"
+        />
 
-                <Button
-                    v-if="can('roles.delete')"
-                    :label="$t('sk-datatable.bulk_delete')"
-                    icon="pi pi-trash"
-                    size="small"
-                    severity="danger"
-                    variant="text"
-                    :loading="selection.submitting.value"
-                    @click="confirmBulkDelete(totalFiltered)"
-                />
-            </template>
-        </SkDatatable>
-    </AdminLayout>
+        <Button
+          v-if="can('roles.delete')"
+          :label="$t('sk-datatable.bulk_delete')"
+          icon="pi pi-trash"
+          size="small"
+          severity="danger"
+          variant="text"
+          :loading="selection.submitting.value"
+          @click="confirmBulkDelete(totalFiltered)"
+        />
+      </template>
+    </SkDatatable>
+  </AdminLayout>
 </template>

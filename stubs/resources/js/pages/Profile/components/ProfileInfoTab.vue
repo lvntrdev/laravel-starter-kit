@@ -51,14 +51,14 @@
 </script>
 
 <template>
-    <!-- Avatar -->
-    <AvatarUpload
-        :avatar-url="user?.avatar_url"
-        upload-url="/user/avatar"
-        delete-url="/user/avatar"
-        class="mb-8"
-    />
+  <!-- Avatar -->
+  <AvatarUpload
+    :avatar-url="user?.avatar_url"
+    upload-url="/user/avatar"
+    delete-url="/user/avatar"
+    class="mb-8"
+  />
 
-    <!-- Profile form -->
-    <SkForm :config="formConfig" />
+  <!-- Profile form -->
+  <SkForm :config="formConfig" />
 </template>

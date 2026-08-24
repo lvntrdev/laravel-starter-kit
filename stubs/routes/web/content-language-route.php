@@ -22,9 +22,16 @@ use Lvntr\StarterKit\Http\Controllers\Admin\ContentLanguageController;
 |   - yazma (add, save, remove)      → check.permission:settings.update
 |
 | Rota adlarının son segmentleri (dt, fetch, add, save, remove) kasıtlı olarak
-| CheckResourcePermission::ACTION_ABILITY_MAP dışındadır: web.php'nin
-| parametresiz `check.permission` grubu bu adlardan izin türetemez ve
-| pass-through olur; asıl korumayı yukarıdaki explicit izinler yapar
+| CheckResourcePermission::ACTION_ABILITY_MAP dışındadır: bunlar kaynağa göre
+| anlam değiştiren fiiller, global bir eşleme aynı sözcükle biten alakasız bir
+| tüketici rotasını (orders.save) sessizce kapatırdı.
+|
+| Bunun yerine bu beş ad, tam adlarıyla
+| CheckResourcePermission::PACKAGE_ROUTE_PERMISSIONS içinde sabitlenmiştir —
+| yani web.php'nin parametresiz `check.permission` grubu artık bu rotalardan da
+| yukarıdaki explicit izinlerin aynısını türetir, pass-through olmaz. Asıl
+| korumayı yine yukarıdaki explicit izinler yapar; paket haritası yalnızca
+| parametresiz geçişin çözülemeyen dala düşmesini engeller
 | (settings.update.general / upload.logo rotalarıyla birebir aynı mekanizma).
 |
 */

@@ -75,198 +75,213 @@
 </script>
 
 <template>
-    <div>
-        <SkCard>
-            <template #title>
-                {{ $t('sk-profile.sessions_title') }}
-            </template>
-            <template #subtitle>
-                {{ $t('sk-profile.sessions_subtitle') }}
-            </template>
-            <template #content>
-                <div>
-                    <!-- Loading State -->
-                    <div v-if="sessionsLoading" class="space-y-3">
-                        <div
-                            v-for="i in 2"
-                            :key="i"
-                            class="flex items-center gap-3 rounded-lg border border-surface-200 px-4 py-3 dark:border-surface-700"
-                        >
-                            <div class="size-10 shrink-0 animate-pulse rounded-md bg-surface-200 dark:bg-surface-700" />
-                            <div class="flex-1 space-y-1.5">
-                                <div class="h-4 w-40 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
-                                <div class="h-3 w-56 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
-                            </div>
-                        </div>
-                    </div>
+  <div>
+    <SkCard>
+      <template #title>
+        {{ $t('sk-profile.sessions_title') }}
+      </template>
+      <template #subtitle>
+        {{ $t('sk-profile.sessions_subtitle') }}
+      </template>
+      <template #content>
+        <div>
+          <!-- Loading State -->
+          <div
+            v-if="sessionsLoading"
+            class="space-y-3"
+          >
+            <div
+              v-for="i in 2"
+              :key="i"
+              class="flex items-center gap-3 rounded-lg border border-surface-200 px-4 py-3 dark:border-surface-700"
+            >
+              <div class="size-10 shrink-0 animate-pulse rounded-md bg-surface-200 dark:bg-surface-700" />
+              <div class="flex-1 space-y-1.5">
+                <div class="h-4 w-40 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
+                <div class="h-3 w-56 animate-pulse rounded bg-surface-200 dark:bg-surface-700" />
+              </div>
+            </div>
+          </div>
 
-                    <!-- Session List -->
-                    <div v-else-if="sessions.length > 0" class="space-y-3">
-                        <div
-                            v-for="(session, index) in sessions"
-                            :key="index"
-                            class="flex items-center gap-3 rounded-lg border px-4 py-3 transition"
-                            :class="
-                                session.is_current_device
-                                    ? 'border-primary-200 bg-primary-50/40 dark:border-primary-900/40 dark:bg-primary-950/20'
-                                    : 'border-surface-200 dark:border-surface-700'
-                            "
-                        >
-                            <!-- Device Icon -->
-                            <div
-                                class="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400"
-                            >
-                                <svg
-                                    v-if="session.device.desktop"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-5"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z"
-                                    />
-                                </svg>
-                                <svg
-                                    v-else
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-5"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-                                    />
-                                </svg>
-                            </div>
+          <!-- Session List -->
+          <div
+            v-else-if="sessions.length > 0"
+            class="space-y-3"
+          >
+            <div
+              v-for="(session, index) in sessions"
+              :key="index"
+              class="flex items-center gap-3 rounded-lg border px-4 py-3 transition"
+              :class="
+                session.is_current_device
+                  ? 'border-primary-200 bg-primary-50/40 dark:border-primary-900/40 dark:bg-primary-950/20'
+                  : 'border-surface-200 dark:border-surface-700'
+              "
+            >
+              <!-- Device Icon -->
+              <div
+                class="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400"
+              >
+                <svg
+                  v-if="session.device.desktop"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25Z"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+                  />
+                </svg>
+              </div>
 
-                            <!-- Session Info -->
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="text-sm font-semibold text-surface-900 dark:text-surface-100">
-                                        {{ session.device.platform }} — {{ session.device.browser }}
-                                    </span>
-                                    <span
-                                        v-if="session.is_current_device"
-                                        class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                    >
-                                        <span class="size-1.5 rounded-full bg-green-500" />
-                                        {{ $t('sk-profile.sessions_this_device') }}
-                                    </span>
-                                </div>
-                                <div class="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
-                                    {{ session.ip_address }} ·
-                                    <span v-if="session.is_current_device">
-                                        {{ $t('sk-profile.sessions_active_now') }}
-                                    </span>
-                                    <span v-else>{{ session.last_active }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Per-session logout (opens the log-out-others flow) -->
-                            <Button
-                                v-if="!session.is_current_device"
-                                :label="$t('sk-profile.sessions_logout_one')"
-                                icon="pi pi-sign-out"
-                                severity="secondary"
-                                size="small"
-                                text
-                                @click="openLogoutOtherSessionsDialog"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Full-bleed danger footer -->
-                    <div
-                        class="-mx-6 -mb-[22px] mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-surface-200 bg-red-50/50 px-6 py-4 dark:border-surface-700 dark:bg-red-950/15"
-                    >
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-red-600 dark:text-red-400">
-                                {{ $t('sk-profile.sessions_logout_all_title') }}
-                            </p>
-                            <p class="mt-0.5 max-w-xl text-xs leading-relaxed text-surface-500 dark:text-surface-400">
-                                {{ $t('sk-profile.sessions_logout_all_desc') }}
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <Transition
-                                enter-active-class="transition duration-300"
-                                enter-from-class="opacity-0"
-                                leave-active-class="transition duration-300"
-                                leave-to-class="opacity-0"
-                            >
-                                <span v-if="logoutSuccess" class="text-sm text-green-600 dark:text-green-400">
-                                    {{ $t('sk-profile.sessions_done') }}
-                                </span>
-                            </Transition>
-                            <Button
-                                :label="$t('sk-profile.sessions_logout_all_action')"
-                                icon="pi pi-sign-out"
-                                severity="danger"
-                                :loading="logoutProcessing"
-                                @click="openLogoutOtherSessionsDialog"
-                            />
-                        </div>
-                    </div>
+              <!-- Session Info -->
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-semibold text-surface-900 dark:text-surface-100">
+                    {{ session.device.platform }} — {{ session.device.browser }}
+                  </span>
+                  <span
+                    v-if="session.is_current_device"
+                    class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                  >
+                    <span class="size-1.5 rounded-full bg-green-500" />
+                    {{ $t('sk-profile.sessions_this_device') }}
+                  </span>
                 </div>
-            </template>
-        </SkCard>
-
-        <!-- Log Out Other Sessions Dialog -->
-        <Dialog
-            v-model:visible="showLogoutDialog"
-            :header="$t('sk-profile.sessions_logout')"
-            modal
-            :style="{ width: '25rem' }"
-        >
-            <p class="mb-4 text-sm text-surface-500 dark:text-surface-400">
-                {{ $t('sk-profile.sessions_logout_confirm') }}
-            </p>
-
-            <form @submit.prevent="logoutOtherSessions">
-                <div class="flex flex-col gap-1">
-                    <label for="logout_password" class="text-sm font-medium text-surface-700 dark:text-surface-300">
-                        {{ $t('sk-common.password') }}
-                    </label>
-                    <Password
-                        v-model="logoutPasswordForm.password"
-                        input-id="logout_password"
-                        :invalid="!!logoutPasswordError"
-                        :feedback="false"
-                        autocomplete="current-password"
-                        toggle-mask
-                        fluid
-                        autofocus
-                    />
-                    <small v-if="logoutPasswordError" class="text-red-500">
-                        {{ logoutPasswordError }}
-                    </small>
+                <div class="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
+                  {{ session.ip_address }} ·
+                  <span v-if="session.is_current_device">
+                    {{ $t('sk-profile.sessions_active_now') }}
+                  </span>
+                  <span v-else>{{ session.last_active }}</span>
                 </div>
+              </div>
 
-                <div class="mt-4 flex justify-end gap-2">
-                    <Button
-                        type="button"
-                        :label="$t('sk-common.cancel')"
-                        severity="secondary"
-                        @click="showLogoutDialog = false"
-                    />
-                    <Button
-                        type="submit"
-                        :label="$t('sk-profile.sessions_logout')"
-                        icon="pi pi-sign-out"
-                        severity="danger"
-                        :loading="logoutProcessing"
-                    />
-                </div>
-            </form>
-        </Dialog>
-    </div>
+              <!-- Per-session logout (opens the log-out-others flow) -->
+              <Button
+                v-if="!session.is_current_device"
+                :label="$t('sk-profile.sessions_logout_one')"
+                icon="pi pi-sign-out"
+                severity="secondary"
+                size="small"
+                text
+                @click="openLogoutOtherSessionsDialog"
+              />
+            </div>
+          </div>
+
+          <!-- Full-bleed danger footer -->
+          <div
+            class="-mx-6 -mb-[22px] mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-surface-200 bg-red-50/50 px-6 py-4 dark:border-surface-700 dark:bg-red-950/15"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-red-600 dark:text-red-400">
+                {{ $t('sk-profile.sessions_logout_all_title') }}
+              </p>
+              <p class="mt-0.5 max-w-xl text-xs leading-relaxed text-surface-500 dark:text-surface-400">
+                {{ $t('sk-profile.sessions_logout_all_desc') }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <Transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0"
+                leave-active-class="transition duration-300"
+                leave-to-class="opacity-0"
+              >
+                <span
+                  v-if="logoutSuccess"
+                  class="text-sm text-green-600 dark:text-green-400"
+                >
+                  {{ $t('sk-profile.sessions_done') }}
+                </span>
+              </Transition>
+              <Button
+                :label="$t('sk-profile.sessions_logout_all_action')"
+                icon="pi pi-sign-out"
+                severity="danger"
+                :loading="logoutProcessing"
+                @click="openLogoutOtherSessionsDialog"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+    </SkCard>
+
+    <!-- Log Out Other Sessions Dialog -->
+    <Dialog
+      v-model:visible="showLogoutDialog"
+      :header="$t('sk-profile.sessions_logout')"
+      modal
+      :style="{ width: '25rem' }"
+    >
+      <p class="mb-4 text-sm text-surface-500 dark:text-surface-400">
+        {{ $t('sk-profile.sessions_logout_confirm') }}
+      </p>
+
+      <form @submit.prevent="logoutOtherSessions">
+        <div class="flex flex-col gap-1">
+          <label
+            for="logout_password"
+            class="text-sm font-medium text-surface-700 dark:text-surface-300"
+          >
+            {{ $t('sk-common.password') }}
+          </label>
+          <Password
+            v-model="logoutPasswordForm.password"
+            input-id="logout_password"
+            :invalid="!!logoutPasswordError"
+            :feedback="false"
+            autocomplete="current-password"
+            toggle-mask
+            fluid
+            autofocus
+          />
+          <small
+            v-if="logoutPasswordError"
+            class="text-red-500"
+          >
+            {{ logoutPasswordError }}
+          </small>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <Button
+            type="button"
+            :label="$t('sk-common.cancel')"
+            severity="secondary"
+            @click="showLogoutDialog = false"
+          />
+          <Button
+            type="submit"
+            :label="$t('sk-profile.sessions_logout')"
+            icon="pi pi-sign-out"
+            severity="danger"
+            :loading="logoutProcessing"
+          />
+        </div>
+      </form>
+    </Dialog>
+  </div>
 </template>

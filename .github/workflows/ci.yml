@@ -125,13 +125,16 @@ jobs:
         working-directory: stubs
         run: npm run build
 
+      - name: Bundle budget
+        run: node scripts/ci/check-bundle-budget.mjs
+
       - name: Typecheck (vue-tsc)
         working-directory: stubs
         run: npm run typecheck --if-present
 
       - name: Lint (ESLint)
         working-directory: stubs
-        run: npm run lint --if-present
+        run: npm run lint:ci
 
       - name: Test (Vitest)
         working-directory: stubs

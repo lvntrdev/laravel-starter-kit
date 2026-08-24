@@ -21,17 +21,29 @@
 </script>
 
 <template>
-    <AdminLayout :title="$t('sk-user.edit')" :subtitle="userId" :back-url="true">
-        <SkTabs :config="tabConfig">
-            <template #general>
-                <UserForm :user-id="userId" :role-options="roleOptions" :timezones="timezones" />
-            </template>
+  <AdminLayout
+    :title="$t('sk-user.edit')"
+    :subtitle="userId"
+    :back-url="true"
+  >
+    <SkTabs :config="tabConfig">
+      <template #general>
+        <UserForm
+          :user-id="userId"
+          :role-options="roleOptions"
+          :timezones="timezones"
+        />
+      </template>
 
-            <template #files>
-                <div class="p-2">
-                    <FileManager context="user" :context-id="userId" height="650px" />
-                </div>
-            </template>
-        </SkTabs>
-    </AdminLayout>
+      <template #files>
+        <div class="p-2">
+          <FileManager
+            context="user"
+            :context-id="userId"
+            height="650px"
+          />
+        </div>
+      </template>
+    </SkTabs>
+  </AdminLayout>
 </template>

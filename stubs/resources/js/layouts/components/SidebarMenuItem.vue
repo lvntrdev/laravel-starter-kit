@@ -47,80 +47,133 @@
 </script>
 
 <template>
-    <!-- SECTION TITLE -->
-    <div v-if="item.section" class="nav-section">
-        <span v-if="!collapsed" class="nav-section__title">{{ $t(item.title) }}</span>
-        <span v-else class="nav-section__divider" />
-    </div>
+  <!-- SECTION TITLE -->
+  <div
+    v-if="item.section"
+    class="nav-section"
+  >
+    <span
+      v-if="!collapsed"
+      class="nav-section__title"
+    >{{ $t(item.title) }}</span>
+    <span
+      v-else
+      class="nav-section__divider"
+    />
+  </div>
 
-    <!-- GROUP -->
-    <div v-else-if="item.children?.length" class="nav-group-wrapper">
-        <button
-            class="nav-group"
-            :class="{ 'nav-group--active': isOpen || isGroupOpen(item), 'nav-group--url-active': isGroupOpen(item) }"
-            @click="toggle"
-        >
-            <div class="nav-icon">
-                <i v-if="item.icon" :class="item.icon" />
-            </div>
-            <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-                {{ $t(item.title) }}
-            </span>
-            <i v-if="!collapsed" class="pi pi-chevron-right nav-chevron" :class="{ 'nav-chevron--open': isOpen }" />
-        </button>
-
-        <Transition name="submenu">
-            <div v-if="isOpen && !collapsed" class="nav-submenu">
-                <SidebarMenuItem
-                    v-for="child in item.children"
-                    :key="child.title"
-                    :item="child"
-                    :collapsed="false"
-                    :depth="depth + 1"
-                    @nav-click="emit('navClick')"
-                />
-            </div>
-        </Transition>
-    </div>
-
-    <!-- EXTERNAL LINK -->
-    <a
-        v-else-if="item.external && item.href"
-        :href="item.href"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="nav-link"
-        :class="{ 'nav-link--child': depth > 0 }"
-        @click="handleNavClick"
+  <!-- GROUP -->
+  <div
+    v-else-if="item.children?.length"
+    class="nav-group-wrapper"
+  >
+    <button
+      class="nav-group"
+      :class="{ 'nav-group--active': isOpen || isGroupOpen(item), 'nav-group--url-active': isGroupOpen(item) }"
+      @click="toggle"
     >
-        <div v-if="depth === 0" class="nav-icon">
-            <i v-if="item.icon" :class="item.icon" />
-        </div>
-        <div v-else-if="depth > 0" class="nav-dot" />
-        <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-            {{ $t(item.title) }}
-        </span>
-        <i v-if="!collapsed" class="pi pi-external-link nav-external" />
-    </a>
+      <div class="nav-icon">
+        <i
+          v-if="item.icon"
+          :class="item.icon"
+        />
+      </div>
+      <span
+        class="nav-label"
+        :class="{ 'nav-label--hidden': collapsed }"
+      >
+        {{ $t(item.title) }}
+      </span>
+      <i
+        v-if="!collapsed"
+        class="pi pi-chevron-right nav-chevron"
+        :class="{ 'nav-chevron--open': isOpen }"
+      />
+    </button>
 
-    <!-- INTERNAL LINK -->
-    <Link
-        v-else-if="item.href"
-        :href="item.href"
-        class="nav-link"
-        :class="{
-            'nav-link--active': isActive && depth === 0,
-            'nav-link--child': depth > 0,
-            'nav-link--child-active': isActive && depth > 0,
-        }"
-        @click="handleNavClick"
+    <Transition name="submenu">
+      <div
+        v-if="isOpen && !collapsed"
+        class="nav-submenu"
+      >
+        <SidebarMenuItem
+          v-for="child in item.children"
+          :key="child.title"
+          :item="child"
+          :collapsed="false"
+          :depth="depth + 1"
+          @nav-click="emit('navClick')"
+        />
+      </div>
+    </Transition>
+  </div>
+
+  <!-- EXTERNAL LINK -->
+  <a
+    v-else-if="item.external && item.href"
+    :href="item.href"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="nav-link"
+    :class="{ 'nav-link--child': depth > 0 }"
+    @click="handleNavClick"
+  >
+    <div
+      v-if="depth === 0"
+      class="nav-icon"
     >
-        <div v-if="depth === 0" class="nav-icon">
-            <i v-if="item.icon" :class="item.icon" />
-        </div>
-        <div v-else-if="depth > 0" class="nav-dot" :class="{ 'nav-dot--active': isActive }" />
-        <span class="nav-label" :class="{ 'nav-label--hidden': collapsed }">
-            {{ $t(item.title) }}
-        </span>
-    </Link>
+      <i
+        v-if="item.icon"
+        :class="item.icon"
+      />
+    </div>
+    <div
+      v-else-if="depth > 0"
+      class="nav-dot"
+    />
+    <span
+      class="nav-label"
+      :class="{ 'nav-label--hidden': collapsed }"
+    >
+      {{ $t(item.title) }}
+    </span>
+    <i
+      v-if="!collapsed"
+      class="pi pi-external-link nav-external"
+    />
+  </a>
+
+  <!-- INTERNAL LINK -->
+  <Link
+    v-else-if="item.href"
+    :href="item.href"
+    class="nav-link"
+    :class="{
+      'nav-link--active': isActive && depth === 0,
+      'nav-link--child': depth > 0,
+      'nav-link--child-active': isActive && depth > 0,
+    }"
+    @click="handleNavClick"
+  >
+    <div
+      v-if="depth === 0"
+      class="nav-icon"
+    >
+      <i
+        v-if="item.icon"
+        :class="item.icon"
+      />
+    </div>
+    <div
+      v-else-if="depth > 0"
+      class="nav-dot"
+      :class="{ 'nav-dot--active': isActive }"
+    />
+    <span
+      class="nav-label"
+      :class="{ 'nav-label--hidden': collapsed }"
+    >
+      {{ $t(item.title) }}
+    </span>
+  </Link>
 </template>

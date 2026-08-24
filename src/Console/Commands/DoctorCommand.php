@@ -24,6 +24,7 @@ use Lvntr\StarterKit\Console\Doctor\Checks\ScheduleConfiguredCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\StorageSymlinkCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\ThemeManifestCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\TimezoneStorageCheck;
+use Lvntr\StarterKit\Console\Doctor\Checks\UnresolvedRouteCheck;
 use Lvntr\StarterKit\Console\Doctor\Checks\WritableDirectoriesCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorCheck;
 use Lvntr\StarterKit\Console\Doctor\DoctorReport;
@@ -91,6 +92,7 @@ class DoctorCommand extends Command
             new TimezoneStorageCheck,
             new ActivityLogSecretsCheck,
             new PermissionResourcesDriftCheck,
+            new UnresolvedRouteCheck,
             new MailDriverCheck,
             new NpmBuildArtifactsCheck,
             new ConfigCacheCheck,

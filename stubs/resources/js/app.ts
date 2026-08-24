@@ -20,27 +20,33 @@ axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.headers.common['Accept'] = 'application/json';
 
+// Sayfa cozumu iki katmandan birlesir, app-once (asagidaki i18n merge ile
+// ayni katmanlama):
+//   1. APP — tuketicinin ./pages dizini. Her zaman kazanir; ayni adla yerel
+//      bir sayfa olusturarak vendor sayfasi override edilebilir.
+//   2. VENDOR (fallback) — kit'in vendor-resident, publish edilmeyen
+//      sayfalari (`@lvntr/pages/**` →
+//      vendor/lvntr/laravel-starter-kit/resources/js/pages/, or.
+//      SkComponents/Show).
+// Elle yazilmis `resolve:` @inertiajs/vite'in `pages:` donusumunun yerini
+// alir (plugin mevcut resolve'a dokunmaz) — `pages.path` tek dizin kabul
+// ettigi icin vendor fallback ancak boyle kurulur.
+// Globlar LAZY (eager yok): her sayfa kendi chunk'ina ayrilir ve yalnizca o
+// sayfaya gidildiginde indirilir — sayfa kodu initial payload'a girmez.
+// Glob cagrilari modul kapsaminda; boylece loader haritasi bir kez kurulur,
+// her navigasyonda yeniden olusmaz. `resolve` eslesen loader'in promise'ini
+// dondurur: createInertiaApp async resolver'i hem client'ta hem SSR'da await
+// eder (lang globlarindan farkli olarak burada sync zorunlulugu yok).
+// Katmanlama ve `Page not found` davranisi degismez.
+const appPages = import.meta.glob<DefineComponent>('./pages/**/*.vue', { import: 'default' });
+const vendorPages = import.meta.glob<DefineComponent>('@lvntr/pages/**/*.vue', { import: 'default' });
+
 createInertiaApp({
-    // Sayfa cozumu iki katmandan birlesir, app-once (asagidaki i18n merge ile
-    // ayni katmanlama):
-    //   1. APP — tuketicinin ./pages dizini. Her zaman kazanir; ayni adla yerel
-    //      bir sayfa olusturarak vendor sayfasi override edilebilir.
-    //   2. VENDOR (fallback) — kit'in vendor-resident, publish edilmeyen
-    //      sayfalari (`@lvntr/pages/**` →
-    //      vendor/lvntr/laravel-starter-kit/resources/js/pages/, or.
-    //      SkComponents/Show).
-    // Elle yazilmis `resolve:` @inertiajs/vite'in `pages:` donusumunun yerini
-    // alir (plugin mevcut resolve'a dokunmaz) — `pages.path` tek dizin kabul
-    // ettigi icin vendor fallback ancak boyle kurulur. Globlar eager + sync
-    // resolve: SSR'da sync cozum sart (lang globlariyla ayni gerekce); eski
-    // `lazy: false` davranisinin birebir karsiligi.
     resolve: (name) => {
-        const appPages = import.meta.glob<DefineComponent>('./pages/**/*.vue', { eager: true, import: 'default' });
-        const vendorPages = import.meta.glob<DefineComponent>('@lvntr/pages/**/*.vue', { eager: true, import: 'default' });
         const page = appPages[`./pages/${name}.vue`]
             ?? vendorPages[`/vendor/lvntr/laravel-starter-kit/resources/js/pages/${name}.vue`];
         if (!page) throw new Error(`Page not found: ${name}`);
-        return page;
+        return page();
     },
     progress: {
         delay: 250,

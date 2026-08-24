@@ -50,27 +50,30 @@
 </script>
 
 <template>
-    <AdminLayout :title="$t('sk-profile.title')" :subtitle="$t('sk-profile.subtitle')">
-        <SkTabs :config="tabConfig">
-            <template #general>
-                <ProfileInfoTab />
-            </template>
+  <AdminLayout
+    :title="$t('sk-profile.title')"
+    :subtitle="$t('sk-profile.subtitle')"
+  >
+    <SkTabs :config="tabConfig">
+      <template #general>
+        <ProfileInfoTab />
+      </template>
 
-            <template #password>
-                <PasswordTab />
-            </template>
+      <template #password>
+        <PasswordTab />
+      </template>
 
-            <template #security>
-                <TwoFactorTab
-                    :two-factor-enabled="props.twoFactorEnabled"
-                    :two-factor-confirmed="props.twoFactorConfirmed"
-                    :two-factor-confirmed-at="props.twoFactorConfirmedAt"
-                />
-            </template>
+      <template #security>
+        <TwoFactorTab
+          :two-factor-enabled="props.twoFactorEnabled"
+          :two-factor-confirmed="props.twoFactorConfirmed"
+          :two-factor-confirmed-at="props.twoFactorConfirmedAt"
+        />
+      </template>
 
-            <template #sessions>
-                <SessionsTab />
-            </template>
-        </SkTabs>
-    </AdminLayout>
+      <template #sessions>
+        <SessionsTab />
+      </template>
+    </SkTabs>
+  </AdminLayout>
 </template>

@@ -77,6 +77,27 @@ The built-in `global` context now maps these abilities one-to-one to `files.read
 php artisan sk:seed-permissions
 ```
 
+### Deprecation — unresolved-route fail-closed default flips in the next minor
+
+**Nothing breaks in this release.** A route whose permission cannot be resolved by `CheckResourcePermission` still **passes through today**, exactly as before — the middleware now additionally logs a throttled warning naming the route, so the gap is visible instead of silent. No request that currently succeeds starts failing because of this release.
+
+The kit's own routes are fixed **inside the package** (`src/`): every route the kit ships now resolves to a permission on its own. An existing installation receives this fix through `composer update` alone — **no route-file edits, no `sk:update` reconciliation**. The reason is not that the routes live in the package — they are registered in `stubs/routes/web/*-route.php`, which `sk:install` did copy into your app. What lives in `src/` is the *contract*: a route-name → permission map inside `CheckResourcePermission`, keyed by the names those files already use. So the fix arrives without touching a file you may have edited.
+
+The flip side is worth knowing: **if you renamed one of the kit's routes in your copy, the map no longer matches it** and that route falls back to passing on a warning — and would be denied after the flip. `sk:doctor --only=unresolved-routes` lists exactly those.
+
+One case is deliberately left ungated at the middleware layer: `roles.bulk` and `users.bulk`. The ability those endpoints require depends on the action named in the request body, not on the route, and `BulkActionDispatcher` already authorizes every item against the handler's own ability (`BulkDeleteUserAction` requires `users.delete`). Any single route-level mapping could only over-deny — `.delete`, `.update` and `.read` each break a different legitimate role, since those abilities are independent in `permission-resources.php`. They are therefore declared under the package's exempt list, which also keeps them off the unresolved axis so the flip cannot break bulk actions later. Per-item authorization is unchanged and remains the real gate.
+
+**Ordered remediation path**, to run before the default flips:
+
+1. Run `php artisan sk:doctor --only=unresolved-routes` to list every route in your own app that still passes on a warning rather than resolving to a permission.
+2. Fix each listed route with one of:
+   - Give it a `<resource>.<action>` route name whose action segment is in the middleware's ability map, so a permission resolves automatically.
+   - Gate it with an explicit permission argument, e.g. `check.permission:reports.read`.
+   - If the route is deliberately permission-free (a public webhook, a health check, …), declare it under `starter-kit.permissions.unrestricted_routes` (tight `Str::is` patterns — prefer listing endpoints over whole trees, since a broad pattern silently exempts routes added later too).
+3. Before the next minor ships, set `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES=false` (or `starter-kit.permissions.allow_unresolved` = `false`) in a staging environment and confirm nothing you rely on gets denied.
+
+**The flip:** `STARTER_KIT_ALLOW_UNRESOLVED_ROUTES` (config `starter-kit.permissions.allow_unresolved`) currently defaults to `true` and will default to `false` in the next minor release. After the flip, the env var remains the production-valid escape hatch — set it back to `true` if you need more time to finish remediation, keeping in mind that every route left unresolved is, by definition, ungated for as long as it stays that way.
+
 ## v13.6.8 → v13.6.9
 
 ### `CheckResourcePermission` is now fail-closed on staging/demo (behavior change)

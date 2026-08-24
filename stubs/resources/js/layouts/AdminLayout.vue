@@ -129,61 +129,61 @@
 </script>
 
 <template>
-    <Head :title="title" />
-    <AppShell>
-        <!-- Sidebar -->
-        <template #sidebar="{ collapsed, mobileOpen, isMobile, closeMobile }">
-            <AdminSidebar
-                :collapsed="collapsed"
-                :mobile-open="mobileOpen"
-                :is-mobile="isMobile"
-                @close-mobile="closeMobile"
-            />
-        </template>
+  <Head :title="title" />
+  <AppShell>
+    <!-- Sidebar -->
+    <template #sidebar="{ collapsed, mobileOpen, isMobile, closeMobile }">
+      <AdminSidebar
+        :collapsed="collapsed"
+        :mobile-open="mobileOpen"
+        :is-mobile="isMobile"
+        @close-mobile="closeMobile"
+      />
+    </template>
 
-        <!-- Header -->
-        <template #header="{ collapsed, isMobile, toggle }">
-            <AdminHeader
-                :collapsed="collapsed"
-                :is-mobile="isMobile"
-                :is-dark="isDark"
-                :accent="accent"
-                :sidebar-style="sidebarStyle"
-                :page-title="showTitleInTopbar ? title : ''"
-                :page-subtitle="showTitleInTopbar ? subtitle : ''"
-                @toggle-sidebar="toggle"
-                @toggle-dark="toggleDark"
-                @set-accent="setAccent"
-                @set-sidebar-style="setSidebarStyle"
-            />
-        </template>
+    <!-- Header -->
+    <template #header="{ collapsed, isMobile, toggle }">
+      <AdminHeader
+        :collapsed="collapsed"
+        :is-mobile="isMobile"
+        :is-dark="isDark"
+        :accent="accent"
+        :sidebar-style="sidebarStyle"
+        :page-title="showTitleInTopbar ? title : ''"
+        :page-subtitle="showTitleInTopbar ? subtitle : ''"
+        @toggle-sidebar="toggle"
+        @toggle-dark="toggleDark"
+        @set-accent="setAccent"
+        @set-sidebar-style="setSidebarStyle"
+      />
+    </template>
 
-        <!-- Content -->
-        <AdminPageHeader
-            v-if="showPageHeader"
-            :title="title"
-            :subtitle="subtitle"
-            :back-url="backUrl"
-            :hide-title="showTitleInTopbar"
-        >
-            <template #actions>
-                <slot name="page-actions" />
-            </template>
-        </AdminPageHeader>
+    <!-- Content -->
+    <AdminPageHeader
+      v-if="showPageHeader"
+      :title="title"
+      :subtitle="subtitle"
+      :back-url="backUrl"
+      :hide-title="showTitleInTopbar"
+    >
+      <template #actions>
+        <slot name="page-actions" />
+      </template>
+    </AdminPageHeader>
 
-        <slot />
+    <slot />
 
-        <!-- Footer -->
-        <template #footer>
-            <AdminFooter />
-        </template>
+    <!-- Footer -->
+    <template #footer>
+      <AdminFooter />
+    </template>
 
-        <!-- Global Overlays -->
-        <template #overlays>
-            <ConfirmDialogComponent />
-            <ToastComponent />
-            <AppDialog />
-            <ImageLightbox />
-        </template>
-    </AppShell>
+    <!-- Global Overlays -->
+    <template #overlays>
+      <ConfirmDialogComponent />
+      <ToastComponent />
+      <AppDialog />
+      <ImageLightbox />
+    </template>
+  </AppShell>
 </template>

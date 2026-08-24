@@ -926,7 +926,11 @@ class StarterKitServiceProvider extends ServiceProvider
         }
 
         // inertia: SSR is opt-in (enable via INERTIA_SSR_ENABLED=true).
-        if (! file_exists($configPath('inertia.php'))) {
+        // Skipped when the configuration is cached: config:cache boots the app
+        // and captures this very override into the cache while .env is still
+        // loaded — re-running it on a cached boot would read env() as null and
+        // stomp an enabled SSR flag back to false on every request.
+        if (! $this->app->configurationIsCached() && ! file_exists($configPath('inertia.php'))) {
             config(['inertia.ssr.enabled' => (bool) env('INERTIA_SSR_ENABLED', false)]);
         }
     }
