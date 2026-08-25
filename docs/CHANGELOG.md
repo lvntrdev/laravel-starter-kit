@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## Unreleased
+
+### Fixed
+
+- **A datatable no longer renders empty because a neighbouring table's sort was left in the page URL.** `sort` is a page-global query parameter, so on a page hosting several tables (tabs, side-by-side panels) the table that mounted second read the first one's `sort` out of the URL and asked its own endpoint for a column that endpoint never allowed — `Spatie\QueryBuilder` answers with HTTP 400 (`InvalidSortQuery`), so the table came up blank. A bookmarked link failed the same way once a column had been renamed or dropped. `SkDatatable` now validates a restored sort key against its own columns before using it — the id column included, since it is sortable without appearing in `columns`, and this route's persisted column order too, so a column only the server publishes (a hidden `updated_at`, say) still restores its sort once the user has enabled it. A URL carrying a foreign sort is treated as another table's URL and is ignored **whole** — `page`, `per_page` and the filters with it, because reading half of it would only open this table on the neighbour's page number. A stale key coming back from the per-route session blob is dropped the same way, while a sort the table does own is still restored from both sources.
+
 ## 2026-08-24 — v13.6.15
 
 ### Changed

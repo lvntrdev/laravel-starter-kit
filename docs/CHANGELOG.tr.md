@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## Yayınlanmamış
+
+### Düzeltildi
+
+- **Bir datatable, sayfa URL'inde kalan komşu tablonun sıralaması yüzünden artık boş açılmıyor.** `sort` sayfa genelinde tek bir query parametresi olduğu için, birden fazla tablo barındıran bir sayfada (sekmeler, yan yana paneller) ikinci mount olan tablo URL'deki ilk tablonun `sort` değerini okuyup kendi endpoint'inden o endpoint'in hiç izin vermediği bir kolona göre sıralama istiyordu — `Spatie\QueryBuilder` buna HTTP 400 (`InvalidSortQuery`) ile yanıt veriyor ve tablo boş geliyordu. Bir kolon yeniden adlandırıldıktan veya kaldırıldıktan sonra yer imine alınmış bir bağlantı da aynı şekilde kırılıyordu. `SkDatatable` artık geri yüklenen sıralama anahtarını kullanmadan önce kendi kolonlarıyla doğruluyor — `columns` içinde görünmediği hâlde sıralanabilir olduğu için id kolonu dâhil, ayrıca bu route'a kayıtlı kolon sırası da dâhil; böylece yalnızca sunucunun yayınladığı bir kolon (örneğin gizli `updated_at`), kullanıcı onu açtıktan sonra sıralamasını geri yüklemeye devam ediyor. Yabancı bir sıralama taşıyan URL başka bir tablonun URL'i sayılıp **bütünüyle** yok sayılıyor — `page`, `per_page` ve filtreler dâhil; çünkü yarısını okumak bu tabloyu yalnızca komşusunun sayfa numarasında açardı. Route bazlı session kaydından dönen eskimiş bir anahtar da aynı şekilde düşürülüyor; tablonun gerçekten kendi olan sıralaması ise her iki kaynaktan da geri yüklenmeye devam ediyor.
+
 ## 2026-08-24 — v13.6.15
 
 ### Değişti

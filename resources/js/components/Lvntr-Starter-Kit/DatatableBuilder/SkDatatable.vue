@@ -227,6 +227,9 @@
     /** Keys the user explicitly toggled or restored from a saved state — never overridden. */
     const userTouchedKeys = new Set<string>();
 
+    /** Column keys read back from this route's persisted column order (server-only ones included). */
+    const persistedColumnKeys = new Set<string>();
+
     /** Server column meta gets one shot at (re)applying defaults over the local config. */
     let serverDefaultsApplied = false;
 
@@ -376,14 +379,54 @@
         sessionStorage.setItem(reloadFlagKey, '1');
     }
 
+    /** Strip the `-` descending marker off a `sort` parameter. */
+    function sortParamKey(value: string): string {
+        return value.startsWith('-') ? value.slice(1) : value;
+    }
+
+    /**
+     * Can THIS table ask the backend to sort by `key`?
+     *
+     * A sort the user CLICKS is always one of this table's own columns. A sort read back
+     * from the URL or from a stale session blob is not: `sort` is a page-global query
+     * parameter, so on a page hosting several tables (tabs, side-by-side panels) the one
+     * that mounts second reads the first one's sort and asks its own endpoint for a column
+     * that endpoint never allowed — `Spatie\QueryBuilder` answers with HTTP 400
+     * (`InvalidSortQuery`) and the table renders empty. The same happens to a bookmarked
+     * link after a column is renamed or dropped.
+     *
+     * Three sources answer the question, because no single one is complete at restore time:
+     * the id column (sortable without appearing in `columns`), `allColumns` — which still falls
+     * back to the local config, since the server column meta arrives with the first response,
+     * after restore — and `persistedColumnKeys`, which `restoreColumnState()` has just read
+     * from the route-scoped `dt:cols:` blob. That last one is what keeps a server-only column
+     * (a hidden `updated_at` the local page never declares) working: once the user has enabled
+     * it, its key is in this table's own persisted column order, so a reload or a shared link
+     * still restores the sort. A key seen for the first time on a machine that never loaded
+     * this table is treated as foreign — the safe answer, since the alternative is the 400.
+     */
+    function isOwnSortKey(key: string): boolean {
+        if (!key) return false;
+        if (key === idKey.value) return true;
+        if (persistedColumnKeys.has(key)) return true;
+
+        return allColumns.value.some((c) => c.key === key && c.sortable !== false);
+    }
+
     /**
      * Restore DataTable state.
      * Priority: URL query params (shareable links) → sessionStorage (survives reload & navigation).
+     *
+     * A URL carrying a FOREIGN sort is another table's URL, so none of it is read — not the
+     * sort, not `page`/`per_page`, not the filters. Taking only half of it would open this
+     * table on the neighbour's page number, which is the same bug one symptom quieter.
      */
     function restoreState(): void {
         const urlParams = new URLSearchParams(window.location.search);
+        const urlSort = urlParams.get('sort');
+        const urlSortIsForeign = urlSort !== null && !isOwnSortKey(sortParamKey(urlSort));
 
-        if (urlParams.toString().length > 0) {
+        if (urlParams.toString().length > 0 && !urlSortIsForeign) {
             restoreFromUrlParams(urlParams);
             return;
         }
@@ -393,7 +436,11 @@
             if (raw) {
                 const saved = JSON.parse(raw) as Record<string, unknown>;
                 search.value = (saved.search as string) ?? '';
-                sortKey.value = (saved.sortKey as string) ?? '';
+                // The blob is keyed per route, so it cannot hold a NEIGHBOUR's sort — but it
+                // can hold this table's OWN sort from before a column was renamed or dropped,
+                // and the backend rejects that key exactly the same way.
+                const savedSortKey = (saved.sortKey as string) ?? '';
+                sortKey.value = isOwnSortKey(savedSortKey) ? savedSortKey : '';
                 sortOrder.value = (saved.sortOrder as 'asc' | 'desc') ?? 'asc';
                 currentPage.value = (saved.page as number) ?? 1;
                 meta.value.per_page = (saved.perPage as number) ?? props.config.perPage;
@@ -498,6 +545,10 @@
             for (const key of columnOrder.value) {
                 defaultAppliedKeys.add(key);
                 userTouchedKeys.add(key);
+                // Kept BEFORE the reconcile below, which filters a server-only key out of
+                // `columnOrder` until the first response republishes it: isOwnSortKey()
+                // still needs it to recognise the sort as this table's own.
+                persistedColumnKeys.add(key);
             }
             reconcileColumns();
         } catch {
