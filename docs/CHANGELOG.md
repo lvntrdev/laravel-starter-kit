@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-10 — v13.7.3
+
+### Fixed
+
+- **`sk:update` now tells you how to recover from the `ERESOLVE` its own dependency bump causes.** 13.7.0 moved the frontend toolchain onto current releases, `@tiptap/*` included (`^3.27.1` → `^3.31.3`). The merge into the app's `package.json` lands fine, but a `package-lock.json` carried over from 13.6.x still pins the old graph — and because every `@tiptap/extension-*` declares an *exact* peer on `@tiptap/core`, npm cannot lift half the family and aborts with `ERESOLVE`. Both commands printed only `npm install && npm run build`, which is the command that fails. `sk:update` now detects that the merge moved a constraint the app already carried and prints the lockfile recovery line alongside it; `sk:upgrade` prints the same line when its own `npm install` step fails. The recovery is documented in [UPGRADE.md](UPGRADE.md) — `rm -rf node_modules package-lock.json && npm install`, never `--force` or `--legacy-peer-deps`, which install a `@tiptap/core` the surrounding extensions were not built against.
+
 ## 2026-09-08 — v13.7.2
 
 ### Fixed

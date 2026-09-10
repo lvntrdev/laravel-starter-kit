@@ -526,6 +526,9 @@ class UpdateCommand extends Command
     /** @var list<string> Package-owned (safe-path) files left in place because the user modified them */
     private array $safePathConflicts = [];
 
+    /** Set when mergePackageJson() moved a version constraint the app already had — see printSummary(). */
+    private bool $dependencyVersionsChanged = false;
+
     public function handle(): int
     {
         if (! $this->option('dry-run') && $this->isPackageSourceTree()) {
@@ -1899,6 +1902,19 @@ PHP;
                 continue;
             }
 
+            // A MOVED constraint (not a newly added one) is what strands the
+            // app's package-lock.json: the lock still pins the old graph, and
+            // for a package family whose peers are pinned exactly — tiptap is
+            // the standing example — npm cannot re-resolve it in place and
+            // fails with ERESOLVE. printSummary() turns this flag into the
+            // recovery command.
+            foreach ($stubSection as $name => $version) {
+                if (isset($currentSection[$name]) && $currentSection[$name] !== $version) {
+                    $this->dependencyVersionsChanged = true;
+                    break;
+                }
+            }
+
             $mergedSection = array_merge($currentSection, $stubSection);
             ksort($mergedSection);
             $merged[$section] = $mergedSection;
@@ -2158,6 +2174,14 @@ PHP;
             $this->newLine();
             $this->components->warn('Run the following commands to apply frontend changes:');
             $this->line('  <fg=cyan>npm install && npm run build</>');
+
+            if ($this->dependencyVersionsChanged) {
+                $this->newLine();
+                $this->line('  <fg=gray>This update moved dependency versions your package.json already carried. Your package-lock.json still</>');
+                $this->line('  <fg=gray>pins the previous graph, and npm cannot always re-resolve one in place — if the install fails with</>');
+                $this->line('  <fg=gray>ERESOLVE, drop the lockfile and the tree, then install again:</>');
+                $this->line('  <fg=cyan>rm -rf node_modules package-lock.json && npm install && npm run build</>');
+            }
         }
     }
 

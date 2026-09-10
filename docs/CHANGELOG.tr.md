@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-10 — v13.7.3
+
+### Düzeltildi
+
+- **`sk:update` artık kendi bağımlılık yükseltmesinin yol açtığı `ERESOLVE` hatasından nasıl çıkılacağını söylüyor.** 13.7.0 frontend araç zincirini güncel sürümlere taşıdı, `@tiptap/*` dahil (`^3.27.1` → `^3.31.3`). Uygulamanın `package.json`'ına birleştirme sorunsuz oturuyor, ama 13.6.x'ten devralınan `package-lock.json` hâlâ eski grafiği sabitliyor — ve her `@tiptap/extension-*` paketi `@tiptap/core`'a *tam sürüm* peer bağımlılığı tanımladığı için npm ailenin yarısını yükseltemiyor ve `ERESOLVE` ile duruyor. İki komut da yalnızca `npm install && npm run build` yazdırıyordu; yani patlayan komutun kendisini. `sk:update` artık birleştirmenin uygulamada zaten var olan bir kısıtı değiştirdiğini tespit edip yanına lockfile kurtarma satırını basıyor; `sk:upgrade` de kendi `npm install` adımı başarısız olduğunda aynı satırı basıyor. Kurtarma [UPGRADE.md](UPGRADE.tr.md) içinde belgelendi — `rm -rf node_modules package-lock.json && npm install`; `--force` ya da `--legacy-peer-deps` asla, çünkü ikisi de etrafındaki extension'ların derlenmediği bir `@tiptap/core` kuruyor.
+
 ## 2026-09-08 — v13.7.2
 
 ### Düzeltildi

@@ -32,6 +32,28 @@ Aura used to hand the page title, subtitle and back button to `AdminHeader` for 
 
 `@tiptap/extension-task-item` and `@tiptap/extension-task-list` were removed from the stub's direct dependencies — neither is imported anywhere in the kit's own code (`EditorInput.vue` or elsewhere). If your own code imports either of these directly (a custom rich-text extension, a task-list feature built on top of the editor), add them back to your own app's `package.json`; `sk:update`/`composer update`/`npm install` no longer pull them in for you, even transitively.
 
+### `npm install` may fail with `ERESOLVE` — delete `package-lock.json` and install again
+
+**Affects:** any app upgrading to 13.7.x that keeps the `package-lock.json` it installed 13.6.x with. **Not affected:** a fresh `sk:install`, which regenerates the lockfile.
+
+13.7.0 moved the whole frontend toolchain onto its current releases, `@tiptap/*` among them (`^3.27.1` → `^3.31.3`). `sk:update` merges the new constraints into your `package.json`, but your `package-lock.json` still pins the old graph — and every `@tiptap/extension-*` package declares an **exact** peer on `@tiptap/core` (`peer @tiptap/core@"3.27.1"`), so npm cannot lift half the family and leave the rest. It gives up:
+
+```
+npm error ERESOLVE could not resolve
+npm error Found: @tiptap/core@3.27.1
+npm error   @tiptap/core@"^3.31.3" from the root project
+npm error   peer @tiptap/core@"3.27.1" from @tiptap/extension-blockquote@3.27.1
+```
+
+Drop the stale lockfile and the tree built from it, then install again:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install && npm run build
+```
+
+The lockfile is regenerated from the same `package.json` ranges your app already declares, so nothing moves outside a constraint you approved. Do **not** reach for `--force` or `--legacy-peer-deps`: both leave a `@tiptap/core` in `node_modules` that the extensions around it were never built against, and the editor breaks at runtime rather than at install time.
+
 ### `LogoutUserAction` now revokes the refresh token bound to the current credential too
 
 `app/Http/Controllers/Admin/*`'s logout path is not affected, but the stub `app/Domain/Auth/Actions/LogoutUserAction.php` is: it used to call `$user->token()?->revoke()` and stop there, leaving a live OAuth refresh token bound to the just-revoked access token — a refresh token deliberately outlives its access token, so the caller could mint a brand-new access token immediately after "logging out." The action now uses a new `Lvntr\StarterKit\Domain\User\Concerns\RevokesOAuthCredentials` trait that revokes the refresh token first and the access token second.

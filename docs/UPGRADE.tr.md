@@ -32,6 +32,28 @@ Bu nedenle `AdminHeader.vue` üç prop'u da kabul etmeye, `back` olayını yayma
 
 `@tiptap/extension-task-item` ve `@tiptap/extension-task-list`, stub'ın doğrudan bağımlılıklarından kaldırıldı — hiçbiri kitin kendi kodunda (`EditorInput.vue` ya da başka bir yerde) import edilmiyor. Kendi kodunuz bunlardan birini doğrudan import ediyorsa (özel bir rich-text extension'ı, editörün üzerine kurulmuş bir task-list özelliği) kendi uygulamanızın `package.json`'ına geri ekleyin; `sk:update`/`composer update`/`npm install` artık bunları sizin için, transitively bile, çekmiyor.
 
+### `npm install` `ERESOLVE` ile patlayabilir — `package-lock.json`'ı silip yeniden kurun
+
+**Etkilenen:** 13.6.x ile kurduğu `package-lock.json`'ı koruyup 13.7.x'e geçen her uygulama. **Etkilenmeyen:** lockfile'ı zaten yeniden üreten temiz bir `sk:install`.
+
+13.7.0 tüm frontend araç zincirini güncel sürümlerine taşıdı, `@tiptap/*` de dahil (`^3.27.1` → `^3.31.3`). `sk:update` yeni kısıtları `package.json`'ınıza birleştiriyor, ama `package-lock.json`'ınız hâlâ eski grafiği sabitliyor — ve her `@tiptap/extension-*` paketi `@tiptap/core`'a **tam sürüm** peer bağımlılığı tanımlıyor (`peer @tiptap/core@"3.27.1"`), yani npm ailenin yarısını yükseltip gerisini bırakamıyor. Pes ediyor:
+
+```
+npm error ERESOLVE could not resolve
+npm error Found: @tiptap/core@3.27.1
+npm error   @tiptap/core@"^3.31.3" from the root project
+npm error   peer @tiptap/core@"3.27.1" from @tiptap/extension-blockquote@3.27.1
+```
+
+Bayat lockfile'ı ve ondan kurulmuş ağacı silip yeniden kurun:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install && npm run build
+```
+
+Lockfile, uygulamanızın zaten tanımladığı `package.json` aralıklarından yeniden üretiliyor; onaylamadığınız bir kısıtın dışına hiçbir şey çıkmıyor. `--force` ya da `--legacy-peer-deps`'e **başvurmayın**: ikisi de `node_modules`'a, etrafındaki extension'ların hiç derlenmediği bir `@tiptap/core` bırakır — editör kurulum anında değil, çalışma anında bozulur.
+
 ### `LogoutUserAction` artık mevcut credential'a bağlı refresh token'ı da iptal ediyor
 
 `app/Http/Controllers/Admin/*`'ın logout yolu etkilenmiyor, ama stub `app/Domain/Auth/Actions/LogoutUserAction.php` etkileniyor: daha önce yalnızca `$user->token()?->revoke()` çağırıp duruyordu; bu, az önce iptal edilen access token'a bağlı canlı bir OAuth refresh token bırakıyordu — bir refresh token tasarım gereği access token'ından daha uzun yaşar, yani "logout" olduktan hemen sonra çağıran yeni bir access token basabiliyordu. Action artık önce refresh token'ı, sonra access token'ı iptal eden yeni bir `Lvntr\StarterKit\Domain\User\Concerns\RevokesOAuthCredentials` trait'ini kullanıyor.

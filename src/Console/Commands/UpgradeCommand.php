@@ -153,6 +153,15 @@ class UpgradeCommand extends Command
 
             if (! $built) {
                 $this->components->warn('Frontend assets were not rebuilt. Run `npm install && npm run build` by hand.');
+
+                if (! $npmInstalled) {
+                    // The usual cause is an upgrade that moved dependency
+                    // versions while package-lock.json still pins the previous
+                    // graph — npm reports it as ERESOLVE and cannot re-resolve
+                    // a peer-pinned family (tiptap) in place.
+                    $this->line('  <fg=gray>If npm failed with ERESOLVE, the old package-lock.json is pinning the previous dependency graph:</>');
+                    $this->line('  <fg=cyan>rm -rf node_modules package-lock.json && npm install && npm run build</>');
+                }
             }
         }
 
