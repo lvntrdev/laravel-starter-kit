@@ -21,6 +21,12 @@
 # Yayın akışı: commit → 'git push origin main' → CI yeşillenene kadar bekle →
 # ./release.sh. Uzak CI kapısı, koşusu olmayan bir commit'in etiketlenmesini
 # engeller.
+#
+# Packagist: deponun Packagist webhook'u BİLEREK kapalı. Yayın, etiket
+# push'unun tetiklediği CI'ın 'packagist' job'ı ile yapılıyor — job yalnız
+# 'v*' etiketinde ve diğer tüm job'lar yeşilken çalışır, yani main'e giden
+# her push değil, sadece CI'ı geçen bir etiket Packagist'e ulaşır.
+# PACKAGIST_USERNAME / PACKAGIST_TOKEN secret'ları gerekir.
 set -euo pipefail
 
 RED='\033[0;31m'
