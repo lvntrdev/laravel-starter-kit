@@ -4,6 +4,29 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v13.7.3 → v13.7.4
+
+### "Debug Mode" rozeti artık ortama değil `system_admin` rolüne bakıyor
+
+**Etkilenen:** `app/Http/Middleware/HandleInertiaRequests.php` dosyasını düzenlemiş uygulamalar. **Etkilenmeyen:** dosyaya dokunmamış uygulamalar — `sk:update` dosyayı hash ile takip ettiği için yeni sürümü kendisi getirir.
+
+`appDebug` production'ın tamamında `false` paylaşılıyordu; yani `APP_DEBUG=true` değerinin hâlâ açık olduğunu gösteren tek işaret olan header'daki "Debug Mode" rozeti, açık kalmasının gerçekten bedeli olduğu tek sunucuda sönüyordu. Bayrak artık ortama değil izleyene bakıyor: `system_admin` rozeti her ortamda görüyor, başka hiç kimseye bayrak gitmiyor — böylece ortam kontrolünün yazılma sebebi olan parmak izi kaygısı da yerinde kalıyor.
+
+`sk:update` dosyanızın ayrıştığını bildirirse (düzenlemenizi korur), iki satırlık değişikliği elle uygulayın:
+
+```php
+// önce
+'appDebug' => fn () => app()->environment('production') ? false : (bool) config('app.debug'),
+
+// sonra
+'appDebug' => fn () => (bool) config('app.debug')
+    && ($request->user()?->hasRole('system_admin') ?? false),
+```
+
+`php artisan sk:update --dry-run` hiçbir şey yazılmadan önce farkı gösterir. `appEnv` değişmedi — "Dev Mode" rozeti zaten yalnızca `local`'de çiziliyor. Kontrol ek sorgu maliyeti getirmez: `roles` ilişkisi aynı metottaki `auth` paylaşımı için hâlihazırda yükleniyor.
+
+---
+
 ## v13.6.16 → v13.7.0
 
 ### Local/public disk üzerindeki FileManager dosya URL'leri artık kalıcı public link değil

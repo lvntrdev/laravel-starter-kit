@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-10 — v13.7.4
+
+### Changed
+
+- **The "Debug Mode" badge now follows the role, not the environment — so a forgotten `APP_DEBUG=true` is visible exactly where it costs.** `HandleInertiaRequests` shared `appDebug` as `false` for the whole of production, which meant the header's only warning that debug output was still on went dark on the one server where leaving it on matters. The gate is now the audience instead: `appDebug` is `config('app.debug')` AND the viewer holding `system_admin`, in every environment. A system admin sees the badge on production; nobody else ever receives the flag, so the fingerprinting concern the environment check was written for still holds. `appEnv` keeps its production `null` — its "Dev Mode" badge only ever renders on `local`. The `roles` relation is already loaded for the `auth` share, so the check costs no extra query. `HandleInertiaRequests.php` is a published file — an app that edited its own copy keeps it and applies the change by hand, per [UPGRADE.md](UPGRADE.md).
+
 ## 2026-09-10 — v13.7.3
 
 ### Fixed

@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-10 — v13.7.4
+
+### Değiştirildi
+
+- **"Debug Mode" rozeti artık ortama değil role bakıyor — böylece unutulmuş bir `APP_DEBUG=true` tam da bedelinin ödendiği yerde görünüyor.** `HandleInertiaRequests`, `appDebug` değerini production'ın tamamında `false` paylaşıyordu; yani debug çıktısının hâlâ açık olduğunu söyleyen tek uyarı, açık kalmasının asıl önem taşıdığı sunucuda sönüyordu. Kapı artık ortam yerine izleyici: `appDebug`, `config('app.debug')` VE izleyenin `system_admin` rolüne sahip olması, her ortamda. Sistem yöneticisi rozeti production'da görüyor; bayrak başka hiç kimseye gitmiyor, dolayısıyla ortam kontrolünün yazılma sebebi olan parmak izi kaygısı da yerinde duruyor. `appEnv` production'daki `null` değerini koruyor — "Dev Mode" rozeti zaten yalnızca `local`'de çiziliyor. `roles` ilişkisi `auth` paylaşımı için hâlihazırda yüklendiğinden kontrol ek sorgu maliyeti getirmiyor. `HandleInertiaRequests.php` publish edilen bir dosya — kendi kopyasını düzenlemiş uygulama onu korur ve değişikliği elle uygular; ayrıntı [UPGRADE.tr.md](UPGRADE.tr.md) içinde.
+
 ## 2026-09-10 — v13.7.3
 
 ### Düzeltildi

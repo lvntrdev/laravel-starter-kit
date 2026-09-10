@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.4] - 2026-09-10
+
+### Changed
+
+- **The "Debug Mode" badge now follows the role, not the environment — so a forgotten `APP_DEBUG=true` is visible exactly where it costs.** `HandleInertiaRequests` shared `appDebug` as `false` for the whole of production, which meant the header's only warning that debug output was still on went dark on the one server where leaving it on matters. The gate is now the audience instead: `appDebug` is `config('app.debug')` AND the viewer holding `system_admin`, in every environment. A system admin sees the badge on production; nobody else ever receives the flag, so the fingerprinting concern the environment check was written for still holds. `appEnv` keeps its production `null` — its "Dev Mode" badge only ever renders on `local`. The `roles` relation is already loaded for the `auth` share, so the check costs no extra query. `HandleInertiaRequests.php` is a published file — an app that edited its own copy keeps it and applies the change by hand, per [UPGRADE.md](docs/UPGRADE.md).
+
 ## [13.7.3] - 2026-09-10
 
 ### Fixed

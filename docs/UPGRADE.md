@@ -4,6 +4,29 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v13.7.3 → v13.7.4
+
+### The "Debug Mode" badge is now gated on `system_admin` instead of the environment
+
+**Affects:** apps that edited `app/Http/Middleware/HandleInertiaRequests.php`. **Not affected:** apps that left the file untouched — `sk:update` tracks it by hash and delivers the new version for you.
+
+`appDebug` used to be shared as `false` throughout production, so the header's "Debug Mode" badge — the only visible sign that `APP_DEBUG=true` was still on — went dark on the one server where leaving it on actually costs something. The flag is now gated on the viewer rather than the environment: a `system_admin` sees the badge in every environment, and nobody else ever receives the flag, which keeps the fingerprinting concern the environment check was written for intact.
+
+If `sk:update` reports that your copy of the file diverged (it keeps your edits), apply the two-line change yourself:
+
+```php
+// before
+'appDebug' => fn () => app()->environment('production') ? false : (bool) config('app.debug'),
+
+// after
+'appDebug' => fn () => (bool) config('app.debug')
+    && ($request->user()?->hasRole('system_admin') ?? false),
+```
+
+`php artisan sk:update --dry-run` shows the diff before anything is written. `appEnv` is unchanged — its "Dev Mode" badge only ever renders on `local`. The check costs no extra query: the `roles` relation is already loaded for the `auth` share in the same method.
+
+---
+
 ## v13.6.16 → v13.7.0
 
 ### FileManager file URLs on a local/public disk are no longer permanent public links

@@ -85,7 +85,14 @@ class HandleInertiaRequests extends Middleware
             // exposing them to every authenticated user in prod leaks useful
             // fingerprinting info (and advertises that APP_DEBUG is on).
             'appEnv' => fn () => app()->environment('production') ? null : config('app.env'),
-            'appDebug' => fn () => app()->environment('production') ? false : (bool) config('app.debug'),
+            // `appDebug` is the exception: the header's "Debug Mode" badge is the
+            // only thing that catches an APP_DEBUG=true left on in production, so
+            // hiding it there removes the warning exactly where it matters most.
+            // Gate on the audience instead of the environment — system_admin sees
+            // it in every environment, nobody else ever does. The `roles` relation
+            // is already loaded for the `auth` share below, so this costs no query.
+            'appDebug' => fn () => (bool) config('app.debug')
+                && ($request->user()?->hasRole('system_admin') ?? false),
             'locale' => app()->getLocale(),
             'availableLocales' => config('app.languages', []),
             // Content languages are a separate concept from the admin UI locale:
