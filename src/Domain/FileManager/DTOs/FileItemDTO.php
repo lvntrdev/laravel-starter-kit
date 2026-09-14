@@ -37,17 +37,29 @@ readonly class FileItemDTO extends BaseDTO
      */
     public static function fromModel(Media $media, ?FileManagerContextDTO $context = null): self
     {
-        try {
-            // S3 and friends: a short-lived signed URL is already the safe
-            // answer, and it keeps the bytes off the PHP worker.
-            $url = $media->getTemporaryUrl(now()->addMinutes(30));
-        } catch (RuntimeException) {
-            // Local/public disks throw here. The old fallback was
-            // Media::getUrl() — a permanent, unauthenticated, non-expiring
-            // public link that bypasses FileManagerAuthorizer completely and
-            // keeps serving the file after a permission revoke or a move to
-            // trash. Hand out the authorized in-app route instead.
-            $url = self::previewUrl($media, $context);
+        if (self::isTrashed($media)) {
+            // Trash is "gone" everywhere else in the kit: the {media} route
+            // binder answers 404 for a soft-deleted row on download, preview,
+            // rename and share-link creation. getTemporaryUrl() was the one
+            // door left open — on a remote disk it signs a GetObject straight
+            // against the retained object, so for the life of that signature
+            // the bytes are reachable without route binding, without the trash
+            // check and without any share revocation. A deleted file gets the
+            // in-app route (which 404s while it is trashed) and nothing else.
+            $url = self::trashedUrl($media, $context);
+        } else {
+            try {
+                // S3 and friends: a short-lived signed URL is already the safe
+                // answer, and it keeps the bytes off the PHP worker.
+                $url = $media->getTemporaryUrl(now()->addMinutes(30));
+            } catch (RuntimeException) {
+                // Local/public disks throw here. The old fallback was
+                // Media::getUrl() — a permanent, unauthenticated, non-expiring
+                // public link that bypasses FileManagerAuthorizer completely and
+                // keeps serving the file after a permission revoke or a move to
+                // trash. Hand out the authorized in-app route instead.
+                $url = self::previewUrl($media, $context);
+            }
         }
 
         return new self(
@@ -94,6 +106,68 @@ readonly class FileItemDTO extends BaseDTO
     }
 
     /**
+     * Is this row soft-deleted?
+     *
+     * Asked through the SoftDeletes method rather than the `deleted_at`
+     * attribute: the configured media model MAY be Spatie's base class, which
+     * has neither the trait nor the column, and a missing-attribute read there
+     * would silently answer "not trashed" on some drivers.
+     */
+    private static function isTrashed(Media $media): bool
+    {
+        return method_exists($media, 'trashed') && $media->trashed() === true;
+    }
+
+    /**
+     * The only URL a trashed item may carry: the in-app preview route, which
+     * the {media} binder refuses with a 404 for as long as the row stays in
+     * the trash, and which starts working again the moment it is restored.
+     *
+     * Unlike previewUrl() this never falls back to Media::getUrl(). A missing
+     * context is not a reason to hand out a permanent storage link for content
+     * the user deleted — with no mounted FileManager route there is simply no
+     * URL to give, and the empty string is the honest answer.
+     */
+    private static function trashedUrl(Media $media, ?FileManagerContextDTO $context): string
+    {
+        try {
+            return route('file-manager.files.preview', self::previewRouteParameters($media, $context));
+        } catch (RouteNotFoundException) {
+            Log::warning('FileManager preview route is not registered; a trashed file is listed without a URL. Mount the FileManager routes to restore trash previews.', [
+                'media_id' => $media->getKey(),
+            ]);
+
+            return '';
+        }
+    }
+
+    /**
+     * Route parameters for `file-manager.files.preview`.
+     *
+     * The context travels as a query string because FileManagerRequest reads
+     * `context` / `context_id` from there; the media key is the only path
+     * segment.
+     *
+     * @return array<string, mixed>
+     */
+    private static function previewRouteParameters(Media $media, ?FileManagerContextDTO $context): array
+    {
+        $parameters = ['media' => $media->getKey()];
+
+        if ($context === null) {
+            return $parameters;
+        }
+
+        $parameters['context'] = $context->context;
+
+        if ($context->contextId !== null && $context->contextId !== '') {
+            $parameters['context_id'] = $context->contextId;
+        }
+
+        return $parameters;
+    }
+
+    /**
      * URL of the authorized preview route, carrying the context as query
      * parameters — FileManagerRequest::context() reads `context` /
      * `context_id` from the query string, so a plain <img src> authenticates
@@ -116,14 +190,8 @@ readonly class FileItemDTO extends BaseDTO
             return $media->getUrl();
         }
 
-        $parameters = ['media' => $media->getKey(), 'context' => $context->context];
-
-        if ($context->contextId !== null && $context->contextId !== '') {
-            $parameters['context_id'] = $context->contextId;
-        }
-
         try {
-            return route('file-manager.files.preview', $parameters);
+            return route('file-manager.files.preview', self::previewRouteParameters($media, $context));
         } catch (RouteNotFoundException) {
             Log::warning('FileManager preview route is not registered; falling back to the public media URL. Mount the FileManager routes to stop handing out unauthenticated file links.', [
                 'media_id' => $media->getKey(),

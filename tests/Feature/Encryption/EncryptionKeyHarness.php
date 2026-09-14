@@ -285,6 +285,47 @@ function ekcShadowAclWriteTool(string $binDir): ?string
 }
 
 /**
+ * Shadow the external binary the ACL READ half shells out to — `ls` on Darwin,
+ * `getfacl` on Linux — with one that exits with $status, by prepending a
+ * scratch bin directory to PATH.
+ *
+ * The counterpart of ekcShadowAclWriteTool(), and the only way to reach
+ * readFileAcl()'s two UNKNOWN-vs-no-tooling branches from a test: the real
+ * reader answers fine on both CI and a developer machine, and the difference
+ * between the two branches is nothing but the exit status.
+ *
+ * - `$status = 1` is "the reader is installed and it failed" — a mount whose
+ *   ACLs it cannot query, a hardened host. That is an UNKNOWN, and the rotation
+ *   must refuse it.
+ * - `$status = 127` is the shell's "command not found", which is what a stock
+ *   container without the `acl` package produces. That must stay a silent
+ *   no-op — the contract every host with no ACL at all depends on.
+ *
+ * Returns null on a platform readFileAcl() has no reader for at all, since
+ * there is then no branch to force — the caller should skip.
+ */
+function ekcShadowAclReadTool(string $binDir, int $status): ?string
+{
+    $binary = match (PHP_OS_FAMILY) {
+        'Darwin' => 'ls',
+        'Linux' => 'getfacl',
+        default => null,
+    };
+
+    if ($binary === null) {
+        return null;
+    }
+
+    mkdir($binDir, 0755, true);
+
+    $script = $binDir.'/'.$binary;
+    file_put_contents($script, "#!/bin/sh\nexit ".$status."\n");
+    chmod($script, 0755);
+
+    return $binDir;
+}
+
+/**
  * Run $callback with PATH temporarily prefixed by $prefix, restoring the
  * original value even if $callback throws or an assertion fails.
  */

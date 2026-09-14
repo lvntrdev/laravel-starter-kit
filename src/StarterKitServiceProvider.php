@@ -7,6 +7,7 @@ use App\Models\User;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Container\Container;
@@ -100,6 +101,7 @@ use Lvntr\StarterKit\Domain\User\Events\UserUpdated;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserCreated;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserDeleted;
 use Lvntr\StarterKit\Domain\User\Listeners\LogUserUpdated;
+use Lvntr\StarterKit\Domain\User\Listeners\RevokeCredentialsOnPasswordReset;
 use Lvntr\StarterKit\Domain\User\Queries\UserBulkSelectionQuery;
 use Lvntr\StarterKit\Domain\User\Queries\UserDatatableQuery;
 use Lvntr\StarterKit\Exceptions\ApiException;
@@ -1635,6 +1637,15 @@ class StarterKitServiceProvider extends ServiceProvider
         Event::listen(UserCreated::class, LogUserCreated::class);
         Event::listen(UserUpdated::class, LogUserUpdated::class);
         Event::listen(UserDeleted::class, LogUserDeleted::class);
+
+        // ── Password reset → credential revocation ───────────────────────────
+        // The FRAMEWORK event, not a Fortify hook: every reset path (Fortify's
+        // web reset today, any API/console reset a consumer adds tomorrow)
+        // converges on it, so the guarantee has exactly one door. Registered
+        // unconditionally — Illuminate\Auth ships the event, so this costs a
+        // dormant binding on an install that never resets a password and never
+        // depends on Fortify or Passport being installed.
+        Event::listen(PasswordReset::class, RevokeCredentialsOnPasswordReset::class);
 
         // ── Role audit events (vendor event + vendor listener) ───────────────
         Event::listen(RoleCreated::class, LogRoleCreated::class);

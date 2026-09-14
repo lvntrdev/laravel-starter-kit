@@ -930,3 +930,142 @@ it('leaves a temp file with no ACL, and an unknown target ACL, completely alone'
 
     @unlink($temp);
 });
+
+/*
+|--------------------------------------------------------------------------
+| 13. …and the third ACL answer: the check that could not be RUN
+|--------------------------------------------------------------------------
+|
+| Sections 11 and 12 both start from a KNOWN ACL. This one starts from no answer
+| at all, and it is the worse state: with nothing read, neither direction can be
+| decided. The replaced file may carry a grant that is about to be dropped, and
+| the replacement may carry one it inherited from the directory that is about to
+| go live on the file holding the encryption key. `fileperms()` reads the same
+| before and after either way.
+|
+| readFileAcl() answers null for BOTH "there are no ACLs here" and "there are
+| and the reader failed", and collapsing the two is what let the second ride
+| through silently. The separating signal is the exit status: 127 is the shell's
+| "command not found" — a stock container without the `acl` package, which must
+| keep rotating exactly as it always has — and every other non-zero status is a
+| reader that is installed and could not answer, which refuses.
+|
+| The report itself is driven directly so it runs on EVERY platform, including
+| one with no ACLs at all; the classification is driven through the full command
+| with the reader shadowed on PATH, because the exit status is the whole
+| behaviour under test and it is not reachable any other way.
+|
+*/
+
+it('refuses the rotation when the ACL could not be read at all', function (): void {
+    ekcFixture('APP_KEY='.ekcKey('app')."\n");
+    chmod(ekcEnvPath(), 0600);
+
+    try {
+        ekcInvoke('reportUnreadableAcl', [ekcEnvPath(), ekcEnvPath(), 'the ACL reader exited with status 1', false]);
+
+        $this->fail('An unreadable ACL must refuse the rotation.');
+    } catch (RuntimeException $e) {
+        // The message has to carry three things or the operator cannot act on
+        // it: which check could not run, why, and the flag that downgrades it.
+        expect($e->getMessage())->toContain('could not be read')
+            ->and($e->getMessage())->toContain('the ACL reader exited with status 1')
+            ->and($e->getMessage())->toContain('--allow-acl-loss')
+            ->and($e->getMessage())->toContain('existing file is untouched')
+            // No key material, ever — not even the .env body this ran against.
+            ->and($e->getMessage())->not->toContain(ekcKey('app'));
+    }
+});
+
+it('--allow-acl-loss downgrades the unreadable-ACL refusal to a warning on screen and in the log', function (): void {
+    ekcFixture('APP_KEY='.ekcKey('app')."\n");
+
+    Log::shouldReceive('warning')
+        ->once()
+        ->withArgs(static fn (string $message): bool => str_contains($message, 'WITHOUT being able to read'));
+
+    $output = ekcInvoke('reportUnreadableAcl', [ekcEnvPath(), ekcEnvPath(), 'exec() is unavailable here', true]);
+
+    // Same escape hatch, same voice, same audit trail as the two mismatch
+    // reports: deliberate stays possible, silent does not.
+    expect($output)->toContain('could not be read');
+});
+
+it('refuses a full rotation when the ACL reader is installed and fails', function (): void {
+    ekcFixture('APP_KEY='.ekcKey('app')."\n");
+    chmod(ekcEnvPath(), 0600);
+
+    $shadow = ekcShadowAclReadTool($this->ekcBasePath.'/acl-read-shadow-bin', 1);
+
+    if ($shadow === null) {
+        $this->markTestSkipped('This platform has no ACL reader to shadow — the silent null path is what runs here.');
+    }
+
+    $before = ekcEnvContents();
+
+    // Status 1, not 127: the reader IS here. Nothing can be concluded about the
+    // ACL, so the rotation must not proceed on the assumption that there is none.
+    $result = ekcWithPath($shadow, fn (): array => ekcRun());
+
+    expect($result['status'])->toBe(1)
+        // Refused at the CAPTURE, before the temp file exists: not one byte of
+        // the replacement was written, and .env is byte-identical.
+        ->and(ekcEnvContents())->toBe($before)
+        ->and(ekcRead(ekcEnvContents(), DataEncrypterFactory::PRIMARY_ENV_KEY))->toBeNull()
+        ->and($result['output'])->toContain('could not be read');
+});
+
+it('lets --allow-acl-loss push an unreadable ACL through the FULL rotation instead of refusing it', function (): void {
+    ekcFixture('APP_KEY='.ekcKey('app')."\n");
+    chmod(ekcEnvPath(), 0600);
+
+    $shadow = ekcShadowAclReadTool($this->ekcBasePath.'/acl-read-shadow-allowed-bin', 1);
+
+    if ($shadow === null) {
+        $this->markTestSkipped('This platform has no ACL reader to shadow — the silent null path is what runs here.');
+    }
+
+    Log::spy();
+
+    $result = ekcWithPath($shadow, fn (): array => ekcRun(['--allow-acl-loss' => true]));
+
+    expect($result['status'])->toBe(0)
+        ->and($result['output'])->toContain('could not be read')
+        ->and(fileperms(ekcEnvPath()) & 0777)->toBe(0600)
+        ->and(ekcRead(ekcEnvContents(), DataEncrypterFactory::PRIMARY_ENV_KEY))->not->toBeNull()
+        ->and(ekcRead(ekcEnvContents(), DataEncrypterFactory::PREVIOUS_ENV_KEY))->toBe(ekcKey('app'));
+
+    // Once per .env write, and a rotation with a key to preserve writes twice
+    // (previous list first, new primary second). Both writes face the same dead
+    // reader, and both are audited — an accepted unknown is not a quiet one.
+    Log::shouldHaveReceived('warning')
+        ->withArgs(static fn (string $message): bool => str_contains($message, 'WITHOUT being able to read'))
+        ->twice();
+});
+
+it('keeps rotating silently on a host that does not ship an ACL reader at all', function (): void {
+    // The contract this whole feature has to stay invisible on: a stock
+    // container without the `acl` package has no ACL to lose, so 127 must not
+    // start refusing rotations — that would be the regression the fail-closed
+    // branch above is most likely to cause.
+    ekcFixture('APP_KEY='.ekcKey('app')."\n");
+    chmod(ekcEnvPath(), 0600);
+
+    $shadow = ekcShadowAclReadTool($this->ekcBasePath.'/acl-read-missing-bin', 127);
+
+    if ($shadow === null) {
+        $this->markTestSkipped('This platform has no ACL reader to shadow — the silent null path is what runs here.');
+    }
+
+    Log::spy();
+
+    $result = ekcWithPath($shadow, fn (): array => ekcRun());
+
+    expect($result['status'])->toBe(0)
+        ->and($result['output'])->not->toContain('could not be read')
+        ->and(fileperms(ekcEnvPath()) & 0777)->toBe(0600)
+        ->and(ekcRead(ekcEnvContents(), DataEncrypterFactory::PRIMARY_ENV_KEY))->not->toBeNull()
+        ->and(ekcRead(ekcEnvContents(), DataEncrypterFactory::PREVIOUS_ENV_KEY))->toBe(ekcKey('app'));
+
+    Log::shouldNotHaveReceived('warning');
+});

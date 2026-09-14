@@ -5,7 +5,6 @@ namespace App\Actions\Fortify;
 use App\Enums\RoleEnum;
 use App\Models\Setting;
 use App\Models\User;
-use App\Rules\TurnstileRule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -50,7 +49,14 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
-            'cf_turnstile_response' => [new TurnstileRule],
+            // NO Turnstile rule here. A Cloudflare token is SINGLE-USE: the
+            // `turnstile` middleware attached to the register POST (see
+            // App\Providers\FortifyServiceProvider) already spends it against
+            // siteverify, so re-validating the same token from this action
+            // returns `timeout-or-duplicate` and would reject every legitimate
+            // registration. The middleware is also the only layer that can see
+            // an ABSENT field — a non-implicit rule object is skipped for one,
+            // which is exactly the hole this pair of changes closes.
         ])->validate();
 
         $user = User::create([

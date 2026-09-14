@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
+use Lvntr\StarterKit\Domain\FileManager\Services\FileManagerAuthorizer;
 use Lvntr\StarterKit\Exceptions\DomainRuleException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -76,6 +77,10 @@ class UploadFileAction extends FileManagerAction
      * two concurrent uploads racing on a fresh name converge on a single
      * folder row instead of one failing with a 500.
      *
+     * The restore branch additionally asserts the caller's `update` ability —
+     * see the comment at the call site; `create` alone never revives trashed
+     * content.
+     *
      * @param  class-string<Model>  $folderModel
      */
     private function ensureManagedFolder(FileManagerContextDTO $context, string $name, string $folderModel): string
@@ -91,6 +96,19 @@ class UploadFileAction extends FileManagerAction
 
             if ($existing !== null) {
                 if ($existing->trashed()) {
+                    // Pulling a folder out of the trash is an `update`
+                    // operation everywhere else (FileManagerController::
+                    // restoreItem authorizes update), and reaching it through
+                    // an upload must not be cheaper: a caller holding nothing
+                    // but `files.create` could otherwise name a deleted root
+                    // folder in `folder_name` and resurrect it — the one thing
+                    // the create ability is not allowed to do. Asked through
+                    // FileManagerAuthorizer so the per-context `authorize`
+                    // closure stays the single source of truth (and an
+                    // unauthenticated caller fails closed with the same
+                    // AuthorizationException → 403 as any other deny).
+                    app(FileManagerAuthorizer::class)->authorizeUpdate($context);
+
                     $existing->restore();
                 }
 

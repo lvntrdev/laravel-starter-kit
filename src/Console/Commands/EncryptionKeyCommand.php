@@ -71,11 +71,12 @@ use Throwable;
  * printing path: it emits one freshly generated key on stdout and writes
  * nothing at all.
  *
- * The only lines this command logs are the two `--allow-acl-loss` downgrades —
- * {@see self::carryOverAcl()} for an ACL that could not be carried over, and
+ * The only lines this command logs are the three `--allow-acl-loss` downgrades —
+ * {@see self::carryOverAcl()} for an ACL that could not be carried over,
  * {@see self::normaliseTempAcl()} for one the replacement inherited and could
- * not shed — and both carry a file path and ACL text, never a value out of
- * `.env`. Values that reach an exception message do so through
+ * not shed, and {@see self::reportUnreadableAcl()} for an ACL that could not be
+ * READ at all — and all three carry a file path and ACL text, never a value out
+ * of `.env`. Values that reach an exception message do so through
  * {@see DataEncrypterFactory::parseKey()}, which withholds key material by
  * design.
  */
@@ -128,16 +129,29 @@ final class EncryptionKeyCommand extends Command
      * The name says "loss" because that was the first direction it covered — an
      * ACL on `.env` that the replacement could not be given. It now covers the
      * MIRROR direction too ({@see self::normaliseTempAcl()}): an ACL the
-     * replacement carries and `.env` does not. Renaming the option would break
-     * every deploy script that already passes it, so the help text carries the
-     * widened meaning instead.
+     * replacement carries and `.env` does not. And it covers the case where
+     * NEITHER direction could be decided, because the ACL could not be read at
+     * all on a platform that has ACLs ({@see self::reportUnreadableAcl()}).
+     * Renaming the option would break every deploy script that already passes
+     * it, so the help text carries the widened meaning instead.
      */
     private const ACL_LOSS_OPTION = 'allow-acl-loss';
+
+    /**
+     * The shell's exit status for "command not found".
+     *
+     * The single signal that separates "this host does not ship an ACL reader"
+     * — a stock container without the `acl` package, the case
+     * {@see self::readFileAcl()}'s silent null exists for — from "the reader IS
+     * here and it failed", which is an unknown and refuses. Neither `getfacl`
+     * nor `ls` uses 127 for an error of its own; they exit 1.
+     */
+    private const ACL_TOOL_MISSING_STATUS = 127;
 
     protected $signature = 'encryption:key
         {--show : Print a freshly generated key and write nothing}
         {--force : Run even when the environment looks like production}
-        {--allow-acl-loss : Rotate even when the ACL of the replacement file cannot be made to match the ACL of .env: a file-specific ACL that could not be carried over, or one inherited from the directory that could not be cleared}';
+        {--allow-acl-loss : Rotate even when the ACL of the replacement file cannot be made to match the ACL of .env: a file-specific ACL that could not be carried over, one inherited from the directory that could not be cleared, or an ACL that could not be read at all on a host that has ACLs}';
 
     protected $description = 'Generate a dedicated DATA_ENCRYPTION_KEY, preserving the current key in DATA_ENCRYPTION_PREVIOUS_KEYS.';
 
@@ -349,7 +363,11 @@ final class EncryptionKeyCommand extends Command
      * purpose: on Linux `setfacl` writes the ACL's mask into the mode's group
      * bits, so a chmod afterwards would rewrite the mask that was just verified.
      * A platform or host without ACL tooling reads back `null` and changes
-     * nothing at all — see {@see self::readFileAcl()}.
+     * nothing at all — see {@see self::readFileAcl()}. A platform that HAS ACLs
+     * whose reader merely failed reads back `null` too, and that one is an
+     * unknown rather than a no-op: it refuses here, at the capture, because a
+     * null carries no reason with it once it has been handed to the two helpers
+     * below ({@see self::reportUnreadableAcl()}).
      *
      * ## …and the ACL runs in BOTH directions
      *
@@ -377,7 +395,18 @@ final class EncryptionKeyCommand extends Command
 
         // Captured together with the mode/owner/group, before anything exists
         // next to the target: this is the identity the replacement must carry.
-        $acl = $this->readFileAcl($target);
+        //
+        // An UNREADABLE answer is not an empty one. Both ACL checks below treat
+        // null as "change nothing", which is right only when null means "this
+        // platform has no ACLs". On Darwin or Linux, where a directory CAN carry
+        // an inheritance rule, a reader that could not run leaves both checks
+        // unable to decide anything — so the unknown is caught here, before the
+        // temp file exists and before a single byte has moved.
+        $acl = $this->readFileAcl($target, $aclUnreadable);
+
+        if ($acl === null && $aclUnreadable !== null) {
+            $this->reportUnreadableAcl($target, $target, $aclUnreadable, (bool) $this->option(self::ACL_LOSS_OPTION));
+        }
 
         $dir = dirname($target);
         $temp = $dir.DIRECTORY_SEPARATOR.'.'.basename($target).'.tmp'.bin2hex(random_bytes(6));
@@ -625,12 +654,16 @@ final class EncryptionKeyCommand extends Command
      * `$acl` is the TARGET's ACL as {@see self::readFileAcl()} reports it,
      * `$current` the temp's. Four of the five combinations do nothing:
      *
-     * - `$acl === null` — no ACL tooling on this host/platform. Strict no-op,
-     *   exactly as before this check existed: a stock container without
-     *   `getfacl` must not start refusing rotations.
-     * - `$current === null` — unreachable in practice (a non-null `$acl` proves
-     *   the reader works in this very directory, and the temp was just created
-     *   and stat'd), and treated as the same unknown for the same reason.
+     * - `$acl === null` — no ACL tooling on this host/platform, or an unknown
+     *   the operator accepted with `--allow-acl-loss`; either way the caller has
+     *   already decided. Strict no-op, exactly as before this check existed: a
+     *   stock container without `getfacl` must not start refusing rotations.
+     * - `$current === null` — all but unreachable (a non-null `$acl` proves the
+     *   reader works in this very directory, and the temp was just created and
+     *   stat'd). If it happens anyway the reader BROKE mid-run rather than being
+     *   absent, so it is the same unknown the capture refuses on, reported
+     *   through the same {@see self::reportUnreadableAcl()}; a `null` with no
+     *   reason behind it stays the historical no-op.
      * - `$current === ''` — the temp carries no file-specific ACL, so it cannot
      *   grant anything. Nothing to strip. This is the branch EVERY rotation on
      *   a directory without an inheritance rule takes, which is why this check
@@ -663,9 +696,21 @@ final class EncryptionKeyCommand extends Command
             return;
         }
 
-        $current = $this->readFileAcl($temp);
+        $current = $this->readFileAcl($temp, $unreadable);
 
-        if ($current === null || $current === '' || $current === $acl) {
+        if ($current === null) {
+            // $acl is non-null, so the reader answered for the target moments
+            // ago in this very directory: it did not go MISSING, it failed. That
+            // leaves "does the replacement grant something .env does not" with
+            // no answer, which is exactly the unknown the capture refuses on.
+            if ($unreadable !== null) {
+                $this->reportUnreadableAcl($target, $temp, $unreadable, $allowMismatch);
+            }
+
+            return;
+        }
+
+        if ($current === '' || $current === $acl) {
             return;
         }
 
@@ -756,11 +801,14 @@ final class EncryptionKeyCommand extends Command
      * `$acl` is what {@see self::readFileAcl()} found on the target. Two of its
      * three possible values mean "do nothing", and that is deliberate:
      *
-     * - `null` — this platform or this host cannot report an ACL (no `getfacl`,
-     *   a Windows/BSD runner, `exec()` in `disable_functions`). Unknown is NOT
-     *   treated as "there is one": an install without ACL tooling has to behave
-     *   exactly as it did before this check existed, or a stock Linux container
-     *   would start refusing every rotation over a file that has no ACL at all.
+     * - `null` — no ACL to speak of on this host: a Windows/BSD runner, or a
+     *   container that does not ship `getfacl` at all. Unknown is NOT treated as
+     *   "there is one": an install without ACL tooling has to behave exactly as
+     *   it did before this check existed, or a stock Linux container would start
+     *   refusing every rotation over a file that has no ACL at all. The OTHER
+     *   null — an ACL-capable host whose reader failed — never reaches here
+     *   undecided: {@see self::putEnvPreservingIdentity()} refuses at the
+     *   capture, and only `--allow-acl-loss` turns it back into this no-op.
      * - `''` — tooling answered and the file carries no file-specific ACL. The
      *   overwhelming majority of installs; nothing to preserve, nothing to do.
      *
@@ -835,14 +883,101 @@ final class EncryptionKeyCommand extends Command
     }
 
     /**
+     * The refusal (or, under `--allow-acl-loss`, the warning) for an ACL check
+     * that could not be RUN at all on a platform that has ACLs.
+     *
+     * Distinct from the two mismatch reports either side of it: those know what
+     * the ACL is and cannot make it match. This one does not know what the ACL
+     * IS, which is strictly worse — both directions are undecided at once. The
+     * replaced file may carry a grant that the replacement silently drops, and
+     * the replacement may carry one it inherited from the directory that widens
+     * who can read the key. Neither shows up in `ls -l`: the mode reads the same
+     * before and after.
+     *
+     * It fails CLOSED for the reason every other guard in this class does — the
+     * refusal costs a rotation that did not happen, the alternative costs a key
+     * whose reader set nobody checked — and `--allow-acl-loss` downgrades it to
+     * a warning on screen AND in the log, the same escape hatch, in the same
+     * voice, as the two mismatch reports.
+     *
+     * Only paths and the reader's own message are emitted; no ACL value is even
+     * known at this point, and nothing here has read `.env`'s contents.
+     *
+     * @param  string  $target  the `.env` being replaced, named in every message
+     * @param  string  $path  the file whose ACL could not be read — the target
+     *                        at capture time, the replacement at normalisation
+     *
+     * @throws RuntimeException
+     */
+    private function reportUnreadableAcl(string $target, string $path, string $reason, bool $allowLoss): void
+    {
+        if ($allowLoss) {
+            Log::warning(sprintf(
+                'encryption:key rotated [%s] WITHOUT being able to read the file-specific ACL of [%s] on a %s host '
+                .'(%s). --%s was given, so the rotation continued with neither ACL check decided. Verify by hand '
+                .'that the rotated file grants exactly what the replaced one did.',
+                $target,
+                $path,
+                $this->osFamily(),
+                $reason,
+                self::ACL_LOSS_OPTION,
+            ));
+
+            $this->components->warn(sprintf(
+                'The file-specific ACL of [%s] could not be read (%s), so NEITHER ACL check could run for [%s]. '
+                .'--%s was given, so the rotation continued: an ACL the replaced file carried may be gone, and one '
+                .'the replacement inherited from its directory may now be live. Check both by hand.',
+                $path,
+                $reason,
+                $target,
+                self::ACL_LOSS_OPTION,
+            ));
+
+            return;
+        }
+
+        throw new RuntimeException(sprintf(
+            'Refusing to replace [%s]: this host runs %s, which has file-specific ACLs, but the ACL of [%s] could '
+            .'not be read (%s). Unknown is not the same as "there is no ACL" — with no reading, neither check can '
+            .'run: a grant [%s] carries could be dropped silently, and a grant the replacement inherits from its '
+            .'directory could widen who can read the encryption key, both while the mode still reads %s. The '
+            .'existing file is untouched. Restore the ACL reader (%s), or re-run with --%s to rotate without the '
+            .'ACL check.',
+            $target,
+            $this->osFamily(),
+            $path,
+            $reason,
+            $target,
+            sprintf('%o', fileperms($target) & 0777),
+            $this->osFamily() === 'Darwin' ? 'ls -lde' : 'getfacl',
+            self::ACL_LOSS_OPTION,
+        ));
+    }
+
+    /**
      * A file's file-specific ACL as a normalised string, or null when this
      * platform/host cannot say.
      *
-     * The `null` return is the whole safety design of this feature: it is the
-     * DEFAULT for everything that is not a Linux or macOS host with working ACL
-     * tooling and a callable `exec()`, and {@see self::carryOverAcl()} treats it
-     * as "change nothing". Turning an unknown into a refusal would break
-     * rotation on a stock container that has no `getfacl` and no ACL either.
+     * The `null` return has TWO meanings and the caller must be able to tell
+     * them apart, so the reason for an unknown comes back through `$unreadable`:
+     *
+     * - `$unreadable === null` — there is no ACL to miss. Either the platform
+     *   has no ACL model this command speaks (Windows, BSD, Solaris), or the
+     *   host does not ship the reader at all (`getfacl` absent → the shell's
+     *   127). This is the historical silent no-op, and it stays one: turning it
+     *   into a refusal would break rotation on a stock container that has no
+     *   `getfacl` and no ACL either.
+     * - `$unreadable !== null` — this host DOES have ACLs and the read still
+     *   failed (`exec()` disabled, the reader exited non-zero, the path is not a
+     *   regular file). Nothing can be concluded about the file's ACL, which is
+     *   the state {@see self::reportUnreadableAcl()} refuses on. Reading this as
+     *   "no ACL" is what let a directory-inherited grant ride a rotation into
+     *   the new `.env`.
+     *
+     * The platform switch is evaluated FIRST, before `exec()` and before the
+     * stat: on a platform with no ACLs there is no check to have failed, and a
+     * Windows host with `exec()` in `disable_functions` must stay on the silent
+     * path rather than refuse over an ACL model it does not have.
      *
      * Platform commands, both reading only the file named on the command line:
      *
@@ -859,12 +994,15 @@ final class EncryptionKeyCommand extends Command
      * attacker-controlled, but a space or a quote in a deploy directory is
      * ordinary, and an unescaped path would turn a working rotation into a
      * shell-parsed one.
+     *
+     * @param  string|null  $unreadable  out-param: null when the silent no-op is
+     *                                   correct, otherwise why the read failed
+     *
+     * @param-out string|null $unreadable
      */
-    private function readFileAcl(string $path): ?string
+    private function readFileAcl(string $path, ?string &$unreadable = null): ?string
     {
-        if (! function_exists('exec') || ! is_file($path)) {
-            return null;
-        }
+        $unreadable = null;
 
         $quoted = escapeshellarg($path);
 
@@ -874,7 +1012,21 @@ final class EncryptionKeyCommand extends Command
             default => null,
         };
 
+        // No ACL model on this platform: there was never a check to fail, so the
+        // null carries no reason and every caller stays on its historical no-op.
         if ($command === null) {
+            return null;
+        }
+
+        if (! function_exists('exec')) {
+            $unreadable = 'exec() is unavailable here, so no ACL reader could be run';
+
+            return null;
+        }
+
+        if (! is_file($path)) {
+            $unreadable = 'it is not a regular file, so no file-specific ACL could be read from it';
+
             return null;
         }
 
@@ -883,9 +1035,22 @@ final class EncryptionKeyCommand extends Command
 
         @exec($command, $lines, $status);
 
-        // A missing tool exits 127, an unreadable file non-zero: both are
-        // "cannot say", never "there is no ACL".
-        return $status === 0 ? $this->normaliseAcl($lines) : null;
+        if ($status === 0) {
+            return $this->normaliseAcl($lines);
+        }
+
+        // 127 is the shell's "command not found" and the ONE status that means
+        // the host simply does not ship the reader — the stock-container case
+        // this whole feature has to stay invisible on. Every other non-zero
+        // status is a reader that IS here and could not answer, which is an
+        // unknown and must not collapse into "there is no ACL".
+        if ($status === self::ACL_TOOL_MISSING_STATUS) {
+            return null;
+        }
+
+        $unreadable = sprintf('the ACL reader exited with status %d', $status);
+
+        return null;
     }
 
     /**

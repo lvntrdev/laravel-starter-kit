@@ -227,17 +227,32 @@ class FolderContentsQuery
     }
 
     /**
+     * Collect a folder and every descendant beneath it.
+     *
+     * The walk keeps a visited set because `parent_id` is not guaranteed to
+     * describe a tree: MoveItemAction refuses a cycle it can see, but a cycle
+     * woven by two concurrent moves — or by data written outside the kit — is
+     * still representable in the schema. Without the set such a graph never
+     * terminates and burns CPU/memory on a plain folder listing, so this guard
+     * stands on its own and does not depend on the write-side lock.
+     *
      * @param  array<string, array<int, string>>  $childrenMap
      * @return array<int, string>
      */
     private function collectSubtreeIds(string $rootId, array $childrenMap): array
     {
         $ids = [$rootId];
+        $visited = [$rootId => true];
         $stack = [$rootId];
 
         while ($stack !== []) {
             $parent = array_shift($stack);
             foreach ($childrenMap[$parent] ?? [] as $child) {
+                if (isset($visited[$child])) {
+                    continue;
+                }
+
+                $visited[$child] = true;
                 $ids[] = $child;
                 $stack[] = $child;
             }

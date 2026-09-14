@@ -123,7 +123,7 @@ class FortifyServiceProvider extends ServiceProvider
             PrepareAuthenticatedSession::class,
         ]));
 
-        // ── forgot-password → reset gate + turnstile middleware ──────
+        // ── anonymous auth POSTs → reset gate + turnstile + throttle ──
         Route::matched(function ($event) {
             $request = $event->request;
 
@@ -140,8 +140,38 @@ class FortifyServiceProvider extends ServiceProvider
                 abort_unless((string) Setting::getValue('auth.password_reset', '1') === '1', 403);
             }
 
-            if ($request->isMethod('POST') && $request->is('forgot-password')) {
-                $event->route->middleware(['turnstile']);
+            // Turnstile is enforced as MIDDLEWARE, not only through the
+            // TurnstileRule entry inside CreateNewUser. Laravel skips a
+            // non-implicit rule object when the attribute is absent or an empty
+            // string (Validator::presentOrRuleIsImplicit), so a POST /register
+            // that simply omits `cf_turnstile_response` walked straight past
+            // that rule and created the account with no CAPTCHA at all. The
+            // middleware reads the input itself and fails closed. Making the
+            // rule `required` is NOT the fix — it would break registration
+            // wherever Turnstile is off; ValidateTurnstile is a no-op in that
+            // mode, so this attach is safe for every consumer.
+            //
+            // Matching on the route NAME rather than the path keeps the guard
+            // correct under a custom `fortify.prefix` / `fortify.paths.*`.
+            // Fortify names the register POST `register.store` (the GET view
+            // route is `register`) across the whole supported ^1.35 range; the
+            // bare `register` name stays in the list so a consumer that rebinds
+            // the endpoint under the short name is still covered.
+            if ($request->isMethod('POST')) {
+                $routeName = $event->route->getName();
+
+                if (in_array($routeName, ['register', 'register.store'], true)) {
+                    // Throttle stays FIRST in the list so a flood cannot force
+                    // one outbound Cloudflare verification (5s timeout) per
+                    // request — the same ordering rule routes/api/public-api.php
+                    // states. Fortify ships POST /register with `guest:` only,
+                    // i.e. no rate limit whatsoever on anonymous account
+                    // creation; 5/min per IP matches the ceiling the API
+                    // register endpoint already carries.
+                    $event->route->middleware(['throttle:5,1', 'turnstile']);
+                } elseif ($routeName === 'password.email') {
+                    $event->route->middleware(['turnstile']);
+                }
             }
         });
 

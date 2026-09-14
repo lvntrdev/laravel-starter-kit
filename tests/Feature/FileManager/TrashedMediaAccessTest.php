@@ -40,8 +40,12 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Lvntr\StarterKit\Domain\FileManager\Actions\CreateShareLinkAction;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\CreateShareLinkDTO;
+use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
+use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Domain\FileManager\Models\ShareRevocation;
+use Lvntr\StarterKit\Domain\FileManager\Queries\TrashContentsQuery;
 use Lvntr\StarterKit\Tests\Stubs\TestMedia;
+use Lvntr\StarterKit\Tests\Stubs\TestOwner;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Yardımcılar
@@ -274,4 +278,76 @@ it('serves the file again after restore when the link was never revoked or expir
     $response = $this->get($url);
     $response->assertOk();
     expect($response->streamedContent())->toBe('restore-bytes');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// H) Çöp LİSTESİ imzalı storage URL'i dağıtmaz
+// ──────────────────────────────────────────────────────────────────────────────
+//
+// Yukarıdaki B–E senaryoları uygulama route'unu kapatıyor; sızıntı listeleme
+// payload'undaydı: FileItemDTO::fromModel() koşulsuz getTemporaryUrl() üretiyor
+// ve remote bir disk (S3) saklanan nesne için doğrudan GetObject imzalıyordu —
+// route binding, trash durumu ve share revocation'ın tamamı devre dışı.
+// Fake disk'e temporary-URL callback'i BİLEREK kuruluyor: kurulmazsa local
+// driver RuntimeException atar ve test yanlış sebepten yeşil kalırdı.
+
+function trashedGuardContext(string $ownerId): FileManagerContextDTO
+{
+    return new FileManagerContextDTO(
+        context: 'user',
+        contextId: $ownerId,
+        owner: (new TestOwner)->forceFill(['id' => $ownerId]),
+        // media.model_type ile birebir aynı olmalı — TrashContentsQuery
+        // satırları bu değerle çeker.
+        ownerType: 'user',
+        ownerId: $ownerId,
+    );
+}
+
+it('never hands out a signed storage URL for a trashed file in the trash listing', function (): void {
+    Storage::fake('public');
+
+    // S3 taklidi: imzalı geçici URL üretebilen disk.
+    Storage::disk('public')->buildTemporaryUrlsUsing(
+        fn (string $path, $expiration): string => 'https://cdn.test/'.$path.'?X-Amz-Signature=trash-leak',
+    );
+
+    $ownerId = 'owner-trash-listing';
+    $context = trashedGuardContext($ownerId);
+    $media = insertTrashedGuardMedia('user', $ownerId);
+
+    // Kontrol: dosya canlıyken imzalı URL DOĞRU cevap — bu satır düşerse
+    // aşağıdaki asıl iddia boşa düşer (disk hiç temporary URL üretmiyordur).
+    expect(FileItemDTO::fromModel($media, $context)->url)->toContain('X-Amz-Signature');
+
+    $media->delete();
+
+    $payload = (new TrashContentsQuery)->execute($context);
+
+    expect($payload['files'])->toHaveCount(1)
+        ->and($payload['files'][0]['url'])->not->toContain('X-Amz-Signature')
+        ->and($payload['files'][0]['url'])->not->toContain('cdn.test')
+        // Yerine: uygulama içi preview route'u — aynı dosyayı 404'e düşüren yol.
+        ->and($payload['files'][0]['url'])->toContain('file-manager/files/'.$media->getKey().'/preview');
+
+    // Ve verilen URL gerçekten kapalı: trash'teki satır {media} binder'ında 404.
+    $this->actingAs(trashedGuardActor($ownerId))
+        ->get($payload['files'][0]['url'])
+        ->assertNotFound();
+});
+
+it('keeps the live listing URL byte-identical to the temporary storage URL', function (): void {
+    // Çöp düzeltmesi yalnız trashed satırı etkilemeli: canlı listeleme hâlâ
+    // getTemporaryUrl() sonucunu aynen taşır (davranış değişmedi).
+    Storage::fake('public');
+
+    Storage::disk('public')->buildTemporaryUrlsUsing(
+        fn (string $path, $expiration): string => 'https://cdn.test/'.$path.'?X-Amz-Signature=live',
+    );
+
+    $ownerId = 'owner-live-listing';
+    $media = insertTrashedGuardMedia('user', $ownerId);
+
+    expect(FileItemDTO::fromModel($media, trashedGuardContext($ownerId))->url)
+        ->toBe($media->getTemporaryUrl(now()->addMinutes(30)));
 });

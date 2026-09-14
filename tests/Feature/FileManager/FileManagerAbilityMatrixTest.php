@@ -36,9 +36,12 @@
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Lvntr\StarterKit\Domain\FileManager\Actions\UploadFileAction;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
 use Lvntr\StarterKit\Domain\FileManager\Services\FileManagerAuthorizer;
 use Lvntr\StarterKit\Domain\FileManager\Support\ContextRegistry;
+use Lvntr\StarterKit\Exceptions\DomainRuleException;
+use Lvntr\StarterKit\Tests\Stubs\TestFileFolder;
 use Lvntr\StarterKit\Tests\Stubs\TestOwner;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -344,6 +347,79 @@ it('authorizeWrite is an alias of authorizeUpdate, not of create or delete', fun
 
     test()->actingAs(fmActor(['files.delete']));
     expect(fn () => $authorizer->authorizeWrite(fmGlobalContext()))->toThrow(AuthorizationException::class);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 4. Upload may not become a back door into restore
+// ──────────────────────────────────────────────────────────────────────────────
+//
+// The routing map above says `upload` => create and `restoreItem` => update, but
+// UploadFileAction::ensureManagedFolder used to restore() a soft-deleted managed
+// folder in place. A `files.create`-only caller could therefore name a trashed
+// root folder in `folder_name` and pull it back out of the trash — the exact
+// ability collapse the map claims is gone. The gate now sits at the restore
+// branch itself, asked through FileManagerAuthorizer.
+//
+// `files` is left EMPTY on purpose: ensureManagedFolder runs before the
+// empty-files rule, so the restore branch is reached without a disk or an
+// UploadedFile, and which exception comes back says which rule stopped the run —
+// AuthorizationException = refused at the restore, DomainRuleException = the
+// restore was allowed and the action moved on.
+
+function fmTrashedManagedFolder(string $name): TestFileFolder
+{
+    $context = fmGlobalContext();
+
+    $folder = TestFileFolder::query()->create([
+        'owner_type' => $context->ownerType,
+        'owner_id' => $context->ownerId,
+        'parent_id' => null,
+        'name' => $name,
+    ]);
+
+    $folder->delete();
+
+    return $folder;
+}
+
+function fmFolderIsTrashed(TestFileFolder $folder): bool
+{
+    return TestFileFolder::withTrashed()->findOrFail($folder->getKey())->trashed();
+}
+
+it('refuses to restore a trashed managed folder for a create-only uploader', function (): void {
+    $folder = fmTrashedManagedFolder('Managed Deny');
+
+    test()->actingAs(fmActor(['files.create']));
+
+    expect(fn () => app(UploadFileAction::class)->execute(fmGlobalContext(), [], null, 'Managed Deny'))
+        ->toThrow(AuthorizationException::class);
+
+    // The row must still be in the trash — a rolled-back restore is the claim,
+    // not merely a thrown exception.
+    expect(fmFolderIsTrashed($folder))->toBeTrue();
+});
+
+it('restores the trashed managed folder when the uploader also holds update', function (): void {
+    $folder = fmTrashedManagedFolder('Managed Allow');
+
+    test()->actingAs(fmActor(['files.create', 'files.update']));
+
+    expect(fn () => app(UploadFileAction::class)->execute(fmGlobalContext(), [], null, 'Managed Allow'))
+        ->toThrow(DomainRuleException::class);
+
+    expect(fmFolderIsTrashed($folder))->toBeFalse();
+});
+
+it('still lets a create-only uploader open a brand-new managed folder', function (): void {
+    // The new gate fires ONLY on the trashed branch; the ordinary create path
+    // must stay untouched.
+    test()->actingAs(fmActor(['files.create']));
+
+    expect(fn () => app(UploadFileAction::class)->execute(fmGlobalContext(), [], null, 'Managed Fresh'))
+        ->toThrow(DomainRuleException::class);
+
+    expect(TestFileFolder::query()->where('name', 'Managed Fresh')->exists())->toBeTrue();
 });
 
 it('grants each ability to the matching permission and to no other', function (): void {

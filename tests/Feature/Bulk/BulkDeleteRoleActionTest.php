@@ -2,17 +2,27 @@
 
 /*
 |--------------------------------------------------------------------------
-| BulkDeleteRoleAction Authorize Mantık Testleri
+| BulkDeleteRoleAction authorization tests
 |--------------------------------------------------------------------------
 |
-| BulkDeleteRoleAction App namespace'indedir; mantığı in-test override ile simüle edilir.
+| The invariant under test: POST /admin/roles/bulk must never be a wider door
+| than DELETE /admin/roles/{role}. An equal-rank role is deletable by NEITHER.
 |
-| Test senaryoları:
-|   - roles.delete permission'ı olmayan actor → boş koleksiyon
-|   - Sistem rolleri korunur (protected name listesi)
-|   - system_admin tüm non-sistem rolleri silebilir
-|   - Non-system_admin kendi rütbesinden yüksek rolleri silemez
-|   - Dispatcher aracılığıyla exception propagation (transaction rollback simülasyonu)
+| The shipped stub (stubs/app/Domain/Role/BulkActions/BulkDeleteRoleAction.php)
+| cannot be instantiated from this suite. `App\` is not autoloaded, and the
+| moment App\Enums\RoleEnum is require_once'd into the process the previously
+| dormant StarterKitServiceProvider::configureGates() starts registering a
+| Gate::before closure typed to App\Models\User — which then TypeErrors in every
+| other test that authorizes an anonymous Authorizable (44 failures, measured).
+| So the rule is covered from two sides:
+|
+|   1. Behaviour — an in-test mirror of authorize() pins the expected outcomes
+|      (permission gate, protected system roles, rank hierarchy).
+|   2. Source contract — the tests at the bottom assert the shipped action keeps
+|      NO rank rule of its own and delegates to CanManageRoleQuery, and that the
+|      query ranks STRICTLY. Without (2) the mirror in (1) is worthless: the
+|      previous version of this file hard-coded `>=` and kept passing while the
+|      shipped action drifted away from the singular destroy() path.
 |
 */
 
@@ -24,8 +34,13 @@ use Lvntr\StarterKit\Http\Bulk\BulkActionDispatcher;
 use Lvntr\StarterKit\Http\Bulk\BulkDeleteAction;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Yardımcılar
+// Helpers
 // ──────────────────────────────────────────────────────────────────────────────
+
+function skRepoPath(string $relative): string
+{
+    return dirname(__DIR__, 3).'/'.$relative;
+}
 
 function makeRoleActor(
     int $id,
@@ -56,24 +71,46 @@ function makeRoleModel(int $id, string $name, int $sortOrder = 10): Model
     return $model;
 }
 
-// Sistem role adları (gerçek RoleEnum yerine sabit liste)
+// System role names (stand-in for the real RoleEnum, which must not be loaded
+// into this process — see the file header).
 function systemRoleNames(): array
 {
-    return ['system_admin', 'admin'];
+    return ['system_admin', 'admin', 'user'];
 }
 
+/**
+ * Mirror of CanManageRoleQuery::check(). STRICT `>` on purpose: an equal-rank
+ * role is NOT manageable. Pinned to the real query by the source-contract test
+ * 'CanManageRoleQuery ranks strictly'.
+ */
+function canManageRoleRank(Authenticatable $actor, Model $role): bool
+{
+    if ($actor->hasRole('system_admin')) {
+        return true;
+    }
+
+    $actorMinSortOrder = $actor->roles->min('sort_order');
+
+    // Role-less actor — casting null → 0 would let them manage every role.
+    if ($actorMinSortOrder === null) {
+        return false;
+    }
+
+    return $role->sort_order > (int) $actorMinSortOrder;
+}
+
+/**
+ * Mirror of the shipped authorize(): permission gate, protected system roles,
+ * and the rank decision delegated to the query rule — no second rank rule.
+ */
 function makeRoleBulkDeleteAction(): BulkDeleteAction
 {
     $protectedRoles = systemRoleNames();
 
     return new class($protectedRoles) extends BulkDeleteAction
     {
-        private array $protectedRoles;
-
-        public function __construct(array $protectedRoles)
-        {
-            $this->protectedRoles = $protectedRoles;
-        }
+        /** @param string[] $protectedRoles */
+        public function __construct(private array $protectedRoles) {}
 
         public function authorize(Authenticatable $user, Collection $items): Collection
         {
@@ -81,99 +118,143 @@ function makeRoleBulkDeleteAction(): BulkDeleteAction
                 return new Collection;
             }
 
-            $isSystemAdmin = $user->hasRole('system_admin');
-            $actorMinSortOrder = $isSystemAdmin ? null : $user->roles->min('sort_order');
-
-            return $items->filter(function ($role) use ($isSystemAdmin, $actorMinSortOrder): bool {
-                // Sistem rolleri her zaman korunur
+            return $items->filter(function (Model $role) use ($user): bool {
+                // System roles are always protected — even from system_admin.
                 if (in_array($role->name, $this->protectedRoles, true)) {
                     return false;
                 }
 
-                if ($isSystemAdmin) {
-                    return true;
-                }
-
-                // Rolsüz actor — en düşük rütbe, hiçbir rolü silemez
-                if ($actorMinSortOrder === null) {
-                    return false;
-                }
-
-                return (int) $role->sort_order >= (int) $actorMinSortOrder;
+                return canManageRoleRank($user, $role);
             })->values();
         }
     };
 }
 
+/**
+ * @param  array<int, Model>  $roles
+ * @return array<int, int>
+ */
+function authorizedRoleIds(array $roles, Authenticatable $actor): array
+{
+    return makeRoleBulkDeleteAction()
+        ->authorize($actor, new Collection($roles))
+        ->pluck('id')
+        ->all();
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
-// Testler
+// Tests
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('roles.delete permission\'ı olmayan actor → boş koleksiyon', function (): void {
-    $action = makeRoleBulkDeleteAction();
+it('returns an empty collection for an actor without roles.delete', function (): void {
     $actor = makeRoleActor(id: 1, canDelete: false);
-    $role = makeRoleModel(id: 10, name: 'editor');
+    $role = makeRoleModel(id: 10, name: 'editor', sortOrder: 50);
 
-    $result = $action->authorize($actor, new Collection([$role]));
-
-    expect($result)->toBeEmpty();
+    expect(authorizedRoleIds([$role], $actor))->toBe([]);
 });
 
-it('sistem rolleri her zaman korunur', function (): void {
-    $action = makeRoleBulkDeleteAction();
+it('always protects system roles, even from system_admin', function (): void {
     $actor = makeRoleActor(id: 1, isSystemAdmin: true);
 
     $sysRole1 = makeRoleModel(id: 1, name: 'system_admin', sortOrder: 1);
     $sysRole2 = makeRoleModel(id: 2, name: 'admin', sortOrder: 2);
-    $customRole = makeRoleModel(id: 3, name: 'editor', sortOrder: 20);
+    $sysRole3 = makeRoleModel(id: 3, name: 'user', sortOrder: 3);
+    $customRole = makeRoleModel(id: 4, name: 'editor', sortOrder: 20);
 
-    $result = $action->authorize($actor, new Collection([$sysRole1, $sysRole2, $customRole]));
-
-    expect($result->count())->toBe(1)
-        ->and($result->first()->name)->toBe('editor');
+    expect(authorizedRoleIds([$sysRole1, $sysRole2, $sysRole3, $customRole], $actor))->toBe([4]);
 });
 
-it('system_admin tüm non-sistem rolleri silebilir', function (): void {
-    $action = makeRoleBulkDeleteAction();
+it('lets system_admin delete every non-system role', function (): void {
     $actor = makeRoleActor(id: 1, isSystemAdmin: true);
 
     $roles = collect(range(1, 5))
         ->map(fn (int $i) => makeRoleModel($i, "custom-role-{$i}", $i * 10))
         ->all();
 
-    $result = $action->authorize($actor, new Collection($roles));
-
-    expect($result->count())->toBe(5);
+    expect(authorizedRoleIds($roles, $actor))->toBe([1, 2, 3, 4, 5]);
 });
 
-it('non-system_admin kendi rütbesinden yüksek rolleri silemez', function (): void {
-    $action = makeRoleBulkDeleteAction();
-    $actor = makeRoleActor(id: 1, isSystemAdmin: false, sortOrder: 10);
+it('denies a role that outranks the actor', function (): void {
+    $actor = makeRoleActor(id: 1, sortOrder: 10);
 
-    $highRank = makeRoleModel(id: 1, name: 'senior-editor', sortOrder: 5);  // yüksek rütbe → atla
-    $equalRank = makeRoleModel(id: 2, name: 'editor', sortOrder: 10);        // eşit → geçir
-    $lowRank = makeRoleModel(id: 3, name: 'viewer', sortOrder: 20);          // düşük → geçir
+    $highRank = makeRoleModel(id: 1, name: 'senior-editor', sortOrder: 5);
+    $lowRank = makeRoleModel(id: 2, name: 'viewer', sortOrder: 20);
 
-    $result = $action->authorize($actor, new Collection([$highRank, $equalRank, $lowRank]));
-
-    expect($result->count())->toBe(2)
-        ->and($result->pluck('name')->all())->toContain('editor')
-        ->and($result->pluck('name')->all())->toContain('viewer')
-        ->and($result->pluck('name')->all())->not->toContain('senior-editor');
+    expect(authorizedRoleIds([$highRank, $lowRank], $actor))->toBe([2]);
 });
 
-it('rolsüz actor (direct-permission) → hiçbir rolü silemez', function (): void {
-    $action = makeRoleBulkDeleteAction();
-    $actor = makeRoleActor(id: 1, isSystemAdmin: false, sortOrder: null);
+it('denies an equal-rank custom role — bulk may not outrun the singular destroy() path', function (): void {
+    // Regression: authorize() carried its own `>=` while CanManageRoleQuery —
+    // the query destroy()/edit()/data() run — uses `>`. A roles.delete actor
+    // could therefore bulk-delete the peer role that DELETE
+    // /admin/roles/{role} refuses with a 403.
+    $actor = makeRoleActor(id: 1, sortOrder: 10);
+    $equalRank = makeRoleModel(id: 7, name: 'editor', sortOrder: 10);
+
+    expect(authorizedRoleIds([$equalRank], $actor))->toBe([])
+        ->and(canManageRoleRank($actor, $equalRank))->toBeFalse();
+});
+
+it('mixed payload: deletes only the role ranked below the actor', function (): void {
+    $actor = makeRoleActor(id: 1, sortOrder: 10);
+
+    $equalRank = makeRoleModel(id: 1, name: 'editor', sortOrder: 10);
+    $lowRank = makeRoleModel(id: 2, name: 'viewer', sortOrder: 11);
+
+    expect(authorizedRoleIds([$equalRank, $lowRank], $actor))->toBe([2]);
+});
+
+it('denies everything for a role-less (direct-permission) actor', function (): void {
+    $actor = makeRoleActor(id: 1, sortOrder: null);
 
     $customRole = makeRoleModel(id: 3, name: 'editor', sortOrder: 20);
 
-    $result = $action->authorize($actor, new Collection([$customRole]));
-
-    expect($result)->toBeEmpty();
+    expect(authorizedRoleIds([$customRole], $actor))->toBe([]);
 });
 
-it('dispatcher: handle exception → exception yayılır (transaction rollback simülasyonu)', function (): void {
+// ──────────────────────────────────────────────────────────────────────────────
+// Source contract — what keeps the mirror above honest
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('the shipped BulkDeleteRoleAction keeps no rank rule of its own', function (): void {
+    $source = (string) file_get_contents(
+        skRepoPath('stubs/app/Domain/Role/BulkActions/BulkDeleteRoleAction.php')
+    );
+
+    $inlineRankRule = '/sort_order\s*[<>]=?/';
+
+    expect($source)
+        ->toContain('use App\Domain\Role\Queries\CanManageRoleQuery;')
+        ->toContain('$this->canManageQuery->check($user, $role)')
+        // A second, inline rank comparison is exactly what produced the
+        // `>=` (bulk) vs `>` (singular) split — there must be none left.
+        ->not->toMatch($inlineRankRule)
+        // ...and the guard above is only worth anything if it really matches
+        // the line this regression shipped with:
+        ->and('(int) $role->sort_order >= (int) $actorMinSortOrder;')->toMatch($inlineRankRule);
+});
+
+it('CanManageRoleQuery ranks strictly — an equal-rank role is not manageable', function (): void {
+    $source = (string) file_get_contents(
+        skRepoPath('src/Domain/Role/Queries/CanManageRoleQuery.php')
+    );
+
+    expect($source)
+        ->toContain('return $role->sort_order > (int) $userMinSortOrder;')
+        ->not->toContain('sort_order >=');
+});
+
+it('RoleController runs the singular delete through the same query', function (): void {
+    $source = (string) file_get_contents(
+        skRepoPath('stubs/app/Http/Controllers/Admin/RoleController.php')
+    );
+
+    expect($source)
+        ->toContain('public function destroy(Role $role, DeleteRoleAction $action, CanManageRoleQuery $canManageQuery)')
+        ->toContain('if (! $canManageQuery->check(Auth::user(), $role)) {');
+});
+
+it('dispatcher: a throwing handle() propagates (transaction rollback simulation)', function (): void {
     $dispatcher = new BulkActionDispatcher;
 
     $throwingAction = new class implements BulkAction

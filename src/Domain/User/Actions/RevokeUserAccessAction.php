@@ -14,8 +14,19 @@ use Lvntr\StarterKit\Http\Middleware\EnsureUserIsActive;
 use Throwable;
 
 /**
- * Drops every credential the kit issues for a user whose status just moved
- * INTO a denied value.
+ * Drops every credential the kit issues for a user, through one of two doors.
+ *
+ * ── TWO ENTRY POINTS, ONE BODY OF WORK ──────────────────────────────────────
+ *
+ *   execute()                     the status transition INTO a denied value.
+ *                                 Gated on the operator's status-enforcement
+ *                                 switch and on the change actually being a
+ *                                 transition (see below).
+ *   executeForCredentialRotation() the user's password was just reset. NOT
+ *                                 gated on status at all — see that method.
+ *
+ * Both run the SAME private internals, so the set of credentials the kit
+ * considers "an access path for this account" can never mean two things.
  *
  * EnsureUserIsActive already cuts an open request the moment the account
  * behind it is disabled, but it can only act on a request that actually passes
@@ -31,7 +42,7 @@ use Throwable;
  *   - a database session row, which otherwise stays valid until the session
  *     lifetime expires.
  *
- * ── TRANSITION-ONLY, NEVER PER-SAVE ─────────────────────────────────────────
+ * ── TRANSITION-ONLY, NEVER PER-SAVE (execute() ONLY) ────────────────────────
  *
  * Revocation fires only when the NORMALISED status actually CHANGED and the new
  * value is on the operator's deny-list. An admin editing the name of a user who
@@ -42,7 +53,7 @@ use Throwable;
  * to an already-disabled account is exactly the storm this rule exists to
  * prevent.
  *
- * ── SHARED CONTRACT WITH THE MIDDLEWARE ─────────────────────────────────────
+ * ── SHARED CONTRACT WITH THE MIDDLEWARE (execute() ONLY) ────────────────────
  *
  * "Denied" is not decided here. Both the enforcement switch
  * (`starter-kit.security.enforce_active_status`) and the deny-list
@@ -115,7 +126,58 @@ class RevokeUserAccessAction extends BaseAction
         // caller. With no open transaction Laravel's manager runs the callback
         // immediately.
         $this->afterCommit($user, function () use ($user, $from, $to): void {
-            $this->revoke($user, $from, $to);
+            $this->revoke(
+                $user,
+                'starter-kit: user status moved to a denied value; credentials revoked.',
+                ['from_status' => $from, 'to_status' => $to],
+            );
+        });
+
+        return true;
+    }
+
+    /**
+     * Revoke every credential of a user whose password was just reset.
+     *
+     * ── WHY A SECOND DOOR, AND WHY IT IGNORES STATUS ────────────────────────
+     *
+     * A password reset carries a guarantee of its own — "the old password, and
+     * everything it ever bought, is dead" — and that guarantee has nothing to
+     * do with the account's status. Routing a reset through execute() would
+     * have silently revoked NOTHING in three ordinary situations: an install
+     * that left `enforce_active_status` off, a user whose status the operator
+     * never taught the kit, and — the common case — a user who is active
+     * before the reset and still active after it, so there is no transition.
+     *
+     * What the reset leaves behind without this is the whole point. Neither a
+     * Passport token nor a database session is bound to the password: the
+     * kit's own defaults give a refresh token 14 days and a personal access
+     * token 30, and a session lives until the session lifetime expires. So the
+     * user who resets their password precisely BECAUSE they believe they were
+     * compromised hands the attacker nothing — the stolen bearer token keeps
+     * authenticating, and the attacker's browser session keeps working, for
+     * weeks.
+     *
+     * The work is identical to the status path and runs through the same
+     * private internals: access tokens, the refresh tokens bound to them,
+     * unredeemed authorization and device codes, and the account's database
+     * session rows.
+     *
+     * Unconditional by design. There is no "was it really a transition" test
+     * to make here — a reset that resets nothing is not a thing — so this
+     * always schedules, and the counts in the log line are what say whether
+     * anything was actually live.
+     *
+     * @return bool whether revocation was scheduled
+     */
+    public function executeForCredentialRotation(Authenticatable $user): bool
+    {
+        $this->afterCommit($user, function () use ($user): void {
+            $this->revoke(
+                $user,
+                'starter-kit: password was reset; credentials revoked.',
+                ['trigger' => 'password_reset'],
+            );
         });
 
         return true;
@@ -149,19 +211,24 @@ class RevokeUserAccessAction extends BaseAction
     /**
      * Perform the revocation and emit exactly one structured line.
      *
-     * The line carries counts and the two status values only. No token id, no
-     * token value, no session id ever reaches the log.
+     * The message and the extra context belong to the entry point that
+     * triggered this, so the log says WHY the credentials went away. The line
+     * carries counts and that context only — no token id, no token value and
+     * no session id ever reaches the log, from either door.
+     *
+     * `$context` is merged ahead of `$counts` but behind `user_id`; both are
+     * kit-authored literal keys, so no caller can shadow a count.
+     *
+     * @param  array<string, mixed>  $context
      */
-    private function revoke(Authenticatable $user, ?string $from, ?string $to): void
+    private function revoke(Authenticatable $user, string $message, array $context): void
     {
         $counts = $this->revokePassportCredentials($user);
         $counts['sessions'] = $this->purgeDatabaseSessions($user);
 
-        Log::info('starter-kit: user status moved to a denied value; credentials revoked.', [
+        Log::info($message, [
             'user_id' => $this->identifierFor($user),
-            'from_status' => $from,
-            'to_status' => $to,
-        ] + $counts);
+        ] + $context + $counts);
     }
 
     // ─── Passport ───────────────────────────────────────────────────────────
@@ -368,7 +435,7 @@ class RevokeUserAccessAction extends BaseAction
         try {
             return (int) $statement();
         } catch (Throwable $e) {
-            Log::warning('starter-kit: a credential class could not be revoked after a user status change.', [
+            Log::warning('starter-kit: a credential class could not be revoked while revoking a user\'s access.', [
                 'user_id' => $this->identifierFor($user),
                 'credential' => $what,
                 'reason' => $e->getMessage(),
@@ -390,6 +457,12 @@ class RevokeUserAccessAction extends BaseAction
      *
      * Every session of the account goes, including the one belonging to the
      * admin performing the change when an admin disables their own account.
+     *
+     * On the password-reset path this cannot break the reset request itself:
+     * Fortify resets without logging anyone in, so the request that triggers
+     * this holds a GUEST session (`user_id` null) which no `where('user_id')`
+     * can match. A user who was already logged in elsewhere does lose that
+     * session row — which is the entire point.
      */
     private function purgeDatabaseSessions(Authenticatable $user): ?int
     {
@@ -417,7 +490,7 @@ class RevokeUserAccessAction extends BaseAction
                 ->where('user_id', $identifier)
                 ->delete();
         } catch (Throwable $e) {
-            Log::warning('starter-kit: database sessions could not be purged after a user status change.', [
+            Log::warning('starter-kit: database sessions could not be purged while revoking a user\'s access.', [
                 'user_id' => $this->identifierFor($user),
                 'reason' => $e->getMessage(),
             ]);

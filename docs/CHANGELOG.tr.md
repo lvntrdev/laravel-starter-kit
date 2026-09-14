@@ -2,7 +2,19 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
-## 2026-09-10 — v13.7.4
+## 2026-09-14 — v13.7.4
+
+### Düzeltildi
+
+- **Toplu rol silme, tekil silmenin zaten reddettiği eşit-rütbeli bir rolü silebiliyordu** — çünkü rütbe kontrolünü biraz daha gevşek bir karşılaştırmayla kendi içinde yeniden uyguluyordu. İki yol artık tek bir rütbe kontrolünü paylaşıyor. Scaffold tarafı (`stubs/`): mevcut bir kuruluma yalnızca `sk:update` ile ulaşır — `BulkDeleteRoleAction.php`'ı özelleştirmiş bir uygulamanın düzeltmeyi elle uygulaması gerekir.
+- **Kayıt akışı artık login formunun zaten uyguladığı hız sınırlaması ve Turnstile CAPTCHA'sından geçiyor** — bu da otomatik bir istemcinin CAPTCHA'yı çözmeden hesap açmasına izin veren açığı kapatıyor. Scaffold tarafı: mevcut kuruluma yalnızca `sk:update` ile ulaşır — özelleştirilmiş bir `FortifyServiceProvider.php`'ın bu değişikliği elle alması gerekir.
+- **Parola sıfırlama artık hesabı her yerde oturumdan çıkarıyor** — sıfırlamayı isteyen oturum dışında, tüm API token'ları ve tüm diğer aktif oturumlar iptal ediliyor. Giriş yapılmışken uygulama içinden parola değiştirme veya bir yöneticinin parolanızı belirlemesi henüz kapsanmıyor; bu yollar eski oturumları hâlâ canlı bırakıyor.
+- **Dosya yöneticisinin çöp kutusu, başka bir kullanıcının silinmiş dosyası için çalışan bir önizleme ve gerçek bir indirme linki döndürebiliyordu**, ve yalnızca oluşturma yetkisi olan bir yükleyici kendine ait olmayan bir dosyayı geri yükleyebiliyordu. İkisi de artık engellendi.
+- **Yazma yetkiniz olmayan bir klasöre dosya yüklemek artık reddediliyor**, sessizce geçmek yerine.
+- **Bir klasörü kendi alt klasörüne taşımak artık engelleniyor**, klasör ağacını bozmak yerine.
+- **Zengin metin editörünün HTML sanitizer'ı, içine gizlenmiş bir kontrol karakteriyle tehlikeli bir link şemasını** (örn. `javascript:`) **korumaya kandırılabiliyordu.** Artık değeri kontrol etmeden önce tarayıcının yaptığı gibi normalize ediyor.
+- **Dosya yöneticisinde yerel bir HTML dosyasını önizlemek artık onu canlı bir sayfa olarak çalıştırmıyor.** Artık tamamen sandbox'lanmış bir frame içinde render ediliyor ve bu dosya türü için "yeni sekmede aç" seçeneği gizlendi — çünkü tarayıcı sekmesinde açmak, sandbox'lı önizlemeden daha az güvenli olurdu.
+- **`encryption:key` artık macOS'ta `.env` dosyanızın izinlerinin yeniden yazımdan sağlam çıktığını doğrulayamazsa döndürmeyi reddediyor**, belirsiz bırakarak döndürmek yerine. Kontrol ettikten sonra yine de devam etmek için `--allow-acl-loss` verin.
 
 ### Değiştirildi
 

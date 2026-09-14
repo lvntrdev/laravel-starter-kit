@@ -2,7 +2,19 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-09-10 — v13.7.4
+## 2026-09-14 — v13.7.4
+
+### Fixed
+
+- **Bulk role deletion could delete an equal-rank peer role that the single-record delete already refused**, because it re-implemented the rank check with a slightly looser comparison. Both paths now share one rank check. Scaffold-side (`stubs/`): reaches an existing install only via `sk:update` — a customized copy of `BulkDeleteRoleAction.php` needs the fix re-applied by hand.
+- **Registration now goes through the same rate limit and Turnstile CAPTCHA the login form already enforces**, closing a gap that let an automated client create accounts without solving it. Scaffold-side: reaches an existing install only via `sk:update` — a customized `FortifyServiceProvider.php` needs this applied by hand.
+- **Resetting a password now signs the account out everywhere** — every API token and every other active session are revoked, not just the one that requested the reset. Doesn't yet cover an in-app password change while logged in or an admin setting your password; those still leave old sessions live.
+- **The file manager's trash could return a working preview and a real download link for another user's deleted file**, and a create-only uploader could restore a file that wasn't theirs. Both are now blocked.
+- **Uploading into a folder you don't have write access to is now rejected**, instead of silently going through.
+- **Moving a folder into its own subfolder is now blocked**, instead of corrupting the folder tree.
+- **The rich-text editor's HTML sanitizer could be tricked into keeping a dangerous link scheme** (e.g. `javascript:`) by hiding a control character inside it. It now normalizes the value the way a browser does before checking it.
+- **Previewing a local HTML file in the file manager no longer runs it as a live page.** It now renders in a fully sandboxed frame, and the "open in new tab" option is hidden for that file type since opening it in a browser tab would have been less safe than the sandboxed preview.
+- **`encryption:key` now refuses to rotate on macOS if it can't confirm your `.env` file's permissions survived the rewrite**, instead of rotating and leaving that uncertain. Pass `--allow-acl-loss` to proceed anyway once you've checked.
 
 ### Changed
 

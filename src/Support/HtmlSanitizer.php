@@ -138,8 +138,18 @@ class HtmlSanitizer
                 continue;
             }
 
-            if (in_array($name, ['href', 'src'], true) && ! self::isSafeUrl($attribute->nodeValue ?? '')) {
-                $element->removeAttribute($name);
+            if (in_array($name, ['href', 'src'], true)) {
+                $normalizedUrl = self::normalizeUrl($attribute->nodeValue ?? '');
+
+                if (! self::isSafeUrl($normalizedUrl)) {
+                    $element->removeAttribute($name);
+
+                    continue;
+                }
+
+                if ($normalizedUrl !== $attribute->nodeValue) {
+                    $element->setAttribute($name, $normalizedUrl);
+                }
 
                 continue;
             }
@@ -240,19 +250,35 @@ class HtmlSanitizer
      * tel. Everything else (javascript:, vbscript:, data:, blob:, file:,
      * ftp:, …) is rejected — blocklist approaches have repeatedly failed as
      * new dangerous schemes surface.
+     *
+     * Expects an already-normalized value (see {@see normalizeUrl()}) —
+     * callers strip control characters before this check so a scheme
+     * smuggled past the pattern with an embedded TAB/LF/CR cannot slip
+     * through as a "relative" URL and be restored verbatim by a browser.
      */
     private static function isSafeUrl(string $url): bool
     {
-        $trimmed = trim($url);
-        if ($trimmed === '') {
+        if ($url === '') {
             return false;
         }
 
         // Relative URL (no scheme) — safe.
-        if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $trimmed) !== 1) {
+        if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $url) !== 1) {
             return true;
         }
 
-        return preg_match('#^(?:https?|mailto|tel):#i', $trimmed) === 1;
+        return preg_match('#^(?:https?|mailto|tel):#i', $url) === 1;
+    }
+
+    /**
+     * Normalize a URL attribute value the way a browser does before it
+     * evaluates the scheme: strip ASCII TAB, LF, CR and any other C0
+     * control character, then trim surrounding whitespace.
+     */
+    private static function normalizeUrl(string $url): string
+    {
+        $stripped = preg_replace('/[\x00-\x1F]/', '', $url) ?? $url;
+
+        return trim($stripped);
     }
 }
