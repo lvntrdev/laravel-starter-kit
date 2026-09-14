@@ -386,7 +386,12 @@ jobs:
           cat response.json
           echo
 
-          if [ "${STATUS}" != "200" ]; then
+          # 202 is the normal answer: update-package ACCEPTS the job and crawls
+          # the tag asynchronously, so it means published-shortly, not refused.
+          # 200 is what the endpoint returns when it answers synchronously.
+          # Treating anything but 200 as a refusal failed the v13.7.4 release
+          # job on a request Packagist had in fact accepted.
+          if [ "${STATUS}" != "200" ] && [ "${STATUS}" != "202" ]; then
             echo "::error::Packagist refused the update (HTTP ${STATUS}) — ${GITHUB_REF_NAME} is tagged but NOT published."
             exit 1
           fi
