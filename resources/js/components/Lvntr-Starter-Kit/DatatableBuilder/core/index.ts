@@ -10,7 +10,9 @@ export type {
     FilterType,
     FilterPlacement,
     ActionSeverity,
+    MessageConfig,
     TagColor,
+    TagSeverity,
     DataTableResponse,
     ServerColumn,
 } from './types';

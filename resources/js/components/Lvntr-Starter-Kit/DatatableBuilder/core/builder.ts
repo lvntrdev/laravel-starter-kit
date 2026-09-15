@@ -15,7 +15,9 @@ import type {
     IdColumnConfig,
     MenuActionConfig,
     MenuButtonConfig,
+    MessageConfig,
     TagColor,
+    TagSeverity,
 } from './types';
 
 export class ColumnBuilder<_T = unknown> {
@@ -389,6 +391,17 @@ export class TableBuilder<T = unknown> {
     /** Toolbar sub-heading shown under the title. */
     subtitle(subtitle: string): this {
         this.config.subtitle = subtitle;
+        return this;
+    }
+
+    /**
+     * Notice strip between the toolbar and the table head.
+     *
+     * @example .message('users.readonly_notice', 'warn')
+     * @example .message({ text: 'users.quota_hit', severity: 'danger', closable: true })
+     */
+    message(message: string | MessageConfig, severity: TagSeverity = 'info'): this {
+        this.config.message = typeof message === 'string' ? { text: message, severity } : { severity, ...message };
         return this;
     }
 

@@ -2,6 +2,17 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-16 — v13.7.5
+
+### Eklendi
+
+- **Tablolar artık arama satırı ile sütun başlıkları arasında bir mesaj şeridi gösterebiliyor** — "bu liste salt okunur" ya da "içe aktarma başarısız" gibi durumlar için tam genişlikte bir uyarı. Ton seçilebiliyor (`info`, `success`, `warn`, `danger`, …), isteğe bağlı ikon ve kapatma butonu eklenebiliyor. Sayfa açıkken değişen bir mesaj için `#message` slot'u devreye giriyor.
+- **Tablo toolbar'ının `#toolbar-end` slot'u artık çalışıyor.** İçine koyduğunuz şey önceden kayboluyordu; şimdi sağda, filtre ve sütun butonlarının ardından görünüyor.
+
+### Değiştirildi
+
+- **Satır içi filtre etiketleri artık arama kutusunun hemen yanında değil, sağdaki filtre ve sütun butonlarının yanında duruyor** — filtre eklendikçe arama kutusu itilmiyor ve arama satırının çevresindeki boşluk dengeli.
+
 ## 2026-09-14 — v13.7.4
 
 ### Düzeltildi

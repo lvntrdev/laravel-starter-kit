@@ -2,6 +2,17 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-16 — v13.7.5
+
+### Added
+
+- **Tables can now show a message bar between the search row and the column headings** — a full-width notice for things like "this list is read-only" or "your import failed". Pick a tone (`info`, `success`, `warn`, `danger`, …), optionally an icon and a dismiss button. For a message that changes while the page is open, a `#message` slot takes over.
+- **The table toolbar's `#toolbar-end` slot works now.** Anything you put in it used to disappear; it now appears on the right, after the filter and columns buttons.
+
+### Changed
+
+- **Inline filter pills now sit with the filter and columns buttons on the right**, instead of directly beside the search box — the search box no longer gets pushed around as filters are added, and the spacing around the search row is even.
+
 ## 2026-09-14 — v13.7.4
 
 ### Fixed

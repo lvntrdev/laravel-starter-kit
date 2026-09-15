@@ -5,6 +5,17 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.5] - 2026-09-16
+
+### Added
+
+- **A datatable can now carry a notice band between its toolbar and the table head.** `DB.table().message('users.readonly_notice', 'warn')` renders a PrimeVue `Message` full-bleed across the card, flush with the table below it. The short form takes a translation key plus a severity; the object form (`.message({ text, severity, icon, closable })`) adds a leading icon and a dismiss button. Severity uses the same vocabulary as tags and row actions — `info` (default), `success`, `warn`, `danger`, `secondary`, `contrast` — and `danger` is mapped onto PrimeVue's `error` at the component boundary, so a config written in kit terms needs no translation by hand. For a notice whose content changes at runtime, the new `#message` slot replaces the configured one.
+- **The datatable's `#toolbar-end` slot now actually renders.** It was declared in the component's slot contract but never emitted, so anything passed to it silently disappeared; it now draws in the toolbar's right-hand group, after the filter and column buttons, and the toolbar itself no longer collapses when `#toolbar-end` is the only thing filling it.
+
+### Changed
+
+- **Inline filter pills moved from beside the search box into the toolbar's right-hand group**, next to the filter and column buttons, so the search box keeps the left edge on its own and the pills wrap with the rest of the controls instead of pushing the search input around. The titled toolbar's second row also picked up a matching bottom padding, which centres the search/filter row between the two hairlines that bracket it.
+
 ## [13.7.4] - 2026-09-14
 
 ### Security

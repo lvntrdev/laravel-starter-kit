@@ -41,7 +41,9 @@
    one spacing step, not two container gaps. The heading's right divider is
    dropped since the search box no longer sits next to the title. */
 .sk-dt-toolbar--titled {
-    @apply px-6 pt-[18px] pb-2.5 sm:gap-y-0;
+    /* Row 2's bottom padding matches the break's sm:mb-3.5 above it, so the
+       search/filter row sits exactly centred between the two hairlines. */
+    @apply px-6 pt-[18px] pb-3.5 sm:gap-y-0;
 }
 
 .sk-dt-toolbar--titled .sk-dt-toolbar__head {
@@ -307,6 +309,8 @@
     @apply flex items-center;
 }
 
+/* Right-hand group: inline filter pills, the filter/columns buttons and the
+   #toolbar-end slot, pushed away from the search box by ml-auto. */
 .sk-dt-toolbar__right {
     @apply flex flex-wrap items-center gap-2.5 sm:ml-auto;
 }
@@ -530,6 +534,16 @@
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ACTIVE FILTER TAGS
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.sk-dt-message {
+    /* Notice band between the toolbar and the table head — full-bleed, flush with
+       the card edges like the table itself, so no gutter and no rounded corners. */
+    @apply m-0;
+}
+
+.sk-dt-message .p-message {
+    @apply m-0 rounded-none border-x-0;
+}
 
 .sk-dt-tags {
     /* Active-filter band — no surrounding frame/fill; just the tag row, with

@@ -74,6 +74,7 @@ Main capabilities:
 - `cardSubtitle(subtitle)`
 - `title(title)` — toolbar heading rendered to the left of the search input
 - `subtitle(subtitle)` — sub-heading shown under the toolbar title
+- `message(text | config, severity?)` — notice strip between the toolbar and the table head
 - `columnToggle(enabled)` — show/hide the column visibility & order menu button (default: `true`)
 - `perPage(count)`
 - `idColumn(config | false)`
@@ -83,6 +84,33 @@ Main capabilities:
 - `addMenuActions(...menuActions)`
 - `menuButton(config)`
 - `create(config)`
+
+## Toolbar Message
+
+A notice strip rendered between the toolbar (search/filters) and the table head.
+
+```ts
+DB.table<UserDTO>()
+    .message('users.readonly_notice', 'warn')
+    // or, with the full config
+    .message({ text: 'users.quota_hit', severity: 'danger', icon: 'pi pi-ban', closable: true })
+```
+
+The text is passed through the translator, like every other builder label. `severity`
+accepts the same vocabulary as tags and actions — `info` (default), `success`, `warn`,
+`danger`, `secondary`, `contrast` — and is mapped onto PrimeVue's `Message` severities
+(`danger` → `error`).
+
+For a message whose content changes at runtime, use the `#message` slot instead; it
+replaces the configured one:
+
+```vue
+<SkDatatable :config="config">
+    <template #message>
+        <Message v-if="importFailed" severity="error" closable>{{ importError }}</Message>
+    </template>
+</SkDatatable>
+```
 
 ## Column Builder
 
@@ -371,6 +399,7 @@ When the backend declares its column list, the response carries a `columns` meta
 
 - `#toolbar-start` — rendered inside the actions group, **to the left of the create button** (e.g. an Export button)
 - `#toolbar` — rendered after the create button (used by the bulk-action toolbar)
+- `#toolbar-end` — rendered on the **right-hand side**, after the inline filter pills and the filter/columns buttons
 
 ```vue
 <SkDatatable :config="tableConfig">

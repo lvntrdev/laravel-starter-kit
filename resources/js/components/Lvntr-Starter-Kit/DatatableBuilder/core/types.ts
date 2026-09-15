@@ -21,6 +21,18 @@ export type ButtonVariant = 'outlined' | 'text';
 
 export type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
 
+/** Notice strip rendered between the toolbar and the table head. */
+export interface MessageConfig {
+    /** Message body. Passed through the translator, like every other builder label. */
+    text: string;
+    /** PrimeVue Message severity. `danger` is accepted and mapped to PrimeVue's `error`. */
+    severity?: TagSeverity;
+    /** Leading icon class, e.g. `pi pi-info-circle`. */
+    icon?: string;
+    /** Render the dismiss button. Default: false. */
+    closable?: boolean;
+}
+
 export type TagColor =
     | 'red'
     | 'orange'
@@ -164,6 +176,8 @@ export interface DataTableConfig<T = unknown> {
     title?: string;
     /** Toolbar sub-heading shown under the title. */
     subtitle?: string;
+    /** Notice strip between the toolbar and the table head. */
+    message?: MessageConfig;
     /** Show the column visibility/order menu button. Default: true. */
     columnToggle: boolean;
     perPage: number;

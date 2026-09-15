@@ -50,3 +50,31 @@ describe('DB.table() — route + columns', () => {
         expect(cfg.columns[1].visible).toBe(false);
     });
 });
+
+describe('DB.table() — .message()', () => {
+    it('defaults a string message to the info severity', () => {
+        const config = DB.table().route('/dt').addColumns(DB.column().key('id')).message('users.notice').build();
+
+        expect(config.message).toEqual({ text: 'users.notice', severity: 'info' });
+    });
+
+    it('takes the severity as the second argument', () => {
+        const config = DB.table()
+            .route('/dt')
+            .addColumns(DB.column().key('id'))
+            .message('users.notice', 'warn')
+            .build();
+
+        expect(config.message?.severity).toBe('warn');
+    });
+
+    it('accepts a full config object, whose own severity wins over the default', () => {
+        const config = DB.table()
+            .route('/dt')
+            .addColumns(DB.column().key('id'))
+            .message({ text: 'users.quota', severity: 'danger', closable: true })
+            .build();
+
+        expect(config.message).toEqual({ text: 'users.quota', severity: 'danger', closable: true });
+    });
+});

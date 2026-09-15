@@ -1208,7 +1208,9 @@
     defineSlots<{
         toolbar?(): unknown;
         'toolbar-start'?(): unknown;
+        'toolbar-end'?(): unknown;
         'bulk-actions'?(): unknown;
+        message?(): unknown;
         [key: `cell-${string}`]: (props: { row: unknown; value: unknown }) => unknown;
     }>();
 
@@ -1235,6 +1237,14 @@
 
     // Toolbar head row: the table's own title, or the page header standing in for it.
     const hasToolbarHead = computed(() => !!props.config.title || !!props.config.subtitle || hostsPageHeader.value);
+
+    // PrimeVue's Message calls the red severity `error`; the builder vocabulary
+    // (tags, actions) calls it `danger` — translate at the boundary so a config
+    // written in kit terms keeps working.
+    const messageSeverity = computed(() => {
+        const severity = props.config.message?.severity ?? 'info';
+        return severity === 'danger' ? 'error' : severity;
+    });
 </script>
 
 <template>
@@ -1255,7 +1265,8 @@
                     hasToolbarHead ||
                     showColumnToggle ||
                     $slots.toolbar ||
-                    $slots['toolbar-start']
+                    $slots['toolbar-start'] ||
+                    $slots['toolbar-end']
                 "
                 class="sk-dt-toolbar"
                 :class="{ 'no-padding': !config.isCard, 'sk-dt-toolbar--titled': hasToolbarHead }"
@@ -1353,78 +1364,6 @@
                     />
                 </div>
 
-                <!-- Inline filter pills — directly after the search box, per design -->
-                <template v-for="filter in inlineFilters" :key="filter.key">
-                    <!-- Select filters render as design-language pills with a custom dropdown -->
-                    <div v-if="filter.type === 'select'" class="sk-dt-pillwrap" @click.stop>
-                        <button
-                            type="button"
-                            class="sk-dt-pill"
-                            :class="{
-                                'sk-dt-pill--open': openFilterKey === filter.key,
-                                'sk-dt-pill--active': isPillActive(filter),
-                            }"
-                            @click="toggleFilterMenu(filter.key, filter, $event.currentTarget as HTMLElement)"
-                        >
-                            <span class="sk-dt-pill__key">{{ resolveFilterLabel(filter) }}:</span>
-                            <span class="sk-dt-pill__val">{{ pillValueLabel(filter) }}</span>
-                            <span v-if="pillCount(filter) !== null" class="sk-dt-pill__count">{{
-                                pillCount(filter)
-                            }}</span>
-                            <i
-                                v-if="isPillActive(filter)"
-                                class="pi pi-times sk-dt-pill__clear"
-                                :aria-label="$t('sk-button.clear_all')"
-                                @click.stop="clearFilter(filter.key)"
-                            />
-                            <i
-                                class="pi pi-chevron-down sk-dt-pill__caret"
-                                :class="{ 'rotate-180': openFilterKey === filter.key }"
-                            />
-                        </button>
-                        <!-- menu is teleported to <body> (see the Teleport at the end of
-                             the toolbar) so a long list escapes the card/scroll clip -->
-                    </div>
-
-                    <!-- Other inline filter types keep their PrimeVue inputs -->
-                    <div v-else class="sk-dt-toolbar__inline-filter">
-                        <!-- Date pickers carry their label via the placeholder; only
-                             select-button needs an external label. -->
-                        <span
-                            v-if="filter.type === 'select-button'"
-                            class="sk-dt-toolbar__inline-filter-label"
-                            >{{ resolveFilterLabel(filter) }}</span
-                        >
-                        <SelectButton
-                            v-if="filter.type === 'select-button'"
-                            v-model="activeFilters[filter.key]"
-                            :options="getFilterOptions(filter)"
-                            option-label="label"
-                            option-value="value"
-                            :allow-empty="true"
-                        />
-                        <DatePicker
-                            v-else-if="filter.type === 'date'"
-                            :model-value="activeFilters[filter.key] as DateFilterValue"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            date-format="dd.mm.yy"
-                            show-button-bar
-                            class="min-w-48"
-                            @update:model-value="(val) => (activeFilters[filter.key] = val as DateFilterValue)"
-                        />
-                        <DatePicker
-                            v-else-if="filter.type === 'daterange'"
-                            :model-value="activeFilters[filter.key] as DaterangeFilterValue"
-                            :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
-                            date-format="dd.mm.yy"
-                            selection-mode="range"
-                            show-button-bar
-                            class="min-w-56"
-                            @update:model-value="(val) => (activeFilters[filter.key] = val as DaterangeFilterValue)"
-                        />
-                    </div>
-                </template>
-
                 <!-- Inline pill dropdown — teleported to <body> as a fixed overlay so a
                      long option list is never clipped by the card / scroll container. -->
                 <Teleport to="body">
@@ -1472,6 +1411,78 @@
 
                 <!-- Right: Filter Popover, Columns, Actions -->
                 <div class="sk-dt-toolbar__right">
+                    <!-- Inline filter pills — right-aligned group, before the filter/columns buttons -->
+                    <template v-for="filter in inlineFilters" :key="filter.key">
+                        <!-- Select filters render as design-language pills with a custom dropdown -->
+                        <div v-if="filter.type === 'select'" class="sk-dt-pillwrap" @click.stop>
+                            <button
+                                type="button"
+                                class="sk-dt-pill"
+                                :class="{
+                                    'sk-dt-pill--open': openFilterKey === filter.key,
+                                    'sk-dt-pill--active': isPillActive(filter),
+                                }"
+                                @click="toggleFilterMenu(filter.key, filter, $event.currentTarget as HTMLElement)"
+                            >
+                                <span class="sk-dt-pill__key">{{ resolveFilterLabel(filter) }}:</span>
+                                <span class="sk-dt-pill__val">{{ pillValueLabel(filter) }}</span>
+                                <span v-if="pillCount(filter) !== null" class="sk-dt-pill__count">{{
+                                    pillCount(filter)
+                                }}</span>
+                                <i
+                                    v-if="isPillActive(filter)"
+                                    class="pi pi-times sk-dt-pill__clear"
+                                    :aria-label="$t('sk-button.clear_all')"
+                                    @click.stop="clearFilter(filter.key)"
+                                />
+                                <i
+                                    class="pi pi-chevron-down sk-dt-pill__caret"
+                                    :class="{ 'rotate-180': openFilterKey === filter.key }"
+                                />
+                            </button>
+                            <!-- menu is teleported to <body> (see the Teleport at the end of
+                                 the toolbar) so a long list escapes the card/scroll clip -->
+                        </div>
+
+                        <!-- Other inline filter types keep their PrimeVue inputs -->
+                        <div v-else class="sk-dt-toolbar__inline-filter">
+                            <!-- Date pickers carry their label via the placeholder; only
+                                 select-button needs an external label. -->
+                            <span
+                                v-if="filter.type === 'select-button'"
+                                class="sk-dt-toolbar__inline-filter-label"
+                                >{{ resolveFilterLabel(filter) }}</span
+                            >
+                            <SelectButton
+                                v-if="filter.type === 'select-button'"
+                                v-model="activeFilters[filter.key]"
+                                :options="getFilterOptions(filter)"
+                                option-label="label"
+                                option-value="value"
+                                :allow-empty="true"
+                            />
+                            <DatePicker
+                                v-else-if="filter.type === 'date'"
+                                :model-value="activeFilters[filter.key] as DateFilterValue"
+                                :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
+                                date-format="dd.mm.yy"
+                                show-button-bar
+                                class="min-w-48"
+                                @update:model-value="(val) => (activeFilters[filter.key] = val as DateFilterValue)"
+                            />
+                            <DatePicker
+                                v-else-if="filter.type === 'daterange'"
+                                :model-value="activeFilters[filter.key] as DaterangeFilterValue"
+                                :placeholder="filter.placeholder ?? resolveFilterLabel(filter)"
+                                date-format="dd.mm.yy"
+                                selection-mode="range"
+                                show-button-bar
+                                class="min-w-56"
+                                @update:model-value="(val) => (activeFilters[filter.key] = val as DaterangeFilterValue)"
+                            />
+                        </div>
+                    </template>
+
                     <!-- Search button (mobile only, hidden on sm+) -->
                     <Button
                         v-if="config.searchable"
@@ -1512,6 +1523,9 @@
                         <i class="pi pi-table" />
                         <span class="sk-dt-colbtn__count">{{ visibleColumnCount }}/{{ allColumns.length }}</span>
                     </button>
+
+                    <!-- Custom slot — right-hand side, after the filter/columns buttons -->
+                    <slot name="toolbar-end" />
 
                     <span
                         v-if="
@@ -1723,6 +1737,21 @@
                 <button class="sk-dt-tags__clear-all" @click="clearAllFilters">
                     {{ $t('sk-button.clear_all') }}
                 </button>
+            </div>
+
+            <!-- Notice strip between the toolbar and the table head. Builder-driven
+                 via .message(), or the #message slot for state that changes at runtime. -->
+            <div v-if="config.message || $slots.message" class="sk-dt-message">
+                <slot name="message">
+                    <Message
+                        v-if="config.message"
+                        :severity="messageSeverity"
+                        :icon="config.message.icon"
+                        :closable="config.message.closable ?? false"
+                    >
+                        {{ $t(config.message.text) }}
+                    </Message>
+                </slot>
             </div>
 
             <!-- Table -->

@@ -74,6 +74,7 @@ Temel yetenekler:
 - `cardSubtitle(subtitle)`
 - `title(title)` — arama kutusunun solunda gösterilen toolbar başlığı
 - `subtitle(subtitle)` — toolbar başlığının altındaki alt başlık
+- `message(text | config, severity?)` — toolbar ile tablo başlığı arasındaki bilgi şeridi
 - `columnToggle(enabled)` — sütun görünürlük/sıralama menü butonunu aç/kapat (varsayılan: `true`)
 - `perPage(count)`
 - `idColumn(config | false)`
@@ -83,6 +84,32 @@ Temel yetenekler:
 - `addMenuActions(...menuActions)`
 - `menuButton(config)`
 - `create(config)`
+
+## Toolbar Mesajı
+
+Toolbar (arama/filtreler) ile tablo başlık satırı arasında gösterilen bilgi şeridi.
+
+```ts
+DB.table<UserDTO>()
+    .message('users.readonly_notice', 'warn')
+    // ya da tam config ile
+    .message({ text: 'users.quota_hit', severity: 'danger', icon: 'pi pi-ban', closable: true })
+```
+
+Metin, diğer builder etiketleri gibi çeviriden geçer. `severity`, tag ve action'lardaki
+sözlüğün aynısını kabul eder — `info` (varsayılan), `success`, `warn`, `danger`,
+`secondary`, `contrast` — ve PrimeVue `Message` severity'lerine eşlenir (`danger` → `error`).
+
+İçeriği çalışma anında değişen bir mesaj için `#message` slot'unu kullanın; config ile
+verileni geçersiz kılar:
+
+```vue
+<SkDatatable :config="config">
+    <template #message>
+        <Message v-if="importFailed" severity="error" closable>{{ importError }}</Message>
+    </template>
+</SkDatatable>
+```
 
 ## Column Builder
 
@@ -371,6 +398,7 @@ Backend sütun listesini tanımladığında response `columns` meta dizisi taş�
 
 - `#toolbar-start` — aksiyon grubunun içinde, **create butonunun solunda** render edilir (ör. bir Dışa Aktar butonu)
 - `#toolbar` — create butonundan sonra render edilir (bulk-action toolbar'ı burayı kullanır)
+- `#toolbar-end` — **sağ tarafta**, satır içi filtre pill'lerinden ve filtre/kolon butonlarından sonra render edilir
 
 ```vue
 <SkDatatable :config="tableConfig">
