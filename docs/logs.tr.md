@@ -44,7 +44,7 @@ Tek dosya için filtre paneli + sayfalı görüntüleyici. Filtreler:
 - `from`, `to` — ISO tarih aralığı
 - `keyword` — mesaj + stack trace içinde case-insensitive substring araması
 
-Filtre değişiklikleri `useApi` üzerinden `logs.entries` çağrısı yapar, listeyi yeniler ve cursor'ı sıfırlar. **Daha fazla yükle**, önceki yanıttaki `next_cursor` ile devam eder. `eof` flag'i true ise butonu kapatır.
+Kayıtlar **en yeniden eskiye** listelenir. Filtre değişiklikleri `useApi` üzerinden `logs.entries` çağrısı yapar, listeyi yeniler ve cursor'ı sıfırlar. **Daha fazla yükle**, önceki yanıttaki `next_cursor` ile bir sonraki (daha eski) sayfayı listenin altına ekler. `eof` flag'i true ise butonu kapatır.
 
 Her kayıt level chip + timestamp + mesajın baş kısmı olarak çökertilmiş gelir. Açıldığında tam mesaj, JSON pretty-print edilmiş `context` (varsa) ve stack trace görünür.
 
@@ -76,7 +76,7 @@ src/Domain/Logs/   (Lvntr\StarterKit\Domain\Logs\)
 
 ### Streaming Kayıt Okuyucu
 
-`LogEntryQuery::paginate()` dosyayı `fopen('rb')` ile açar ve satır başına 64KB ile sınırlı `fgets()` döngüsünü kullanır. Cursor, bir sonraki kayıt başlığının başladığı byte offset'idir; sayfanın devamına geri dönmek tek `fseek` ile olur. Bellek kullanımı dosya boyutundan bağımsız olarak sabit kalır.
+`LogEntryQuery::paginate()` dosyayı `fopen('rb')` ile açar ve satır başına 64KB ile sınırlı `fgets()` döngüsünü kullanır. Log dosyası sonundan büyüdüğü için sayfa **geriye doğru** kurulur: pencere `cursor` offset'inde biter (hariç) ve dosya başına doğru 64KB'lık adımlarla, istek başına 2MB tavanına kadar genişler. Pencere sonra ileri yönde parse edilir (kayıtlar yalnızca yazım sırasına göre okunabilir) ve ters çevrilerek döndürülür. Cursor, sayfanın EN ESKİ kaydının başladığı byte offset'idir; bir sonraki sayfa tek `fseek` ile devam eder. Bellek kullanımı dosya boyutundan bağımsız olarak sabit kalır.
 
 Eşleşmeyen satırlar konumlarına göre işlenir:
 

@@ -5,6 +5,12 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.7.6] - 2026-09-22
+
+### Changed
+
+- **The log viewer now lists a file's entries newest first.** `LogEntryQuery::paginate()` used to stream the file forward from byte 0, so the first page of `/logs/{file}` was the oldest part of the day — on an active log the entry you came to read sat hundreds of "load more" clicks away. The page is now built backwards: the window ends at `cursor` (exclusive) and expands towards the start of the file in 64KB steps until it holds a full page, capped at 2MB per request; it is parsed forward (entries can only be read in write order) and emitted reversed. `next_cursor` changed meaning with it — it is now the byte offset where the page's OLDEST entry begins, and **load more** appends the next older page below. Multi-line stacks stay attached across window boundaries, and pre-header content at the head of the file still surfaces as a raw entry.
+
 ## [13.7.5] - 2026-09-16
 
 ### Added

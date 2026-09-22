@@ -44,7 +44,7 @@ Filter panel + paginated viewer for a single file. Filters:
 - `from`, `to` — ISO date range
 - `keyword` — case-insensitive substring search across message + stack trace
 
-Filter changes call `logs.entries` via `useApi`, replace the list, and reset the cursor. **Load more** uses `next_cursor` from the previous response. EOF flag short-circuits the button.
+Entries are listed **newest first**. Filter changes call `logs.entries` via `useApi`, replace the list, and reset the cursor. **Load more** uses `next_cursor` from the previous response to append the next older page. EOF flag short-circuits the button.
 
 Each entry collapses to a level chip + timestamp + first part of the message. Expanding shows the full message, JSON-pretty-printed `context` (if any), and the stack trace.
 
@@ -76,7 +76,7 @@ src/Domain/Logs/   (Lvntr\StarterKit\Domain\Logs\)
 
 ### Streaming entry reader
 
-`LogEntryQuery::paginate()` opens the file with `fopen('rb')` and walks lines with `fgets()` capped at 64KB per line. The cursor is the byte offset where the next entry header begins, so resuming a page is a single `fseek`. Memory stays bounded regardless of file size.
+`LogEntryQuery::paginate()` opens the file with `fopen('rb')` and walks lines with `fgets()` capped at 64KB per line. Because a log file grows at its end, a page is built **backwards**: the window ends at `cursor` (exclusive) and expands towards the start of the file in 64KB steps until it holds a full page, capped at 2MB per request. The window is then parsed forward (entries can only be read in write order) and emitted reversed. The cursor is the byte offset where the page's OLDEST entry begins, so the next page resumes with a single `fseek`. Memory stays bounded regardless of file size.
 
 Unmatched lines are handled by position:
 

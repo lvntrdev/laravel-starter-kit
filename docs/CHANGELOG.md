@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-22 — v13.7.6
+
+### Changed
+
+- **The log viewer now shows the newest entries at the top.** Opening a day's log file used to start you at the oldest entries of the day, so reaching the error you actually came for took click after click on "load more". The list now runs newest to oldest, and **load more** appends the next older page below it. Multi-line stack traces and non-Laravel-format lines keep showing up as before.
+
 ## 2026-09-16 — v13.7.5
 
 ### Added

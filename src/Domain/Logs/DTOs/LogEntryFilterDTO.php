@@ -7,7 +7,8 @@ use Lvntr\StarterKit\Domain\Shared\DTOs\BaseDTO;
 
 /**
  * Filter / pagination payload for LogEntryQuery.
- * `cursor` is the byte offset returned by the previous page's `next_cursor`.
+ * Entries are returned newest first; `cursor` is the byte offset returned by
+ * the previous page's `next_cursor` (where that page's oldest entry began).
  */
 readonly class LogEntryFilterDTO extends BaseDTO
 {

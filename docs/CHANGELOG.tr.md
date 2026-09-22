@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-22 — v13.7.6
+
+### Değiştirildi
+
+- **Log görüntüleyici artık en yeni kayıtları en üstte gösteriyor.** Bir günün log dosyası açıldığında ilk sayfa günün en eski kayıtlarıyla geliyordu; aradığınız son hataya ulaşmak için defalarca "daha fazla yükle" demek gerekiyordu. Artık liste en yeniden eskiye geliyor, **daha fazla yükle** bir sonraki (daha eski) sayfayı listenin altına ekliyor. Çok satırlı hata izleri ve Laravel formatı dışındaki satırlar eskisi gibi görünmeye devam ediyor.
+
 ## 2026-09-16 — v13.7.5
 
 ### Eklendi
