@@ -4104,7 +4104,8 @@ class InstallCommand extends Command
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Inject DigitalOcean Spaces disk into config/filesystems.php if not already present.
+     * Inject the kit's S3-compatible disks (DigitalOcean Spaces, Hetzner Object
+     * Storage) into config/filesystems.php when not already present.
      */
     private function injectFilesystemsConfig(): void
     {
@@ -4114,7 +4115,10 @@ class InstallCommand extends Command
             return;
         }
 
-        $this->modifyPhpFileAst($configPath, function (array $stmts): bool {
+        // disk name => env prefix
+        $disks = ['do' => 'DO_SPACES', 'hetzner' => 'HETZNER_S3'];
+
+        $this->modifyPhpFileAst($configPath, function (array $stmts) use ($disks): bool {
             $root = $this->findConfigRootArray($stmts);
 
             if ($root === null) {
@@ -4127,45 +4131,53 @@ class InstallCommand extends Command
                 return false;
             }
 
-            // Idempotent — skip if the 'do' disk is already present.
-            if ($this->configArrayHasKey($disksItem->value, 'do')) {
-                return false;
+            $changed = false;
+
+            foreach ($disks as $name => $env) {
+                // Idempotent — skip a disk that is already present.
+                if ($this->configArrayHasKey($disksItem->value, $name)) {
+                    continue;
+                }
+
+                $disksItem->value->items[] = new Node\ArrayItem(
+                    new Node\Expr\Array_([
+                        new Node\ArrayItem(new Node\Scalar\String_('s3'), new Node\Scalar\String_('driver')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_KEY"), new Node\Scalar\String_('key')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_SECRET"), new Node\Scalar\String_('secret')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_REGION"), new Node\Scalar\String_('region')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_BUCKET"), new Node\Scalar\String_('bucket')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_ENDPOINT"), new Node\Scalar\String_('endpoint')),
+                        new Node\ArrayItem($this->envCallNode("{$env}_URL"), new Node\Scalar\String_('url')),
+                        new Node\ArrayItem(new Node\Scalar\String_('private'), new Node\Scalar\String_('visibility')),
+                        new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('throw')),
+                        new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('report')),
+                    ]),
+                    new Node\Scalar\String_($name),
+                );
+
+                $changed = true;
             }
 
-            $disksItem->value->items[] = new Node\ArrayItem(
-                new Node\Expr\Array_([
-                    new Node\ArrayItem(new Node\Scalar\String_('s3'), new Node\Scalar\String_('driver')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_KEY'), new Node\Scalar\String_('key')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_SECRET'), new Node\Scalar\String_('secret')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_REGION'), new Node\Scalar\String_('region')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_BUCKET'), new Node\Scalar\String_('bucket')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_ENDPOINT'), new Node\Scalar\String_('endpoint')),
-                    new Node\ArrayItem($this->envCallNode('DO_SPACES_URL'), new Node\Scalar\String_('url')),
-                    new Node\ArrayItem(new Node\Scalar\String_('private'), new Node\Scalar\String_('visibility')),
-                    new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('throw')),
-                    new Node\ArrayItem(new Node\Expr\ConstFetch(new Node\Name('false')), new Node\Scalar\String_('report')),
-                ]),
-                new Node\Scalar\String_('do'),
-            );
-
-            return true;
+            return $changed;
         });
 
-        // Also set in runtime config so it's available immediately.
-        config([
-            'filesystems.disks.do' => [
-                'driver' => 's3',
-                'key' => env('DO_SPACES_KEY'),
-                'secret' => env('DO_SPACES_SECRET'),
-                'region' => env('DO_SPACES_REGION'),
-                'bucket' => env('DO_SPACES_BUCKET'),
-                'endpoint' => env('DO_SPACES_ENDPOINT'),
-                'url' => env('DO_SPACES_URL'),
-                'visibility' => 'private',
-                'throw' => false,
-                'report' => false,
-            ],
-        ]);
+        // Also set in runtime config so they're available immediately.
+        foreach ($disks as $name => $env) {
+            config([
+                "filesystems.disks.{$name}" => [
+                    'driver' => 's3',
+                    'key' => env("{$env}_KEY"),
+                    'secret' => env("{$env}_SECRET"),
+                    'region' => env("{$env}_REGION"),
+                    'bucket' => env("{$env}_BUCKET"),
+                    'endpoint' => env("{$env}_ENDPOINT"),
+                    'url' => env("{$env}_URL"),
+                    'visibility' => 'private',
+                    'throw' => false,
+                    'report' => false,
+                ],
+            ]);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════

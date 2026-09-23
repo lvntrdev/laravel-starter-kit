@@ -6,7 +6,7 @@ Starter kit veritabanındaki küçük bir hassas veri kümesini şifreler. Bu d�
 
 | Veri | Nerede | Kullanılan anahtar |
 | --- | --- | --- |
-| Hassas ayar değerleri (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) | `settings.value` | `DataCrypt` (adanmış anahtar) |
+| Hassas ayar değerleri (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `storage.hetzner_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) | `settings.value` | `DataCrypt` (adanmış anahtar) |
 | İki faktörlü doğrulama sırrı ve kurtarma kodları | `users.two_factor_secret`, `users.two_factor_recovery_codes` | `DataCrypt` (adanmış anahtar) |
 | Session'lar, imzalı URL'ler, cookie'ler ve hâlâ `Crypt` facade'ını çağıran uygulama kodu | — | `APP_KEY` (değişmedi) |
 

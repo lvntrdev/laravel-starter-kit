@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-23 — v13.8.0
+
+### Added
+
+- **Hetzner Object Storage and Amazon S3 can now be chosen in Settings → Storage.** Next to Local and DigitalOcean Spaces, the storage driver picker now offers Hetzner (with a Falkenstein / Nuremberg / Helsinki region picker) and Amazon S3. Existing installs get the new `hetzner` disk added to `config/filesystems.php` by `php artisan sk:update`. The Hetzner secret key is stored encrypted, like the other storage secrets. You no longer type `https://` for the endpoint or URL, choosing a region fills in the endpoint, entering a bucket name fills in the URL, and the region lists are searchable.
+
+### Security
+
+- **Secret settings stay encrypted even if your `config/settings.php` is older than the kit.** A newly added secret setting used to be saved unencrypted when the app's published settings config did not list it yet; the kit's built-in list now always applies.
+
 ## 2026-09-22 — v13.7.6
 
 ### Changed

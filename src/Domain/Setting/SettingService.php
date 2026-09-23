@@ -55,14 +55,20 @@ class SettingService
         // added there without being added here, consumers without the
         // published config write that secret to the DB as PLAINTEXT.
         // Parity is enforced by tests/Feature/Settings/SensitiveKeysFallbackTest.php.
-        $this->sensitiveKeys = config('settings.sensitive_keys', [
+        //
+        // Merged (not replaced) with the app's list: a config/settings.php
+        // published before a new secret key shipped would otherwise shadow it
+        // and that secret would be written as plaintext.
+        $this->sensitiveKeys = array_values(array_unique([
+            ...(array) config('settings.sensitive_keys', []),
             'mail.password',
             'storage.spaces_secret',
             'storage.aws_secret',
+            'storage.hetzner_secret',
             'turnstile.secret_key',
             'postman.api_key',
             'apidog.access_token',
-        ]);
+        ]));
     }
 
     /**

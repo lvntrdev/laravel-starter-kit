@@ -90,6 +90,13 @@
                 aws_bucket: string | null;
                 aws_url: string | null;
                 aws_endpoint: string | null;
+                hetzner_key: string | null;
+                hetzner_secret: null;
+                hetzner_secret_is_set: boolean;
+                hetzner_region: string | null;
+                hetzner_bucket: string | null;
+                hetzner_endpoint: string | null;
+                hetzner_url: string | null;
             };
             file_manager: {
                 max_size_mb: number;

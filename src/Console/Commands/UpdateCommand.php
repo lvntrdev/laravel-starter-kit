@@ -1696,7 +1696,8 @@ class UpdateCommand extends Command
     }
 
     /**
-     * Inject DigitalOcean Spaces disk into config/filesystems.php if not already present.
+     * Inject the kit's S3-compatible disks (DigitalOcean Spaces, Hetzner Object
+     * Storage) into config/filesystems.php when not already present.
      */
     private function injectFilesystemsConfig(): void
     {
@@ -1706,45 +1707,48 @@ class UpdateCommand extends Command
             return;
         }
 
-        $content = $this->files->get($configPath);
+        // disk name => env prefix
+        foreach (['do' => 'DO_SPACES', 'hetzner' => 'HETZNER_S3'] as $name => $env) {
+            $content = $this->files->get($configPath);
 
-        // Check if 'do' disk is already inside the 'disks' section
-        $disksPos = strpos($content, "'disks'");
-        if ($disksPos === false) {
-            return;
-        }
+            // Check if the disk is already inside the 'disks' section
+            $disksPos = strpos($content, "'disks'");
+            if ($disksPos === false) {
+                return;
+            }
 
-        $disksClosingPos = strpos($content, "\n    ],", $disksPos);
-        if ($disksClosingPos === false) {
-            return;
-        }
+            $disksClosingPos = strpos($content, "\n    ],", $disksPos);
+            if ($disksClosingPos === false) {
+                return;
+            }
 
-        $disksSection = substr($content, $disksPos, $disksClosingPos - $disksPos);
-        if (str_contains($disksSection, "'do'")) {
-            return;
-        }
+            $disksSection = substr($content, $disksPos, $disksClosingPos - $disksPos);
+            if (str_contains($disksSection, "'{$name}'")) {
+                continue;
+            }
 
-        $diskConfig = <<<'PHP'
+            $diskConfig = <<<PHP
 
-        'do' => [
+        '{$name}' => [
             'driver' => 's3',
-            'key' => env('DO_SPACES_KEY'),
-            'secret' => env('DO_SPACES_SECRET'),
-            'region' => env('DO_SPACES_REGION'),
-            'bucket' => env('DO_SPACES_BUCKET'),
-            'endpoint' => env('DO_SPACES_ENDPOINT'),
-            'url' => env('DO_SPACES_URL'),
+            'key' => env('{$env}_KEY'),
+            'secret' => env('{$env}_SECRET'),
+            'region' => env('{$env}_REGION'),
+            'bucket' => env('{$env}_BUCKET'),
+            'endpoint' => env('{$env}_ENDPOINT'),
+            'url' => env('{$env}_URL'),
             'visibility' => 'private',
             'throw' => false,
             'report' => false,
         ],
 PHP;
 
-        $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen('    ],'));
+            $content = substr_replace($content, $diskConfig."\n\n    ],", $disksClosingPos + 1, strlen('    ],'));
 
-        $this->files->put($configPath, $content);
+            $this->files->put($configPath, $content);
 
-        $this->updated[] = 'config/filesystems.php (injected DO Spaces disk)';
+            $this->updated[] = "config/filesystems.php (injected '{$name}' disk)";
+        }
     }
 
     /**

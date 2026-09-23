@@ -57,7 +57,7 @@ Yalnızca her iki komut da geçtikten ve noktasal kontrol başarılı olduktan s
 
 - **Bu kitteki hiçbir komut o veriyi kurtaramaz.** `encryption:health` `unreadable` veya `key-error` raporlar ve öyle kalır; bir onarım yolu yoktur.
 - **Kurtarılamayan şeyler:**
-  - Kayıp anahtar altında şifrelenmiş her hassas ayar (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) — hedef sunucu diğer açılardan sağlıklı hale geldikten sonra Settings ekranından **elle yeniden girilmelidir**.
+  - Kayıp anahtar altında şifrelenmiş her hassas ayar (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `storage.hetzner_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) — hedef sunucu diğer açılardan sağlıklı hale geldikten sonra Settings ekranından **elle yeniden girilmelidir**.
   - Kayıp anahtar altında şifrelenmiş her kullanıcının 2FA sırrı ve kurtarma kodları — etkilenen her kullanıcı **iki faktörlü doğrulamayı kapatıp yeniden kaydolmalıdır**. Sır çözülemediği için mevcut doğrulama akışı üzerinden kendi kendine kurtaramazlar.
 - **Etkilenmeyenler:** hâlâ elinizde olan bir anahtar altında şifrelenmiş her şey (örn. yalnızca `DATA_ENCRYPTION_PREVIOUS_KEYS` kaybolduysa ama mevcut birincil anahtar doğru taşındıysa, yalnızca hâlâ eski anahtarda kalan satırlar etkilenir — tam olarak hangileri olduğunu görmek için `encryption:health` çalıştırın).
 - Bunu "hatayı yok etmek için" `DATA_ENCRYPTION_PREVIOUS_KEYS`'i temizleyerek veya `APP_KEY`/`DATA_ENCRYPTION_KEY`'i yeniden üreterek atlatmaya çalışmayın — bu veriyi geri getirmez ve gerçek anahtarı daha sonra bulma şansını da ortadan kaldırır.

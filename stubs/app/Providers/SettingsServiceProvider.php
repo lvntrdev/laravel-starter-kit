@@ -327,6 +327,13 @@ class SettingsServiceProvider extends ServiceProvider
             if ($storage['aws_endpoint'] ?? null) {
                 config(['filesystems.disks.s3.endpoint' => $storage['aws_endpoint']]);
             }
+
+            // Hetzner Object Storage
+            foreach (['key', 'secret', 'region', 'bucket', 'endpoint', 'url'] as $field) {
+                if ($storage["hetzner_{$field}"] ?? null) {
+                    config(["filesystems.disks.hetzner.{$field}" => $storage["hetzner_{$field}"]]);
+                }
+            }
         }
 
         // File Manager — push DB-stored upload constraints into the package config

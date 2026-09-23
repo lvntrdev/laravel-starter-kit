@@ -6,7 +6,7 @@ The starter kit encrypts a small set of sensitive database values. This document
 
 | Data | Where | Key used |
 | --- | --- | --- |
-| Sensitive settings values (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) | `settings.value` | `DataCrypt` (dedicated key) |
+| Sensitive settings values (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `storage.hetzner_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) | `settings.value` | `DataCrypt` (dedicated key) |
 | Two-factor secret and recovery codes | `users.two_factor_secret`, `users.two_factor_recovery_codes` | `DataCrypt` (dedicated key) |
 | Sessions, signed URLs, cookies, and any app code still calling the `Crypt` facade | — | `APP_KEY` (unchanged) |
 

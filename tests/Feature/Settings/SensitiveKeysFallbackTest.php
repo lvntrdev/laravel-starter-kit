@@ -83,6 +83,7 @@ it('encrypts sensitive setting writes via the fallback when config is absent', f
     'mail.password',
     'storage.spaces_secret',
     'storage.aws_secret',
+    'storage.hetzner_secret',
     'turnstile.secret_key',
     'postman.api_key',
     'apidog.access_token',
@@ -99,4 +100,19 @@ it('stores non-sensitive settings as plaintext with encrypted=false', function (
 
     expect($row->encrypted)->toBeFalse()
         ->and($row->value)->toBe('Starter Kit');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 4. Eski publish edilmiş config yeni secret key'i gölgelemez
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('still encrypts a kit secret missing from an outdated published config', function (): void {
+    config(['settings.sensitive_keys' => ['mail.password']]);
+
+    app(SettingService::class)->setValue('storage.hetzner_secret', 'hetzner-plain');
+
+    $row = TestSetting::query()->where('group', 'storage')->where('key', 'hetzner_secret')->firstOrFail();
+
+    expect($row->encrypted)->toBeTrue()
+        ->and($row->value)->not->toContain('hetzner-plain');
 });

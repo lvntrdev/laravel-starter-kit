@@ -261,11 +261,12 @@ class SettingsDefaultsQuery
         $stored = Setting::getGroup('storage');
         $spacesSecret = $stored['spaces_secret'] ?? config('filesystems.disks.do.secret');
         $awsSecret = $stored['aws_secret'] ?? config('filesystems.disks.s3.secret');
+        $hetznerSecret = $stored['hetzner_secret'] ?? config('filesystems.disks.hetzner.secret');
 
         return [
             'media_disk' => $stored['media_disk'] ?? config('media-library.disk_name'),
             'spaces_key' => $stored['spaces_key'] ?? config('filesystems.disks.do.key'),
-            // Never expose S3/Spaces secrets; only tell the UI whether one exists.
+            // Never expose S3/Spaces/Hetzner secrets; only tell the UI whether one exists.
             'spaces_secret' => null,
             'spaces_secret_is_set' => $this->isFilled($spacesSecret),
             'spaces_region' => $stored['spaces_region'] ?? config('filesystems.disks.do.region'),
@@ -279,6 +280,13 @@ class SettingsDefaultsQuery
             'aws_bucket' => $stored['aws_bucket'] ?? config('filesystems.disks.s3.bucket'),
             'aws_url' => $stored['aws_url'] ?? config('filesystems.disks.s3.url'),
             'aws_endpoint' => $stored['aws_endpoint'] ?? config('filesystems.disks.s3.endpoint'),
+            'hetzner_key' => $stored['hetzner_key'] ?? config('filesystems.disks.hetzner.key'),
+            'hetzner_secret' => null,
+            'hetzner_secret_is_set' => $this->isFilled($hetznerSecret),
+            'hetzner_region' => $stored['hetzner_region'] ?? config('filesystems.disks.hetzner.region'),
+            'hetzner_bucket' => $stored['hetzner_bucket'] ?? config('filesystems.disks.hetzner.bucket'),
+            'hetzner_endpoint' => $stored['hetzner_endpoint'] ?? config('filesystems.disks.hetzner.endpoint'),
+            'hetzner_url' => $stored['hetzner_url'] ?? config('filesystems.disks.hetzner.url'),
         ];
     }
 

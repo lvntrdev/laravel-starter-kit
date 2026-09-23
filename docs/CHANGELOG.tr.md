@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-23 — v13.8.0
+
+### Eklendi
+
+- **Ayarlar → Depolama ekranında artık Hetzner Object Storage ve Amazon S3 seçilebiliyor.** Yerel disk ve DigitalOcean Spaces'in yanında depolama sürücüsü seçicisi artık Hetzner (Falkenstein / Nürnberg / Helsinki bölge seçimiyle) ve Amazon S3 seçeneklerini de sunuyor. Mevcut kurulumlarda yeni `hetzner` diski `php artisan sk:update` ile `config/filesystems.php` dosyasına eklenir. Hetzner gizli anahtarı, diğer depolama anahtarları gibi şifreli saklanır. Uç nokta ve URL için artık `https://` yazmanız gerekmiyor; bölge seçince uç nokta, bucket adı girince URL otomatik doluyor, bölge listelerinde arama yapılabiliyor.
+
+### Güvenlik
+
+- **`config/settings.php` dosyanız kit'ten eski olsa bile gizli ayarlar şifreli kalıyor.** Yeni eklenen bir gizli ayar, uygulamanın yayınlanmış settings config'inde henüz listelenmiyorsa şifrelenmeden kaydediliyordu; kit'in yerleşik listesi artık her zaman uygulanıyor.
+
 ## 2026-09-22 — v13.7.6
 
 ### Değiştirildi

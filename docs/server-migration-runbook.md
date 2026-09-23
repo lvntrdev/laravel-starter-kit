@@ -57,7 +57,7 @@ If `.env` was not carried correctly and the key that encrypted existing data (`A
 
 - **No command in this kit can recover that data.** `encryption:health` will report `unreadable` or `key-error` and stay that way; there is no repair path.
 - **What is unrecoverable:**
-  - Every sensitive setting encrypted under the lost key (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) — these must be **re-entered by hand** in the Settings screen once the target server is otherwise healthy.
+  - Every sensitive setting encrypted under the lost key (`mail.password`, `storage.spaces_secret`, `storage.aws_secret`, `storage.hetzner_secret`, `turnstile.secret_key`, `postman.api_key`, `apidog.access_token`) — these must be **re-entered by hand** in the Settings screen once the target server is otherwise healthy.
   - Every user's 2FA secret and recovery codes encrypted under the lost key — each affected user must **disable and re-enrol two-factor authentication**. They cannot self-recover through the existing challenge flow if the secret itself cannot be decrypted.
 - **What is not affected:** anything encrypted under a key you *do* still have (e.g. if only `DATA_ENCRYPTION_PREVIOUS_KEYS` was lost but the current primary key was carried correctly, only rows still on the old key are affected — run `encryption:health` to see exactly which).
 - Do not attempt to work around this by clearing `DATA_ENCRYPTION_PREVIOUS_KEYS` or regenerating `APP_KEY`/`DATA_ENCRYPTION_KEY` "to make the error go away" — that does not restore the data and forecloses any chance of finding the real key later.

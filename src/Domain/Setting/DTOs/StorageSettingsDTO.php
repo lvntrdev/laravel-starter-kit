@@ -23,6 +23,12 @@ readonly class StorageSettingsDTO extends BaseDTO
         public ?string $awsBucket,
         public ?string $awsUrl,
         public ?string $awsEndpoint,
+        public ?string $hetznerKey = null,
+        public ?string $hetznerSecret = null,
+        public ?string $hetznerRegion = null,
+        public ?string $hetznerBucket = null,
+        public ?string $hetznerEndpoint = null,
+        public ?string $hetznerUrl = null,
     ) {}
 
     /**
@@ -44,6 +50,12 @@ readonly class StorageSettingsDTO extends BaseDTO
             awsBucket: $data['aws_bucket'] ?? null,
             awsUrl: $data['aws_url'] ?? null,
             awsEndpoint: $data['aws_endpoint'] ?? null,
+            hetznerKey: $data['hetzner_key'] ?? null,
+            hetznerSecret: $data['hetzner_secret'] ?? null,
+            hetznerRegion: $data['hetzner_region'] ?? null,
+            hetznerBucket: $data['hetzner_bucket'] ?? null,
+            hetznerEndpoint: $data['hetzner_endpoint'] ?? null,
+            hetznerUrl: $data['hetzner_url'] ?? null,
         );
     }
 
@@ -64,6 +76,11 @@ readonly class StorageSettingsDTO extends BaseDTO
             'aws_bucket' => $this->awsBucket,
             'aws_url' => $this->awsUrl,
             'aws_endpoint' => $this->awsEndpoint,
+            'hetzner_key' => $this->hetznerKey,
+            'hetzner_region' => $this->hetznerRegion,
+            'hetzner_bucket' => $this->hetznerBucket,
+            'hetzner_endpoint' => $this->hetznerEndpoint,
+            'hetzner_url' => $this->hetznerUrl,
         ];
 
         // Omit secrets when blank so the existing stored values are preserved.
@@ -73,6 +90,10 @@ readonly class StorageSettingsDTO extends BaseDTO
 
         if ($this->awsSecret !== null && $this->awsSecret !== '') {
             $data['aws_secret'] = $this->awsSecret;
+        }
+
+        if ($this->hetznerSecret !== null && $this->hetznerSecret !== '') {
+            $data['hetzner_secret'] = $this->hetznerSecret;
         }
 
         return $data;

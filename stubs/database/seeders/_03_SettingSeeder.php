@@ -69,6 +69,12 @@ class _03_SettingSeeder extends Seeder
                 'aws_bucket' => config('filesystems.disks.s3.bucket'),
                 'aws_url' => config('filesystems.disks.s3.url'),
                 'aws_endpoint' => config('filesystems.disks.s3.endpoint'),
+                'hetzner_key' => config('filesystems.disks.hetzner.key'),
+                'hetzner_secret' => config('filesystems.disks.hetzner.secret'),
+                'hetzner_region' => config('filesystems.disks.hetzner.region'),
+                'hetzner_bucket' => config('filesystems.disks.hetzner.bucket'),
+                'hetzner_endpoint' => config('filesystems.disks.hetzner.endpoint'),
+                'hetzner_url' => config('filesystems.disks.hetzner.url'),
             ],
             'file_manager' => [
                 'max_size_mb' => '10',

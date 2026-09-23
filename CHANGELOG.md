@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.0] - 2026-09-23
+
+### Added
+
+- **Storage settings now offer Hetzner Object Storage and Amazon S3 next to DigitalOcean Spaces.** The driver picker lists four cards (Local, DO Spaces, Hetzner, Amazon S3). Hetzner is a new S3-compatible `hetzner` disk — `sk:install` and `sk:update` inject it into `config/filesystems.php` (env prefix `HETZNER_S3_*`) exactly like the `do` disk, and the admin form stores `storage.hetzner_*` (region picker for `fsn1` / `nbg1` / `hel1`, endpoint `https://<region>.your-objectstorage.com`). Amazon S3 uses the stock `s3` disk; its `storage.aws_*` settings were already persisted but hidden and are now editable. `storage.hetzner_secret` is encrypted at rest like the other storage secrets. Across all three providers the endpoint and public-URL inputs sit behind a fixed `https://` addon (`UpdateStorageSettingsRequest::prepareForValidation()` adds the scheme to a bare host), picking a region fills the endpoint, a region plus a bucket name fills the public URL (virtual-hosted style), and the region selects are searchable.
+
+### Security
+
+- **A kit secret key is no longer written as plaintext when the app's published `config/settings.php` predates it.** `SettingService` used the app's `sensitive_keys` list *instead of* its built-in list, so a config published before a new secret shipped silently disabled encryption for that key. The two lists are now merged.
+
 ## [13.7.6] - 2026-09-22
 
 ### Changed
