@@ -49,9 +49,9 @@ class UserSessionsQuery
         return match (true) {
             str_contains($userAgent, 'Edg') => 'Edge',
             str_contains($userAgent, 'OPR') || str_contains($userAgent, 'Opera') => 'Opera',
-            str_contains($userAgent, 'Chrome') && ! str_contains($userAgent, 'Edg') => 'Chrome',
+            str_contains($userAgent, 'Chrome') => 'Chrome',
             str_contains($userAgent, 'Firefox') => 'Firefox',
-            str_contains($userAgent, 'Safari') && ! str_contains($userAgent, 'Chrome') => 'Safari',
+            str_contains($userAgent, 'Safari') => 'Safari',
             str_contains($userAgent, 'MSIE') || str_contains($userAgent, 'Trident') => 'Internet Explorer',
             default => 'Unknown',
         };

@@ -255,7 +255,7 @@ class UpgradeCommand extends Command
      */
     private function assertPhpVersion(): bool
     {
-        if (PHP_VERSION_ID >= 80400) {
+        if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
             $this->components->twoColumnDetail('PHP version', '<fg=green>'.PHP_VERSION.'</>');
 
             return true;
