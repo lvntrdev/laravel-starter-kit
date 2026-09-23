@@ -8,8 +8,11 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 - **Ayarlar → Depolama ekranında artık Hetzner Object Storage ve Amazon S3 seçilebiliyor.** Yerel disk ve DigitalOcean Spaces'in yanında depolama sürücüsü seçicisi artık Hetzner (Falkenstein / Nürnberg / Helsinki bölge seçimiyle) ve Amazon S3 seçeneklerini de sunuyor. Mevcut kurulumlarda yeni `hetzner` diski `php artisan sk:update` ile `config/filesystems.php` dosyasına eklenir. Hetzner gizli anahtarı, diğer depolama anahtarları gibi şifreli saklanır. Uç nokta ve URL için artık `https://` yazmanız gerekmiyor; bölge seçince uç nokta, bucket adı girince URL otomatik doluyor, bölge listelerinde arama yapılabiliyor.
 
+- **Zengin metin editörü artık içeriğin HTML'ini gösterip düzenletiyor, biçimlendirme araçları da arttı.** `</>` düğmesi editörü HTML kaynağına geçirir; yazılanlar anında forma işlenir, kaynak açıkken kaydedilse de kaybolmaz, editörün saklayamadığı etiketler de yazarken kutunun altında gösterilir; tam ekran düğmesi içeriği tüm ekrana yayar (Esc ile çıkılır). Araç çubuğuna altı çizili, vurgu rengi ve biçimi temizle eklendi; `standard` preset'e görev listesi ve iki yana yaslama, `full` preset'e H4, satır içi kod, alt/üst simge, yazı tipi / boyut / satır aralığı seçicileri ve YouTube videosu geldi. Yeni editör paketleri için `php artisan sk:update` ve ardından `npm install` çalıştırın.
+
 ### Güvenlik
 
+- **Kaydedilen editör içeriğinde yalnızca YouTube video gömmeleri kalıyor.** Diğer tüm `<iframe>`'ler kayıtta silinmeye devam ediyor; yeni yazı stilleri de yalnızca düz değerleri kabul ediyor.
 - **`config/settings.php` dosyanız kit'ten eski olsa bile gizli ayarlar şifreli kalıyor.** Yeni eklenen bir gizli ayar, uygulamanın yayınlanmış settings config'inde henüz listelenmiyorsa şifrelenmeden kaydediliyordu; kit'in yerleşik listesi artık her zaman uygulanıyor.
 
 ## 2026-09-22 — v13.7.6

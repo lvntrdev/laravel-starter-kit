@@ -50,6 +50,48 @@
     background: var(--p-surface-800);
 }
 
+.sk-rte__select {
+    @apply w-28;
+}
+
+/* Fullscreen: the wrapper covers the viewport; Esc or the toggle leaves. */
+.sk-rte--fullscreen {
+    @apply fixed inset-0 rounded-none;
+    z-index: 1000;
+}
+
+.sk-rte--fullscreen .sk-rte__body,
+.sk-rte--fullscreen .sk-rte__source {
+    @apply flex-1;
+}
+
+/* HTML source view */
+.sk-rte__source {
+    @apply w-full resize-y border-0 px-4 py-3 text-sm outline-none;
+    background: transparent;
+    color: inherit;
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        SF Mono,
+        Menlo,
+        Consolas,
+        monospace;
+}
+
+.sk-rte__source-warning {
+    @apply flex items-center gap-2 border-t px-4 py-2 text-sm;
+    border-color: var(--p-amber-300);
+    background: var(--p-amber-50);
+    color: var(--p-amber-800);
+}
+
+:root.dark .sk-rte__source-warning {
+    border-color: var(--p-amber-700);
+    background: color-mix(in oklab, var(--p-amber-500) 15%, transparent);
+    color: var(--p-amber-200);
+}
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    EDITOR BODY
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -201,6 +243,38 @@
 .sk-rte__content ul[data-type='taskList'] li > div,
 .sk-prose ul[data-type='taskList'] li > div {
     @apply flex-1;
+}
+
+/* Rendered (sanitized) HTML has no checkbox input — draw the state instead. */
+.sk-prose ul[data-type='taskList'] li::before {
+    content: '☐';
+}
+
+.sk-prose ul[data-type='taskList'] li[data-checked='true']::before {
+    content: '☑';
+}
+
+.sk-rte__content sub,
+.sk-prose sub,
+.sk-rte__content sup,
+.sk-prose sup {
+    @apply text-xs;
+}
+
+.sk-rte__content div[data-youtube-video],
+.sk-prose div[data-youtube-video] {
+    @apply my-3;
+}
+
+.sk-rte__content div[data-youtube-video] iframe,
+.sk-prose div[data-youtube-video] iframe {
+    @apply h-auto max-w-full rounded;
+    aspect-ratio: 16 / 9;
+}
+
+.sk-rte__body div[data-youtube-video].ProseMirror-selectednode iframe {
+    outline: 2px solid var(--p-primary-400);
+    outline-offset: 2px;
 }
 
 .sk-rte__content hr,

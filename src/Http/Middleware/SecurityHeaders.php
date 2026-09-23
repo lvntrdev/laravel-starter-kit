@@ -115,7 +115,8 @@ class SecurityHeaders
             "style-src 'self' 'unsafe-inline'",
             $scriptSrc,
             "connect-src 'self' https://challenges.cloudflare.com{$suffix}",
-            'frame-src https://challenges.cloudflare.com',
+            // youtube-nocookie: editor video embeds (HtmlSanitizer keeps only that iframe).
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com',
         ]);
     }
 

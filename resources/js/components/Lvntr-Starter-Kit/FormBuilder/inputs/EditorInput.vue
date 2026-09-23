@@ -15,10 +15,15 @@
     import { TableHeader } from '@tiptap/extension-table-header';
     import { TableCell } from '@tiptap/extension-table-cell';
     import { Color } from '@tiptap/extension-color';
-    import { TextStyle } from '@tiptap/extension-text-style';
+    import { TextStyle, BackgroundColor, FontFamily, FontSize, LineHeight } from '@tiptap/extension-text-style';
+    import { TaskList, TaskItem } from '@tiptap/extension-list';
+    import Subscript from '@tiptap/extension-subscript';
+    import Superscript from '@tiptap/extension-superscript';
+    import Youtube from '@tiptap/extension-youtube';
     import type { Extensions } from '@tiptap/core';
     import InputText from 'primevue/inputtext';
     import Popover from 'primevue/popover';
+    import Select from 'primevue/select';
     import EditorColorPalette from './EditorColorPalette.vue';
     import type { EditorImageUploadConfig, EditorToolbarPreset } from '../core';
     import type { FileItem } from '../../FileManager/types';
@@ -82,7 +87,9 @@
                 class: {
                     default: tableClassFor('light'),
                     parseHTML: (el) => el.getAttribute('class') ?? tableClassFor('light'),
-                    renderHTML: (attrs) => ({ class: (attrs.class as string) ?? tableClassFor('light') }),
+                    renderHTML: (attrs) => ({
+                        class: (attrs.class as string) ?? tableClassFor('light'),
+                    }),
                 },
                 borderColor: {
                     default: null,
@@ -137,6 +144,22 @@
         TableCell,
         TextStyle,
         Color.configure({ types: ['textStyle'] }),
+        BackgroundColor,
+        FontFamily,
+        FontSize,
+        LineHeight,
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        Subscript,
+        Superscript,
+        // nocookie + no paste handler: the only way in is the toolbar prompt,
+        // and HtmlSanitizer only keeps iframes pointing at the embed endpoint.
+        Youtube.configure({
+            nocookie: true,
+            addPasteHandler: false,
+            width: 640,
+            height: 360,
+        }),
     ];
     if (props.imageUpload) {
         extensions.push(CustomImage.configure({ inline: true, allowBase64: false }));
@@ -194,9 +217,18 @@
     watch(
         () => props.modelValue,
         (next) => {
-            const current = editor.value?.getHTML() ?? '';
-            if (editor.value && next !== current) {
-                editor.value.commands.setContent(next || '', { emitUpdate: false });
+            if (!editor.value || next === editor.value.getHTML()) return;
+            // treatEmptyAsBlank echo of our own emit — nothing changed.
+            if (!next && editor.value.isEmpty) return;
+            editor.value.commands.setContent(next || '', { emitUpdate: false });
+            // An external change (e.g. TranslatableInput switching locale) must
+            // replace the source buffer too, or the next keystroke writes the old
+            // text into the new value.
+            if (sourceMode.value) {
+                resyncingSource = true;
+                sourceHtml.value = formatHtml(editor.value.getHTML());
+                resyncingSource = false;
+                droppedTags.value = [];
             }
         },
     );
@@ -309,9 +341,9 @@
             const detail =
                 raw.startsWith('sk-') || raw.startsWith('validation.')
                     ? (() => {
-                        const translated = trans(raw);
-                        return translated === raw ? trans('sk-editor.image_upload_failed') : translated;
-                    })()
+                          const translated = trans(raw);
+                          return translated === raw ? trans('sk-editor.image_upload_failed') : translated;
+                      })()
                     : raw || trans('sk-editor.image_upload_failed');
             toast.add({
                 severity: 'error',
@@ -369,7 +401,11 @@
             .insertContent({
                 type: 'image',
                 // public_url, not url -- see the upload path above.
-                attrs: { src: file.public_url ?? file.url, alt: file.name, width: defaultImageWidth },
+                attrs: {
+                    src: file.public_url ?? file.url,
+                    alt: file.name,
+                    width: defaultImageWidth,
+                },
             })
             .insertContent(' ')
             .run();
@@ -510,6 +546,132 @@
         return (editor.value.getAttributes('table').borderColor as string | null) ?? null;
     });
 
+    const highlightPopover = ref<InstanceType<typeof Popover> | null>(null);
+
+    function toggleHighlightPopover(event: Event): void {
+        highlightPopover.value?.toggle(event);
+    }
+
+    function pickHighlight(hex: string): void {
+        editor.value?.chain().focus().setBackgroundColor(hex).run();
+        highlightPopover.value?.hide();
+    }
+
+    function clearHighlight(): void {
+        editor.value?.chain().focus().unsetBackgroundColor().run();
+        highlightPopover.value?.hide();
+    }
+
+    const currentHighlight = computed<string | null>(() => {
+        if (!editor.value) return null;
+        return (editor.value.getAttributes('textStyle').backgroundColor as string | undefined) ?? null;
+    });
+
+    function clearFormatting(): void {
+        editor.value?.chain().focus().unsetAllMarks().clearNodes().run();
+    }
+
+    function promptYoutube(): void {
+        if (!editor.value) return;
+        const url = window.prompt(trans('sk-editor.youtube_prompt'));
+        if (!url) return;
+        if (!editor.value.chain().focus().setYoutubeVideo({ src: url.trim() }).run()) {
+            toast.add({
+                severity: 'warn',
+                group: 'bc',
+                summary: trans('sk-editor.youtube_invalid'),
+                life: 3000,
+            });
+        }
+    }
+
+    // Typography — values are what HtmlSanitizer::filterStyle() accepts.
+    const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px'].map((v) => ({
+        label: v,
+        value: v,
+    }));
+    const fontFamilyOptions = [
+        { label: 'Sans', value: 'ui-sans-serif, system-ui, sans-serif' },
+        { label: 'Serif', value: 'Georgia, serif' },
+        { label: 'Mono', value: 'ui-monospace, monospace' },
+    ];
+    const lineHeightOptions = ['1', '1.25', '1.5', '1.75', '2'].map((v) => ({
+        label: v,
+        value: v,
+    }));
+
+    function textStyleModel(attr: 'fontSize' | 'fontFamily' | 'lineHeight') {
+        return computed<string | null>({
+            get: () => (editor.value?.getAttributes('textStyle')[attr] as string | undefined) ?? null,
+            set: (value) => {
+                const chain = editor.value?.chain().focus();
+                if (!chain) return;
+                if (attr === 'fontSize') (value ? chain.setFontSize(value) : chain.unsetFontSize()).run();
+                if (attr === 'fontFamily') (value ? chain.setFontFamily(value) : chain.unsetFontFamily()).run();
+                if (attr === 'lineHeight') (value ? chain.setLineHeight(value) : chain.unsetLineHeight()).run();
+            },
+        });
+    }
+
+    const fontSize = textStyleModel('fontSize');
+    const fontFamily = textStyleModel('fontFamily');
+    const lineHeight = textStyleModel('lineHeight');
+
+    // HTML source view. The textarea is the raw text the user typed; every
+    // keystroke is parsed back through the editor schema and emitted, so a
+    // submit while the source view is open still carries the edit. Tags the
+    // schema does not know are dropped on that round-trip, so they are listed
+    // under the textarea while the user is still typing — never silently.
+    const sourceMode = ref(false);
+    const sourceHtml = ref('');
+    const droppedTags = ref<string[]>([]);
+    let resyncingSource = false;
+
+    // Tags the schema rewrites to an equivalent one are not a loss.
+    const tagAliases: Record<string, string> = { b: 'strong', i: 'em', del: 's', strike: 's' };
+
+    function tagsIn(html: string): Set<string> {
+        const body = new window.DOMParser().parseFromString(html, 'text/html').body;
+        return new Set(
+            Array.from(body.querySelectorAll('*'), (el) => {
+                const tag = el.tagName.toLowerCase();
+                return tagAliases[tag] ?? tag;
+            }),
+        );
+    }
+
+    function formatHtml(html: string): string {
+        return html.replace(/(<\/(?:p|h[2-4]|ul|ol|li|blockquote|pre|table|thead|tbody|tr|div)>|<hr>)/g, '$1\n').trim();
+    }
+
+    function toggleSourceMode(): void {
+        if (!editor.value) return;
+        if (!sourceMode.value) {
+            sourceHtml.value = formatHtml(editor.value.getHTML());
+        }
+        sourceMode.value = !sourceMode.value;
+        if (!sourceMode.value) {
+            droppedTags.value = [];
+            editor.value.commands.focus();
+        }
+    }
+
+    // flush: 'sync' — the model is updated inside the input event itself, so
+    // no submit can land between a keystroke and the emit.
+    watch(
+        sourceHtml,
+        (html) => {
+            if (!sourceMode.value || !editor.value || resyncingSource) return;
+            editor.value.commands.setContent(html, { emitUpdate: false });
+            syncModelFromEditor();
+            const kept = tagsIn(editor.value.getHTML());
+            droppedTags.value = [...tagsIn(html)].filter((tag) => !kept.has(tag));
+        },
+        { flush: 'sync' },
+    );
+
+    const fullscreen = ref(false);
+
     const showLists = computed(() => props.toolbar === 'standard' || props.toolbar === 'full');
     const showFull = computed(() => props.toolbar === 'full');
 
@@ -524,245 +686,443 @@
 </script>
 
 <template>
-    <div class="sk-rte" :class="{ 'sk-rte--invalid': invalid, 'sk-rte--disabled': disabled }">
+    <div
+        class="sk-rte"
+        :class="{
+            'sk-rte--invalid': invalid,
+            'sk-rte--disabled': disabled,
+            'sk-rte--fullscreen': fullscreen,
+        }"
+        @keydown.esc="fullscreen = false"
+    >
         <div v-if="editor" class="sk-rte__toolbar">
-            <ButtonGroup>
-                <Button
-                    v-tooltip.top="$t('sk-editor.bold')"
-                    type="button"
-                    label="B"
-                    size="small"
-                    text
-                    :pt="{ label: { class: 'font-bold' } }"
-                    :aria-label="$t('sk-editor.bold')"
-                    :severity="editor.isActive('bold') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleBold().run()"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.italic')"
-                    type="button"
-                    label="I"
-                    size="small"
-                    text
-                    :pt="{ label: { class: 'italic font-serif' } }"
-                    :aria-label="$t('sk-editor.italic')"
-                    :severity="editor.isActive('italic') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleItalic().run()"
-                />
-                <Button
-                    v-if="toolbar !== 'minimal'"
-                    v-tooltip.top="$t('sk-editor.strike')"
-                    type="button"
-                    label="S"
-                    size="small"
-                    text
-                    :pt="{ label: { class: 'line-through' } }"
-                    :aria-label="$t('sk-editor.strike')"
-                    :severity="editor.isActive('strike') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleStrike().run()"
-                />
-            </ButtonGroup>
+            <template v-if="!sourceMode">
+                <ButtonGroup>
+                    <Button
+                        v-tooltip.top="$t('sk-editor.bold')"
+                        type="button"
+                        label="B"
+                        size="small"
+                        text
+                        :pt="{ label: { class: 'font-bold' } }"
+                        :aria-label="$t('sk-editor.bold')"
+                        :severity="editor.isActive('bold') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleBold().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.italic')"
+                        type="button"
+                        label="I"
+                        size="small"
+                        text
+                        :pt="{ label: { class: 'italic font-serif' } }"
+                        :aria-label="$t('sk-editor.italic')"
+                        :severity="editor.isActive('italic') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleItalic().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.underline')"
+                        type="button"
+                        label="U"
+                        size="small"
+                        text
+                        :pt="{ label: { class: 'underline' } }"
+                        :aria-label="$t('sk-editor.underline')"
+                        :severity="editor.isActive('underline') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleUnderline().run()"
+                    />
+                    <Button
+                        v-if="toolbar !== 'minimal'"
+                        v-tooltip.top="$t('sk-editor.strike')"
+                        type="button"
+                        label="S"
+                        size="small"
+                        text
+                        :pt="{ label: { class: 'line-through' } }"
+                        :aria-label="$t('sk-editor.strike')"
+                        :severity="editor.isActive('strike') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleStrike().run()"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup v-if="showFull">
-                <Button
-                    v-tooltip.top="$t('sk-editor.h2')"
-                    type="button"
-                    label="H2"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.h2')"
-                    :severity="editor.isActive('heading', { level: 2 }) ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.h3')"
-                    type="button"
-                    label="H3"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.h3')"
-                    :severity="editor.isActive('heading', { level: 3 }) ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
-                />
-            </ButtonGroup>
+                <ButtonGroup v-if="showFull">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.inline_code')"
+                        type="button"
+                        label="<>"
+                        size="small"
+                        text
+                        :pt="{ label: { class: 'font-mono' } }"
+                        :aria-label="$t('sk-editor.inline_code')"
+                        :severity="editor.isActive('code') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleCode().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.subscript')"
+                        type="button"
+                        label="x₂"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.subscript')"
+                        :severity="editor.isActive('subscript') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleSubscript().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.superscript')"
+                        type="button"
+                        label="x²"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.superscript')"
+                        :severity="editor.isActive('superscript') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleSuperscript().run()"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup v-if="showLists">
-                <Button
-                    v-tooltip.top="$t('sk-editor.bullet_list')"
-                    type="button"
-                    icon="pi pi-list"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.bullet_list')"
-                    :severity="editor.isActive('bulletList') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleBulletList().run()"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.ordered_list')"
-                    type="button"
-                    icon="pi pi-sort-numeric-down"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.ordered_list')"
-                    :severity="editor.isActive('orderedList') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleOrderedList().run()"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.blockquote')"
-                    type="button"
-                    icon="pi pi-align-justify"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.blockquote')"
-                    :severity="editor.isActive('blockquote') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().toggleBlockquote().run()"
-                />
-            </ButtonGroup>
+                <template v-if="showFull">
+                    <Select
+                        v-model="fontFamily"
+                        :options="fontFamilyOptions"
+                        option-label="label"
+                        option-value="value"
+                        size="small"
+                        show-clear
+                        class="sk-rte__select"
+                        :placeholder="$t('sk-editor.font_family')"
+                        :aria-label="$t('sk-editor.font_family')"
+                        :disabled="disabled"
+                    />
+                    <Select
+                        v-model="fontSize"
+                        :options="fontSizeOptions"
+                        option-label="label"
+                        option-value="value"
+                        size="small"
+                        show-clear
+                        class="sk-rte__select"
+                        :placeholder="$t('sk-editor.font_size')"
+                        :aria-label="$t('sk-editor.font_size')"
+                        :disabled="disabled"
+                    />
+                    <Select
+                        v-model="lineHeight"
+                        :options="lineHeightOptions"
+                        option-label="label"
+                        option-value="value"
+                        size="small"
+                        show-clear
+                        class="sk-rte__select"
+                        :placeholder="$t('sk-editor.line_height')"
+                        :aria-label="$t('sk-editor.line_height')"
+                        :disabled="disabled"
+                    />
+                </template>
 
-            <ButtonGroup v-if="showLists">
-                <Button
-                    v-tooltip.top="$t('sk-editor.align_left')"
-                    type="button"
-                    icon="pi pi-align-left"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.align_left')"
-                    :severity="editor.isActive({ textAlign: 'left' }) ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="setAlign('left')"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.align_center')"
-                    type="button"
-                    icon="pi pi-align-center"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.align_center')"
-                    :severity="editor.isActive({ textAlign: 'center' }) ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="setAlign('center')"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.align_right')"
-                    type="button"
-                    icon="pi pi-align-right"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.align_right')"
-                    :severity="editor.isActive({ textAlign: 'right' }) ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="setAlign('right')"
-                />
-            </ButtonGroup>
+                <ButtonGroup v-if="showFull">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.h2')"
+                        type="button"
+                        label="H2"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.h2')"
+                        :severity="editor.isActive('heading', { level: 2 }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.h3')"
+                        type="button"
+                        label="H3"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.h3')"
+                        :severity="editor.isActive('heading', { level: 3 }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.h4')"
+                        type="button"
+                        label="H4"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.h4')"
+                        :severity="editor.isActive('heading', { level: 4 }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleHeading({ level: 4 }).run()"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup>
-                <Button
-                    v-tooltip.top="$t('sk-editor.color')"
-                    type="button"
-                    icon="pi pi-palette"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.color')"
-                    :pt="{ icon: { style: currentColor ? { color: currentColor } : {} } }"
-                    :severity="currentColor ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="toggleColorPopover"
-                />
-            </ButtonGroup>
+                <ButtonGroup v-if="showLists">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.bullet_list')"
+                        type="button"
+                        icon="pi pi-list"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.bullet_list')"
+                        :severity="editor.isActive('bulletList') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleBulletList().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.ordered_list')"
+                        type="button"
+                        icon="pi pi-sort-numeric-down"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.ordered_list')"
+                        :severity="editor.isActive('orderedList') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleOrderedList().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.task_list')"
+                        type="button"
+                        icon="pi pi-check-square"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.task_list')"
+                        :severity="editor.isActive('taskList') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleTaskList().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.blockquote')"
+                        type="button"
+                        icon="pi pi-align-justify"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.blockquote')"
+                        :severity="editor.isActive('blockquote') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleBlockquote().run()"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup v-if="links || imageUpload">
-                <Button
-                    v-if="links"
-                    v-tooltip.top="$t('sk-editor.link')"
-                    type="button"
-                    icon="pi pi-link"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.link')"
-                    :severity="editor.isActive('link') ? 'primary' : 'secondary'"
-                    :disabled="disabled"
-                    @click="promptLink"
-                />
-                <Button
-                    v-if="imageUpload"
-                    v-tooltip.top="$t('sk-editor.image')"
-                    type="button"
-                    icon="pi pi-image"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.image')"
-                    :loading="uploadingImage"
-                    :disabled="disabled || uploadingImage"
-                    @click="pickImage"
-                />
-            </ButtonGroup>
+                <ButtonGroup v-if="showLists">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.align_left')"
+                        type="button"
+                        icon="pi pi-align-left"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.align_left')"
+                        :severity="editor.isActive({ textAlign: 'left' }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="setAlign('left')"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.align_center')"
+                        type="button"
+                        icon="pi pi-align-center"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.align_center')"
+                        :severity="editor.isActive({ textAlign: 'center' }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="setAlign('center')"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.align_right')"
+                        type="button"
+                        icon="pi pi-align-right"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.align_right')"
+                        :severity="editor.isActive({ textAlign: 'right' }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="setAlign('right')"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.align_justify')"
+                        type="button"
+                        icon="pi pi-align-justify"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.align_justify')"
+                        :severity="editor.isActive({ textAlign: 'justify' }) ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="setAlign('justify')"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup v-if="showLists">
-                <Button
-                    v-tooltip.top="$t('sk-editor.table_insert')"
-                    type="button"
-                    icon="pi pi-table"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.table_insert')"
-                    :severity="editor.isActive('table') ? 'primary' : 'secondary'"
-                    :disabled="disabled || editor.isActive('table')"
-                    @click="insertTable"
-                />
-            </ButtonGroup>
+                <ButtonGroup>
+                    <Button
+                        v-tooltip.top="$t('sk-editor.color')"
+                        type="button"
+                        icon="pi pi-palette"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.color')"
+                        :pt="{
+                            icon: { style: currentColor ? { color: currentColor } : {} },
+                        }"
+                        :severity="currentColor ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="toggleColorPopover"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.highlight')"
+                        type="button"
+                        icon="pi pi-pencil"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.highlight')"
+                        :pt="{
+                            icon: {
+                                style: currentHighlight ? { backgroundColor: currentHighlight } : {},
+                            },
+                        }"
+                        :severity="currentHighlight ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="toggleHighlightPopover"
+                    />
+                    <Button
+                        v-if="toolbar !== 'minimal'"
+                        v-tooltip.top="$t('sk-editor.clear_format')"
+                        type="button"
+                        icon="pi pi-eraser"
+                        size="small"
+                        text
+                        severity="secondary"
+                        :aria-label="$t('sk-editor.clear_format')"
+                        :disabled="disabled"
+                        @click="clearFormatting"
+                    />
+                </ButtonGroup>
 
-            <ButtonGroup v-if="showFull">
+                <ButtonGroup v-if="links || imageUpload">
+                    <Button
+                        v-if="links"
+                        v-tooltip.top="$t('sk-editor.link')"
+                        type="button"
+                        icon="pi pi-link"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.link')"
+                        :severity="editor.isActive('link') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="promptLink"
+                    />
+                    <Button
+                        v-if="imageUpload"
+                        v-tooltip.top="$t('sk-editor.image')"
+                        type="button"
+                        icon="pi pi-image"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.image')"
+                        :loading="uploadingImage"
+                        :disabled="disabled || uploadingImage"
+                        @click="pickImage"
+                    />
+                </ButtonGroup>
+
+                <ButtonGroup v-if="showLists">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.table_insert')"
+                        type="button"
+                        icon="pi pi-table"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.table_insert')"
+                        :severity="editor.isActive('table') ? 'primary' : 'secondary'"
+                        :disabled="disabled || editor.isActive('table')"
+                        @click="insertTable"
+                    />
+                </ButtonGroup>
+
+                <ButtonGroup v-if="showFull">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.code_block')"
+                        type="button"
+                        icon="pi pi-code"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.code_block')"
+                        :severity="editor.isActive('codeBlock') ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().toggleCodeBlock().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.horizontal_rule')"
+                        type="button"
+                        icon="pi pi-minus"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.horizontal_rule')"
+                        :disabled="disabled"
+                        @click="editor.chain().focus().setHorizontalRule().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.youtube')"
+                        type="button"
+                        icon="pi pi-youtube"
+                        size="small"
+                        text
+                        severity="secondary"
+                        :aria-label="$t('sk-editor.youtube')"
+                        :disabled="disabled"
+                        @click="promptYoutube"
+                    />
+                </ButtonGroup>
+
+                <ButtonGroup v-if="showFull">
+                    <Button
+                        v-tooltip.top="$t('sk-editor.undo')"
+                        type="button"
+                        icon="pi pi-undo"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.undo')"
+                        :disabled="disabled || !editor.can().undo()"
+                        @click="editor.chain().focus().undo().run()"
+                    />
+                    <Button
+                        v-tooltip.top="$t('sk-editor.redo')"
+                        type="button"
+                        icon="pi pi-refresh"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.redo')"
+                        :disabled="disabled || !editor.can().redo()"
+                        @click="editor.chain().focus().redo().run()"
+                    />
+                </ButtonGroup>
+            </template>
+
+            <ButtonGroup class="ml-auto">
                 <Button
-                    v-tooltip.top="$t('sk-editor.code_block')"
+                    v-tooltip.top="$t('sk-editor.source')"
                     type="button"
                     icon="pi pi-code"
                     size="small"
                     text
-                    :aria-label="$t('sk-editor.code_block')"
-                    :severity="editor.isActive('codeBlock') ? 'primary' : 'secondary'"
+                    :aria-label="$t('sk-editor.source')"
+                    :aria-pressed="sourceMode"
+                    :severity="sourceMode ? 'primary' : 'secondary'"
                     :disabled="disabled"
-                    @click="editor.chain().focus().toggleCodeBlock().run()"
+                    @click="toggleSourceMode"
                 />
                 <Button
-                    v-tooltip.top="$t('sk-editor.horizontal_rule')"
+                    v-tooltip.top="$t('sk-editor.fullscreen')"
                     type="button"
-                    icon="pi pi-minus"
+                    :icon="fullscreen ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
                     size="small"
                     text
-                    :aria-label="$t('sk-editor.horizontal_rule')"
-                    :disabled="disabled"
-                    @click="editor.chain().focus().setHorizontalRule().run()"
-                />
-            </ButtonGroup>
-
-            <ButtonGroup v-if="showFull">
-                <Button
-                    v-tooltip.top="$t('sk-editor.undo')"
-                    type="button"
-                    icon="pi pi-undo"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.undo')"
-                    :disabled="disabled || !editor.can().undo()"
-                    @click="editor.chain().focus().undo().run()"
-                />
-                <Button
-                    v-tooltip.top="$t('sk-editor.redo')"
-                    type="button"
-                    icon="pi pi-refresh"
-                    size="small"
-                    text
-                    :aria-label="$t('sk-editor.redo')"
-                    :disabled="disabled || !editor.can().redo()"
-                    @click="editor.chain().focus().redo().run()"
+                    :aria-label="$t('sk-editor.fullscreen')"
+                    :aria-pressed="fullscreen"
+                    :severity="fullscreen ? 'primary' : 'secondary'"
+                    @click="fullscreen = !fullscreen"
                 />
             </ButtonGroup>
         </div>
@@ -975,7 +1335,11 @@
                     icon="pi pi-palette"
                     size="small"
                     text
-                    :pt="{ icon: { style: currentTableBorderColor ? { color: currentTableBorderColor } : {} } }"
+                    :pt="{
+                        icon: {
+                            style: currentTableBorderColor ? { color: currentTableBorderColor } : {},
+                        },
+                    }"
                     :severity="currentTableBorderColor ? 'primary' : 'secondary'"
                     @click="toggleTableBorderPopover"
                 />
@@ -1005,6 +1369,29 @@
             />
         </Popover>
 
-        <EditorContent :editor="editor" class="sk-rte__body" :style="{ minHeight }" />
+        <Popover ref="highlightPopover">
+            <EditorColorPalette :current="currentHighlight" @pick="pickHighlight" @clear="clearHighlight" />
+        </Popover>
+
+        <textarea
+            v-if="sourceMode"
+            v-model="sourceHtml"
+            class="sk-rte__source"
+            spellcheck="false"
+            :disabled="disabled"
+            :style="{ minHeight }"
+            :aria-label="$t('sk-editor.source')"
+            :aria-describedby="droppedTags.length ? `${id ?? 'sk-rte'}-dropped` : undefined"
+        />
+        <div
+            v-if="sourceMode && droppedTags.length"
+            :id="`${id ?? 'sk-rte'}-dropped`"
+            class="sk-rte__source-warning"
+            role="status"
+        >
+            <i class="pi pi-exclamation-triangle" aria-hidden="true" />
+            {{ $t('sk-editor.source_dropped', { tags: droppedTags.map((t) => `<${t}>`).join(', ') }) }}
+        </div>
+        <EditorContent v-show="!sourceMode" :editor="editor" class="sk-rte__body" :style="{ minHeight }" />
     </div>
 </template>

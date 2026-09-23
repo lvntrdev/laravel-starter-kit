@@ -16,12 +16,13 @@ use DOMNode;
  * - Disallowed attributes are stripped from allowed tags.
  * - href/src attributes are rejected when they use javascript:, vbscript:, or data: schemes.
  * - External anchor links are forced to rel="nofollow noopener".
+ * - <iframe> survives only when its src is a YouTube embed URL (editor video node).
  */
 class HtmlSanitizer
 {
     /** @var list<string> */
     private const ALLOWED_TAGS = [
-        'p', 'br', 'strong', 'em', 's', 'u', 'code',
+        'p', 'br', 'strong', 'em', 's', 'u', 'code', 'sub', 'sup',
         'ul', 'ol', 'li', 'blockquote',
         'h2', 'h3', 'h4',
         'a', 'img',
@@ -42,6 +43,7 @@ class HtmlSanitizer
         'h3' => ['style'],
         'h4' => ['style'],
         'span' => ['style'],
+        'div' => ['data-youtube-video'],
         'table' => ['class', 'style'],
         'th' => ['colspan', 'rowspan', 'colwidth', 'style'],
         'td' => ['colspan', 'rowspan', 'colwidth', 'style'],
@@ -97,6 +99,12 @@ class HtmlSanitizer
             }
 
             $tag = strtolower($child->nodeName);
+
+            if ($tag === 'iframe' && self::isYoutubeEmbed($child->getAttribute('src'))) {
+                self::filterIframe($child);
+
+                continue;
+            }
 
             if (in_array($tag, self::DROP_ELEMENTS, true)) {
                 $dropNodes[] = $child;
@@ -208,6 +216,32 @@ class HtmlSanitizer
                 continue;
             }
 
+            if ($property === 'font-size') {
+                if (preg_match('/^\d+(?:\.\d+)?\s*(?:%|px|em|rem)$/i', $value) === 1) {
+                    $kept[] = 'font-size: '.$value;
+                }
+
+                continue;
+            }
+
+            if ($property === 'line-height') {
+                if (preg_match('/^\d+(?:\.\d+)?\s*(?:%|px|em|rem)?$/i', $value) === 1) {
+                    $kept[] = 'line-height: '.$value;
+                }
+
+                continue;
+            }
+
+            if ($property === 'font-family') {
+                // Family names and generic keywords only — no parentheses,
+                // semicolons or backslashes that could smuggle another value.
+                if (preg_match('/^[a-z0-9 ,\'"-]{1,100}$/i', $value) === 1) {
+                    $kept[] = 'font-family: '.$value;
+                }
+
+                continue;
+            }
+
             if (in_array($property, ['width', 'min-width', 'max-width', 'height'], true)) {
                 if (preg_match('/^\d+(?:\.\d+)?\s*(?:%|px|em|rem|vh|vw)$/i', $value) === 1) {
                     $kept[] = $property.': '.$value;
@@ -226,6 +260,47 @@ class HtmlSanitizer
         }
 
         return implode('; ', $kept);
+    }
+
+    /**
+     * Strict YouTube embed check: https, the privacy host the editor emits
+     * (and the only one CSP frame-src allows), the /embed/ path and an 11-char
+     * video id. The query string is limited to the
+     * key=value pairs Tiptap's youtube node emits.
+     */
+    private static function isYoutubeEmbed(string $src): bool
+    {
+        return preg_match(
+            '#^https://www\.youtube-nocookie\.com/embed/[A-Za-z0-9_-]{11}(?:\?[A-Za-z0-9_=&%.-]*)?$#',
+            self::normalizeUrl($src),
+        ) === 1;
+    }
+
+    /** Keep only the attributes a YouTube embed needs; drop srcdoc, on*, sandbox, allow, etc. */
+    private static function filterIframe(DOMElement $iframe): void
+    {
+        foreach (iterator_to_array($iframe->attributes) as $attribute) {
+            /** @var DOMAttr $attribute */
+            $name = strtolower($attribute->nodeName);
+            $value = $attribute->nodeValue ?? '';
+
+            $keep = match ($name) {
+                'src' => true,
+                'width', 'height' => preg_match('/^\d{1,4}$/', $value) === 1,
+                'allowfullscreen' => true,
+                default => false,
+            };
+
+            if (! $keep) {
+                $iframe->removeAttributeNode($attribute);
+            }
+        }
+
+        $iframe->setAttribute('src', self::normalizeUrl($iframe->getAttribute('src')));
+
+        while ($iframe->firstChild !== null) {
+            $iframe->removeChild($iframe->firstChild);
+        }
     }
 
     private static function unwrap(DOMElement $element): void

@@ -8,8 +8,11 @@ Newly added features and improvements to the starter kit are listed here.
 
 - **Hetzner Object Storage and Amazon S3 can now be chosen in Settings → Storage.** Next to Local and DigitalOcean Spaces, the storage driver picker now offers Hetzner (with a Falkenstein / Nuremberg / Helsinki region picker) and Amazon S3. Existing installs get the new `hetzner` disk added to `config/filesystems.php` by `php artisan sk:update`. The Hetzner secret key is stored encrypted, like the other storage secrets. You no longer type `https://` for the endpoint or URL, choosing a region fills in the endpoint, entering a bucket name fills in the URL, and the region lists are searchable.
 
+- **The rich text editor can show and edit the content's HTML, and has more formatting tools.** A `</>` button switches the editor to its HTML source — edits count immediately, so saving with the source view open keeps them, and any tag the editor cannot keep is named under the text box as you type — and a fullscreen button gives the content the whole screen (Esc leaves). The toolbar also gains underline, highlight color and clear formatting; the `standard` preset adds task lists and justify, and `full` adds H4, inline code, sub/superscript, font / size / line-height pickers and YouTube videos. Run `php artisan sk:update` and `npm install` to pull the new editor packages.
+
 ### Security
 
+- **Only YouTube video embeds survive in saved editor content.** Any other `<iframe>` is still removed on save, and the new font styles only accept plain values.
 - **Secret settings stay encrypted even if your `config/settings.php` is older than the kit.** A newly added secret setting used to be saved unencrypted when the app's published settings config did not list it yet; the kit's built-in list now always applies.
 
 ## 2026-09-22 — v13.7.6
