@@ -2,7 +2,7 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
-## 2026-09-25 — v13.9.0
+## 2026-09-25 — v13.8.1
 
 ### Added
 
