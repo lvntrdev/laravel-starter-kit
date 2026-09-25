@@ -2,6 +2,12 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-09-25 — v13.9.0
+
+### Added
+
+- **The rich text editor can add buttons.** When links are enabled, a new toolbar button turns the selected text — or a label you type — into a button that opens a URL, in three styles — primary, secondary and outline — and in any color from the editor palette. Content stays plain HTML, so admin pages show it as a button and a mobile app can render it as its own native button; an app that does not know about buttons still shows a working link. Run `php artisan sk:update` to get the button styles.
+
 ## 2026-09-23 — v13.8.0
 
 ### Added

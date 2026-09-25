@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.9.0] - 2026-09-25
+
+### Added
+
+- **Rich text editor: button links.** With `links()` on, a new toolbar button turns the selection (or a label typed in its popover) into a link styled as a button — `primary`, `secondary` or `outline` — with an optional palette color for `primary` / `outline`. It is stored as `<a href="…" data-sk-button="<variant>" data-sk-color="#rrggbb">` plus inline `--sk-button-color` / `--sk-button-text` variables for the web (text color picked by luminance), so the content stays plain HTML: `.sk-rte__content` / `.sk-prose` draw it as a button, a mobile app can map `a[data-sk-button]` to a native button, and a renderer that ignores the attribute still shows a working link. The editor's link extension is now `ButtonLink` (Tiptap `Link` + the `button` attribute) instead of the one bundled in StarterKit; `links()` / paste auto-linking behave as before.
+
+### Security
+
+- **`HtmlSanitizer` keeps `data-sk-button` on `<a>` only with a known variant** (`primary`, `secondary`, `outline`) and `data-sk-color` only as `#rrggbb`; any other value is dropped and the link kept. `<a>` may carry `style`, filtered by the same property allowlist, which now also admits the hex-only `--sk-button-color` / `--sk-button-text`.
+
 ## [13.8.0] - 2026-09-23
 
 ### Added

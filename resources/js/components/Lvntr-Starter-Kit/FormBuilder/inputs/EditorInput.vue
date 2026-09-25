@@ -20,10 +20,12 @@
     import Subscript from '@tiptap/extension-subscript';
     import Superscript from '@tiptap/extension-superscript';
     import Youtube from '@tiptap/extension-youtube';
+    import Link from '@tiptap/extension-link';
     import type { Extensions } from '@tiptap/core';
     import InputText from 'primevue/inputtext';
     import Popover from 'primevue/popover';
     import Select from 'primevue/select';
+    import SelectButton from 'primevue/selectbutton';
     import EditorColorPalette from './EditorColorPalette.vue';
     import type { EditorImageUploadConfig, EditorToolbarPreset } from '../core';
     import type { FileItem } from '../../FileManager/types';
@@ -125,13 +127,57 @@
         },
     });
 
+    // A button is a link with a style: `<a href data-sk-button="primary" data-sk-color="#hex">`.
+    // Renderers that know the attributes (the kit CSS, a mobile app) draw a
+    // button; everything else still gets a working link. The inline CSS
+    // variables are the web copy of data-sk-color — CSS cannot read a data
+    // attribute as a color.
+    const buttonVariants = ['primary', 'secondary', 'outline'] as const;
+    type ButtonVariant = (typeof buttonVariants)[number];
+    const hexColor = /^#[0-9a-f]{6}$/i;
+
+    function readableTextOn(hex: string): string {
+        const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#111827' : '#ffffff';
+    }
+
+    const ButtonLink = Link.extend({
+        addAttributes() {
+            return {
+                ...this.parent?.(),
+                button: {
+                    default: null,
+                    parseHTML: (el) => {
+                        const value = el.getAttribute('data-sk-button');
+                        return buttonVariants.includes(value as ButtonVariant) ? value : null;
+                    },
+                    renderHTML: (attrs) => (attrs.button ? { 'data-sk-button': attrs.button as string } : {}),
+                },
+                buttonColor: {
+                    default: null,
+                    parseHTML: (el) => {
+                        const value = el.getAttribute('data-sk-color') ?? '';
+                        return hexColor.test(value) ? value.toLowerCase() : null;
+                    },
+                    renderHTML: (attrs) => {
+                        const color = attrs.buttonColor as string | null;
+                        if (!color) return {};
+                        return {
+                            'data-sk-color': color,
+                            style: `--sk-button-color: ${color}; --sk-button-text: ${readableTextOn(color)}`,
+                        };
+                    },
+                },
+            };
+        },
+    });
+
     const extensions: Extensions = [
-        // StarterKit v3 bundles the Link extension, so configure it here instead
-        // of pushing a second one (which triggers a "Duplicate extension names"
-        // warning). Disable it entirely when links are not enabled.
+        // StarterKit v3 bundles Link; it is swapped for ButtonLink below, so the
+        // bundled one stays off (two would warn "Duplicate extension names").
         StarterKit.configure({
             heading: { levels: [2, 3, 4] },
-            link: props.links ? { openOnClick: false, autolink: true } : false,
+            link: false,
         }),
         Placeholder.configure({ placeholder: () => props.placeholder ?? '' }),
         TextAlign.configure({
@@ -161,6 +207,9 @@
             height: 360,
         }),
     ];
+    if (props.links) {
+        extensions.push(ButtonLink.configure({ openOnClick: false, autolink: true }));
+    }
     if (props.imageUpload) {
         extensions.push(CustomImage.configure({ inline: true, allowBase64: false }));
     }
@@ -421,6 +470,61 @@
             return;
         }
         editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    }
+
+    const buttonPopover = ref<InstanceType<typeof Popover> | null>(null);
+    const buttonForm = ref<{ label: string; href: string; variant: ButtonVariant; color: string | null }>({
+        label: '',
+        href: '',
+        variant: 'primary',
+        color: null,
+    });
+    // Nothing selected and no link under the caret: the button text is typed in the popover.
+    const buttonNeedsLabel = ref(false);
+    const buttonVariantOptions = computed(() =>
+        buttonVariants.map((value) => ({ value, label: trans(`sk-editor.button_${value}`) })),
+    );
+
+    const currentButton = computed<ButtonVariant | null>(() => {
+        if (!editor.value) return null;
+        return (editor.value.getAttributes('link').button as ButtonVariant | null) ?? null;
+    });
+
+    function toggleButtonPopover(event: Event): void {
+        if (!editor.value) return;
+        const attrs = editor.value.getAttributes('link');
+        buttonForm.value = {
+            label: '',
+            href: (attrs.href as string | undefined) ?? 'https://',
+            variant: (attrs.button as ButtonVariant | null) ?? 'primary',
+            color: (attrs.buttonColor as string | null) ?? null,
+        };
+        buttonNeedsLabel.value = editor.value.state.selection.empty && !editor.value.isActive('link');
+        buttonPopover.value?.toggle(event);
+    }
+
+    function applyButton(): void {
+        if (!editor.value) return;
+        const href = buttonForm.value.href.trim();
+        const label = buttonForm.value.label.trim();
+        if (href === '' || (buttonNeedsLabel.value && label === '')) return;
+
+        // Secondary is the neutral style — a color would be ignored, so it is not stored.
+        const { variant, color } = buttonForm.value;
+        const attrs = { href, button: variant, buttonColor: variant === 'secondary' ? null : color };
+        const chain = editor.value.chain().focus();
+        if (buttonNeedsLabel.value) {
+            chain.insertContent({ type: 'text', text: label, marks: [{ type: 'link', attrs }] });
+        } else {
+            chain.extendMarkRange('link').setMark('link', attrs);
+        }
+        chain.run();
+        buttonPopover.value?.hide();
+    }
+
+    function removeButton(): void {
+        editor.value?.chain().focus().extendMarkRange('link').unsetLink().run();
+        buttonPopover.value?.hide();
     }
 
     function setAlign(align: 'left' | 'center' | 'right' | 'justify'): void {
@@ -1014,6 +1118,18 @@
                         @click="promptLink"
                     />
                     <Button
+                        v-if="links"
+                        v-tooltip.top="$t('sk-editor.button')"
+                        type="button"
+                        icon="pi pi-stop"
+                        size="small"
+                        text
+                        :aria-label="$t('sk-editor.button')"
+                        :severity="currentButton ? 'primary' : 'secondary'"
+                        :disabled="disabled"
+                        @click="toggleButtonPopover"
+                    />
+                    <Button
                         v-if="imageUpload"
                         v-tooltip.top="$t('sk-editor.image')"
                         type="button"
@@ -1367,6 +1483,52 @@
                 @pick="pickTableBorderColor"
                 @clear="clearTableBorderColor"
             />
+        </Popover>
+
+        <Popover ref="buttonPopover">
+            <form class="sk-rte__button-form" @submit.prevent="applyButton">
+                <InputText
+                    v-if="buttonNeedsLabel"
+                    v-model="buttonForm.label"
+                    size="small"
+                    :placeholder="$t('sk-editor.button_label')"
+                    :aria-label="$t('sk-editor.button_label')"
+                />
+                <InputText
+                    v-model="buttonForm.href"
+                    size="small"
+                    type="url"
+                    :placeholder="$t('sk-editor.button_url')"
+                    :aria-label="$t('sk-editor.button_url')"
+                />
+                <SelectButton
+                    v-model="buttonForm.variant"
+                    :options="buttonVariantOptions"
+                    option-label="label"
+                    option-value="value"
+                    size="small"
+                    :allow-empty="false"
+                    :aria-label="$t('sk-editor.button_style')"
+                />
+                <EditorColorPalette
+                    v-if="buttonForm.variant !== 'secondary'"
+                    :current="buttonForm.color"
+                    @pick="(hex) => (buttonForm.color = hex)"
+                    @clear="buttonForm.color = null"
+                />
+                <div class="sk-rte__button-form-actions">
+                    <Button
+                        v-if="currentButton"
+                        type="button"
+                        size="small"
+                        text
+                        severity="danger"
+                        :label="$t('sk-editor.button_remove')"
+                        @click="removeButton"
+                    />
+                    <Button type="submit" size="small" :label="$t('sk-editor.button_apply')" />
+                </div>
+            </form>
         </Popover>
 
         <Popover ref="highlightPopover">

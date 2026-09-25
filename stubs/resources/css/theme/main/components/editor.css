@@ -181,6 +181,36 @@
     color: var(--p-primary-500);
 }
 
+/* Button links: <a data-sk-button="primary|secondary|outline">. A picked color
+   arrives as --sk-button-color / --sk-button-text; the theme primary otherwise. */
+.sk-rte__content a[data-sk-button],
+.sk-prose a[data-sk-button] {
+    @apply my-1 inline-block rounded-md border px-4 py-2 font-medium no-underline;
+    background: var(--sk-button-color, var(--p-primary-500));
+    border-color: var(--sk-button-color, var(--p-primary-500));
+    color: var(--sk-button-text, var(--p-primary-contrast-color, #fff));
+}
+
+.sk-rte__content a[data-sk-button='secondary'],
+.sk-prose a[data-sk-button='secondary'] {
+    background: var(--p-surface-100);
+    border-color: var(--p-surface-200);
+    color: var(--p-surface-800);
+}
+
+:root.dark .sk-rte__content a[data-sk-button='secondary'],
+:root.dark .sk-prose a[data-sk-button='secondary'] {
+    background: var(--p-surface-800);
+    border-color: var(--p-surface-700);
+    color: var(--p-surface-100);
+}
+
+.sk-rte__content a[data-sk-button='outline'],
+.sk-prose a[data-sk-button='outline'] {
+    background: transparent;
+    color: var(--sk-button-color, var(--p-primary-500));
+}
+
 .sk-rte__content img,
 .sk-prose img {
     @apply my-2 h-auto max-w-full rounded;
@@ -372,6 +402,14 @@
 
 .sk-rte__bubble-input {
     @apply w-20;
+}
+
+.sk-rte__button-form {
+    @apply flex min-w-72 flex-col gap-2;
+}
+
+.sk-rte__button-form-actions {
+    @apply flex justify-end gap-1;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

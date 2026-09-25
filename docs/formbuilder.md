@@ -284,7 +284,7 @@ FB.password().key('password').generator({ length: 24 });
 - `placeholder(string)` — translation key rendered when the editor is empty.
 - `minHeight(string)` — CSS `min-height` for the editor body (default `'10rem'`).
 - `imageUpload({ context, contextId?, folderId?, folderName?, acceptedMimes? })` — configure inline image uploads through File Manager. `context` is required and must be registered in the File Manager context registry. `folderName` groups every image uploaded through this editor under a single root-level folder in that context (e.g. every welcome-message image goes under "Welcome Message"). Accepts the same regex as the server-side `folder_name` validator: letters, digits, space, dash, underscore only.
-- `links(boolean)` — enables the link toolbar button and paste auto-linking. Default `false`.
+- `links(boolean)` — enables the link toolbar button and paste auto-linking. Default `false`. It also enables the **button** tool: select text (or type a label) and pick a URL, a style — `primary`, `secondary` or `outline` — and, for `primary` / `outline`, an optional color from the editor palette (the theme primary otherwise). The result is a normal link carrying the style: `<a href="…" data-sk-button="primary">…</a>`. `sk-prose` draws it as a button; a mobile app rendering the same HTML should map `a[data-sk-button]` to its own native button (see below), and any renderer that ignores the attribute still shows a working link.
 - `treatEmptyAsBlank(boolean)` — emits an empty string instead of `<p></p>` when the editor is empty. Default `true`.
 
 ```ts
@@ -294,6 +294,11 @@ FB.editor()
     .placeholder('sk-setting.general.welcome_message_placeholder')
     .imageUpload({ context: 'global', folderName: 'Welcome Message' });
 ```
+
+
+#### Button links on mobile
+
+Editor content is plain HTML, so a native app sees buttons as `<a>` tags. The contract is one attribute: `data-sk-button` is `primary`, `secondary` or `outline` (`HtmlSanitizer` drops any other value), the optional `data-sk-color` is a `#rrggbb` fill (`primary`) or border + text color (`outline`) — pick white or dark text on a fill by its luminance, `href` is `http(s)`, `mailto` or `tel`, and the link text is the button label. Map it in your HTML renderer instead of relying on CSS — e.g. a custom `a` renderer in `react-native-render-html`, or a `TagExtension` for `a` in `flutter_html` — and fall back to the default link rendering when the attribute is missing. Use an https universal / app link as the URL when the button should open a screen inside the app.
 
 ### Rendering sanitized content
 

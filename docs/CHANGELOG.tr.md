@@ -2,6 +2,12 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-09-25 — v13.9.0
+
+### Eklendi
+
+- **Zengin metin editörüne buton eklenebiliyor.** Link açık olan editörlerde yeni araç çubuğu düğmesi, seçili metni ya da yazdığınız etiketi bir adrese giden butona çevirir; üç stil var (ana, ikincil, çerçeveli) ve renk editör paletinden seçilebiliyor. İçerik düz HTML olarak kalır: yönetim ekranlarında buton olarak görünür, mobil uygulama da kendi native butonu olarak çizebilir; butonları tanımayan bir uygulama ise çalışan bir link gösterir. Buton stilleri için `php artisan sk:update` çalıştırın.
+
 ## 2026-09-23 — v13.8.0
 
 ### Eklendi

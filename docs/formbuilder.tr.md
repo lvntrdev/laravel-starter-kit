@@ -282,7 +282,7 @@ FB.password().key('password').generator({ length: 24 });
 - `placeholder(string)` — editor boşken gösterilen çeviri anahtarı.
 - `minHeight(string)` — editor gövdesi için CSS `min-height` (varsayılan `'10rem'`).
 - `imageUpload({ context, contextId?, folderId?, folderName?, acceptedMimes? })` — File Manager üzerinden inline görsel upload'ını konfigüre eder. `context` zorunludur ve File Manager context registry içinde kayıtlı olmalıdır. `folderName`, bu editör üzerinden yüklenen her görseli ilgili context'te tek bir root-level klasör altında gruplar (örn. her welcome-message görseli "Welcome Message" altına gider). Server-side `folder_name` validator'ı ile aynı regex: yalnızca harf, rakam, boşluk, tire, altçizgi.
-- `links(boolean)` — link toolbar butonunu ve paste auto-linking davranışını açar. Varsayılan `false`.
+- `links(boolean)` — link toolbar butonunu ve paste auto-linking davranışını açar. Varsayılan `false`. Aynı zamanda **buton** aracını açar: metni seçin (ya da buton metnini yazın), adres ve stil seçin — `primary`, `secondary` veya `outline` — `primary` / `outline` için editör paletinden isteğe bağlı renk de seçilebilir (seçilmezse tema ana rengi). Sonuç stili taşıyan normal bir linktir: `<a href="…" data-sk-button="primary">…</a>`. `sk-prose` bunu buton olarak çizer; aynı HTML'i gösteren mobil uygulama `a[data-sk-button]` etiketini kendi native butonuna eşlemelidir (aşağıya bakın), attribute'u tanımayan her renderer ise çalışan bir link gösterir.
 - `treatEmptyAsBlank(boolean)` — editör boşken `<p></p>` yerine boş string üretir. Varsayılan `true`.
 
 ```ts
@@ -292,6 +292,10 @@ FB.editor()
     .placeholder('sk-setting.general.welcome_message_placeholder')
     .imageUpload({ context: 'global', folderName: 'Welcome Message' });
 ```
+
+#### Mobilde buton linkleri
+
+Editör içeriği düz HTML'dir; native uygulama butonları `<a>` etiketi olarak görür. Sözleşme tek attribute: `data-sk-button` değeri `primary`, `secondary` veya `outline` (`HtmlSanitizer` başka değeri siler), isteğe bağlı `data-sk-color` `#rrggbb` biçiminde dolgu (`primary`) ya da kenarlık + yazı rengidir (`outline`) — dolgu üstündeki yazıyı parlaklığa göre beyaz ya da koyu seçin, `href` `http(s)`, `mailto` veya `tel`, link metni buton etiketi. CSS'e güvenmek yerine HTML renderer'ınızda eşleyin — örn. `react-native-render-html`'de özel `a` renderer'ı, `flutter_html`'de `a` için bir `TagExtension` — attribute yoksa varsayılan link çizimine düşün. Buton uygulama içinde bir ekran açacaksa adres olarak https universal / app link kullanın.
 
 ### Sanitize edilmiş içeriği render etme
 

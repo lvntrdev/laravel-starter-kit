@@ -17,6 +17,8 @@ use DOMNode;
  * - href/src attributes are rejected when they use javascript:, vbscript:, or data: schemes.
  * - External anchor links are forced to rel="nofollow noopener".
  * - <iframe> survives only when its src is a YouTube embed URL (editor video node).
+ * - data-sk-button on <a> (editor button link) survives only with a known variant,
+ *   data-sk-color only as a #rrggbb hex.
  */
 class HtmlSanitizer
 {
@@ -33,7 +35,7 @@ class HtmlSanitizer
 
     /** @var array<string, list<string>> */
     private const ALLOWED_ATTRIBUTES = [
-        'a' => ['href', 'title', 'rel', 'target'],
+        'a' => ['href', 'title', 'rel', 'target', 'style', 'data-sk-button', 'data-sk-color'],
         'img' => ['src', 'alt', 'title', 'width', 'height', 'style', 'data-align'],
         'ul' => ['data-type'],
         'ol' => ['start', 'type'],
@@ -49,6 +51,9 @@ class HtmlSanitizer
         'td' => ['colspan', 'rowspan', 'colwidth', 'style'],
         'col' => ['style', 'span'],
     ];
+
+    /** @var list<string> */
+    private const BUTTON_VARIANTS = ['primary', 'secondary', 'outline'];
 
     /** @var list<string> */
     private const DROP_ELEMENTS = [
@@ -162,6 +167,22 @@ class HtmlSanitizer
                 continue;
             }
 
+            if ($name === 'data-sk-button') {
+                if (! in_array($attribute->nodeValue, self::BUTTON_VARIANTS, true)) {
+                    $element->removeAttribute($name);
+                }
+
+                continue;
+            }
+
+            if ($name === 'data-sk-color') {
+                if (preg_match('/^#[0-9a-f]{6}$/i', $attribute->nodeValue ?? '') !== 1) {
+                    $element->removeAttribute($name);
+                }
+
+                continue;
+            }
+
             if ($name === 'style') {
                 $cleanStyle = self::filterStyle($attribute->nodeValue ?? '');
                 if ($cleanStyle === '') {
@@ -250,7 +271,7 @@ class HtmlSanitizer
                 continue;
             }
 
-            if (in_array($property, ['color', 'background-color', '--sk-table-border'], true)) {
+            if (in_array($property, ['color', 'background-color', '--sk-table-border', '--sk-button-color', '--sk-button-text'], true)) {
                 if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $value) === 1) {
                     $kept[] = $property.': '.strtolower($value);
                 } elseif (preg_match('/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+))?\s*\)$/i', $value) === 1) {

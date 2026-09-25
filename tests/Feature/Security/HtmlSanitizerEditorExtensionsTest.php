@@ -63,3 +63,32 @@ it('drops any other iframe', function (string $src): void {
     'javascript' => ['javascript:alert(1)'],
     'no src' => [''],
 ]);
+
+it('keeps a button link with a known variant', function (string $variant): void {
+    expect(HtmlSanitizer::clean('<p><a href="https://example.test" data-sk-button="'.$variant.'">Go</a></p>'))
+        ->toBe('<p><a href="https://example.test" data-sk-button="'.$variant.'">Go</a></p>');
+})->with(['primary', 'secondary', 'outline']);
+
+it('drops an unknown button variant but keeps the link', function (): void {
+    expect(HtmlSanitizer::clean('<p><a href="https://example.test" data-sk-button="x onclick">Go</a></p>'))
+        ->toBe('<p><a href="https://example.test">Go</a></p>');
+});
+
+it('keeps a button color as a hex and its css variables', function (): void {
+    $clean = HtmlSanitizer::clean(
+        '<p><a href="https://example.test" data-sk-button="primary" data-sk-color="#1D4ED8" '
+        .'style="--sk-button-color: #1d4ed8; --sk-button-text: #ffffff">Go</a></p>',
+    );
+
+    expect($clean)->toContain('data-sk-color="#1D4ED8"')
+        ->toContain('--sk-button-color: #1d4ed8')
+        ->toContain('--sk-button-text: #ffffff');
+});
+
+it('drops a button color that is not a hex', function (): void {
+    $clean = HtmlSanitizer::clean(
+        '<p><a href="https://example.test" data-sk-color="red;x" style="--sk-button-color: url(https://evil.test)">Go</a></p>',
+    );
+
+    expect($clean)->toBe('<p><a href="https://example.test">Go</a></p>');
+});
