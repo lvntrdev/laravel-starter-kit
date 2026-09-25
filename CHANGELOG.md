@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Rich text editor: button links.** With `links()` on, a new toolbar button turns the selection (or a label typed in its popover) into a link styled as a button — `primary`, `secondary` or `outline` — with an optional palette color for `primary` / `outline`. It is stored as `<a href="…" data-sk-button="<variant>" data-sk-color="#rrggbb">` plus inline `--sk-button-color` / `--sk-button-text` variables for the web (text color picked by luminance), so the content stays plain HTML: `.sk-rte__content` / `.sk-prose` draw it as a button, a mobile app can map `a[data-sk-button]` to a native button, and a renderer that ignores the attribute still shows a working link. The editor's link extension is now `ButtonLink` (Tiptap `Link` + the `button` attribute) instead of the one bundled in StarterKit; `links()` / paste auto-linking behave as before.
 
+### Fixed
+
+- **`sk:install` / `sk:update` banners show the installed version.** Both printed a hand-written `(v13.7.x)` that went stale with every release. They now read it from Composer's runtime metadata through the new `Support\KitVersion::tag()` (`dev` for a branch or source install); `DocsLink` resolves its pinned docs ref through the same helper.
+
 ### Security
 
 - **`HtmlSanitizer` keeps `data-sk-button` on `<a>` only with a known variant** (`primary`, `secondary`, `outline`) and `data-sk-color` only as `#rrggbb`; any other value is dropped and the link kept. `<a>` may carry `style`, filtered by the same property allowlist, which now also admits the hex-only `--sk-button-color` / `--sk-button-text`.

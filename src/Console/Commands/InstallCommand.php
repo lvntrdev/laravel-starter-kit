@@ -20,6 +20,7 @@ use Lvntr\StarterKit\Console\Support\RecipeRegistry;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use Lvntr\StarterKit\Support\DocsLink;
 use Lvntr\StarterKit\Support\Encryption\DataEncrypterFactory;
+use Lvntr\StarterKit\Support\KitVersion;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\Node\Stmt;
@@ -391,7 +392,7 @@ class InstallCommand extends Command
         }
 
         $this->newLine();
-        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer (v13.7.x)</>');
+        $this->line('  <fg=cyan;options=bold>Lvntr Starter Kit Installer ('.(KitVersion::tag() ?? 'dev').')</>');
         $this->newLine();
         $this->line('  <fg=gray>Package runtime runs from vendor/lvntr/laravel-starter-kit.</>');
         $this->line('  <fg=gray>This command copies the application skeleton (auth, layout,</>');

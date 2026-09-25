@@ -2,8 +2,6 @@
 
 namespace Lvntr\StarterKit\Support;
 
-use Composer\InstalledVersions;
-
 /**
  * Build a URL to a documentation page that is reachable from an installed app.
  *
@@ -22,8 +20,6 @@ final class DocsLink
 {
     private const REPOSITORY = 'https://github.com/lvntrdev/laravel-starter-kit';
 
-    private const PACKAGE = 'lvntr/laravel-starter-kit';
-
     private const FALLBACK_REF = 'main';
 
     /**
@@ -35,25 +31,12 @@ final class DocsLink
     }
 
     /**
-     * Resolve the git ref the installed package corresponds to.
-     *
-     * A tagged release reports `13.6.16`, which is published as `v13.6.16`. A
-     * branch install reports `dev-main` or `dev-feature/x`, neither of which is
-     * a useful permalink for an operator, so those fall back to the default
-     * branch.
+     * Resolve the git ref the installed package corresponds to. A branch
+     * install (`dev-main`) is not a useful permalink, so it falls back to the
+     * default branch.
      */
     private static function ref(): string
     {
-        if (! class_exists(InstalledVersions::class) || ! InstalledVersions::isInstalled(self::PACKAGE)) {
-            return self::FALLBACK_REF;
-        }
-
-        $version = InstalledVersions::getPrettyVersion(self::PACKAGE);
-
-        if (! is_string($version) || $version === '' || str_starts_with($version, 'dev-')) {
-            return self::FALLBACK_REF;
-        }
-
-        return str_starts_with($version, 'v') ? $version : 'v'.$version;
+        return KitVersion::tag() ?? self::FALLBACK_REF;
     }
 }
