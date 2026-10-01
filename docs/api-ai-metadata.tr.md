@@ -48,11 +48,11 @@ Her attribute değeri, üretilen OpenAPI işleminde `x-` önekli bir anahtar alt
 Kit'in kendi `App\Http\Controllers\Api\UserController` sınıfındaki (`stubs/app/Http/Controllers/Api/UserController.php`) `store()` metodunu, `to_api()` ile zaten `ApiResponse` zarfı üzerinden dönen haliyle, işaretlemek:
 
 ```php
-use LvntR\ApiDock\Attributes\AiChangelog;
-use LvntR\ApiDock\Attributes\AiExample;
-use LvntR\ApiDock\Attributes\AiHint;
-use LvntR\ApiDock\Attributes\AiPitfall;
-use LvntR\ApiDock\Attributes\ApiFeature;
+use Lvntr\ApiDock\Attributes\AiChangelog;
+use Lvntr\ApiDock\Attributes\AiExample;
+use Lvntr\ApiDock\Attributes\AiHint;
+use Lvntr\ApiDock\Attributes\AiPitfall;
+use Lvntr\ApiDock\Attributes\ApiFeature;
 
 #[AiHint('Yönetici tarafından yönetilen bir kullanıcı oluşturur; çağıranın zaten users.create yetkisi olmalı.')]
 #[ApiFeature(scopes: ['users.create'])]

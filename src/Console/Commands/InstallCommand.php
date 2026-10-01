@@ -3802,12 +3802,12 @@ class InstallCommand extends Command
         $this->runProcess(['php', 'artisan', 'config:clear'], 'Clearing config cache');
         $this->runProcess(['php', 'artisan', 'route:clear'], 'Clearing route cache');
 
-        // 3. Generate Wayfinder route/action TypeScript files (required for build)
+        // 3. Generate Wayfinder route TypeScript files (required for build; actions are unused)
         if (! $this->step('Generating Wayfinder types', function () {
-            return $this->runProcessStep(['php', 'artisan', 'wayfinder:generate'], timeout: 60);
+            return $this->runProcessStep(['php', 'artisan', 'wayfinder:generate', '--skip-actions'], timeout: 60);
         }, mandatory: false)) {
             $this->components->warn('Wayfinder types could not be generated. Build will fail.');
-            $this->renderFrontendGuidance('php artisan wayfinder:generate && npm run build');
+            $this->renderFrontendGuidance('php artisan wayfinder:generate --skip-actions && npm run build');
 
             return;
         }

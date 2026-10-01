@@ -2,7 +2,7 @@
 
 namespace Lvntr\StarterKit\Domain\ApiRoute\Support;
 
-use LvntR\ApiDock\Support\DocumentGenerator;
+use Lvntr\ApiDock\Support\DocumentGenerator;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 
 /**

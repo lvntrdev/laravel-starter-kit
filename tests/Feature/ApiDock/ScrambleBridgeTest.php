@@ -1,7 +1,7 @@
 <?php
 
 use Dedoc\Scramble\Scramble;
-use LvntR\ApiDock\ApiDockServiceProvider;
+use Lvntr\ApiDock\ApiDockServiceProvider;
 use Lvntr\StarterKit\Support\Scramble\ApiResponseExtension;
 use Lvntr\StarterKit\Tests\Feature\ApiDock\ApiDockScrambleBridgeTestCase;
 

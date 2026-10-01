@@ -5,7 +5,7 @@ namespace Lvntr\StarterKit\Tests\Feature\ApiDock;
 use App\Http\Middleware\CheckApiDocsAccess;
 use Dedoc\Scramble\ScrambleServiceProvider;
 use Illuminate\Foundation\Application;
-use LvntR\ApiDock\ApiDockServiceProvider;
+use Lvntr\ApiDock\ApiDockServiceProvider;
 use Lvntr\StarterKit\Tests\PermissionMiddlewareTestCase;
 
 /**

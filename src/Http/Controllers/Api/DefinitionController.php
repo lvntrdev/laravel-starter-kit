@@ -4,11 +4,11 @@ namespace Lvntr\StarterKit\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use LvntR\ApiDock\Attributes\AiExample;
-use LvntR\ApiDock\Attributes\AiHint;
-use LvntR\ApiDock\Attributes\AiPitfall;
-use LvntR\ApiDock\Attributes\AiTool;
-use LvntR\ApiDock\Attributes\ApiFeature;
+use Lvntr\ApiDock\Attributes\AiExample;
+use Lvntr\ApiDock\Attributes\AiHint;
+use Lvntr\ApiDock\Attributes\AiPitfall;
+use Lvntr\ApiDock\Attributes\AiTool;
+use Lvntr\ApiDock\Attributes\ApiFeature;
 use Lvntr\StarterKit\Domain\Shared\Services\DefinitionService;
 use Lvntr\StarterKit\Http\Controllers\Concerns\ListsDefinitions;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;

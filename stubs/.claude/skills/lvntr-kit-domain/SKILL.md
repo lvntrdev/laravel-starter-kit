@@ -172,7 +172,7 @@ php artisan sk:seed-permissions --fresh
 ### Step 13 — Wayfinder regen
 
 ```bash
-php artisan wayfinder:generate
+php artisan wayfinder:generate --skip-actions
 ```
 
 ---
@@ -261,9 +261,9 @@ add AI-facing detail to the generated OpenAPI document beyond what the
 schema already says — full merge rules in `docs/api-ai-metadata.md`.
 
 ```php
-use LvntR\ApiDock\Attributes\AiHint;
-use LvntR\ApiDock\Attributes\AiPitfall;
-use LvntR\ApiDock\Attributes\ApiFeature;
+use Lvntr\ApiDock\Attributes\AiHint;
+use Lvntr\ApiDock\Attributes\AiPitfall;
+use Lvntr\ApiDock\Attributes\ApiFeature;
 
 #[AiHint('Creates an admin-managed user; the caller must already hold users.create.')]
 #[ApiFeature(scopes: ['users.create'])]

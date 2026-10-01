@@ -119,9 +119,8 @@ rules about *what not to touch* are kit-specific.
 4. **Never bypass `useDialog()` / `useConfirm()`** by importing PrimeVue
    `Dialog` or using `confirm()/alert()`. The kit's `<AppDialog />` and
    `<ConfirmDialog group="app" />` are mounted in `AdminLayout.vue`.
-5. **Never hardcode URLs in Vue.** Import from `@/routes/**` or
-   `@/actions/**` and call `.url()`. Run `php artisan wayfinder:generate`
-   after route changes.
+5. **Never hardcode URLs in Vue.** Import from `@/routes/**` and call `.url()`.
+   Run `php artisan wayfinder:generate --skip-actions` after route changes.
 6. **Never put business logic in controllers.** Push it into an Action under
    `app/Domain/{Entity}/Actions/`. Controllers stay 5-line thin.
 7. **Run `vendor/bin/pint --dirty --format agent`** before finishing any PHP

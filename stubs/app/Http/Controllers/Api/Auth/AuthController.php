@@ -17,11 +17,11 @@ use App\Http\Resources\Admin\User\UserResource;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use LvntR\ApiDock\Attributes\AiExample;
-use LvntR\ApiDock\Attributes\AiHint;
-use LvntR\ApiDock\Attributes\AiPitfall;
-use LvntR\ApiDock\Attributes\AiTool;
-use LvntR\ApiDock\Attributes\ApiFeature;
+use Lvntr\ApiDock\Attributes\AiExample;
+use Lvntr\ApiDock\Attributes\AiHint;
+use Lvntr\ApiDock\Attributes\AiPitfall;
+use Lvntr\ApiDock\Attributes\AiTool;
+use Lvntr\ApiDock\Attributes\ApiFeature;
 
 /**
  * API authentication controller.

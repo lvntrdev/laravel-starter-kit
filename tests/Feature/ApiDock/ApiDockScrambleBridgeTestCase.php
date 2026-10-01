@@ -4,7 +4,7 @@ namespace Lvntr\StarterKit\Tests\Feature\ApiDock;
 
 use Dedoc\Scramble\ScrambleServiceProvider;
 use Illuminate\Foundation\Application;
-use LvntR\ApiDock\ApiDockServiceProvider;
+use Lvntr\ApiDock\ApiDockServiceProvider;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 

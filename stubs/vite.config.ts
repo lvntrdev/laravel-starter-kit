@@ -152,7 +152,7 @@ export default defineConfig({
         // any ignore-scripts config); the explicit chain in package.json's
         // dev/build scripts is kept as belt-and-suspenders.
         skTheme(),
-        ...(isWayfinderAvailable() ? [wayfinder()] : []),
+        ...(isWayfinderAvailable() ? [wayfinder({ actions: false })] : []),
         ...(isVitest
             ? []
             : [

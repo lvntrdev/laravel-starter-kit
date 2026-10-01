@@ -293,7 +293,7 @@ if frontend_built; then
 else
     log "sk:install did not leave a build manifest — building explicitly…"
     in_fixture npm install --no-audit --no-fund
-    artisan wayfinder:generate
+    artisan wayfinder:generate --skip-actions
     in_fixture npm run build
 
     frontend_built || die "No Vite manifest under public/build after \`npm run build\` — the fixture cannot render a page."

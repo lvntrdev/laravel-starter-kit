@@ -154,7 +154,7 @@ php artisan api-dock:agent-guide       # install the API Dock authoring rules in
 ```
 
 Annotate `App\Http\Controllers\Api\*` classes/methods with the six
-`LvntR\ApiDock\Attributes\*` attributes (`AiHint`, `AiPitfall`, `AiChangelog`,
+`Lvntr\ApiDock\Attributes\*` attributes (`AiHint`, `AiPitfall`, `AiChangelog`,
 `AiExample`, `AiTool`, `ApiFeature`) to add AI-facing metadata beyond what the
 generated schema already says — see `docs/api-ai-metadata.md`.
 
@@ -180,7 +180,7 @@ detects your modifications).
 ```bash
 php artisan site:install              # one-shot: migrate + seed + passport keys + admin
 php artisan env:sync                  # propagate .env keys → .env.example (also runs in pre-commit)
-php artisan wayfinder:generate        # regenerate @/routes and @/actions after route changes
+php artisan wayfinder:generate --skip-actions  # regenerate @/routes after route changes (actions unused)
 php artisan file-manager:purge-trash  # permanently delete expired file-manager trash
                                       # (--days=N, --chunk=N 1-5000 default 500; takes a cache
                                       #  lock, exits non-zero when an item was left behind)

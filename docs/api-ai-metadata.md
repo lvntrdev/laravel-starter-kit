@@ -48,11 +48,11 @@ Each attribute value lands in the generated OpenAPI operation under an `x-` pref
 Annotating `store()` on the kit's own `App\Http\Controllers\Api\UserController` (`stubs/app/Http/Controllers/Api/UserController.php`), which already returns through the `ApiResponse` envelope via `to_api()`:
 
 ```php
-use LvntR\ApiDock\Attributes\AiChangelog;
-use LvntR\ApiDock\Attributes\AiExample;
-use LvntR\ApiDock\Attributes\AiHint;
-use LvntR\ApiDock\Attributes\AiPitfall;
-use LvntR\ApiDock\Attributes\ApiFeature;
+use Lvntr\ApiDock\Attributes\AiChangelog;
+use Lvntr\ApiDock\Attributes\AiExample;
+use Lvntr\ApiDock\Attributes\AiHint;
+use Lvntr\ApiDock\Attributes\AiPitfall;
+use Lvntr\ApiDock\Attributes\ApiFeature;
 
 #[AiHint('Creates an admin-managed user; the caller must already hold users.create.')]
 #[ApiFeature(scopes: ['users.create'])]

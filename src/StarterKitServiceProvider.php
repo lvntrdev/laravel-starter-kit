@@ -30,7 +30,7 @@ use Illuminate\Translation\FileLoader;
 use Inertia\Inertia;
 use Laravel\Fortify\Fortify;
 use Laravel\Passport\Passport;
-use LvntR\ApiDock\ApiDockServiceProvider;
+use Lvntr\ApiDock\ApiDockServiceProvider;
 use Lvntr\StarterKit\Domain\ActivityLog\Queries\ActivityLogDatatableQuery;
 use Lvntr\StarterKit\Domain\ApiClient\Actions\CreateApiClientAction;
 use Lvntr\StarterKit\Domain\ApiClient\Actions\CreatePersonalAccessTokenAction;
@@ -1506,7 +1506,7 @@ class StarterKitServiceProvider extends ServiceProvider
      * at the prefix root and the generated document at `<prefix>/spec` (see
      * vendor/lvntr/api-dock/routes/api-dock.php). Matching the prefix and its
      * subpaths therefore covers every request that can reach
-     * `LvntR\ApiDock\Support\DocumentGenerator`. Scramble's own `docs/api*`
+     * `Lvntr\ApiDock\Support\DocumentGenerator`. Scramble's own `docs/api*`
      * routes are no longer registered — see register().
      *
      * A blank prefix would mount api-dock at the application root, which this
