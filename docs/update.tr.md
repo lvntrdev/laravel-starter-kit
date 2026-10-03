@@ -57,7 +57,7 @@ php artisan sk:update
 - izlenmeyen dosyalar için nasıl davranılacağını sorar
 - paketle gelen yeni dosyaları ekler
 - eksik filesystem ve media library config parçalarını enjekte eder
-- yeni migration'ları isteğe bağlı olarak çalıştırabilir
+- bekleyen migration'ları çalıştırmayı önerir: o an kopyaladığı migration'lar ve `vendor/` içinden yüklenip henüz çalışmamış kit migration'ları (ör. `file_manager_share_links` tablosu). Reddederseniz `php artisan migrate`'i kendiniz çalıştırın
 
 ### Vendor-first davranış modülü göçü (v13.6.0+)
 

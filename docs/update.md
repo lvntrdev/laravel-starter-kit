@@ -57,7 +57,7 @@ php artisan sk:update
 - asks how to handle untracked files
 - adds new files introduced by the package
 - injects missing filesystem and media library config pieces
-- can optionally run newly added migrations
+- offers to run pending migrations: migrations it just copied in, and kit migrations loaded from `vendor/` that have not run yet (e.g. the `file_manager_share_links` table). Declined? Run `php artisan migrate` yourself
 
 ### Vendor-first behavior module migration (v13.6.0+)
 

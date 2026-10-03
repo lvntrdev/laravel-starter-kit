@@ -6,6 +6,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ### Düzeltildi
 
+- **`sk:update` artık kitin yeni veritabanı değişikliklerini çalıştırıyor.** Güncelleme, kitin ihtiyaç duyduğu yeni bir tabloyu atlayabiliyordu; bu yüzden aktif paylaşım linkleri listesi, `php artisan migrate` elle çalıştırılana kadar "A server error occurred." gösteriyordu.
 - **Kit'le gelen AI skill'leri yeniden kodla uyumlu.** Ajanlara doğru olmayan bazı bilgiler veriliyordu: her `LogicException`'ın 422'ye dönüştüğü, `useDialog()`'un `refreshKey` aldığı, `sk:seed-permissions --fresh`'in rutin adım olduğu (tüm rollerin yetkilerini sıfırlar) ve `site:install`'ın zararsız olduğu (tüm tabloları siler). Bunlar düzeltildi.
 
 ### Eklendi

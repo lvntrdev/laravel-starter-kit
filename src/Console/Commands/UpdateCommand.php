@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Filesystem\Filesystem;
 use Lvntr\StarterKit\Console\Commands\Concerns\ChecksStepResults;
 use Lvntr\StarterKit\Console\Commands\Concerns\ComparesPublishedStubs;
@@ -605,7 +606,7 @@ class UpdateCommand extends Command
         // the command still exited 0. The result is now the command's result.
         $failedSteps = [];
 
-        if (! $dryRun && ! empty($this->added) && $this->hasNewMigrations()) {
+        if (! $dryRun && $this->hasNewMigrations()) {
             if (confirm('New migrations found. Run them now?', default: true)) {
                 $migrated = spin(function () {
                     return $this->runArtisan('migrate', ['--force' => true]);
@@ -1436,7 +1437,9 @@ class UpdateCommand extends Command
     }
 
     /**
-     * Check if newly added files include migrations.
+     * Check if this update brings migrations that have not run yet: stub
+     * migrations copied in this run, or package migrations auto-loaded from
+     * vendor (registerMigrations()), which never show up in `$this->added`.
      */
     private function hasNewMigrations(): bool
     {
@@ -1446,7 +1449,38 @@ class UpdateCommand extends Command
             }
         }
 
-        return false;
+        return $this->hasPendingPackageMigrations();
+    }
+
+    /**
+     * Package migrations under database/migrations/ missing from the
+     * `migrations` table. No repository (migrations never ran) or vendor
+     * loading switched off → false: there is nothing for `migrate` to pick up.
+     */
+    private function hasPendingPackageMigrations(): bool
+    {
+        if (! config('starter-kit.run_migrations', true)) {
+            return false;
+        }
+
+        /** @var Migrator $migrator */
+        $migrator = $this->laravel->make('migrator');
+
+        // Best-effort: a file-only update must still finish (hash registry
+        // included) when the database is unreachable.
+        try {
+            if (! $migrator->repositoryExists()) {
+                return false;
+            }
+
+            $files = $migrator->getMigrationFiles(dirname(__DIR__, 3).'/database/migrations');
+
+            return array_diff(array_keys($files), $migrator->getRepository()->getRan()) !== [];
+        } catch (\Throwable $e) {
+            $this->components->warn('Pending kit migrations could not be checked: '.$e->getMessage().' Run `php artisan migrate` once the database is reachable.');
+
+            return false;
+        }
     }
 
     /**

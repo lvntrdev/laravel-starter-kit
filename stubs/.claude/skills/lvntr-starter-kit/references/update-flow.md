@@ -40,7 +40,13 @@ The kit tracks every published file in `storage/starter-kit/hashes.json`
 6. **Run `--dry-run` first.** Use `--force` only if your customizations are
    safe to lose — it ignores the registry and overwrites everything tracked.
 
-7. **After update:** re-run `npm install && npm run build`; read the package
+7. **Migrations:** `sk:update` offers `migrate` whenever a migration is
+   pending — a stub migration it just copied, or a kit migration auto-loaded
+   from `vendor/` that is not in the `migrations` table yet. Declined (or a
+   non-interactive run that skipped it)? Run `php artisan migrate`: a kit
+   page whose table is missing answers with a 500.
+
+8. **After update:** re-run `npm install && npm run build`; read the package
    `CHANGELOG.md` and `docs/UPGRADE.md` for breaking notes (e.g. the
    v13.5.11 → v13.6.0 theme-tree migration). If a kit dependency's version
    moved and `npm install` fails with `ERESOLVE`, `sk:update` prints the

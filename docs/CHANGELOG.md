@@ -6,6 +6,7 @@ Newly added features and improvements to the starter kit are listed here.
 
 ### Fixed
 
+- **`sk:update` now runs the kit's new database changes.** Updating could leave out a new table the kit needs, so the active share links list showed "A server error occurred." until you ran `php artisan migrate` yourself.
 - **The AI skills shipped with the kit match the code again.** Agents were told a few things that are not true — that any `LogicException` becomes a 422, that `useDialog()` takes a `refreshKey`, that `sk:seed-permissions --fresh` is the routine step (it resets every role's permissions), and that `site:install` is harmless (it drops all tables). These are corrected.
 
 ### Added

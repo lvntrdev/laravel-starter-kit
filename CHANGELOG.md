@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`sk:update` runs new package migrations.** It only offered `migrate` when it had copied a migration stub in that run, so a migration shipped inside the package (auto-loaded from `vendor/`, e.g. the new `file_manager_share_links` table) was never run and the page using it failed with a server error. It now also checks the package's migrations against the `migrations` table.
 - **Shipped AI skills (`.claude/skills/lvntr-*`) brought back in line with the code.** `lvntr-kit-domain` told agents a plain `\LogicException` maps to a 422 — only `DomainRuleException` does, any other `LogicException` is a 500 — showed a `permission-resources.php` entry shape the config does not use, offered `sk:seed-permissions --fresh` (which resets every role's grants) as the routine follow-up, and passed field errors to `ApiException::unprocessable()`, which takes a message only. `lvntr-kit-frontend` documented `useDialog({ refreshKey })` (the composable takes no arguments; `refreshKey` belongs in the `open()` options), a `confirmLeave: false` option instead of `.confirmLeave(false)`, and `useDatatableSelection()` / `useMenuBuilder()` with the wrong signatures. `lvntr-starter-kit` described `PermissionEnum` as always overwritten by `sk:update` (it is hash-guarded) and `site:install` as a harmless one-shot (it runs `migrate:fresh`).
 
 ### Added
