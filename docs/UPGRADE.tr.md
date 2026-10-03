@@ -4,6 +4,18 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 
 ---
 
+## v13.8.3 → v13.8.4
+
+### Paylaşım linki yönetimi yeni bir migration gerektirir
+
+**Etkilenen:** File Manager paylaşım linklerini kullanan tüm uygulamalar.
+
+- `create_file_manager_share_links_table` migration'ı paketin `database/migrations/` klasöründe gelir. `php artisan migrate` çalıştırın (`sk:update` bunu zaten çalıştırır). Çalışana kadar paylaşım linki oluşturma başarısız olur.
+- Yükseltmeden önce oluşturulan linkler yeni "Aktif Paylaşım Linkleri" çekmecesinde listelenmez, çünkü imzaları hiç saklanmamıştı. Yine de zamanında sona erer, en geç 30 gün sonra.
+- `resources/js/composables/useFileShare.ts` ya da Files sayfasını uygulamanıza kopyaladıysanız, bu dosyaları yeniden senkronlayana kadar eski arayüzü kullanmaya devam edersiniz (`php artisan sk:update --dry-run` farkı gösterir).
+
+---
+
 ## v13.7.3 → v13.7.4
 
 ### "Debug Mode" rozeti artık ortama değil `system_admin` rolüne bakıyor

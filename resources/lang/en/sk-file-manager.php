@@ -145,12 +145,9 @@ return [
         'copy_failed_manual' => 'Could not copy automatically. Please copy the link manually.',
         'expires_at' => 'Expires: :date',
         'drawer_title' => 'Active Share Links',
-        'drawer_empty' => 'No share links created in this session.',
-        'drawer_session_note' => 'Links created in this session are shown. Refresh the page to clear this list.',
-        'column_link' => 'Link',
+        'drawer_empty' => 'No active share links for this file.',
+        'column_created' => 'Created',
         'column_expires' => 'Expires',
-        'status_expired' => 'Expired',
-        'status_active' => 'Active',
 
         'ttl' => [
             '1h' => '1 hour',
@@ -163,6 +160,7 @@ return [
             'summary' => 'Share Error',
             'create_failed' => 'Failed to generate share link.',
             'revoke_failed' => 'Failed to revoke share link.',
+            'list_failed' => 'Failed to load share links.',
         ],
     ],
 

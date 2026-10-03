@@ -145,6 +145,9 @@ function driftTableMap(): array
         'file_manager_share_revocations' => ['file_manager_share_revocations', [
             $vendor.'/2026_05_06_100000_create_file_manager_share_revocations_table.php',
         ]],
+        'file_manager_share_links' => ['file_manager_share_links', [
+            $vendor.'/2026_10_04_100000_create_file_manager_share_links_table.php',
+        ]],
         'media' => ['media', [
             $vendor.'/2026_03_08_205445_create_media_table.php',
             $vendor.'/2026_04_13_100200_add_folder_id_to_media_table.php',

@@ -307,7 +307,7 @@ Barrel: `@/composables` (`stubs/resources/js/composables/index.ts`). Direct: `@/
 | `useAccentColor()` | `{ accent, setAccent(color), applyAccent(color, { followGlobal? }), sidebarStyle, setSidebarStyle(style), applySidebarStyle(style) }` | `accent` `'default'` = follow admin global default. Barrel also exports `ACCENT_COLORS`, `ACCENT_SWATCH`, `SIDEBAR_STYLES`, types `AccentColor`, `SidebarStyle` |
 | `useAppearanceDefaults()` | `{ appearance, defaultAccent, defaultDarkMode, defaultSidebarStyle, logoLightUrl, logoDarkUrl, faviconUrl, applyFavicon() }` | Admin-wide appearance from Inertia shared props; call `applyFavicon()` in `onMounted` |
 | `useImageLightbox()` | `{ open(url, name='', items=[], index=0), close(), next(), prev(), state }` | **no-barrel.** Global overlay mounted in `AdminLayout`; pass `items`+`index` for gallery |
-| `useFileShare()` | `{ createShare(mediaId, ttlHours): ShareLinkResult\|null, revokeShare(mediaId, tokenHash): boolean }` | **no-barrel.** Signed share links (1-720 h); toasts its own errors. `ShareLinkResult = { url, expires_at, token_hash }` |
+| `useFileShare()` | `{ createShare(mediaId, ttlHours): ShareLinkResult\|null, revokeShare(mediaId, tokenHash): boolean, listShares(mediaId): IssuedShareLink[] \| null }` | **no-barrel.** Signed share links (1-720 h); toasts its own errors. `ShareLinkResult = { url, expires_at, token_hash }`; `IssuedShareLink = { token_hash, expires_at, created_at }` |
 | `withBasePath(path)` (`useBasePath`) | `string` | **no-barrel.** Prefixes a root-relative path with the app deploy sub-path; for raw `fetch`/XHR only (`useApi` already applies it) |
 | `getXsrfToken()` (`useCsrf`) | `string` | **no-barrel.** Decoded `XSRF-TOKEN` cookie or `''`; for raw requests |
 

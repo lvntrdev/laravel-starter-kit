@@ -109,6 +109,9 @@ it('does not contain unexpected migration files in the vendor directory', functi
         // the current schema accepts. Fail-closed — it measures the longest
         // existing value first and refuses rather than truncate a single row.
         '2026_08_31_120000_narrow_definitions_unique_index_columns.php',
+        // Unreleased: share link registry — one row per issued signed share URL
+        // (token hash only, never the URL). Additive create only.
+        '2026_10_04_100000_create_file_manager_share_links_table.php',
     ];
 
     $actual = collect(scandir($migrationDir))

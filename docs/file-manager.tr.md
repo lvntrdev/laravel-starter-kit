@@ -147,7 +147,7 @@ Breadcrumb'ın üzerinde icon-tinted kartlardan oluşan yatay sıra:
 - **Toplu silme** — toolbar'da seçim olduğunda "Seçilenleri Sil" butonu veya seçili öğeye sağ tık → **Seçilenleri Sil (N)**. Çöp Kutusu açıkken aktif öğeleri soft-delete eder; Çöp Kutusu içindeyken veya `enableTrash=false` olduğunda `force_delete=true` gönderip seçili öğeleri kalıcı siler.
 - **Yeniden Adlandır** — klasör ve dosya context menüleri yeniden adlandırma dialog'u açar. Aynı klasörde çakışan isimler sunucu tarafında reddedilir.
 - **Kopyalama** — dosya context menüsündeki **Çoğalt**, mevcut klasörde (veya verilen hedef klasörde) `photo (copy).jpg` / `photo (copy 2).jpg` gibi çakışmasız isimle fiziksel MediaLibrary kopyası oluşturur.
-- **Paylaş** — dosya context menüsündeki **Paylaş** mutlak dosya URL'sini `navigator.clipboard.writeText(...)` ile panoya kopyalar ve başarıda yerelleştirilmiş "Bağlantı kopyalandı" toast'u gösterir. Clipboard izni reddedilirse onun yerine yerelleştirilmiş "yakında geliyor" toast'u çıkar.
+- **Paylaş** — dosya context menüsündeki **Paylaş**, `FileManager`'ın dosyayla birlikte bir `share` olayı yaymasını sağlar; kendisi bir şey kopyalamaz ve yerleşik bir yedek davranışı yoktur. Admin Files sayfasında bu olay `ShareLinkModal`'ı açar (süre seç, imzalı bağlantıyı oluştur ve kopyala); modaldaki **Aktif Paylaşım Linkleri** çekmecesi o dosya için hâlâ geçerli bağlantıları iptal aksiyonuyla listeler. Özel sayfalar `@share` olayını kendileri yönetmelidir (bkz. `docs/composables.md` içindeki `useFileShare()`).
 - **Detaylar** — dosya context menüsündeki **Detaylar** girişi Ad, Tip, Boyut, Yüklenme, Klasör ve (resimlerde) Boyutlar'ı gösteren `FileDetailsDialog`'u açar. Resim boyutları gizli bir `new Image()` ile async yüklenir. Dialog, sağ-tık menüsündeki indirme handler'ını yeniden kullanan bir **İndir** footer butonuyla gelir.
 - **Busy overlay** — Sil / Taşı / Yeniden Adlandır işlemlerinde FileManager alanının üstüne modal kart (spinner + başlık) çıkıyor; toplu işlerde "N öğe kaldı" canlı sayaç + **Durdur** butonu döngüyü iptal ediyor.
 
@@ -194,6 +194,7 @@ Tüm uçlar `context` ve `context_id` parametrelerini GET/DELETE'te query string
 | DELETE | `/file-manager/files/{media}`                        | Tekli dosya silme                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Zorla indirme                                                         |
 | POST   | `/file-manager/share`                                | HMAC imzalı paylaşım bağlantısı oluştur (`media_id`, `expires_in_hours?`)   |
+| GET    | `/file-manager/share?media_id=`                      | Dosyanın aktif paylaşım bağlantılarını listele (`token_hash`, `expires_at`, `created_at`) |
 | POST   | `/file-manager/share/revoke`                         | Paylaşım bağlantısını iptal et (`token`)                              |
 | GET    | `/file-manager/share/{media}?expires=&signature=`    | İmzayı doğrula ve dosyaya erişim ver                                  |
 
@@ -329,6 +330,8 @@ Kimlik doğrulaması gerektirmeksizin dosyaya süreli erişim sağlayan HMAC-SHA
 | `max_ttl_hours`     | int  | `720`      | İzin verilen maksimum geçerlilik süresi (30 gün)      |
 | `allow_revoke`      | bool | `true`     | Süresi dolmadan bağlantı iptaline izin verir          |
 
+Oluşturulan her bağlantı ayrıca `file_manager_share_links` tablosuna kaydedilir (oluşturan kullanıcı, `media_id`, imzalı token'ın **hash**'i, `expires_at`) — URL ya da imzanın kendisi asla saklanmaz. `GET /file-manager/share?media_id=` bu tabloyu okur: süresi dolmuş ve iptal edilmiş bağlantılar listelenmez, liste en yeni 100 kayıtla sınırlıdır.
+
 İptal edilen token'lar `file_manager_share_revocations` tablosunda `(media_id, signed_token_hash)` composite unique index ile saklanır. Token doğrulaması oluşturulduğu `media_id` ile karşılaştırılır — farklı bir media kaydına karşı aynı token geçerli sayılmaz.
 
 #### Çöp kutusu ve paylaşım bağlantısı erişimi
@@ -384,7 +387,7 @@ Built-in kurallar:
 Paylaşım bağlantısı işlemleri iki ayrı izin kullanır:
 
 - `share-media` — imzalı paylaşım bağlantısı oluşturma (`POST /file-manager/share`)
-- `revoke-share-media` — süresi dolmadan bağlantı iptali (`POST /file-manager/share/revoke`)
+- `revoke-share-media` — süresi dolmadan bağlantı iptali (`POST /file-manager/share/revoke`); bir dosyanın aktif bağlantılarını listelemeyi de (`GET /file-manager/share`) bu yetki denetler
 
 ## İlgili Yapı
 

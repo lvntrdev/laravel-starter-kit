@@ -10,6 +10,12 @@ export interface ShareLinkResult {
     token_hash: string;
 }
 
+export interface IssuedShareLink {
+    token_hash: string;
+    expires_at: string;
+    created_at: string;
+}
+
 export function useFileShare() {
     const api = useApi({ toast: false });
     const toast = useToast();
@@ -83,8 +89,35 @@ export function useFileShare() {
         }
     }
 
+    /**
+     * Lists the file's active (unexpired, unrevoked) share links.
+     *
+     * @param mediaId Medialibrary media kaydının ID'si.
+     * @returns       Aktif linkler veya hata durumunda null.
+     */
+    async function listShares(mediaId: number): Promise<IssuedShareLink[] | null> {
+        try {
+            return await api.get<IssuedShareLink[]>(`/file-manager/share?media_id=${mediaId}`);
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : trans('sk-file-manager.share.errors.list_failed');
+
+            toast.add({
+                severity: 'error',
+                summary: trans('sk-file-manager.share.errors.summary'),
+                detail: message,
+                group: 'bc',
+                life: 5000,
+            });
+            return null;
+        }
+    }
+
     return {
         createShare,
         revokeShare,
+        listShares,
     };
 }

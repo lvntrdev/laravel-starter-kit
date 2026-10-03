@@ -310,6 +310,7 @@ FileManager medyası için imzalı paylaşım linkleri oluşturmak ve iptal etme
 
 - `createShare(mediaId: number, ttlHours: number): Promise<ShareLinkResult | null>` — imzalı paylaşım linki oluşturur (TTL: 1–720 saat); `{ url, expires_at, token_hash }` veya hata durumunda `null` döner
 - `revokeShare(mediaId: number, token: string): Promise<boolean>` — token hash ile mevcut bir linki iptal eder
+- `listShares(mediaId: number): Promise<IssuedShareLink[] | null>` — dosyanın aktif linklerini `{ token_hash, expires_at, created_at }` olarak listeler (URL ve imza yok); hata durumunda `null`. "Aktif Paylaşım Linkleri" çekmecesini (`MyShareLinksDrawer`) besler
 
 ### useAccentColor() — Dahili
 

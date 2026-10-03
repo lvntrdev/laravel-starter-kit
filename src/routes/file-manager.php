@@ -86,6 +86,7 @@ Route::prefix('file-manager')
 |
 | GET  file-manager/share/{media} — public endpoint; signed middleware ile
 |                                   korunur, auth gerektirmez.
+| GET  file-manager/share?media_id= — aktif linkleri listele; auth gerekli.
 | POST file-manager/share          — link üret; auth gerekli.
 | POST file-manager/share/revoke   — revoke et; auth gerekli.
 |
@@ -104,12 +105,13 @@ if (config('file-manager.share.enabled', true)) {
         ->middleware(['signed', 'throttle:60,1'])
         ->withoutMiddleware(['auth', 'verified', 'auth:sanctum', 'auth:api']);
 
-    // Auth gerekli: link üretme ve revoke.
+    // Auth gerekli: listeleme, link üretme ve revoke.
     Route::prefix('file-manager/share')
         ->name('file-manager.share.')
         ->controller(ShareController::class)
         ->middleware('throttle:30,1')
         ->group(function (): void {
+            Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::post('/revoke', 'revoke')->name('revoke');
         });

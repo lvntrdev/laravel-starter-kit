@@ -145,12 +145,9 @@ return [
         'copy_failed_manual' => 'Otomatik kopyalanamadı. Lütfen linki elle kopyalayın.',
         'expires_at' => 'Son geçerlilik: :date',
         'drawer_title' => 'Aktif Paylaşım Linkleri',
-        'drawer_empty' => 'Bu oturumda oluşturulan paylaşım linki yok.',
-        'drawer_session_note' => 'Bu oturumda oluşturulan linkler gösterilmektedir. Sayfayı yenilediğinizde liste sıfırlanır.',
-        'column_link' => 'Link',
+        'drawer_empty' => 'Bu dosya için aktif paylaşım linki yok.',
+        'column_created' => 'Oluşturulma',
         'column_expires' => 'Son Geçerlilik',
-        'status_expired' => 'Süresi Doldu',
-        'status_active' => 'Aktif',
 
         'ttl' => [
             '1h' => '1 saat',
@@ -163,6 +160,7 @@ return [
             'summary' => 'Paylaşım Hatası',
             'create_failed' => 'Paylaşım linki oluşturulamadı.',
             'revoke_failed' => 'Paylaşım linki iptal edilemedi.',
+            'list_failed' => 'Paylaşım linkleri yüklenemedi.',
         ],
     ],
 

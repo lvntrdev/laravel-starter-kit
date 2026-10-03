@@ -60,6 +60,7 @@ it('applies the whole package migration chain on the target driver', function ()
         'file_favorites',
         'global_file_buckets',
         'file_manager_share_revocations',
+        'file_manager_share_links',
     ];
 
     foreach ($kitTables as $table) {
@@ -109,6 +110,9 @@ it('creates every declared index on the target driver', function () {
             'file_manager_share_revocations_tenant_id_index' => false,
             'fm_share_rev_media_token_unique' => true,
         ],
+        'file_manager_share_links' => [
+            'fm_share_links_media_token_unique' => true,
+        ],
         'media' => [
             'media_folder_id_index' => false,
             'media_uuid_unique' => true,
@@ -134,6 +138,8 @@ it('creates every declared index on the target driver', function () {
         // hash), never a bare unique on the hash — a bare one would let one user
         // revoke another user's share token.
         ->and(migrationIndex('file_manager_share_revocations', 'fm_share_rev_media_token_unique')['columns'])
+        ->toBe(['media_id', 'signed_token_hash'])
+        ->and(migrationIndex('file_manager_share_links', 'fm_share_links_media_token_unique')['columns'])
         ->toBe(['media_id', 'signed_token_hash']);
 
     // The tightest composite in the chain: three utf8mb4 varchar(255) columns
@@ -166,6 +172,8 @@ it('creates every declared foreign key with its declared referential action', fu
         ['media', 'media_folder_id_foreign', 'file_folders', 'id', 'set null'],
         ['file_manager_share_revocations', 'file_manager_share_revocations_media_id_foreign', 'media', 'id', 'cascade'],
         ['file_manager_share_revocations', 'file_manager_share_revocations_revoked_by_user_id_foreign', 'users', 'id', 'set null'],
+        ['file_manager_share_links', 'file_manager_share_links_media_id_foreign', 'media', 'id', 'cascade'],
+        ['file_manager_share_links', 'file_manager_share_links_created_by_user_id_foreign', 'users', 'id', 'set null'],
     ];
 
     foreach ($expected as [$table, $name, $foreignTable, $foreignColumn, $onDelete]) {
@@ -195,6 +203,7 @@ it('resolves every uuid column in the chain to one driver-native type', function
         ['media', 'folder_id'],
         ['media', 'model_id'],
         ['file_manager_share_revocations', 'revoked_by_user_id'],
+        ['file_manager_share_links', 'created_by_user_id'],
     ];
 
     $observed = [];
@@ -235,6 +244,7 @@ it('rolls the full migration batch back', function () {
         'file_folders',
         'file_favorites',
         'file_manager_share_revocations',
+        'file_manager_share_links',
         // Previously the KNOWN GAP of this file: create_media_table shipped
         // without a down(), so the migrator skipped it and `media` survived a
         // full rollback. It now declares one, so the batch unwinds completely.

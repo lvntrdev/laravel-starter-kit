@@ -147,7 +147,7 @@ The top-bar search box filters the **current folder's** rendered tiles only; nav
 - **Bulk delete** — toolbar button when anything is selected, or right-click a selected item → **Delete Selected (N)**. With Trash enabled this soft-deletes active items; in Trash, or when `enableTrash=false`, it sends `force_delete=true` and permanently deletes the selected items.
 - **Rename** — folder and file context menus open a rename dialog. Duplicate names in the same folder are rejected server-side.
 - **Copy** — file context menu **Duplicate** creates a physical MediaLibrary copy in the current folder (or supplied target folder) with copy-safe names such as `photo (copy).jpg` / `photo (copy 2).jpg`.
-- **Share** — file context menu **Share** copies the absolute file URL to the clipboard via `navigator.clipboard.writeText(...)` and surfaces a localised "Link copied" toast on success. If clipboard permission is refused, the localised "coming soon" toast surfaces instead.
+- **Share** — file context menu **Share** makes `FileManager` emit a `share` event with the file; it does not copy anything itself and has no built-in fallback. In the admin Files page the event opens `ShareLinkModal` (pick a lifetime, generate and copy the signed link), and the modal's **Active Share Links** drawer lists the links still valid for that file with a revoke action. Custom pages must handle `@share` themselves (see `useFileShare()` in `docs/composables.md`).
 - **Details** — file context menu **Details** opens `FileDetailsDialog` showing Name, Type, Size, Uploaded, Folder and (for images) Dimensions. Image dimensions are loaded async via a hidden `new Image()`. The dialog has a **Download** footer button that re-uses the same handler as the right-click menu.
 - **Busy overlay** — Delete / Move / Rename operations paint a modal card over the FileManager area with a spinner, title and — for bulk ops — a "N items remaining" counter plus a **Stop** button that cancels the remaining iterations.
 
@@ -194,6 +194,7 @@ All endpoints accept `context` and `context_id` as query string on GET/DELETE or
 | DELETE | `/file-manager/files/{media}`                        | Delete one file                                                     |
 | GET    | `/file-manager/files/{media}/download`               | Force-download                                                      |
 | POST   | `/file-manager/share`                                | Create an HMAC-signed share link (`media_id`, `expires_in_hours?`)         |
+| GET    | `/file-manager/share?media_id=`                      | List a file's active share links (`token_hash`, `expires_at`, `created_at`) |
 | POST   | `/file-manager/share/revoke`                         | Revoke a share link (`token`)                                       |
 | GET    | `/file-manager/share/{media}?expires=&signature=`    | Validate signature and serve the file                               |
 
@@ -331,6 +332,8 @@ HMAC-SHA256 signed links that grant time-limited access to a file without requir
 | `max_ttl_hours`    | int  | `720`   | Maximum allowed lifetime (30 days)               |
 | `allow_revoke`     | bool | `true`  | Allow links to be revoked before expiry          |
 
+Every created link is also recorded in the `file_manager_share_links` table (the creator, `media_id`, the signed-token **hash**, `expires_at`) — never the URL or the signature itself. `GET /file-manager/share?media_id=` reads this table: expired and revoked links are not listed, and the list is capped at the 100 newest.
+
 Revoked tokens are recorded in the `file_manager_share_revocations` table with a `(media_id, signed_token_hash)` composite unique index. A token is validated against its originating `media_id` — cross-media token reuse is rejected.
 
 #### Trash and share link access
@@ -386,7 +389,7 @@ The `files` resource is seeded with `create / read / update / delete` abilities;
 Share link operations use two dedicated permissions:
 
 - `share-media` — create a signed share link (`POST /file-manager/share`)
-- `revoke-share-media` — revoke a share link before expiry (`POST /file-manager/share/revoke`)
+- `revoke-share-media` — revoke a share link before expiry (`POST /file-manager/share/revoke`); also gates listing a file's active links (`GET /file-manager/share`)
 
 ## Related Stack
 

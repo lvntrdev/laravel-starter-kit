@@ -12,8 +12,10 @@ use Lvntr\StarterKit\Domain\FileManager\Actions\CreateShareLinkAction;
 use Lvntr\StarterKit\Domain\FileManager\Actions\RevokeShareLinkAction;
 use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\CreateShareLinkDTO;
+use Lvntr\StarterKit\Domain\FileManager\Models\ShareLink;
 use Lvntr\StarterKit\Domain\FileManager\Models\ShareRevocation;
 use Lvntr\StarterKit\Http\Requests\FileManager\CreateShareLinkRequest;
+use Lvntr\StarterKit\Http\Requests\FileManager\ListShareLinksRequest;
 use Lvntr\StarterKit\Http\Requests\FileManager\RevokeShareLinkRequest;
 use Lvntr\StarterKit\Http\Resources\FileManager\ShareLinkResource;
 use Lvntr\StarterKit\Http\Responses\ApiResponse;
@@ -25,6 +27,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * Endpoint'ler:
  *   GET  file-manager/share/{media}  — imzalı linki serve eder (public, signed)
+ *   GET  file-manager/share?media_id= — medyanın aktif linklerini listeler (auth gerekli)
  *   POST file-manager/share          — yeni share link üretir (auth gerekli)
  *   POST file-manager/share/revoke   — link'i geçersiz kılar (auth gerekli)
  *
@@ -150,12 +153,55 @@ class ShareController extends Controller
             'owner_type' => $media->model_type,
             'owner_id' => (string) $media->model_id,
             'expires_in_hours' => $request->input('expires_in_hours'),
+            // users.id is a UUID string — never cast to int (same rule as revoke()).
+            'created_by_user_id' => $user ? (string) $user->getAuthIdentifier() : null,
         ]);
 
         $result = $action->execute($dto);
 
         // K3: to_api() envelope — useApi composable {success, data, ...} bekliyor.
         return to_api(new ShareLinkResource($result->toArray()), status: 201);
+    }
+
+    /**
+     * Bir medyanın aktif (süresi dolmamış, revoke edilmemiş) linklerini listeler.
+     *
+     * Yanıt yalnız token_hash + tarihleri içerir; URL ve signature asla dönmez.
+     *
+     * @OA\Get(
+     *   path="/file-manager/share",
+     *   summary="Aktif share link'leri listele",
+     *   security={{"bearerAuth": {}}},
+     *   tags={"FileManager"},
+     *
+     *   @OA\Parameter(name="media_id", in="query", required=true, @OA\Schema(type="integer", minimum=1)),
+     *
+     *   @OA\Response(response=200, description="Aktif link listesi (token_hash, expires_at, created_at)"),
+     *   @OA\Response(response=403, description="Yetki yok"),
+     *   @OA\Response(response=422, description="Validation hatası")
+     * )
+     */
+    public function index(ListShareLinksRequest $request): ApiResponse|JsonResponse
+    {
+        // revoke() ile aynı lookup + gate: liste, iptal yetkisinin bir görünümüdür.
+        /** @var Media $media */
+        $media = $this->mediaQueryWithTrashed()->findOrFail($request->input('media_id'));
+
+        Gate::authorize('revoke-share-media', $media);
+
+        // ponytail: 100-row cap, no pagination; switch to paginate() if a media ever holds more live links.
+        $links = ShareLink::activeFor($media)
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->map(fn (ShareLink $link): array => [
+                'token_hash' => $link->signed_token_hash,
+                'expires_at' => to_api_date($link->expires_at),
+                'created_at' => to_api_date($link->created_at),
+            ])
+            ->all();
+
+        return to_api($links);
     }
 
     /**

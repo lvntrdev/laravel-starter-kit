@@ -8,6 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\URL;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\CreateShareLinkDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\ShareLinkResultDTO;
+use Lvntr\StarterKit\Domain\FileManager\Models\ShareLink;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -19,9 +20,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * üretmek bilgi sızıntısı yaratır.
  *
  * Token hash hesabı: Laravel signed URL'nin `signature` query parametresi
- * SHA256 ile hash'lenir ve yalnızca revoke edildiğinde DB'ye yazılır.
- * `URL::hasValidSignature()` imza doğrulamasını zaten yapar; burada
- * sadece revocation lookup'ı için hash kullanılır.
+ * SHA256 ile hash'lenir ve her üretimde `file_manager_share_links`'e yazılır
+ * (aktif link listesi için); revoke edildiğinde revocation tablosuna da düşer.
+ * URL'nin kendisi ve ham signature hiçbir yerde saklanmaz.
+ * `URL::hasValidSignature()` imza doğrulamasını zaten yapar; hash yalnız
+ * listeleme ve revocation lookup'ı için kullanılır.
  */
 class CreateShareLinkAction extends FileManagerAction
 {
@@ -48,6 +51,14 @@ class CreateShareLinkAction extends FileManagerAction
         // Signature parametresini URL'den çıkar ve hash'le.
         // Bu hash, revocation tablosunda lookup key olarak kullanılır.
         $tokenHash = $this->extractTokenHash($url);
+
+        // Link kaydı URL dönmeden ÖNCE yazılır: kaydı olmayan link dışarı çıkmaz.
+        // Aynı medya + aynı expiry saniyesi birebir aynı URL'yi üretir;
+        // createOrFirst bunu unique-violation 500'üne çevirmeden mevcut satırı döner.
+        ShareLink::createOrFirst(
+            ['media_id' => $dto->media->getKey(), 'signed_token_hash' => $tokenHash],
+            ['expires_at' => $expiresAt, 'created_by_user_id' => $dto->createdByUserId],
+        );
 
         // Audit sink (Task 8): üretilen paylaşım linki admin ActivityLog
         // UI'ında görünür. İmzalı URL ve signature/token hash KASITLI olarak

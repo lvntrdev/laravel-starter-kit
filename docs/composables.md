@@ -310,6 +310,7 @@ Used by the vendor `Files` module (`ShareLinkModal`, `MyShareLinksDrawer`) to cr
 
 - `createShare(mediaId: number, ttlHours: number): Promise<ShareLinkResult | null>` — creates a signed share link (TTL: 1–720 hours); returns `{ url, expires_at, token_hash }` or `null` on error
 - `revokeShare(mediaId: number, token: string): Promise<boolean>` — revokes an existing link by token hash
+- `listShares(mediaId: number): Promise<IssuedShareLink[] | null>` — lists the file's active links as `{ token_hash, expires_at, created_at }` (no URL, no signature); `null` on error. Feeds the "Active Share Links" drawer (`MyShareLinksDrawer`)
 
 ### useAccentColor() — Internal
 

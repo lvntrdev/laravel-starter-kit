@@ -12,6 +12,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 - **AI skill'leri artık 13.7–13.8'i kapsıyor:** `-W` ile güncelleme, `package.json` birleştirme, `sk:doctor`'ın Kit Bağımlılıkları kontrolü, `sk:redact-activity-secrets`, yeni `make:sk-domain` flag'leri, editör buton linkleri, datatable bildirimleri, toplu seçim ve Hetzner / Amazon S3 sürücüleri. Uygulamanızda almak için `php artisan sk:update` çalıştırın.
 - **AI skill'leri için tam API referansları.** FormBuilder / DatatableBuilder / TabBuilder'ın tüm metodları, composable'lar ve bileşenler; backend tarafında `ApiResponse` / `ApiException` / `ActionPipeline` / `DatatableQueryBuilder` API'ı ve global helper'lar. Ajanlar bunları yalnızca tam bir metoda ihtiyaç duyduğunda okuyor; günlük işler hızlı kalıyor.
+- **Bir dosyanın aktif paylaşım linklerini görme ve iptal etme.** Files'taki paylaşım penceresinde artık o dosya için hâlâ geçerli linkleri listeleyen ve her birini iptal etmeye izin veren bir "Aktif Paylaşım Linkleri" çekmecesi var. Güncellemeden sonra `php artisan migrate` çalıştırın (`sk:update` bunu sizin için yapar); güncellemeden önce oluşturulan linkler listelenmez ama zamanında sona erer.
 
 ## 2026-10-03 — v13.8.3
 

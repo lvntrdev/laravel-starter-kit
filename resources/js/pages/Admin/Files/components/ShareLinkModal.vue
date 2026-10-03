@@ -29,6 +29,7 @@
     });
     const emit = defineEmits<{
         'update:visible': [value: boolean];
+        'manage-links': [];
     }>();
 
     const toast = useToast();
@@ -252,6 +253,12 @@
         </div>
 
         <template #footer>
+            <Button
+                :label="trans('sk-file-manager.share.drawer_title')"
+                severity="secondary"
+                text
+                @click="emit('manage-links')"
+            />
             <Button
                 :label="trans('sk-file-manager.labels.close')"
                 severity="secondary"

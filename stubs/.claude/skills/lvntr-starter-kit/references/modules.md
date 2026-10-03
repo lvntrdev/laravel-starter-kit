@@ -18,6 +18,11 @@ the vendor package; take project ownership of one with `sk:eject {Domain}`.
 - Trash retention: schedule `php artisan file-manager:purge-trash` (or pass
   `--days=N`) to permanently delete expired trash items
 - Share links have create/revoke audit coverage on the activity log
+- Issued share links are recorded in `file_manager_share_links` (hash +
+  expiry + creator, never the URL). `GET /file-manager/share?media_id=` lists a
+  file's live links (same `revoke-share-media` gate as revoke; 403 for an
+  unknown file); the share modal's "Manage links" opens the drawer that
+  revokes them (`useFileShare().listShares`)
 
 ### Activity & Audit Log
 

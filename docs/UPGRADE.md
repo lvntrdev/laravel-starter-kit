@@ -4,6 +4,18 @@ This file is the cross-major-version migration guide. Every release gets its own
 
 ---
 
+## v13.8.3 → v13.8.4
+
+### Share link management needs a new migration
+
+**Affects:** every app that uses the File Manager share links.
+
+- The migration `create_file_manager_share_links_table` ships in the package's `database/migrations/`. Run `php artisan migrate` (`sk:update` already runs it). Until it has run, creating a share link fails.
+- Links created before the upgrade are not listed in the new "Active Share Links" drawer, because their signatures were never stored. They still expire on schedule, 30 days later at most.
+- If you copied `resources/js/composables/useFileShare.ts` or the Files page into your app, you keep the old UI until you re-sync those files (`php artisan sk:update --dry-run` shows the diff).
+
+---
+
 ## v13.7.3 → v13.7.4
 
 ### The "Debug Mode" badge is now gated on `system_admin` instead of the environment

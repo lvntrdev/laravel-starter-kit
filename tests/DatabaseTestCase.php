@@ -24,6 +24,7 @@ use Spatie\MediaLibrary\MediaLibraryServiceProvider;
  *   - file_folders                     (vendor migration)
  *   - file_favorites                   (vendor migration)
  *   - file_manager_share_revocations   (vendor migration — T4 share feature)
+ *   - file_manager_share_links         (vendor migration — share link registry)
  *
  * Tablolar Schema builder ile inline oluşturulur (loadMigrationsFrom yerine).
  * Bu yaklaşım Testbench-core'un kendi fixture migration'larının (dedupe_receipts
@@ -58,6 +59,7 @@ abstract class DatabaseTestCase extends Orchestra
         // Ancak ilk çalıştırmada tablolar yoktur.
         // Schema builder idempotent değildir — "table already exists" hatasını
         // önlemek için mevcut tabloları önce drop et.
+        Schema::dropIfExists('file_manager_share_links');
         Schema::dropIfExists('file_manager_share_revocations');
         Schema::dropIfExists('file_favorites');
         Schema::dropIfExists('file_folders');
@@ -143,6 +145,8 @@ abstract class DatabaseTestCase extends Orchestra
         // │       2026_05_02_092853_create_file_favorites_table.php            │
         // │   file_manager_share_revocations → database/migrations/            │
         // │       2026_05_06_100000_create_file_manager_share_revocations…php   │
+        // │   file_manager_share_links       → database/migrations/            │
+        // │       2026_10_04_100000_create_file_manager_share_links_table.php  │
         // │                                                                    │
         // │ İSTİSNA: `users` bir migration KOPYASI DEĞİL — kasıtlı minimal     │
         // │ shim'dir (gerçek stub users migration'ı UUID-anahtarlı ve çok daha │
@@ -258,6 +262,19 @@ abstract class DatabaseTestCase extends Orchestra
             $table->timestamp('revoked_at');
             $table->uuid('revoked_by_user_id')->nullable();
             $table->foreign('revoked_by_user_id')->references('id')->on('users')->nullOnDelete();
+            $table->timestamps();
+        });
+
+        // 8. file_manager_share_links tablosu (issued share link registry)
+        Schema::create('file_manager_share_links', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('media_id');
+            $table->foreign('media_id')->references('id')->on('media')->cascadeOnDelete();
+            $table->string('signed_token_hash', 64);
+            $table->unique(['media_id', 'signed_token_hash'], 'fm_share_links_media_token_unique');
+            $table->timestamp('expires_at');
+            $table->uuid('created_by_user_id')->nullable();
+            $table->foreign('created_by_user_id')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }

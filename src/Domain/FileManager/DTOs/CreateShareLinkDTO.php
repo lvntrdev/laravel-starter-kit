@@ -21,6 +21,8 @@ readonly class CreateShareLinkDTO extends BaseDTO
         public string $ownerId,
         /** null ise config('file-manager.share.default_ttl_hours') kullanılır */
         public ?int $expiresInHours = null,
+        /** Link'i üreten kullanıcı (users.id UUID string; int'e cast edilmez) */
+        public ?string $createdByUserId = null,
     ) {}
 
     /**
@@ -33,6 +35,7 @@ readonly class CreateShareLinkDTO extends BaseDTO
             ownerType: $data['owner_type'],
             ownerId: $data['owner_id'],
             expiresInHours: isset($data['expires_in_hours']) ? (int) $data['expires_in_hours'] : null,
+            createdByUserId: isset($data['created_by_user_id']) ? (string) $data['created_by_user_id'] : null,
         );
     }
 
@@ -46,6 +49,7 @@ readonly class CreateShareLinkDTO extends BaseDTO
             'owner_type' => $this->ownerType,
             'owner_id' => $this->ownerId,
             'expires_in_hours' => $this->expiresInHours,
+            'created_by_user_id' => $this->createdByUserId,
         ];
     }
 }
