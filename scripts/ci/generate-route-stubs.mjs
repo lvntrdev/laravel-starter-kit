@@ -62,6 +62,7 @@ const ROUTES = {
         nested: {
             upload: ['logo'],
             delete: ['logo'],
+            contentLanguages: ['dt', 'fetch', 'add', 'save', 'remove'],
             update: [
                 'general',
                 'mail',

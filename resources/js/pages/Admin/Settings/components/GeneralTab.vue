@@ -41,7 +41,11 @@
 
     function toggleLanguage(current: string[] | undefined, locale: string, onUpdate?: (value: unknown) => void) {
         const next = new Set(current ?? []);
-        next.has(locale) ? next.delete(locale) : next.add(locale);
+        if (next.has(locale)) {
+            next.delete(locale);
+        } else {
+            next.add(locale);
+        }
         onUpdate?.(Array.from(next));
     }
 

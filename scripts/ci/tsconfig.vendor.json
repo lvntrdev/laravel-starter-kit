@@ -1,0 +1,25 @@
+// CI-only: type-checks the vendor-resident pages, composables and plugins.
+// Consumers load them through the `@lvntr/pages` glob and the `@/composables`
+// / `@/plugins` fallbacks, which vue-tsc never follows, and stubs/tsconfig.json
+// (shipped to consumers) must not include them — a consumer cannot fix vendor
+// files. Included through the stubs/vendor symlink with preserveSymlinks so
+// bare imports (vue, primevue, ...) resolve from stubs/node_modules, exactly as
+// they do inside a consumer app. `types` lookups start from this directory, so
+// vite/client is included by path instead.
+{
+    "extends": "../../stubs/tsconfig.json",
+    "compilerOptions": {
+        "preserveSymlinks": true,
+        "types": []
+    },
+    "include": [
+        "../../stubs/node_modules/vite/client.d.ts",
+        "../../stubs/resources/js/env.d.ts",
+        "../../stubs/auto-imports.d.ts",
+        "../../stubs/components.d.ts",
+        "../../stubs/vendor/lvntr/laravel-starter-kit/resources/js/pages/**/*.vue",
+        "../../stubs/vendor/lvntr/laravel-starter-kit/resources/js/composables/**/*.ts",
+        "../../stubs/vendor/lvntr/laravel-starter-kit/resources/js/plugins/**/*.ts"
+    ],
+    "exclude": ["../../stubs/vendor/lvntr/laravel-starter-kit/resources/js/**/__tests__/**"]
+}

@@ -260,11 +260,14 @@ jobs:
         working-directory: stubs
         run: npm run typecheck --if-present
 
+      - name: Typecheck (vue-tsc) — vendor pages, composables, plugins
+        run: npm run typecheck:lib
+
       - name: Lint (ESLint)
         working-directory: stubs
         run: npm run lint:ci
 
-      - name: Lint (ESLint) — package library
+      - name: Lint (ESLint) — package library and vendor pages
         run: npm run lint:lib
 
       - name: Test (Vitest)

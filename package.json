@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "lang:build": "node resources/js/lang/sk-lang-build.mjs",
-    "lint:lib": "stubs/node_modules/.bin/eslint --config stubs/eslint.config.js resources/js/components/Lvntr-Starter-Kit --quiet",
+    "lint:lib": "stubs/node_modules/.bin/eslint --config stubs/eslint.config.js resources/js/components/Lvntr-Starter-Kit resources/js/pages resources/js/composables resources/js/plugins --quiet",
+    "typecheck:lib": "stubs/node_modules/.bin/vue-tsc --noEmit -p scripts/ci/tsconfig.vendor.json",
     "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts"
   },
   "main": "resources/js/components/Lvntr-Starter-Kit/index.ts",
