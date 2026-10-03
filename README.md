@@ -7,13 +7,7 @@
 ![Packagist Version](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
-> ## ⚠️ WARNING
->
-> This repository is under active development and is subject to frequent changes. The stability of the project is not yet guaranteed. Please consider the following points before use:
->
-> 1. **Code Changes:** The directory structure or core classes may undergo radical changes without prior notice.
-> 2. **Update Process:** Updates may not always provide an automated migration path. In addition to running update commands, you may need to perform manual interventions by checking the `README` or `CHANGELOG` files.
-> 3. **Risk:** Significant changes may lead to data loss or breaking issues in your existing project.
+![Lvntr Starter Kit dashboard](.github/screenshots/dashboard-aura-light.jpg)
 
 ## Introduction
 
@@ -26,17 +20,88 @@ It is designed for teams who want to skip re-building the same admin screens on 
 > **Website & Documentation:** [starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)
 > Installation guide, component references, architecture notes and examples.
 
-## Screenshots
+## A Quick Tour
 
-![Dark & Light themes](https://starter-kit.lvntr.dev/shots/dark-light.png)
+### Two themes, light & dark — switch instantly, no rebuild
 
-![Login screen](https://starter-kit.lvntr.dev/shots/auth-login.png)
+Pick the built-in **Aura** (inset panel inside a brand-coloured frame) or **Main** theme, choose from 26 accent colours, and let every user toggle dark mode.
 
-![User management](https://starter-kit.lvntr.dev/shots/admin-users.png)
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/dashboard-aura-dark.jpg" alt="Aura theme, dark mode"><br><sub><b>Aura</b> · dark</sub></td>
+    <td width="50%"><img src=".github/screenshots/dashboard-main-light.jpg" alt="Main theme, light mode"><br><sub><b>Main</b> · light</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/dashboard-main-dark.jpg" alt="Main theme, dark mode"><br><sub><b>Main</b> · dark</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-appearance.jpg" alt="Appearance settings"><br><sub>Theme, accent colour, logos and favicon from the Appearance settings</sub></td>
+  </tr>
+</table>
 
-![Roles & permissions](https://starter-kit.lvntr.dev/shots/admin-permissions.png)
+### Users, roles & permissions
 
-![File manager](https://starter-kit.lvntr.dev/shots/admin-file-manager.png)
+Searchable, filterable datatables with server-side pagination, column toggles and bulk actions; dialog forms built with FormBuilder; and a resource × ability permission matrix per role.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/users.jpg" alt="User management"><br><sub>User management</sub></td>
+    <td width="50%"><img src=".github/screenshots/users-edit.jpg" alt="Edit user dialog"><br><sub>Edit user dialog with avatar upload</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/roles.jpg" alt="Roles"><br><sub>Roles</sub></td>
+    <td width="50%"><img src=".github/screenshots/role-permissions.jpg" alt="Role permission matrix"><br><sub>Per-role permission matrix</sub></td>
+  </tr>
+</table>
+
+### File manager
+
+Folders, favourites, trash with a retention period, image/video/PDF previews, storage quota — on local disk, Amazon S3, DigitalOcean Spaces or Hetzner Object Storage.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/file-manager.jpg" alt="File manager"><br><sub>File manager</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-file-manager.jpg" alt="File manager settings"><br><sub>Upload size, quota, accepted types and trash</sub></td>
+  </tr>
+</table>
+
+### Activity logs & log viewer
+
+Every model change is recorded with its causer and a field-level old → new diff. Laravel log files are browsable in the panel, filterable by level, time and message.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/activity-logs.jpg" alt="Activity logs"><br><sub>Activity logs</sub></td>
+    <td width="50%"><img src=".github/screenshots/activity-log-detail.jpg" alt="Activity log detail"><br><sub>Field-level change detail</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/log-files.jpg" alt="Log files"><br><sub>Log files</sub></td>
+    <td width="50%"><img src=".github/screenshots/log-viewer.jpg" alt="Log viewer"><br><sub>Log viewer with level filters and context</sub></td>
+  </tr>
+</table>
+
+### Settings panel
+
+Everything a project usually hard-codes in `.env` is editable from the panel — identity, locale and currency, security policy, SMTP, storage driver, content languages, API clients/tokens — plus a System Health page that runs the `sk:doctor` checks.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-general.jpg" alt="General settings"><br><sub>General</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-security.jpg" alt="Security settings"><br><sub>Security — registration, 2FA, password policy, bot protection</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-mail.jpg" alt="Mail settings"><br><sub>Mail — SMTP and test email</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-storage.jpg" alt="Storage settings"><br><sub>Storage driver</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-content-languages.jpg" alt="Content languages"><br><sub>Content languages for translatable fields</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-system-health.jpg" alt="System health"><br><sub>System health</sub></td>
+  </tr>
+</table>
+
+### Component showcase
+
+A built-in page documents the kit's PrimeVue + SK components in every variant — tags, buttons, messages, toasts and FormBuilder forms.
+
+![Component showcase](.github/screenshots/components.jpg)
 
 ## What is Inside?
 

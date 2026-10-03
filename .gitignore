@@ -45,3 +45,6 @@ graphify-out/
 /test-results/
 /playwright-report/
 /strix_runs/
+
+# Raw screenshot drops — curated copies live in .github/screenshots/.
+/ekran_goruntuleri/

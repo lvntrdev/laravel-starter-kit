@@ -2,18 +2,12 @@
 
 ### Admin odaklı Laravel starter kit.
 
-![Tests](https://img.shields.io/badge/tests-passing-22c55e?style=flat-square)
+![CI](https://img.shields.io/github/actions/workflow/status/lvntrdev/laravel-starter-kit/ci.yml?branch=main&style=flat-square&label=CI)
 ![License](https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square)
 ![Packagist Sürüm](https://img.shields.io/packagist/v/lvntr/laravel-starter-kit?style=flat-square&label=packagist)
 ![Downloads](https://img.shields.io/packagist/dt/lvntr/laravel-starter-kit?style=flat-square&label=downloads)
 
-> ## ⚠️ UYARI
->
-> Bu depo aktif geliştirme aşamasındadır ve sık sık değişikliklere tabidir. Projenin stabilitesi henüz garanti altına alınmamıştır. Kullanmadan önce lütfen aşağıdaki noktaları göz önünde bulundurun:
->
-> 1. **Kod Değişiklikleri:** Dizin yapısı veya çekirdek sınıflar, önceden haber verilmeksizin radikal değişikliklere uğrayabilir.
-> 2. **Güncelleme Süreci:** Güncellemeler her zaman otomatik bir geçiş (migration) yolu sunmayabilir. Güncelleme komutlarını çalıştırmanın yanı sıra, `README` veya `CHANGELOG` dosyalarını kontrol ederek elle müdahale yapmanız gerekebilir.
-> 3. **Risk:** Yapılan önemli değişiklikler, mevcut projenizde veri kaybına veya kırıcı (breaking) hatalara yol açabilir.
+![Lvntr Starter Kit dashboard](.github/screenshots/dashboard-aura-light.jpg)
 
 ## Tanıtım
 
@@ -26,17 +20,88 @@ Her projede aynı admin ekranlarını sıfırdan yazmak istemeyip doğrudan iş 
 > **Web Sitesi & Dökümantasyon:** [starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/)
 > Kurulum rehberi, bileşen referansları, mimari notlar ve örnekler.
 
-## Ekran Görüntüleri
+## Hızlı Tur
 
-![Koyu & Açık temalar](https://starter-kit.lvntr.dev/shots/dark-light.png)
+### İki tema, açık & koyu — yeniden derleme olmadan anında geçiş
 
-![Giriş ekranı](https://starter-kit.lvntr.dev/shots/auth-login.png)
+Yerleşik **Aura** (marka renginde çerçeve içinde gömülü panel) ya da **Main** temasını seç, 26 vurgu renginden birini belirle; her kullanıcı koyu modu kendisi açıp kapatabilsin.
 
-![Kullanıcı yönetimi](https://starter-kit.lvntr.dev/shots/admin-users.png)
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/dashboard-aura-dark.jpg" alt="Aura teması, koyu mod"><br><sub><b>Aura</b> · koyu</sub></td>
+    <td width="50%"><img src=".github/screenshots/dashboard-main-light.jpg" alt="Main teması, açık mod"><br><sub><b>Main</b> · açık</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/dashboard-main-dark.jpg" alt="Main teması, koyu mod"><br><sub><b>Main</b> · koyu</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-appearance.jpg" alt="Görünüm ayarları"><br><sub>Tema, vurgu rengi, logolar ve favicon Görünüm ayarlarından</sub></td>
+  </tr>
+</table>
 
-![Roller ve yetkiler](https://starter-kit.lvntr.dev/shots/admin-permissions.png)
+### Kullanıcılar, roller & yetkiler
 
-![Dosya yöneticisi](https://starter-kit.lvntr.dev/shots/admin-file-manager.png)
+Server-side sayfalama, kolon gösterme/gizleme ve bulk action destekli, aranabilir ve filtrelenebilir datatable'lar; FormBuilder ile kurulan dialog formları; ve her rol için kaynak × yetenek yetki matrisi.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/users.jpg" alt="Kullanıcı yönetimi"><br><sub>Kullanıcı yönetimi</sub></td>
+    <td width="50%"><img src=".github/screenshots/users-edit.jpg" alt="Kullanıcı düzenleme dialogu"><br><sub>Avatar yüklemeli kullanıcı düzenleme dialogu</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/roles.jpg" alt="Roller"><br><sub>Roller</sub></td>
+    <td width="50%"><img src=".github/screenshots/role-permissions.jpg" alt="Rol yetki matrisi"><br><sub>Rol bazlı yetki matrisi</sub></td>
+  </tr>
+</table>
+
+### Dosya yöneticisi
+
+Klasörler, favoriler, saklama süreli çöp kutusu, görsel/video/PDF önizlemeleri, depolama kotası — yerel disk, Amazon S3, DigitalOcean Spaces ya da Hetzner Object Storage üzerinde.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/file-manager.jpg" alt="Dosya yöneticisi"><br><sub>Dosya yöneticisi</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-file-manager.jpg" alt="Dosya yöneticisi ayarları"><br><sub>Yükleme boyutu, kota, kabul edilen türler ve çöp kutusu</sub></td>
+  </tr>
+</table>
+
+### Aktivite kayıtları & log görüntüleyici
+
+Her model değişikliği, değişikliği yapan kişi ve alan bazında eski → yeni farkıyla kaydedilir. Laravel log dosyaları panelden gezilebilir; seviye, zaman ve mesaja göre filtrelenebilir.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/activity-logs.jpg" alt="Aktivite kayıtları"><br><sub>Aktivite kayıtları</sub></td>
+    <td width="50%"><img src=".github/screenshots/activity-log-detail.jpg" alt="Aktivite kaydı detayı"><br><sub>Alan bazında değişiklik detayı</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/log-files.jpg" alt="Log dosyaları"><br><sub>Log dosyaları</sub></td>
+    <td width="50%"><img src=".github/screenshots/log-viewer.jpg" alt="Log görüntüleyici"><br><sub>Seviye filtreli ve context'li log görüntüleyici</sub></td>
+  </tr>
+</table>
+
+### Ayarlar paneli
+
+Projelerde genelde `.env` içine gömülen her şey panelden düzenlenebilir — kimlik, dil ve para birimi, güvenlik politikası, SMTP, depolama sürücüsü, içerik dilleri, API client/token'ları — ayrıca `sk:doctor` kontrollerini çalıştıran bir Sistem Sağlığı sayfası.
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-general.jpg" alt="Genel ayarlar"><br><sub>Genel</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-security.jpg" alt="Güvenlik ayarları"><br><sub>Güvenlik — kayıt, 2FA, şifre politikası, bot koruması</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-mail.jpg" alt="Mail ayarları"><br><sub>Mail — SMTP ve test e-postası</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-storage.jpg" alt="Depolama ayarları"><br><sub>Depolama sürücüsü</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src=".github/screenshots/settings-content-languages.jpg" alt="İçerik dilleri"><br><sub>Çevrilebilir alanlar için içerik dilleri</sub></td>
+    <td width="50%"><img src=".github/screenshots/settings-system-health.jpg" alt="Sistem sağlığı"><br><sub>Sistem sağlığı</sub></td>
+  </tr>
+</table>
+
+### Bileşen vitrini
+
+Yerleşik bir sayfa, kitin PrimeVue + SK bileşenlerini tüm varyantlarıyla gösterir — tag'ler, butonlar, mesajlar, toast'lar ve FormBuilder formları.
+
+![Bileşen vitrini](.github/screenshots/components.jpg)
 
 ## İçinde Neler Var?
 
@@ -67,6 +132,7 @@ Her projede aynı admin ekranlarını sıfırdan yazmak istemeyip doğrudan iş 
     - Sayfa aşımı seçim desteği ile datatable bulk action API
     - `sk:update` ile güvenli güncelleme (hash tabanlı, kullanıcı değişikliklerini korur)
     - `sk:doctor` ile sistem sağlık kontrolü
+    - Hassas ayarlar ve 2FA secret'ları için `APP_KEY`'den bağımsız, ayrı veri şifreleme anahtarı — `encryption:key`, `encryption:rekey`, `encryption:health` ile üret/döndür/doğrula
     - Yeniden derleme gerektirmeyen anlık geçişli yerleşik `main` ve `aura` kit temaları ile açık & koyu tema
 
 ## Nasıl Kullanılır?
@@ -112,6 +178,11 @@ daha yeni Laravel hedefinden kırıcı değişiklik almaz.
 `main` şu anda aktif major hattı takip eder (`13.x`). Gelecekte yeni bir
 Laravel sürümü hedeflendiğinde `main` sonraki major geliştirme hattına
 geçer; önceki major'un `N.x` branch'i ise backport almaya devam eder.
+
+**Sürümün tek doğruluk kaynağı git tag'idir** — ne `composer.json` ne de
+kök `package.json` bir `version` alanı taşır, dolayısıyla senkron tutulacak
+bir şey yoktur. Sürümler `main` üzerinden `release.sh` ile çıkarılır; script
+sürümü tag'ler ve yalnızca o tag'i push eder.
 
 ## Dökümantasyon
 
