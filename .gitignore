@@ -48,3 +48,6 @@ graphify-out/
 
 # Raw screenshot drops — curated copies live in .github/screenshots/.
 /ekran_goruntuleri/
+
+# Local impeccable design-lint state (ignore-values, hook cache).
+/.impeccable/
