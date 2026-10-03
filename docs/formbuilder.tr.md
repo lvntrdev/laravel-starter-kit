@@ -393,7 +393,7 @@ Tam backend ve frontend rehberi için [Çevrilebilir Alanlar](./translatable-fie
 
 `FB.colorSelector()`, Tailwind renk paletinden seçim yapılan ve isteğe bağlı tone seçici içeren bir alan üretir.
 
-- `colors(string[])` — kullanılabilir renk adları. Varsayılan: 22 Tailwind palet ailesinin tamamı — 17 kromatik aile (`red`'den `rose`'a) ve 5 nötr aile (`slate`, `gray`, `zinc`, `neutral`, `stone`).
+- `colors(string[])` — kullanılabilir renk adları. Varsayılan 24 renk: 22 Tailwind palet ailesi — 17 kromatik aile (`red`'den `rose`'a) ve 5 nötr aile (`slate`, `gray`, `zinc`, `neutral`, `stone`) — ile `white` / `black`.
 - `tones(number[])` — gösterilecek tone basamakları. Varsayılan: `[50, 100, …, 950]`.
 - `format('hex' | 'name' | 'name-tone')` — çıktı formatı. Varsayılan: `'name'`.
 - `defaultTone(number)` — tone gerektiren formatlarda ilk seçim. Varsayılan: `500`.

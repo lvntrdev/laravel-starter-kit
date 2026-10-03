@@ -90,6 +90,10 @@ Global dialog manager used together with `@lvntr/components/ui/AppDialog.vue`.
 - `openAsync(component, url, header?, options?, baseProps?)`
 - `close()`
 - `setLoading(val)`
+- `setFooter(footer)` / `patchFooter(partial)` — replace or patch the dialog footer buttons
+- `state` — the shared reactive dialog state
+
+`useDialog()` itself takes no arguments. Options: `refreshKey`, `width`, `footer`, `darkMask`; `openAsync` also accepts `mapResponse(data)` to turn the API response into component props.
 
 If `refreshKey` is provided in options, `onSuccess` and `onCancel` callbacks are injected automatically.
 
@@ -97,9 +101,10 @@ If `refreshKey` is provided in options, `onSuccess` and `onCancel` callbacks are
 
 Shared fullscreen image preview state rendered through the global `ImageLightbox` overlay in `AdminLayout.vue`.
 
-- `open(url, name?)`
+- `open(url, name?, items?, index?)` — pass `items` (and the starting `index`) to page through a gallery
+- `next()` / `prev()` — move through `items`
 - `close()`
-- `state.visible`, `state.url`, `state.name`
+- `state.visible`, `state.url`, `state.name`, `state.items`, `state.index`
 
 Use this for images. For non-image files, keep using `useDialog()` with `FilePreviewModal`.
 
@@ -175,7 +180,7 @@ Tracks Inertia navigation state using `inertia:start` and `inertia:finish` brows
 
 ### useFlash()
 
-Returns reactive flash data from Inertia shared props.
+Returns `{ flash, hasFlash }` — read-only computeds over the Inertia shared `flash` prop (`success`, `error`, `warning`, `info`). `hasFlash` is `true` when any of them is set. Flash is set from the backend (`back()->with('success', …)`), not by assigning to `flash`.
 
 In this project, flash messages are displayed in `AdminLayout.vue`, not inside the composable itself.
 
@@ -190,6 +195,7 @@ Loads definition records from the authenticated `/definitions` endpoint and stor
 - `list(key, filter?)` — returns raw definition items, optionally filtered
 - `options(key, filter?)` — returns items as `{ label, value }` pairs for selects
 - `find(key, value)` — looks up a single item by value
+- `invalidate(keyOrKeys?)` — drops one or more keys from the cache so the next `load()` refetches them; with no argument it behaves like `clearCache()`
 - `clearCache()` — resets the reactive cache
 - `loaded` — reactive boolean that becomes `true` once any load completes
 

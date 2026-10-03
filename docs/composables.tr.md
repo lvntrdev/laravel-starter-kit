@@ -90,6 +90,10 @@ confirmAction({
 - `openAsync(component, url, header?, options?, baseProps?)`
 - `close()`
 - `setLoading(val)`
+- `setFooter(footer)` / `patchFooter(partial)` — dialog footer butonlarını değiştirir veya kısmen günceller
+- `state` — ortak reactive dialog state'i
+
+`useDialog()` parametre almaz. Options: `refreshKey`, `width`, `footer`, `darkMask`; `openAsync` ayrıca API yanıtını component prop'larına çeviren `mapResponse(data)` alır.
 
 Options içinde `refreshKey` verilirse `onSuccess` ve `onCancel` callback'leri otomatik eklenir.
 
@@ -97,9 +101,10 @@ Options içinde `refreshKey` verilirse `onSuccess` ve `onCancel` callback'leri o
 
 `AdminLayout.vue` içindeki global `ImageLightbox` overlay'i üzerinden çalışan, ortak tam ekran görsel önizleme state'idir.
 
-- `open(url, name?)`
+- `open(url, name?, items?, index?)` — galeride gezinmek için `items` (ve başlangıç `index`'i) verin
+- `next()` / `prev()` — `items` içinde ilerler/geri gider
 - `close()`
-- `state.visible`, `state.url`, `state.name`
+- `state.visible`, `state.url`, `state.name`, `state.items`, `state.index`
 
 Resimler için bunu kullanın. Resim olmayan dosyalarda `FilePreviewModal` ile `useDialog()` akışı kullanılmaya devam eder.
 
@@ -175,7 +180,7 @@ Inertia shared props'taki admin geneli `appearance.theme` değerine göre, `data
 
 ### useFlash()
 
-Inertia shared props içindeki flash verisini reactive olarak sunar.
+`{ flash, hasFlash }` döner — Inertia shared `flash` prop'u üzerinde salt okunur computed'lar (`success`, `error`, `warning`, `info`). Herhangi biri doluysa `hasFlash` `true` olur. Flash backend'den (`back()->with('success', …)`) ayarlanır; `flash`'a değer atanmaz.
 
 Bu projede flash mesajlar composable içinde değil, `AdminLayout.vue` içinde toast olarak gösterilir.
 
@@ -190,6 +195,7 @@ Definition kayıtlarını giriş gerektiren `/definitions` endpoint'inden yükle
 - `list(key, filter?)` — ham definition öğelerini döner, isteğe bağlı filtreyle
 - `options(key, filter?)` — select'ler için `{ label, value }` formatında öğeler döner
 - `find(key, value)` — değere göre tek bir öğe bulur
+- `invalidate(keyOrKeys?)` — bir veya birden fazla key'i cache'ten düşürür, sonraki `load()` yeniden çeker; parametresiz çağrılırsa `clearCache()` gibi davranır
 - `clearCache()` — reactive cache'i sıfırlar
 - `loaded` — herhangi bir yükleme tamamlandığında `true` olan reactive boolean
 

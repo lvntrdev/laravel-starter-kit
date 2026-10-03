@@ -396,7 +396,7 @@ See [Translatable Fields](./translatable-fields.md) for the complete backend and
 
 `FB.colorSelector()` renders a Tailwind color palette picker with an optional tone selector.
 
-- `colors(string[])` — available color names. Defaults to all 22 Tailwind palette families: the 17 chromatic families (`red` through `rose`) plus the 5 neutral families (`slate`, `gray`, `zinc`, `neutral`, `stone`).
+- `colors(string[])` — available color names. Defaults to 24 colors: the 22 Tailwind palette families — the 17 chromatic families (`red` through `rose`) plus the 5 neutral families (`slate`, `gray`, `zinc`, `neutral`, `stone`) — and `white` / `black`.
 - `tones(number[])` — tone steps displayed. Defaults to `[50, 100, …, 950]`.
 - `format('hex' | 'name' | 'name-tone')` — output format. Defaults to `'name'`.
 - `defaultTone(number)` — initial tone used when format requires one. Defaults to `500`.
