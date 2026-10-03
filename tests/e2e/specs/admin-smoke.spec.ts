@@ -31,20 +31,12 @@ test('login, create user, assign role, update settings, logout', async ({ page }
     await test.step('log in with the seeded admin', async () => {
         await page.goto('/login');
 
-        // Email uses PrimeVue InputText, whose root element IS the <input>,
-        // so the `id`/`for` pairing resolves cleanly for getByLabel.
+        // Both fields are reached through their <label>. PrimeVue's <Password>
+        // puts a bare `id` on its wrapper div, so Login.vue must pass
+        // `input-id` — if that regresses, the label stops resolving and this
+        // step fails.
         await page.getByLabel('Email Address').fill(ADMIN_EMAIL);
-
-        // Password uses PrimeVue's <Password> component. Any prop not declared
-        // by BasePassword (id, autocomplete, class, ...) falls through to the
-        // component's *wrapper* div, not the inner <input> — Login.vue sets
-        // `id="password"` and `autocomplete="current-password"` directly on
-        // <Password>, so neither reaches the real input. `for="password"` on
-        // the <label> therefore doesn't resolve to a focusable control, and
-        // an autocomplete-attribute selector matches nothing either. `type`
-        // is the one attribute PrimeVue binds directly onto the inner
-        // <input> (`:type="inputType"`), so select on that instead.
-        await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+        await page.getByLabel('Password', { exact: true }).fill(ADMIN_PASSWORD);
 
         await page.getByRole('button', { name: 'Sign In' }).click();
 

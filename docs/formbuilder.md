@@ -112,7 +112,7 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 
 ### Label `for` / control id convention
 
-For most field types the rendered `<label for>` targets the field's own `key`. Six field types render their PrimeVue control inside a non-focusable wrapper element (`input-number`, `date-picker`, `select`, `multiselect`, `toggle-switch`, and `password` when `.feedback()` is enabled) — for those, the inner focusable control receives `${key}__control` as its id via PrimeVue's `inputId` prop, and the label's `for` targets that id instead of the wrapper. This is internal wiring (`core/ids.ts`'s `controlId()`); it only matters if you're reading rendered markup or writing a test that queries by label/id.
+For most field types the rendered `<label for>` targets the field's own `key`. Six field types render their PrimeVue control inside a non-focusable wrapper element (`input-number`, `date-picker`, `select`, `multiselect`, `toggle-switch`, and `password` when `.feedback()` is enabled) — for those, the inner focusable control receives `${key}__control` as its id via PrimeVue's `inputId` prop, and the label's `for` targets that id instead of the wrapper. This is internal wiring (`core/ids.ts`'s `controlId()`); it only matters if you're reading rendered markup or writing a test that queries by label/id. The same applies to `aria-describedby` (the error/help text) and `aria-required`: for these wrapper types, and for `input-otp` and a binary `checkbox`, they land on the focusable element through the component's `pt` (`pcInputText`, `label`, `hiddenInput`, `input`) or, for `password`, `inputProps` — never on the wrapper. Passing your own `pt` through `.props()` replaces that routing.
 
 
 

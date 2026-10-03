@@ -136,11 +136,13 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="password"
             v-model="form.password"
+            input-id="password"
+            :input-props="{
+              autocomplete: 'new-password',
+              'aria-describedby': form.errors.password ? 'password-error' : undefined,
+            }"
             :invalid="!!form.errors.password"
-            :aria-describedby="form.errors.password ? 'password-error' : undefined"
-            autocomplete="new-password"
             toggle-mask
             fluid
           />
@@ -165,14 +167,16 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="password_confirmation"
             v-model="form.password_confirmation"
+            input-id="password_confirmation"
+            :input-props="{
+              autocomplete: 'new-password',
+              'aria-describedby': form.errors.password_confirmation
+                ? 'password-confirmation-error'
+                : undefined,
+            }"
             :invalid="!!form.errors.password_confirmation"
-            :aria-describedby="
-              form.errors.password_confirmation ? 'password-confirmation-error' : undefined
-            "
             :feedback="false"
-            autocomplete="new-password"
             toggle-mask
             fluid
           />

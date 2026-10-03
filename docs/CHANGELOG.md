@@ -8,6 +8,8 @@ Newly added features and improvements to the starter kit are listed here.
 
 - **`sk:update` now runs the kit's new database changes.** Updating could leave out a new table the kit needs, so the active share links list showed "A server error occurred." until you ran `php artisan migrate` yourself.
 - **The AI skills shipped with the kit match the code again.** Agents were told a few things that are not true — that any `LogicException` becomes a 422, that `useDialog()` takes a `refreshKey`, that `sk:seed-permissions --fresh` is the routine step (it resets every role's permissions), and that `site:install` is harmless (it drops all tables). These are corrected.
+- **Password fields work properly with screen readers and password managers.** On the sign-in, registration, password reset and password-change screens, clicking a password label now focuses the field, screen readers read the field's name and its error, and password managers get the right "current password" / "new password" hint. FormBuilder password fields with the strength meter link their error text the same way. Run `php artisan sk:update` to get the updated pages; pages you have edited are left alone.
+- **Screen readers announce errors and required state on more form fields.** Number, code (OTP), date, dropdown, multi-select, checkbox and switch fields in admin forms now read out their validation error and "required" when focused.
 
 ### Added
 

@@ -36,11 +36,11 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="password"
             v-model="form.password"
+            input-id="password"
+            :input-props="{ autocomplete: 'current-password' }"
             :invalid="!!form.errors.password"
             :feedback="false"
-            autocomplete="current-password"
             toggle-mask
             autofocus
             fluid

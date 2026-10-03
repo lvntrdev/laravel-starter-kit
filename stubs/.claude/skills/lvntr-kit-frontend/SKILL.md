@@ -117,6 +117,9 @@ from Settings → Content Languages.
 - **Load-failure retry state** — if remote form data or field options fail to
   load, the form shows a toast + in-form retry instead of failing silently.
 - Required fields render `aria-required` + a screen-reader "required" hint.
+  `aria-required` and `aria-describedby` sit on the focusable element, also for
+  wrapper-rooted PrimeVue controls (routed through their `pt`); a field-level
+  `.props({ pt })` overrides that routing, so merge rather than replace.
 
 ---
 

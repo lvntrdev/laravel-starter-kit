@@ -43,11 +43,11 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="current_password"
             v-model="form.current_password"
+            input-id="current_password"
+            :input-props="{ autocomplete: 'current-password' }"
             :invalid="!!form.errors.current_password"
             :feedback="false"
-            autocomplete="current-password"
             toggle-mask
             autofocus
             fluid
@@ -72,10 +72,10 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="password"
             v-model="form.password"
+            input-id="password"
+            :input-props="{ autocomplete: 'new-password' }"
             :invalid="!!form.errors.password"
-            autocomplete="new-password"
             toggle-mask
             fluid
           />
@@ -99,11 +99,11 @@
         <IconField>
           <InputIcon class="pi pi-lock" />
           <Password
-            id="password_confirmation"
             v-model="form.password_confirmation"
+            input-id="password_confirmation"
+            :input-props="{ autocomplete: 'new-password' }"
             :invalid="!!form.errors.password_confirmation"
             :feedback="false"
-            autocomplete="new-password"
             toggle-mask
             fluid
           />

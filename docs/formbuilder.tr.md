@@ -112,7 +112,7 @@ FB.inputText().key('user_id').default(currentUserId).hidden();
 
 ### Label `for` / control id kuralı
 
-Çoğu field tipinde render edilen `<label for>`, field'ın kendi `key`'ini hedefler. Altı field tipi PrimeVue kontrolünü odaklanamayan bir wrapper elemanı içinde render eder (`input-number`, `date-picker`, `select`, `multiselect`, `toggle-switch` ve `.feedback()` açıkken `password`) — bunlarda iç odaklanabilir kontrol, PrimeVue'nun `inputId` prop'u üzerinden `${key}__control` id'sini alır ve label'ın `for`'u wrapper yerine bu id'yi hedefler. Bu iç kablolamadır (`core/ids.ts`'in `controlId()` fonksiyonu); yalnızca render edilen markup'ı okurken veya label/id ile sorgu yapan bir test yazarken önemlidir.
+Çoğu field tipinde render edilen `<label for>`, field'ın kendi `key`'ini hedefler. Altı field tipi PrimeVue kontrolünü odaklanamayan bir wrapper elemanı içinde render eder (`input-number`, `date-picker`, `select`, `multiselect`, `toggle-switch` ve `.feedback()` açıkken `password`) — bunlarda iç odaklanabilir kontrol, PrimeVue'nun `inputId` prop'u üzerinden `${key}__control` id'sini alır ve label'ın `for`'u wrapper yerine bu id'yi hedefler. Bu iç kablolamadır (`core/ids.ts`'in `controlId()` fonksiyonu); yalnızca render edilen markup'ı okurken veya label/id ile sorgu yapan bir test yazarken önemlidir. Aynısı `aria-describedby` (hata/yardım metni) ve `aria-required` için de geçerli: bu wrapper tiplerinde, ayrıca `input-otp` ve binary `checkbox`'ta bu nitelikler bileşenin `pt`'si (`pcInputText`, `label`, `hiddenInput`, `input`) ya da `password` için `inputProps` üzerinden odaklanabilir elemana gider — wrapper'a asla. `.props()` ile kendi `pt`'nizi verirseniz bu yönlendirmenin yerini alır.
 
 ## Kullanılabilir Field Builder'lar
 

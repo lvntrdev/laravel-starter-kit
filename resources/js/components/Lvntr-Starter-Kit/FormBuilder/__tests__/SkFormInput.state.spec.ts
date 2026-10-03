@@ -146,4 +146,59 @@ describe('SkFormInput / SkFormFieldRenderer — aria-describedby contract', () =
         expect(errorEl.text()).toBe('Required');
         expect(wrapper.get('input#email').attributes('aria-describedby')).toBe(describedById(field));
     });
+
+    it('a feedback password routes aria-describedby to the inner input, not the PrimeVue wrapper', () => {
+        const field = FB.password().key('pwd').label('Password').feedback().build();
+        const config: FormBuilderConfig = { ...FB.form().build(), fields: [field] };
+        const wrapper = mount(SkForm, {
+            props: { config, modelValue: { pwd: '' }, errors: { pwd: 'Required' } },
+            global: { mocks: { $t: (key: string) => key }, plugins: [PrimeVue], stubs: { SkCard: SkCardStub } },
+        });
+
+        expect(wrapper.get(`input#${controlId(field)}`).attributes('aria-describedby')).toBe(describedById(field));
+    });
+
+    /**
+     * Wrapper-rooted PrimeVue controls: aria-describedby and aria-required must sit
+     * on the focusable element (the selector), and nowhere else — a copy left on the
+     * wrapper `<div>` is the regression this guards.
+     */
+    const wrapped: Array<[string, () => FieldConfig, (field: FieldConfig) => string]> = [
+        ['input-number', () => FB.inputNumber().key('qty').label('Qty').required().build(), (f) => `input#${controlId(f)}`],
+        ['input-otp', () => FB.inputOtp().key('otp').label('Code').required().build(), () => 'input'],
+        ['date-picker', () => FB.datePicker().key('when').label('When').required().build(), (f) => `input#${controlId(f)}`],
+        [
+            'select',
+            () => FB.select().key('role').label('Role').required().options([{ label: 'Admin', value: 'admin' }]).build(),
+            (f) => `#${controlId(f)}`,
+        ],
+        [
+            'multiselect',
+            () => FB.multiselect().key('roles').label('Roles').required().options([{ label: 'Admin', value: 'admin' }]).build(),
+            (f) => `#${controlId(f)}`,
+        ],
+        ['checkbox', () => FB.checkbox().key('terms').label('Terms').required().build(), (f) => `input#${f.key}`],
+        ['toggle-switch', () => FB.toggleSwitch().key('active').label('Active').required().build(), (f) => `input#${controlId(f)}`],
+        ['password', () => FB.password().key('pwd').label('Password').feedback().required().build(), (f) => `input#${controlId(f)}`],
+    ];
+
+    it.each(wrapped)('%s: ARIA state lands on the focusable element only', (_type, buildField, focusSelector) => {
+        const field = buildField();
+        const config: FormBuilderConfig = { ...FB.form().build(), fields: [field] };
+        const wrapper = mount(SkForm, {
+            props: { config, modelValue: {}, errors: { [field.key]: 'Required' } },
+            global: { mocks: { $t: (key: string) => key }, plugins: [PrimeVue], stubs: { SkCard: SkCardStub } },
+        });
+
+        const targets = wrapper.findAll(focusSelector(field));
+        expect(targets.length).toBeGreaterThan(0);
+        for (const target of targets) {
+            expect(target.attributes('aria-describedby')).toBe(describedById(field));
+            expect(target.attributes('aria-required')).toBe('true');
+        }
+        expect(wrapper.findAll('[aria-describedby]')).toHaveLength(targets.length);
+        expect(wrapper.findAll('[aria-required]')).toHaveLength(targets.length);
+
+        wrapper.unmount();
+    });
 });

@@ -100,12 +100,14 @@
         <IconField class="auth-input auth-input--password">
           <InputIcon class="auth-input__icon pi pi-lock" />
           <Password
-            id="password"
             v-model="form.password"
+            input-id="password"
+            :input-props="{
+              autocomplete: 'current-password',
+              'aria-describedby': form.errors.password ? 'password-error' : undefined,
+            }"
             :invalid="!!form.errors.password"
-            :aria-describedby="form.errors.password ? 'password-error' : undefined"
             :feedback="false"
-            autocomplete="current-password"
             toggle-mask
             fluid
             input-class="auth-input__control auth-input__control--password"

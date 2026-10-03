@@ -118,6 +118,22 @@
      */
     const describedBy = computed(() => (props.described ? describedById(props.field) : undefined));
 
+    /**
+     * PrimeVue components that root at a wrapper `<div>` (InputNumber, InputOtp,
+     * DatePicker, Select, MultiSelect, Checkbox, ToggleSwitch, Password) hand every
+     * undeclared attribute to that wrapper, so ARIA state bound on the component
+     * never reaches the focusable element. Those controls get `extraProps` without
+     * `aria-required` and receive `controlAria` through their `pt` focus section.
+     */
+    const wrappedExtraProps = computed(() => {
+        const { 'aria-required': _ariaRequired, ...rest } = extraProps.value as Record<string, unknown>;
+        return rest;
+    });
+    const controlAria = computed(() => ({
+        'aria-describedby': describedBy.value,
+        'aria-required': (extraProps.value as Record<string, unknown>)['aria-required'] as boolean | 'true' | 'false' | undefined,
+    }));
+
     /** Translate option labels (and optional descriptions) via trans() so consumers can pass translation keys. */
     const translatedOptions = computed(() =>
         props.options.map((opt) => ({
@@ -712,8 +728,8 @@
                 :use-grouping="asInputNumber.useGrouping ?? true"
                 class="w-full"
                 :input-id="controlId(field)"
-                :aria-describedby="describedBy"
-                v-bind="extraProps"
+                :pt="{ pcInputText: { root: controlAria } }"
+                v-bind="wrappedExtraProps"
                 :disabled="forcedDisabled"
                 :invalid="forcedInvalid"
                 @input="numberVal = ($event.value ?? null) as number | null"
@@ -735,8 +751,8 @@
             :use-grouping="asInputNumber.useGrouping ?? true"
             class="w-full"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ pcInputText: { root: controlAria } }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
             @input="numberVal = ($event.value ?? null) as number | null"
@@ -750,8 +766,8 @@
             :length="asInputOtp.length ?? 6"
             :mask="asInputOtp.mask"
             :integer-only="asInputOtp.integerOnly"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ pcInputText: { root: controlAria } }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
         />
@@ -816,8 +832,8 @@
             :placeholder="asDatePicker.placeholder ? $t(asDatePicker.placeholder) : undefined"
             class="w-full"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ pcInputText: { root: controlAria } }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
         />
@@ -842,8 +858,8 @@
             :loading="loading"
             class="w-full"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ label: controlAria }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled || loading"
             :invalid="forcedInvalid"
         />
@@ -868,8 +884,8 @@
             :loading="loading"
             class="w-full"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ hiddenInput: controlAria }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled || loading"
             :invalid="forcedInvalid"
         />
@@ -915,8 +931,8 @@
             v-model="boolVal"
             :input-id="field.key"
             :binary="true"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ input: controlAria }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
         />
@@ -1006,8 +1022,8 @@
             input-class="w-full"
             class="w-full"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :input-props="controlAria"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
         />
@@ -1080,8 +1096,8 @@
             :id="field.key"
             v-model="boolVal"
             :input-id="controlId(field)"
-            :aria-describedby="describedBy"
-            v-bind="extraProps"
+            :pt="{ input: controlAria }"
+            v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
         />

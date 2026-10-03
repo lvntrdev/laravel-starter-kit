@@ -251,9 +251,9 @@
           <Password
             v-model="logoutPasswordForm.password"
             input-id="logout_password"
+            :input-props="{ autocomplete: 'current-password' }"
             :invalid="!!logoutPasswordError"
             :feedback="false"
-            autocomplete="current-password"
             toggle-mask
             fluid
             autofocus

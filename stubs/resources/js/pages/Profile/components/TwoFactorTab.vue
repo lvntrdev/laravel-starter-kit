@@ -661,9 +661,9 @@
           <Password
             v-model="passwordConfirmForm.password"
             input-id="confirm_password_dialog"
+            :input-props="{ autocomplete: 'current-password' }"
             :invalid="!!passwordConfirmError"
             :feedback="false"
-            autocomplete="current-password"
             toggle-mask
             fluid
             autofocus
