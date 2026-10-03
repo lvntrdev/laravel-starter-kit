@@ -6,6 +6,8 @@ description: "Enforces the Lvntr Starter Kit frontend rules. Activate when: writ
 # Lvntr Kit — Frontend Skill
 
 Reference skill for frontend components, builder APIs, and composables.
+Exact method names and signatures for every FB/DB/TB builder, composable and
+component → `references/builders.md` (read on demand).
 Backend layer (Action/DTO/API/route) → `lvntr-kit-domain`.
 All hard rules, project shape, and command reference → `lvntr-starter-kit`.
 
@@ -20,7 +22,7 @@ The kit breaks when any of these four rules is violated; no justification is val
 - **Use `useApi()` — no `import axios`.** API calls must go through the kit's CSRF-aware HTTP client.
 - **Do not hardcode URLs in Vue.** Import from `@/routes/**` and call `.url()`. Run `php artisan wayfinder:generate --skip-actions` after a route change.
 
-> The numbered canonical hard rules (1-8) live only in the `lvntr-starter-kit` core; the rules above are this skill's frontend summary (core #4/#5 + the SkForm/useApi frontend additions).
+> The numbered canonical hard rules (1-9) live only in the `lvntr-starter-kit` core; the rules above are this skill's frontend summary (core #4/#5 + the SkForm/useApi frontend additions).
 
 ---
 
@@ -51,7 +53,7 @@ const formConfig = computed(() =>
       FB.inputText().key('name'),
       FB.inputNumber().key('price').min(0).fractionDigits(2, 2).suffix('₺'),
       FB.select().key('status').definitionOptions('productStatus'),
-      FB.textarea().key('description').optional().class('col-span-full'),
+      FB.textarea().key('description').optional().colSpan(2),
       FB.fileUpload().key('image').accept('image/*').existingMediaKey('image'),
     )
     .build()
@@ -74,6 +76,7 @@ const formConfig = computed(() =>
 
 `.key(req)`, `.label(s|false)`, `.required(b)`, `.optional()`, `.hint(s)`,
 `.visible(fn)`, `.disabled(fn)`, `.default(v)`, `.props({...})`, `.class(css)`,
+`.colSpan(n)` (grid span within the form's `.cols()`),
 `.hidden(b)`, `.groupPrefix(s)`, `.groupSuffix(s)`, `.controlPosition('left'|'right')`
 
 Fields with options: `.optionsUrl(url|fn)` (the fn form is reactive in a cascading select)
@@ -82,11 +85,35 @@ or `.definitionOptions('key', { only?, except? })`.
 If `.label()` is omitted, the label resolves automatically from `validation.attributes.{key}` —
 add it to the `attributes` array in `lang/{locale}/validation.php` instead of hardcoding a string.
 
+### Rich text editor — `FB.editor()`
+
+```ts
+FB.editor().key('body')
+  .toolbar('standard')                         // 'minimal' | 'standard' | 'full'
+  .links()                                     // links + button links (primary / secondary / outline)
+  .imageUpload({ context: 'global' })          // FileManager context key
+  .minHeight('240px')
+```
+
+An empty editor submits `''`, not `<p></p>` (`.treatEmptyAsBlank(false)` opts out).
+
+Every preset has an HTML source view and a fullscreen toggle; `full` adds
+font family/size, line height, sub/superscript and YouTube embeds
+(`youtube-nocookie.com`). A button link is stored as plain
+`<a data-sk-button="…">` HTML, so it still works where the attribute is ignored.
+Output passes the kit's `HtmlSanitizer` on the backend — don't widen it to
+accept markup the editor doesn't produce.
+
+Translatable fields (`translatableText`, `translatableTextarea`,
+`translatableEditor`) add `.onlyLocales([...])`, `.exceptLocales([...])` and
+`.localeLabelStyle('badge'|'name'|'flag')`; the active content languages come
+from Settings → Content Languages.
+
 ### Built-in SkForm guards (v13.6.8+)
 
 - **Double-submit guard** — re-entrant submits while a request is in flight are ignored.
 - **Dirty-form navigation warning** — both Inertia SPA navigation and browser
-  `beforeunload`; opt out per-form with `confirmLeave: false`.
+  `beforeunload`; opt out per-form with `FB.form().confirmLeave(false)`.
 - **Load-failure retry state** — if remote form data or field options fail to
   load, the form shows a toast + in-form retry instead of failing silently.
 - Required fields render `aria-required` + a screen-reader "required" hint.
@@ -133,8 +160,37 @@ The backend endpoint `ProductDatatableQuery::response()` must return through the
 `tag('definition')` colors automatically using the matching definition's `severity`.
 **Always** use the `escape` callback inside `.render()` — this prevents XSS.
 
+A notice band between the toolbar and the table head:
+`.message('sk-product.readonly_notice', 'warn')` or
+`.message({ text, severity, icon, closable })` — severities `info` (default),
+`success`, `warn`, `danger`, `secondary`, `contrast`. The `#message` slot
+replaces it for runtime content.
+
 Bulk selection across pages goes through `useDatatableSelection()` — do not
-hand-roll checkbox state. Sortable headers are keyboard-operable and the
+hand-roll checkbox state:
+
+```ts
+const selection = useDatatableSelection({
+  bulkUrl: products.bulk.url(),
+  onSuccess: () => bus.refresh('products-table'),
+});
+// selection.executeBulkAction('delete', filterSnapshot)
+// selection.selectAllFiltered(), selection.clearSelection()
+```
+
+```vue
+<SkDatatable :config="tableConfig" refreshKey="products-table" :selection="selection">
+  <template #bulk-actions>
+    <Button :label="$t('sk-datatable.bulk_delete')" @click="confirmBulkDelete" />
+  </template>
+</SkDatatable>
+```
+
+The floating bulk bar (count + clear) is built in; the page supplies only the
+`#bulk-actions` buttons. `resources/js/pages/Admin/Users/Index.vue` is the
+reference wiring, including the filter snapshot for "select all filtered".
+
+Sortable headers are keyboard-operable and the
 empty state distinguishes "no results for your filter" (with a Clear-filters
 action) from "no records at all" — don't reimplement either.
 
@@ -229,15 +285,15 @@ editable app stub.
 
 | Composable | Short description |
 |---|---|
-| `useDialog()` | `dialog.open(Component, props, title, opts)`, `dialog.openAsync(Component, dataUrl, title, opts)`, `dialog.close()`. If `refreshKey` is passed in opts, the table refreshes automatically after a successful save. **Never import PrimeVue Dialog directly.** |
+| `useDialog()` | Takes no arguments. `dialog.open(Component, props, title, opts)`, `dialog.openAsync(Component, dataUrl, title, opts)`, `dialog.close()`, plus `setLoading`, `setFooter`, `patchFooter`. `opts`: `refreshKey` (table refreshes after a successful save), `width`, `footer`, `darkMask`; `openAsync` also takes `mapResponse`. **Never import PrimeVue Dialog directly.** |
 | `useConfirm()` | `confirmDelete(cb, message?, icon?)` and `confirmAction({...})` — `<ConfirmDialog group="app" />` is already mounted in `AdminLayout.vue`. **Never use native `confirm()`/`alert()`.** |
 | `useApi()` | CSRF-aware HTTP client. `api.get<T>(url)`, `.post`, `.put`, `.patch`, `.delete`. Use when an Inertia visit is insufficient (autocomplete, file upload). `useApi({ toast: false })` disables error toasts. |
 | `useDefinition()` | Cached enums from the `/definitions` endpoint. `await load(['userStatus'])`, then `list(key)`, `options(key)`, `find(key, value)`. `.definitionOptions(key)` uses it indirectly. |
-| `useRefreshBus()` | Cross-component refresh. Tables register with `refreshKey`; mutations call `bus.refresh('o-key')`. `useDialog({ refreshKey })` wires this automatically. |
+| `useRefreshBus()` | Cross-component refresh. Tables register with `refreshKey`; mutations call `bus.refresh('the-key')` (`refreshAll()` for every table). Passing `refreshKey` in the `dialog.open()` options wires this automatically. |
 | `useCan()` | `can(perm)`, `canAny([perms])`, `hasRole(role)` — comes from Inertia shared props. |
-| `useFlash()` | Reactive Inertia flash: `flash.value = { success?, error?, warning?, info?, status? }`. |
-| `useDatatableSelection()` | Cross-page bulk selection state for `SkDatatable` bulk actions (`BulkSelectionMode`, `BulkActionPayload`). |
-| `useMenuBuilder()` | Fluent builder consumed by `useAdminMenu` to declare the sidebar menu (groups, items, permissions). |
+| `useFlash()` | `{ flash, hasFlash }` — read-only computeds over the Inertia flash (`flash.value.success`, `.error`, `.warning`, `.info`). Set flash from the backend (`back()->with(...)`), not by assigning. |
+| `useDatatableSelection({ bulkUrl, idKey?, onSuccess? })` | Cross-page bulk selection state; bind to `<SkDatatable :selection>` (see §2). |
+| `useMenuBuilder(items)` | Used by `useAdminMenu`: filters menu items by permission/role and tracks the active item/group. Declare the menu in `useAdminMenu`, not here. |
 | `useSidebar()` | `{ isCollapsed, isMobileOpen, isMobile, toggle, openMobile, closeMobile }`. |
 | `useDarkMode()` | `{ isDark, toggleDark }` — toggles `.dark` on `<html>` and persists to localStorage. |
 | `useTheme()` / `useAccentColor()` | Runtime appearance: active theme, accent color and sidebar style (`ACCENT_COLORS`, `SIDEBAR_STYLES`); pairs with `useAppearanceDefaults()`. |
@@ -334,7 +390,7 @@ bus.refresh('products-table');
 1. **Hardcoded URL** — `fetch('/api/products')` breaks Wayfinder typing. Import from `@/routes/products` and call `.url()`. Do not forget `php artisan wayfinder:generate --skip-actions` when a route changes.
 2. **Custom datatable shape** — `SkDatatable` expects exactly `DataTableResponse<T>`. The backend endpoint must always go through the `DatatableQueryBuilder` chain; a hand-shaped response does not work.
 3. **Hardcoded label** — use a translation key (`'sk-product.name'`) instead of `.label('Product Name')`. A missing key resolves automatically from `validation.attributes.{key}`.
-4. **Missing `refreshKey`** — every table with a mutation dialog must set both `<SkDatatable refreshKey="...">` AND `useDialog({ refreshKey: '...' })`. If either is omitted, the table does not refresh after saving.
+4. **Missing `refreshKey`** — every table with a mutation dialog must set both `<SkDatatable refreshKey="...">` AND `refreshKey` in the `dialog.open()` / `openAsync()` options. If either is omitted, the table does not refresh after saving.
 5. **Skipping `wayfinder:generate --skip-actions`** — if generation does not run after adding or changing a route, Vue imports break or resolve to the old URL.
 6. **Editing `resources/css/theme/_active.css`** — it is generated by the `skTheme()` vite plugin. Theme changes go into the `resources/css/theme/{main,custom}/` slot tree (`VITE_SK_THEME` selects the active theme).
 
@@ -342,7 +398,7 @@ bus.refresh('products-table');
 
 ## Hard rule reminder (when this skill triggers directly)
 
-The full list is in `lvntr-starter-kit` §1 (8 rules). The critical frontend rules are #1, #2, #4, #5:
+The full list is in `lvntr-starter-kit` §1 (9 rules). The critical frontend rules are #1, #2, #4, #5:
 
 - **#1** Do not edit `vendor/lvntr/laravel-starter-kit/`
 - **#2** Do not edit auto-generated files (`wayfinder/routes/actions`, `*.d.ts`, `_ide_helper*`, `.phpstorm.meta.php`, `_active.css`)
@@ -353,7 +409,7 @@ The full list is in `lvntr-starter-kit` §1 (8 rules). The critical frontend rul
 
 ## Cross-ref
 
-Works with `lvntr-starter-kit` (core: all 8 hard rules, project shape, command reference, permissions, i18n).
+Works with `lvntr-starter-kit` (core: all 9 hard rules, project shape, command reference, permissions, i18n).
 The same entity's backend (Action / DTO / API / route) → `lvntr-kit-domain`.
 
 ---

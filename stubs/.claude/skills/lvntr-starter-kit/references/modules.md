@@ -9,8 +9,10 @@ the vendor package; take project ownership of one with `sk:eject {Domain}`.
 
 - Pluggable contexts (e.g. `users.avatar`, `products.gallery`) — register via
   the file manager service so uploads land in the right collection
-- Disk-aware: configure DigitalOcean Spaces / S3 in `config/filesystems.php`
-  (kit injects the `spaces` disk during install)
+- Disk-aware: local disk, Amazon S3, DigitalOcean Spaces or Hetzner Object
+  Storage — pick the driver in Settings → Storage. Install/update inject the
+  `do` (`DO_SPACES_*` env) and `hetzner` (`HETZNER_S3_*` env) disks into
+  `config/filesystems.php`
 - Frontend page lives at `resources/js/pages/Admin/FileManager/` — uses
   Spatie MediaLibrary under the hood via the `HasMediaCollections` trait
 - Trash retention: schedule `php artisan file-manager:purge-trash` (or pass

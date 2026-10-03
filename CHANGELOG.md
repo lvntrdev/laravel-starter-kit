@@ -5,6 +5,17 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.4] - 2026-10-03
+
+### Fixed
+
+- **Shipped AI skills (`.claude/skills/lvntr-*`) brought back in line with the code.** `lvntr-kit-domain` told agents a plain `\LogicException` maps to a 422 — only `DomainRuleException` does, any other `LogicException` is a 500 — showed a `permission-resources.php` entry shape the config does not use, offered `sk:seed-permissions --fresh` (which resets every role's grants) as the routine follow-up, and passed field errors to `ApiException::unprocessable()`, which takes a message only. `lvntr-kit-frontend` documented `useDialog({ refreshKey })` (the composable takes no arguments; `refreshKey` belongs in the `open()` options), a `confirmLeave: false` option instead of `.confirmLeave(false)`, and `useDatatableSelection()` / `useMenuBuilder()` with the wrong signatures. `lvntr-starter-kit` described `PermissionEnum` as always overwritten by `sk:update` (it is hash-guarded) and `site:install` as a harmless one-shot (it runs `migrate:fresh`).
+
+### Added
+
+- **The AI skills cover 13.7–13.8.** `composer update lvntr/laravel-starter-kit -W` and the never-`composer require`-a-kit-dependency rule, the `package.json` merge, the `ERESOLVE` recovery, the `sk:doctor` Kit Dependencies check, `sk:redact-activity-secrets`, `sk:install --modules`, the full `make:sk-domain` flag set (`--with=permissions`, `--no-*`, aliases), the editor's toolbar presets and button links, `DB.table().message()`, the bulk-selection wiring, and the Hetzner / Amazon S3 storage drivers. Run `php artisan sk:update` to refresh the skills in your app.
+- **On-demand API references for the AI skills.** `lvntr-kit-frontend/references/builders.md` lists every FormBuilder / DatatableBuilder / TabBuilder method with its defaults, the `SkForm` / `SkDatatable` / `SkTabs` props, events and slots, every composable's signature and return value, and the UI components. `lvntr-kit-domain/references/api.md` covers `ActionPipeline`, `ApiResponse`, `ApiException` with the handler's status mapping, `DatatableQueryBuilder`, the global helpers, definitions and a bulk-action recipe. Agents read them only when they need an exact signature, so the skills themselves stay short — and consumer apps don't ship the kit's `docs/`, so this was the only place an agent could find them.
+
 ## [13.8.3] - 2026-10-03
 
 ### Fixed

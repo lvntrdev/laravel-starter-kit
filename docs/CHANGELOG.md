@@ -2,6 +2,17 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-10-03 — v13.8.4
+
+### Fixed
+
+- **The AI skills shipped with the kit match the code again.** Agents were told a few things that are not true — that any `LogicException` becomes a 422, that `useDialog()` takes a `refreshKey`, that `sk:seed-permissions --fresh` is the routine step (it resets every role's permissions), and that `site:install` is harmless (it drops all tables). These are corrected.
+
+### Added
+
+- **The AI skills now cover 13.7–13.8:** updating with `-W`, the `package.json` merge, `sk:doctor`'s Kit Dependencies check, `sk:redact-activity-secrets`, the new `make:sk-domain` flags, editor button links, datatable notices, bulk selection and the Hetzner / Amazon S3 drivers. Run `php artisan sk:update` to get them.
+- **Full API references for the AI skills.** Every FormBuilder / DatatableBuilder / TabBuilder method, composable and component, plus the backend `ApiResponse` / `ApiException` / `ActionPipeline` / `DatatableQueryBuilder` API and the global helpers. Agents read them only when they need an exact method, so everyday work stays fast.
+
 ## 2026-10-03 — v13.8.3
 
 ### Fixed

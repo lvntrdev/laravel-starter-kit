@@ -1,6 +1,6 @@
 ---
 name: lvntr-starter-kit
-description: "Use this skill whenever working in a Laravel project that has the Lvntr Starter Kit (lvntr/laravel-starter-kit) installed. ALWAYS activate when: writing or modifying controllers under app/Http/Controllers/Admin, Api or Service; adding business logic under app/Domain/; creating FormRequests, API Resources, Actions, DTOs, Queries, Events, Listeners; touching routes/web/*-route.php or routes/api/*-route.php; building Vue pages under resources/js/pages/Admin/**; using @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading); calling FB/DB/TB builders or composables (useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode, useTheme, useAccentColor, useDatatableSelection, useMenuBuilder); editing lang/{locale}/sk-*.php translations; running sk:install / sk:update / sk:publish / sk:upgrade / sk:doctor / sk:eject / make:sk-domain / remove:sk-domain / sk:seed-permissions / site:install / env:sync / file-manager:purge-trash / encryption:key / encryption:rekey / encryption:health; updating config/permission-resources.php, config/starter-kit.php, config/settings.php; working with the file manager, activity log, definitions, settings panel, or theme system (VITE_SK_THEME); or when the user mentions: starter kit, sk-, ApiResponse, to_api, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder, RoleEnum, PermissionEnum, definitionOptions, refreshKey, dtApi, eject, vendor-first. Also triggers on Turkish: yeni domain, domain ekle, tablo ekle, form ekle, dialog aç. Enforces the kit's hard rules and upgrade-safety, and routes builder/domain detail to the lvntr-kit-frontend / lvntr-kit-domain skills."
+description: "Use this skill whenever working in a Laravel project that has the Lvntr Starter Kit (lvntr/laravel-starter-kit) installed. ALWAYS activate when: writing or modifying controllers under app/Http/Controllers/Admin, Api or Service; adding business logic under app/Domain/; creating FormRequests, API Resources, Actions, DTOs, Queries, Events, Listeners; touching routes/web/*-route.php or routes/api/*-route.php; building Vue pages under resources/js/pages/Admin/**; using @lvntr/components/* (SkForm, SkDatatable, SkTabs, AppDialog, AvatarUpload, PageLoading); calling FB/DB/TB builders or composables (useDialog, useConfirm, useApi, useDefinition, useRefreshBus, useCan, useFlash, useSidebar, useDarkMode, useTheme, useAccentColor, useDatatableSelection, useMenuBuilder); editing lang/{locale}/sk-*.php translations; running sk:install / sk:update / sk:publish / sk:upgrade / sk:doctor / sk:eject / make:sk-domain / remove:sk-domain / sk:seed-permissions / site:install / env:sync / file-manager:purge-trash / sk:redact-activity-secrets / encryption:key / encryption:rekey / encryption:health; updating config/permission-resources.php, config/starter-kit.php, config/settings.php; working with the file manager, activity log, definitions, settings panel, or theme system (VITE_SK_THEME); or when the user mentions: starter kit, sk-, ApiResponse, to_api, ApiException, BaseAction, BaseDTO, ActionPipeline, DatatableQueryBuilder, RoleEnum, PermissionEnum, definitionOptions, refreshKey, dtApi, eject, vendor-first. Also triggers on Turkish: yeni domain, domain ekle, tablo ekle, form ekle, dialog aç. Enforces the kit's hard rules and upgrade-safety, and routes builder/domain detail to the lvntr-kit-frontend / lvntr-kit-domain skills."
 ---
 
 # Lvntr Starter Kit — Core Gate
@@ -24,7 +24,8 @@ The kit is **vendor-first** (v13.6.0+). Three things matter:
    wins**. Take full ownership of a module with `php artisan sk:eject {Domain}`
    (trade-off: no more upstream updates for it).
 3. **The package itself stays untouched** (`vendor/lvntr/laravel-starter-kit/`)
-   — it is upgradable via `composer update` + `php artisan sk:update`.
+   — it is upgradable via `composer update lvntr/laravel-starter-kit -W` +
+   `php artisan sk:update`.
 
 > **Online docs:** [starter-kit.lvntr.dev](https://starter-kit.lvntr.dev/) — full
 > reference, API tables, screenshots. Use this skill for the day-to-day rules.
@@ -35,7 +36,7 @@ The kit is **vendor-first** (v13.6.0+). Three things matter:
 
 ```
 Never touch vendor/ or auto-generated files; never bypass the envelope/dialog/URL/Action rules;
-never finish without pint, and never edit a committed migration.
+never finish without pint, never edit a committed migration, and never re-run sk:install on an installed app.
 ```
 
 Full list: the **Hard rules** section below.
@@ -82,10 +83,11 @@ Stop the moment any of these thoughts appears:
   PrimeVue Dialog directly)
 - Returning JSON from an API controller (use `to_api()` or `ApiResponse::*`)
 - Adding a permission (edit `config/permission-resources.php`, run
-  `sk:seed-permissions --fresh`)
+  `sk:seed-permissions`)
 - Customizing a published Vue component or composable (run `sk:publish` first)
 - Taking ownership of a kit module (`sk:eject {Domain}` — read the trade-off)
-- Upgrading the kit (`composer update`, then `sk:update --dry-run`, then `sk:update`)
+- Upgrading the kit (`composer update lvntr/laravel-starter-kit -W`, then
+  `sk:update --dry-run`, then `sk:update`) — keep the `-W`, see `references/update-flow.md`
 - Diagnosing environment/config issues (`sk:doctor`)
 
 ## When NOT to apply
@@ -164,18 +166,24 @@ denied**; in non-production it warns and allows.
 
 ### Adding a new resource
 
-1. Edit `config/permission-resources.php`:
+`make:sk-domain Product --with=permissions` does this for you. By hand:
+
+1. Edit `config/permission-resources.php` — abilities under `resources`
+   (`null` = all), grants under `role_permissions`, label under
+   `display_names.resources`:
    ```php
-   'products' => [
-       'label' => 'sk-product.product',
-       'abilities' => ['read', 'create', 'update', 'delete'],
+   'resources' => [
+       // …
+       'products' => ['create', 'read', 'update', 'delete'],
    ],
    ```
 
-2. Re-seed:
+2. Seed:
    ```bash
-   php artisan sk:seed-permissions --fresh
+   php artisan sk:seed-permissions
    ```
+   `--fresh` resets **every** role's permissions to match the config exactly —
+   grants made from the Roles screen are lost. Don't use it as a routine step.
 
 ### Roles (already seeded)
 
@@ -212,7 +220,7 @@ manually — adding the resource to `permission-resources.php` is enough.
 
 ## 8. Translations & validation messages
 
-The kit's 44 `sk-*` translation files (EN + TR) run **from the vendor
+The kit's `sk-*` translation files (EN + TR) run **from the vendor
 package** with precompiled frontend JSON. Your app's `lang/` files override
 them **per key** — app keys always win; missing keys fall back to the vendor
 default. `lang/{locale}/validation.php` stays app-owned.
@@ -269,7 +277,7 @@ edit the `.claude` copies; `sk:install`/`sk:update` re-sync the mirror.
 
 ## Bottom Line
 
-The kit's upgrade safety rests on the eight hard rules. `vendor/` and
+The kit's upgrade safety rests on the nine hard rules. `vendor/` and
 auto-generated files are never edited under any circumstances. The API
 envelope, the dialog system, URL management and the Action layer cannot be
 bypassed. PHP changes end with pint; committed migrations are never edited.

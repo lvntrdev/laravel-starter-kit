@@ -2,6 +2,17 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-10-03 — v13.8.4
+
+### Düzeltildi
+
+- **Kit'le gelen AI skill'leri yeniden kodla uyumlu.** Ajanlara doğru olmayan bazı bilgiler veriliyordu: her `LogicException`'ın 422'ye dönüştüğü, `useDialog()`'un `refreshKey` aldığı, `sk:seed-permissions --fresh`'in rutin adım olduğu (tüm rollerin yetkilerini sıfırlar) ve `site:install`'ın zararsız olduğu (tüm tabloları siler). Bunlar düzeltildi.
+
+### Eklendi
+
+- **AI skill'leri artık 13.7–13.8'i kapsıyor:** `-W` ile güncelleme, `package.json` birleştirme, `sk:doctor`'ın Kit Bağımlılıkları kontrolü, `sk:redact-activity-secrets`, yeni `make:sk-domain` flag'leri, editör buton linkleri, datatable bildirimleri, toplu seçim ve Hetzner / Amazon S3 sürücüleri. Uygulamanızda almak için `php artisan sk:update` çalıştırın.
+- **AI skill'leri için tam API referansları.** FormBuilder / DatatableBuilder / TabBuilder'ın tüm metodları, composable'lar ve bileşenler; backend tarafında `ApiResponse` / `ApiException` / `ActionPipeline` / `DatatableQueryBuilder` API'ı ve global helper'lar. Ajanlar bunları yalnızca tam bir metoda ihtiyaç duyduğunda okuyor; günlük işler hızlı kalıyor.
+
 ## 2026-10-03 — v13.8.3
 
 ### Düzeltildi

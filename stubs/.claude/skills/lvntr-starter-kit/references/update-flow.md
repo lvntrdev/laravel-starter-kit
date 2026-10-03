@@ -9,14 +9,21 @@ The kit tracks every published file in `storage/starter-kit/hashes.json`
    matches what the kit shipped, `sk:update` overwrites it with the new
    version. If not (you customized it), it is **skipped and reported**.
 
-2. **SAFE_UPDATE paths** are always refreshed regardless of local edits.
-   Since v13.6.x this list is intentionally tiny:
-   - `app/Enums/PermissionEnum.php` — regenerated to stay in sync with the
-     package's permission constants. Don't hand-edit it.
+2. **SAFE_UPDATE paths** go through the same hash guard: refreshed only while
+   your copy is unmodified (or with `--force`); an edited copy is preserved
+   and reported separately, an untracked one is prompted for. The list is
+   intentionally tiny:
+   - `app/Enums/PermissionEnum.php` — keeps it in sync with the package's
+     permission constants. Prefer not to hand-edit it so it keeps updating.
 
 3. **NEVER_UPDATE paths** are installed once and never overwritten:
    - `config/permission-resources.php` (your resource matrix)
    - `config/settings.php` (your setting groups + `sensitive_keys` whitelist)
+   - `package.json` — never copied over; it is **merged** instead.
+     `dependencies`, `devDependencies` and `scripts` are unioned: your own
+     entries (and their order) stay, the kit's own entries take the kit's
+     current value. `sk:install` merges an existing `package.json` the same
+     way, and `sk:update --dry-run` reports the merge without writing.
 
 4. **Vendor-resident paths** (domain runtimes, kit middleware, helpers,
    `ApiException(Handler)`, FileManager HTTP layer, …) are **not copied at
@@ -27,14 +34,43 @@ The kit tracks every published file in `storage/starter-kit/hashes.json`
    table).
 
 5. **Skipped-at-install paths** (`--without-ai-skill`) are recorded with a
-   `__skipped__` sentinel and never re-added by update.
+   `__skipped__` sentinel and never re-added by update. `sk:update
+   --without-ai-skill` skips the AI-skill refresh for a single run.
 
 6. **Run `--dry-run` first.** Use `--force` only if your customizations are
    safe to lose — it ignores the registry and overwrites everything tracked.
 
 7. **After update:** re-run `npm install && npm run build`; read the package
    `CHANGELOG.md` and `docs/UPGRADE.md` for breaking notes (e.g. the
-   v13.5.11 → v13.6.0 theme-tree migration).
+   v13.5.11 → v13.6.0 theme-tree migration). If a kit dependency's version
+   moved and `npm install` fails with `ERESOLVE`, `sk:update` prints the
+   recovery: `rm -rf node_modules package-lock.json && npm install && npm run build`.
+
+## Before `sk:update` — the Composer step
+
+```bash
+composer update lvntr/laravel-starter-kit -W
+```
+
+**Keep the `-W`.** Without it Composer leaves the kit's own dependencies at
+their locked versions; when a new kit release needs a newer one (13.8.2+
+needs `lvntr/api-dock` `~0.0.8`) it quietly installs the newest kit that
+still fits the old lock instead of failing — the app looks updated but is
+stuck on an older kit.
+
+**Never `composer require` a kit dependency yourself** (e.g.
+`lvntr/api-dock`) — Composer writes a `^0.0.x` constraint that pins one exact
+patch and blocks every later kit update. If the app's `composer.json` already
+lists one:
+
+```bash
+composer remove lvntr/api-dock --no-update
+composer update lvntr/laravel-starter-kit -W
+```
+
+`php artisan sk:doctor` flags both cases (missing or root-pinned kit
+dependency) under **Kit Dependencies**; `sk:update` also warns and, in an
+interactive terminal, offers to run the `-W` update.
 
 To customize something that runs from vendor: **publish it** (`sk:publish` —
 components, composables, plugins, lang, config, helpers…) or **eject the

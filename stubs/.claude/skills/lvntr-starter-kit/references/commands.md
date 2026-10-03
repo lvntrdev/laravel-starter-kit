@@ -12,13 +12,21 @@ php artisan sk:install --force        # overwrite everything AND bypass the alre
 php artisan sk:install --resume       # resume an interrupted install (checkpointed per step)
 php artisan sk:install --without-eject     # keep User/Role runtime in vendor (skip default eject)
 php artisan sk:install --without-ai-skill  # skip publishing the AI skills (.claude/skills + .codex/skills)
+php artisan sk:install --modules=telescope --modules=pulse  # optional packages: telescope, pulse,
+                                      # horizon, sentry (prompted in a TTY when omitted; best-effort)
 
+composer update lvntr/laravel-starter-kit -W   # ALWAYS before sk:update — keep the -W
 php artisan sk:update                 # upgrade kit files; preserves your customizations
 php artisan sk:update --dry-run       # preview what would change  ← ALWAYS first
 php artisan sk:update --force         # ignore hash registry; overwrite everything
+php artisan sk:update --without-ai-skill  # skip the AI-skill refresh for this run
 
 php artisan sk:upgrade                # only for projects upgrading Laravel 12 → 13 (asserts PHP 8.4)
+                                      # --force skips prompts, --skip-build skips npm install/build
 ```
+
+Why `-W` and why never `composer require` a kit dependency such as
+`lvntr/api-dock` yourself → `update-flow.md`.
 
 **`sk:install` is a first-install command, not a repair tool.** It runs a
 fail-closed detection pass before the banner (kit schema tables + install-only
@@ -40,10 +48,14 @@ the word `fresh`) TYPED at a prompt; anything else falls back to `migrate`.
 ### Health check
 
 ```bash
-php artisan sk:doctor                 # environment/config/queue/schedule checks
+php artisan sk:doctor                 # environment/config/queue/schedule/dependency checks
 php artisan sk:doctor --json          # machine-readable output (used by the admin UI)
 php artisan sk:doctor --only=database,redis
 ```
+
+The **Kit Dependencies** check (`missing-kit-dependencies`) warns when a kit
+dependency is missing or pinned in the app's own `composer.json` — the usual
+reason an app is stuck on an older kit release.
 
 ### Domain scaffolding
 
@@ -59,8 +71,11 @@ php artisan make:sk-domain Product \
     --soft-deletes \
     --vue=full --vue-fields
 
-# Opt-in extras: Policy, Factory, Seeder, Pest test, Eloquent relations
-php artisan make:sk-domain Product --with=policy,factory,seeder,test
+# Opt-in extras: Policy, Factory, Seeder, Pest test, permission entry, Eloquent relations
+php artisan make:sk-domain Product --with=policy,factory,seeder,test,permissions
+php artisan make:sk-domain Product --with-permissions          # register in config/permission-resources.php
+php artisan make:sk-domain Product --no-api --no-events --no-soft-deletes   # --no-* negations
+                                                                # (aliases: make:domain, sk-make:domain)
 php artisan make:sk-domain Product --with-relations            # interactive relation wizard
 php artisan make:sk-domain Product --relations="belongsTo:User,hasMany:Comment"
 
@@ -105,6 +120,8 @@ php artisan encryption:health --json   # machine-readable
 php artisan encryption:key             # generate a new key, preserve the old one in
                                        # DATA_ENCRYPTION_PREVIOUS_KEYS (writes .env)
 php artisan encryption:key --show      # print a candidate key, write nothing
+                                       # (--force: production-looking env; --allow-acl-loss:
+                                       #  rotate even when .env's ACL cannot be carried over)
 php artisan encryption:rekey --dry-run # attempt every decrypt, write nothing  ← ALWAYS first
 php artisan encryption:rekey           # re-encrypt rows onto the primary key (maintenance window)
 php artisan encryption:rekey --only=settings|two-factor --chunk=200
@@ -127,11 +144,22 @@ interpolated `.env` value references) — the file must be the authority.
 unvouched. `encryption:key` and `encryption:rekey` share a cache lock and cannot
 run at the same time.
 
+### Activity-log secret cleanup
+
+```bash
+php artisan sk:redact-activity-secrets --dry-run   # report what would be redacted
+php artisan sk:redact-activity-secrets             # strip password hashes / credentials from
+                                                   # existing activity_log rows (IRREVERSIBLE —
+                                                   # back up first; --all, --chunk=N max 5000)
+```
+
 ### Permissions
 
 ```bash
-php artisan sk:seed-permissions --fresh   # re-seed roles + permissions after editing
+php artisan sk:seed-permissions           # sync roles + permissions after editing
                                           # config/permission-resources.php
+php artisan sk:seed-permissions --fresh   # reset EVERY role's permissions to match the
+                                          # config exactly — grants made in the UI are lost
 ```
 
 ### API documentation (`lvntr/api-dock`)
@@ -143,10 +171,12 @@ file.
 ```bash
 php artisan api-dock:sync              # regenerate the OpenAPI doc, diff vs the stored
                                         # snapshot, report breaking/additive/cosmetic changes
+php artisan api-dock:sync --check      # CI gate: exit 1 on breaking changes, write no snapshot
 php artisan api-dock:diff              # compare current doc vs snapshot, write nothing
 php artisan api-dock:diff --json       # machine-readable diff
 php artisan api-dock:export --openapi  # write the plain openapi.json (import this into
                                         # Postman/Apidog) to config('api-dock.ai.export_path')
+                                        # (--output=<dir> overrides the directory)
 php artisan api-dock:export --llms     # write llms.txt (AI-context digest)
 php artisan api-dock:export --mcp      # write mcp-tools.json (MCP tool definitions)
 php artisan api-dock:agent-guide       # install the API Dock authoring rules into this
@@ -178,7 +208,9 @@ detects your modifications).
 ### Day-to-day
 
 ```bash
-php artisan site:install              # one-shot: migrate + seed + passport keys + admin
+php artisan site:install              # DESTRUCTIVE: migrate:fresh (drops ALL tables) + seed +
+                                      # passport keys + admin. Local/dev only — blocked on
+                                      # production-like envs; never suggest it on a DB with data
 php artisan env:sync                  # propagate .env keys → .env.example (also runs in pre-commit)
 php artisan wayfinder:generate --skip-actions  # regenerate @/routes after route changes (actions unused)
 php artisan file-manager:purge-trash  # permanently delete expired file-manager trash

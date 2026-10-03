@@ -9,6 +9,10 @@ Pairs with `lvntr-starter-kit` (core: hard rules, project shape, commands,
 permissions, i18n, built-in modules). The same entity's frontend
 (form/table/Vue) → `lvntr-kit-frontend`.
 
+Exact signatures — `ActionPipeline`, `ApiResponse`, `ApiException`,
+`DatatableQueryBuilder`, global helpers, definitions, the bulk-action recipe →
+`references/api.md` (read on demand).
+
 ---
 
 ## Iron Laws (backend)
@@ -57,10 +61,18 @@ is a thin app shim you may extend.
 
 ## End-to-End Recipe — Backend Steps
 
-The fast path is always `php artisan make:sk-domain Entity` (add
-`--with=policy,factory,seeder,test` or `--relations="belongsTo:User,…"` for
-the opt-in extras). For manual wiring or existing models, follow these steps
-in order. **Steps 14-16 (frontend) are in `lvntr-kit-frontend`.**
+The fast path is always `php artisan make:sk-domain Entity` (aliases
+`make:domain`, `sk-make:domain`). Useful flags:
+
+- `--fields="name:string,price:decimal"` or `--from-migration=<file>` — model fields
+- `--id-type=id|uuid|ulid`
+- `--api`/`--no-api`, `--admin`/`--no-admin`, `--events`/`--no-events`, `--soft-deletes`/`--no-soft-deletes`
+- `--vue=none|empty|full`, `--vue-fields`/`--no-vue-fields`
+- `--with=policy,factory,seeder,test,permissions,relations` (or the matching `--with-*` flags) — `permissions` registers the resource in `config/permission-resources.php` for you
+- `--relations="belongsTo:User,hasMany:Comment"`
+
+For manual wiring or existing models, follow these steps in order.
+**Steps 14-16 (frontend) are in `lvntr-kit-frontend`.**
 
 ### Step 1 — Model + migration + factory
 
@@ -79,7 +91,7 @@ app/Domain/Product/{Actions,DTOs,Queries,Events,Listeners}
 `app/Domain/Product/DTOs/ProductDTO.php`
 
 - `readonly class ProductDTO extends BaseDTO`
-- Implement `fromArray(array $data): static` and `toArray(): array`
+- Implement `fromArray(array $data): static` (abstract on `BaseDTO`) and, by convention, `toArray(): array`
 - Properties in `camelCase`; array keys in `snake_case`
 - Optional fields default to `null`; omit from `toArray()` to skip the DB column (e.g. "don't change password" flows)
 
@@ -87,12 +99,12 @@ app/Domain/Product/{Actions,DTOs,Queries,Events,Listeners}
 
 `app/Domain/Product/Actions/{Create,Update,Delete}ProductAction.php`
 
-- Each extends `BaseAction`
-- Single public `execute()` method
+- Each extends `BaseAction` (an empty marker base — the contract is convention, not enforced)
+- Single public `execute()` method by convention
 - Inject deps via constructor (PHP 8 promoted properties)
 - HTTP-context free — pass `?string $performedById = null` when needed
 - Dispatch domain events on success: `ProductCreated::dispatch($product, $performedById)`
-- Throw `\LogicException` for guarded failures; the kit's handler maps it to a 422 on API routes, and Admin controllers catch and flash it
+- Throw `Lvntr\StarterKit\Exceptions\DomainRuleException` for guarded business failures — the kit's handler maps **only this type** to 422 on API routes; a plain `\LogicException` falls through to a 500. It extends `LogicException`, so Admin controllers can keep catching `\LogicException` and flash the message
 
 ### Step 5 — Datatable query
 
@@ -149,20 +161,37 @@ return DatatableQueryBuilder::for(Product::query())
 
 ### Step 11 — Permissions
 
-Append the resource to `config/permission-resources.php`:
+Skip this step if you scaffolded with `--with=permissions`. Otherwise add the
+resource to `config/permission-resources.php` — abilities under `resources`
+(`null` = all abilities), the label under `display_names.resources`, and the
+role grants under `role_permissions`:
 
 ```php
-'products' => [
-    'label' => 'sk-product.product',
-    'abilities' => ['read', 'create', 'update', 'delete'],
+'resources' => [
+    // …
+    'products' => ['create', 'read', 'update', 'delete'],
+],
+
+'role_permissions' => [
+    'admin' => [/* … */ 'products.create', 'products.read', 'products.update', 'products.delete'],
+],
+
+'display_names' => [
+    'resources' => [
+        'products' => ['en' => 'Products', 'tr' => 'Ürünler'],
+    ],
 ],
 ```
 
-Then re-seed:
+Then seed:
 
 ```bash
-php artisan sk:seed-permissions --fresh
+php artisan sk:seed-permissions
 ```
+
+`--fresh` resets **every** role's permissions to match the config exactly —
+manual grants made from the Roles screen are lost. Use it only when that is
+what you want.
 
 ### Step 12 — Translations
 
@@ -191,7 +220,7 @@ Controller → FormRequest (validate) → DTO (BaseDTO::fromArray) → Action (B
 - **Controller:** 5 lines max. No business logic. No `$request->validate()`.
 - **FormRequest:** `authorize()`, `rules()`, optional `prepareForValidation()`.
 - **DTO:** `readonly`, immutable, self-mapping, no validation.
-- **Action:** one `execute()`, inject deps, dispatch events, throw `\LogicException` for domain guards.
+- **Action:** one `execute()`, inject deps, dispatch events, throw `DomainRuleException` for domain guards.
 - **Event + Listener:** wired in `DomainServiceProvider::boot()` — NOT auto-discovered.
 - **ActionPipeline:** only for multi-step transactional workflows (auto-wraps in `DB::transaction`; `withoutTransaction()` to opt out). Single-action flows don't need it.
 
@@ -227,11 +256,16 @@ throw ApiException::forbidden();
 throw ApiException::badRequest('Invalid filter combination.');
 throw ApiException::conflict('SKU already exists.');
 throw ApiException::unauthorized();
-throw ApiException::unprocessable($errors);   // 422 with field errors
+throw ApiException::unprocessable('Cannot archive a published product.'); // 422, message only
 throw ApiException::serverError('Upstream timeout.');
+throw new DomainRuleException('Folder already exists.');                  // 422 from an Action
 ```
 
-The handler auto-maps Laravel's built-ins: `ModelNotFoundException → 404`, `ValidationException → 422`, `AuthenticationException → 401`, `ThrottleRequestsException → 429`, `LogicException → 422`.
+`ApiException::unprocessable()` takes a message, not field errors. For
+field-level 422s throw `ValidationException::withMessages([...])` or return
+`ApiResponse::error($message, 422)->errors([...])`.
+
+The handler auto-maps: `ModelNotFoundException → 404`, `ValidationException → 422`, `AuthenticationException → 401`, `ThrottleRequestsException → 429`, `DomainRuleException → 422`. Any other `LogicException` stays a 500 — it signals a bug.
 
 ### Envelope shape
 
@@ -241,14 +275,14 @@ The handler auto-maps Laravel's built-ins: `ModelNotFoundException → 404`, `Va
   "status": 200,
   "message": "Operation successful.",
   "data": { "…": "…" },
-  "errors": null,
+  "errors": { "…": "…" },
   "meta": { "…": "…" },
   "trace_id": "…",
   "debug": { "…": "…" }
 }
 ```
 
-`errors` only on failure. `meta` only when set. `debug` only with `APP_DEBUG=true`.
+`errors` only when set (validation failures, or `->errors([...])`) — the key is omitted otherwise. `meta` only when set. `debug` only with `APP_DEBUG=true`.
 
 **API messages and PHP docblocks must be in English.** Turkish belongs in UI copy, commit bodies, and internal docs only.
 
