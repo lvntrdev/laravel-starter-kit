@@ -3,10 +3,12 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright config for the package's E2E smoke suite.
  *
- * Scope is intentionally narrow: a single Chromium project covering one
- * critical admin flow (login → create user → assign role → settings →
- * logout). Cross-browser (Firefox/WebKit) and full-page coverage are out of
- * scope — see plan-docs/2026-09-06-playwright-e2e-smoke.md.
+ * Scope is intentionally narrow: a single Chromium project covering two
+ * critical flows — the admin smoke path (login → create user → assign role →
+ * settings → logout) and two-factor authentication (enable → challenged
+ * login with a recovery code → disable). Cross-browser (Firefox/WebKit) and
+ * full-page coverage are out of scope — see
+ * plan-docs/2026-09-06-playwright-e2e-smoke.md.
  *
  * The target server is provisioned separately by
  * scripts/bootstrap-fixture-app.sh, which prints/exports the base URL

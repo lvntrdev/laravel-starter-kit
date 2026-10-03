@@ -4,13 +4,23 @@ This is developer-facing documentation for the package repository itself — it 
 
 ## What this suite covers
 
-A single Playwright spec drives a real Chromium browser through one critical admin path, start to finish, as one authenticated session:
+Two Playwright specs drive a real Chromium browser through the kit's critical paths, each start to finish as one session.
+
+`admin-smoke.spec.ts`:
 
 1. Log in with a seeded admin account.
 2. Create a uniquely-named user and confirm it appears in the list.
 3. Assign that user a non-admin role and confirm the assignment persisted.
 4. Change one harmless, reversible Settings field and confirm the success flash.
 5. Log out and confirm the redirect to `/login`.
+
+`two-factor.spec.ts`:
+
+1. Turn two-factor authentication on from Profile → Two-Factor Authentication: confirm the password, then enter a real TOTP code computed from the setup key.
+2. Log in again, confirm the login is challenged, and get through with one of the recovery codes.
+3. Turn two-factor authentication off.
+
+It runs on its own seeded account (`e2e-2fa@example.test`), so a run that fails with 2FA still on never blocks the smoke spec's login. Re-running the seeder (`php artisan db:seed --class='Database\Seeders\E2EAdminSeeder'` in the fixture app) turns it off again.
 
 This is a **smoke test, not coverage** — it exists to catch real-browser regressions (Inertia round-trips, redirects, session handling) that the jsdom-based `stubs/package.json` → `npm run test` (Vitest) suite structurally cannot see. It deliberately does not attempt per-page coverage, cross-browser runs (Firefox/WebKit), or visual regression — see `plan-docs/2026-09-06-playwright-e2e-smoke.md` for the scoping rationale.
 
@@ -22,7 +32,7 @@ From the repo root:
 bash scripts/bootstrap-fixture-app.sh && npm run test:e2e
 ```
 
-`scripts/bootstrap-fixture-app.sh` provisions a throwaway Laravel skeleton, requires this checkout into it as a Composer path repository, runs the package installer non-interactively, migrates a scratch SQLite database, seeds the E2E admin user, builds frontend assets, and starts a dev server. It prints the fixture app's base URL, which `npm run test:e2e` (Playwright, `tests/e2e/`) reads via `E2E_BASE_URL`.
+`scripts/bootstrap-fixture-app.sh` provisions a throwaway Laravel skeleton, requires this checkout into it as a Composer path repository, runs the package installer non-interactively, migrates a scratch SQLite database, seeds the E2E admin users and switches two-factor authentication on (fresh installs ship with it off), builds frontend assets, and starts a dev server. It prints the fixture app's base URL, which `npm run test:e2e` (Playwright, `tests/e2e/`) reads via `E2E_BASE_URL`.
 
 The bootstrap script is safe to re-run against a fresh scratch directory; it does not touch this checkout beyond reading it as a path-repo source.
 
@@ -34,7 +44,7 @@ The bootstrap script is safe to re-run against a fresh scratch directory; it doe
 | `E2E_PORT` | `scripts/bootstrap-fixture-app.sh` | `8000` | Port the fixture app's dev server binds to |
 | `E2E_BASE_URL` | `tests/e2e/playwright.config.ts` | printed by the bootstrap script | Base URL the Playwright spec navigates against |
 | `E2E_ADMIN_EMAIL` | `scripts/e2e/fixtures/E2EAdminSeeder.php` | a fixed test-only address | Seeded admin login used by the "log in" step |
-| `E2E_ADMIN_PASSWORD` | `scripts/e2e/fixtures/E2EAdminSeeder.php` | a fixed test-only string | Test-only credential for a disposable SQLite fixture — never a real credential against a real system |
+| `E2E_ADMIN_PASSWORD` | `scripts/e2e/fixtures/E2EAdminSeeder.php` | a fixed test-only string | Test-only credential for a disposable SQLite fixture — never a real credential against a real system. The two-factor spec's account uses it too |
 
 ## Why this lives in the package repo, not `stubs/`
 
@@ -42,4 +52,4 @@ Playwright, the bootstrap script, and the seeder are this package repository's o
 
 ## CI
 
-A dedicated `e2e` job in `.github/workflows/ci.yml` runs the bootstrap script and the smoke spec on every PR, independently of (and in parallel with) the existing test jobs. On failure it uploads the Playwright test report as a build artifact for post-mortem review.
+A dedicated `e2e` job in `.github/workflows/ci.yml` runs the bootstrap script and both specs on every PR, independently of (and in parallel with) the existing test jobs. On failure it uploads the Playwright test report as a build artifact for post-mortem review.

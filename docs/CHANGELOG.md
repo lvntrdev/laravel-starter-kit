@@ -17,6 +17,7 @@ Newly added features and improvements to the starter kit are listed here.
 - **The AI skills now cover 13.7–13.8:** updating with `-W`, the `package.json` merge, `sk:doctor`'s Kit Dependencies check, `sk:redact-activity-secrets`, the new `make:sk-domain` flags, editor button links, datatable notices, bulk selection and the Hetzner / Amazon S3 drivers. Run `php artisan sk:update` to get them.
 - **Full API references for the AI skills.** Every FormBuilder / DatatableBuilder / TabBuilder method, composable and component, plus the backend `ApiResponse` / `ApiException` / `ActionPipeline` / `DatatableQueryBuilder` API and the global helpers. Agents read them only when they need an exact method, so everyday work stays fast.
 - **CI now also checks the kit's built-in admin pages.** The pages, composables and plugins that run from `vendor/` are linted and type-checked in CI like the component library (`npm run lint:lib`, `npm run typecheck:lib`).
+- **Two-factor sign-in is now tested in a real browser.** CI turns two-factor authentication on from the profile page, signs in again through the challenge with a recovery code, and turns it off.
 - **See and revoke a file's active share links.** The share dialog in Files now has an "Active Share Links" drawer listing the links still valid for that file, each with a revoke button. Run `php artisan migrate` after updating (`sk:update` does it for you); links created before the update are not listed but still expire on schedule.
 
 ## 2026-10-03 — v13.8.3
