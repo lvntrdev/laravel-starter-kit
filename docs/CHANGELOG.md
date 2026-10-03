@@ -2,6 +2,20 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-10-03 — v13.8.3
+
+### Fixed
+
+- **`sk:update` keeps the scripts you added to `package.json`.** Your own scripts stay; the kit's scripts are refreshed. `sk:update --dry-run` now shows the `package.json` change it would make.
+
+### Added
+
+- **`sk:doctor` warns when your `composer.json` lists `lvntr/api-dock` itself.** The kit already installs it, and that entry can hold the kit back on an older version. The warning prints the command that fixes it.
+
+### Changed
+
+- **Update with `composer update lvntr/laravel-starter-kit -W`.** Without `-W`, Composer can silently stay on an older kit (for example 13.8.1 instead of 13.8.2). Stuck? See [update.md](update.md#1-update-composer-package).
+
 ## 2026-10-01 — v13.8.2
 
 ### Changed

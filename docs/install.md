@@ -349,7 +349,7 @@ When a new version is released:
 
 ```bash
 # 1. Update the Composer package
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 
 # 2. Sync application files
 php artisan sk:update

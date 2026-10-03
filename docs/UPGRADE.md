@@ -349,7 +349,7 @@ With the flag off, the `nonce="..."` attribute on that script tag renders empty 
 
 The kit now depends on a new package, `lvntr/api-dock`, and it — not Scramble's own bundled UI — is the documentation surface from 13.7.0 on. api-dock documents the exact same `default` Scramble API the kit already generates from route attributes; nothing about how you annotate a controller or route changes. What changed is where you go to read it and who is allowed to: Scramble's default routes are now explicitly disabled (`Scramble::ignoreDefaultRoutes()`), so **`/docs/api` and `/docs/api.json` return 404** on any app that updates — there is no redirect and no grace period. The panel now lives at `/api-dock` (the raw OpenAPI document at `/api-dock/spec`), and unlike the old Scramble route, it is gated behind the seeded `api-docs.read` permission — the same one the API Routes screen already used. If you had bookmarked the old URL, linked it from internal documentation, or pointed a CI/tooling step at it, update it to `/api-dock`.
 
-The old surface is only retired when the new one is actually installed. `Scramble::ignoreDefaultRoutes()` is guarded by `class_exists(Lvntr\ApiDock\ApiDockServiceProvider::class)`, so an app that has this version's source but not its new Composer requirement — a path or VCS repository tracking `dev-main`, a `vendor/` directory restored from an older lock, a constraint that kept api-dock out — keeps `/docs/api` working rather than losing both surfaces at once. The symptom of that window is recognisable: `/docs/api` still answers, `/api-dock` 404s, and the **API Routes** screen shows no panel button (it renders only when the `api-dock.docs` route is registered). The fix is a single `composer update lvntr/laravel-starter-kit`, which pulls in `lvntr/api-dock`; `php artisan sk:update` cannot do it for you — it copies scaffold files and never installs a Composer package.
+The old surface is only retired when the new one is actually installed. `Scramble::ignoreDefaultRoutes()` is guarded by `class_exists(Lvntr\ApiDock\ApiDockServiceProvider::class)`, so an app that has this version's source but not its new Composer requirement — a path or VCS repository tracking `dev-main`, a `vendor/` directory restored from an older lock, a constraint that kept api-dock out — keeps `/docs/api` working rather than losing both surfaces at once. The symptom of that window is recognisable: `/docs/api` still answers, `/api-dock` 404s, and the **API Routes** screen shows no panel button (it renders only when the `api-dock.docs` route is registered). The fix is a single `composer update lvntr/laravel-starter-kit -W`, which pulls in `lvntr/api-dock`; `php artisan sk:update` cannot do it for you — it copies scaffold files and never installs a Composer package.
 
 **What to check:**
 
@@ -400,7 +400,7 @@ STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true
 A quality/UX pass across several published stub files. The headline change is a security fix: `auth.login_throttle = '0'` no longer disables the web login rate limiter entirely — it now swaps in a deliberately generous floor limiter instead. Everything else in this release (audit-log expansion, `sk:install`/`sk:doctor`/`sk:eject` DX, form/datatable accessibility) lives in `src/` (vendor runtime) and needs only `composer update` — see `CHANGELOG.md` for the full list. Run the steps below once; the sections after are reference detail.
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # delivers the updated SettingsServiceProvider/FortifyServiceProvider, eslint.config.js, vitest.config.ts, Definition model, datatable.css
 npm run build
 ```
@@ -436,7 +436,7 @@ If you have your own project-specific reason to allow a fully unthrottled login 
 13.6.0 bundles every published-file change since v13.5.11 (the last released version) into one upgrade. It completes the vendor-runtime migration — backend helper classes, middleware, three third-party configs, 15 composables, `TurnstileWidget.vue`, and the `v-can` / `v-role` permission directive plugin all run from the vendor package — and introduces the structured theme/layout/CSS system: an `AppShell.vue` composition, the `themes/main/` slot tree (every CSS cascade layer is an overridable slot), and the opt-in `themes/custom/` override theme. It also introduces the Security Settings redesign: the Security tab gains three sub-tabs (Authentication / Password Policy / Cloudflare Turnstile), six new `auth.*` setting keys, and full enforcement of password rules and password expiry via `EnsurePasswordNotExpired` middleware. **No visual change to the default build** — the default build (`VITE_SK_THEME=main`) is byte-identical to v13.5.11 for projects that do not touch the security settings. Run the upgrade once with the steps below; the per-area sections that follow are reference detail (apply only the "if you customised…" notes that match your project).
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update          # delivers the new stubs: layout, CSS theme tree, resolver, .env.example + package.json updates
 php artisan migrate            # adds password_changed_at column to users
 npm install
@@ -569,7 +569,7 @@ No migration, no route change, no permission change is needed.
 **Scenario A — unmodified install (standard case)**
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # hash-guarded removal — all five modules migrate automatically
 npm run build
 ```
@@ -648,7 +648,7 @@ Identical to Phase 1: each moved controller / FormRequest / Resource is aliased 
 #### Existing installs — upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # hash-guarded removal of the now-vendor PHP copies
 ```
 
@@ -709,7 +709,7 @@ A fresh `sk:install` no longer copies `app/Domain/ApiClient/`, `app/Domain/ApiRo
 #### Existing installs — upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 ```
 
@@ -842,7 +842,7 @@ No extra step is needed.
 #### Existing installs — upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 npm run build
 ```
@@ -922,7 +922,7 @@ A fresh `sk:install` no longer copies the six migrations listed above. They run 
 #### Existing installs — upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 ```
@@ -981,7 +981,7 @@ A fresh `sk:install` no longer copies `app/Domain/ActivityLog/`, `app/Domain/Log
 #### Existing installs — upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 ```
 
@@ -1053,7 +1053,7 @@ The `LogFilesDeleted → LogActivityForLogFilesDeleted` listener is now register
 1. Update the package:
 
    ```bash
-   composer update lvntr/laravel-starter-kit
+   composer update lvntr/laravel-starter-kit -W
    php artisan sk:update
    ```
 
@@ -1546,7 +1546,7 @@ This release adds `sk:doctor` / System Health dashboard, Signed Share Links for 
 **1. Update the package:**
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 ```
 
 **2. Publish and run new migrations:**
@@ -1599,7 +1599,7 @@ In this release the package runtime was moved to vendor. Your existing files in 
 ### Upgrade steps
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan migrate
 ```
 
@@ -1723,7 +1723,7 @@ See [CHANGELOG.md](../CHANGELOG.md#13490---2026-05-02).
 Quick upgrade:
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 npm install
@@ -1737,7 +1737,7 @@ npm run build
 See [CHANGELOG.md](../CHANGELOG.md#134100---2026-05-04).
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 npm install
@@ -1757,7 +1757,7 @@ npm run build
 | Fresh installs (`composer create-project` + `sk:install`) | Nothing — stubs already carry 13.4.1. |
 | Teams running `sk:update` regularly | `composer update` + `php artisan sk:update`. `ApiResponse`, `ApiExceptionHandler`, `AssignTraceId`, `sk-helpers.php` are carried automatically; **controllers are manual** (Step 4). |
 | Projects with customised controllers | Apply the Step 4 patches by hand — especially the `catch (LogicException $e) → throw ApiException::...` pattern flip. |
-| Package `src/`-only consumers (never published) | `composer update lvntr/laravel-starter-kit` is enough; `Bootstrap` registers the middleware for you. |
+| Package `src/`-only consumers (never published) | `composer update lvntr/laravel-starter-kit -W` is enough; `Bootstrap` registers the middleware for you. |
 | Anyone with their own `app/Http/Middleware/AssignTraceId.php` | Class name collision — either accept the package stub or rename your class. |
 
 ### 1. Pre-upgrade checklist
@@ -1827,7 +1827,7 @@ throw \App\Exceptions\ApiException::badRequest('Invalid coupon code.');
 ### 3. Package update
 
 ```bash
-composer update lvntr/laravel-starter-kit --with-all-dependencies
+composer update lvntr/laravel-starter-kit -W --with-all-dependencies
 php artisan sk:update              # auto: ApiResponse + ApiExceptionHandler + sk-helpers + AssignTraceId
 npm install                         # no JS changes, but keep it in the routine
 ```
@@ -2088,7 +2088,7 @@ php artisan sk:update --force   # restores published files to the previous versi
 | --- | --- |
 | Fresh installs (`composer create-project` + `sk:install`) | Nothing — stubs already carry the new version. |
 | Existing consumer apps | Follow **Steps 1–8** in this document. |
-| Consumers using only the package `src/` (never published) | `composer update lvntr/laravel-starter-kit` is enough. |
+| Consumers using only the package `src/` (never published) | `composer update lvntr/laravel-starter-kit -W` is enough. |
 
 ### 1. Pre-upgrade checklist
 
@@ -2100,7 +2100,7 @@ php artisan sk:update --force   # restores published files to the previous versi
 ### 2. Package update
 
 ```bash
-composer update lvntr/laravel-starter-kit --with-all-dependencies
+composer update lvntr/laravel-starter-kit -W --with-all-dependencies
 npm install
 ```
 

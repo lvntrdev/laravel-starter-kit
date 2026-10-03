@@ -349,7 +349,7 @@ Bayrak kapalıyken o script etiketindeki `nonce="..."` özniteliği boş render 
 
 Kit artık yeni bir pakete bağımlı: `lvntr/api-dock` — ve 13.7.0'dan itibaren dökümantasyon yüzeyi Scramble'ın kendi paketlenmiş arayüzü değil, bu. api-dock, kitin route attribute'larından zaten ürettiği aynı `default` Scramble API'sini belgeliyor; bir controller veya route'u nasıl annotate ettiğiniz konusunda hiçbir şey değişmiyor. Değişen şey, onu okumaya nereye gittiğiniz ve kimin erişebileceği: Scramble'ın varsayılan rotaları artık bilerek devre dışı bırakıldı (`Scramble::ignoreDefaultRoutes()`), yani **`/docs/api` ve `/docs/api.json` güncelleyen her uygulamada 404 dönüyor** — yönlendirme yok, geçiş süresi yok. Panel artık `/api-dock` adresinde yaşıyor (ham OpenAPI belgesi `/api-dock/spec`'te), ve eski Scramble rotasının aksine, seed edilen `api-docs.read` izninin arkasında korunuyor — API Routes ekranının zaten kullandığı aynı izin. Eski URL'i yer imlerine eklediyseniz, dahili dökümantasyondan link verdiyseniz veya bir CI/tooling adımını ona işaret ettiyseniz, `/api-dock`'a güncelleyin.
 
-Eski yüzey, ancak yenisi gerçekten kuruluysa emekliye ayrılıyor. `Scramble::ignoreDefaultRoutes()` çağrısı `class_exists(Lvntr\ApiDock\ApiDockServiceProvider::class)` ile korunuyor; yani bu sürümün kaynağına sahip olup yeni Composer bağımlılığını çözmemiş bir uygulama — `dev-main` izleyen bir path veya VCS repository'si, eski bir lock'tan geri yüklenmiş bir `vendor/` dizini, api-dock'u dışarıda bırakan bir kısıt — iki yüzeyi birden kaybetmek yerine `/docs/api`'yi çalışır halde tutuyor. Bu pencerenin belirtisi tanınabilir: `/docs/api` hâlâ cevap veriyor, `/api-dock` 404 dönüyor ve **API Routes** ekranında panel butonu görünmüyor (buton yalnız `api-dock.docs` rotası kayıtlıysa render ediliyor). Çözüm tek bir `composer update lvntr/laravel-starter-kit` — `lvntr/api-dock`'u da beraberinde kurar. `php artisan sk:update` bunu yapamaz: yalnız scaffold dosyalarını kopyalar, hiçbir zaman bir Composer paketi kurmaz.
+Eski yüzey, ancak yenisi gerçekten kuruluysa emekliye ayrılıyor. `Scramble::ignoreDefaultRoutes()` çağrısı `class_exists(Lvntr\ApiDock\ApiDockServiceProvider::class)` ile korunuyor; yani bu sürümün kaynağına sahip olup yeni Composer bağımlılığını çözmemiş bir uygulama — `dev-main` izleyen bir path veya VCS repository'si, eski bir lock'tan geri yüklenmiş bir `vendor/` dizini, api-dock'u dışarıda bırakan bir kısıt — iki yüzeyi birden kaybetmek yerine `/docs/api`'yi çalışır halde tutuyor. Bu pencerenin belirtisi tanınabilir: `/docs/api` hâlâ cevap veriyor, `/api-dock` 404 dönüyor ve **API Routes** ekranında panel butonu görünmüyor (buton yalnız `api-dock.docs` rotası kayıtlıysa render ediliyor). Çözüm tek bir `composer update lvntr/laravel-starter-kit -W` — `lvntr/api-dock`'u da beraberinde kurar. `php artisan sk:update` bunu yapamaz: yalnız scaffold dosyalarını kopyalar, hiçbir zaman bir Composer paketi kurmaz.
 
 **Kontrol edilecekler:**
 
@@ -400,7 +400,7 @@ STARTER_KIT_ALLOW_UNMAPPED_PERMISSIONS=true
 Birkaç publish edilmiş stub dosyasına dokunan bir kalite/UX turu. Başlıca değişiklik bir güvenlik düzeltmesi: `auth.login_throttle = '0'` artık web login rate limiter'ını tamamen devre dışı bırakmıyor — bunun yerine bilinçli olarak gevşek bir taban limiter'a geçiyor. Bu sürümdeki diğer her şey (audit-log genişletmesi, `sk:install`/`sk:doctor`/`sk:eject` DX iyileştirmeleri, form/datatable erişilebilirliği) `src/` altında (vendor runtime) yaşıyor ve yalnızca `composer update` yeterli — tam liste için `CHANGELOG.md`'ye bakın. Aşağıdaki adımları bir kez çalıştırın; sonraki bölümler referans detaydır.
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # güncellenmiş SettingsServiceProvider/FortifyServiceProvider, eslint.config.js, vitest.config.ts, Definition model, datatable.css'i teslim eder
 npm run build
 ```
@@ -436,7 +436,7 @@ Projenize özel bir sebepten tamamen limitsiz bir login limiter'ı isterseniz, k
 13.6.0, v13.5.11'den (son yayınlanan sürüm) bu yana publish edilmiş dosyalara dokunan tüm değişiklikleri tek bir geçişte toplar. Vendor-runtime migrasyonunu tamamlar — backend yardımcı sınıfları, middleware, üç üçüncü-parti config, 15 composable, `TurnstileWidget.vue` ve `v-can` / `v-role` izin direktif plugin'i artık vendor paketinden çalışır — ve yapılandırılmış tema/layout/CSS sistemini getirir: bir `AppShell.vue` kompozisyonu, `themes/main/` slot ağacı (her CSS cascade katmanı override edilebilir bir slot) ve opt-in `themes/custom/` override teması. Ayrıca Güvenlik Ayarları yeniden tasarımını getirir: Güvenlik sekmesi üç alt sekmeye ayrılır (Kimlik Doğrulama / Parola Politikası / Cloudflare Turnstile), altı yeni `auth.*` ayar anahtarı eklenir ve parola kuralları ile parola geçerlilik süresi `EnsurePasswordNotExpired` middleware'i aracılığıyla tam olarak uygulamaya alınır. **Varsayılan build'de görsel değişiklik yoktur** — varsayılan build (`VITE_SK_THEME=main`) güvenlik ayarlarına dokunmayan projeler için v13.5.11 ile byte-identical'dır. Aşağıdaki adımlarla geçişi tek seferde yapın; ardından gelen alan-bazlı bölümler referans detaydır (yalnızca projenize uyan "özelleştirdiyseniz…" notlarını uygulayın).
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update          # yeni stub'ları getirir: layout, CSS tema ağacı, resolver, .env.example + package.json güncellemeleri
 php artisan migrate            # users tablosuna password_changed_at kolonu ekler
 npm install
@@ -569,7 +569,7 @@ Migration, route değişikliği veya permission değişikliği gerekmez.
 **Senaryo A — değiştirilmemiş kurulum (standart durum)**
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # hash-korumalı kaldırma — beş modülün tümü otomatik migrate olur
 npm run build
 ```
@@ -648,7 +648,7 @@ Faz 1 ile aynıdır: taşınan her controller / FormRequest / Resource, `Starter
 #### Mevcut kurulumlar — geçiş adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update   # artık-vendor PHP kopyalarının hash-korumalı kaldırması
 ```
 
@@ -709,7 +709,7 @@ Etkilenen domain'ler: `ApiClient`, `ApiRoute`, `Setting`, `User`, `Role`.
 #### Mevcut kurulumlar — geçiş adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 ```
 
@@ -842,7 +842,7 @@ Ekstra bir adım gerekmez.
 #### Mevcut kurulumlar — geçiş adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 npm run build
 ```
@@ -922,7 +922,7 @@ Framework-default migration'lar (`create_users_table`, `create_cache_table`, `cr
 #### Mevcut kurulumlar — geçiş adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 ```
@@ -981,7 +981,7 @@ Etkilenen domain'ler: `ActivityLog`, `Logs`, `Session`, `Media`.
 #### Mevcut kurulumlar — geçiş adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 ```
 
@@ -1053,7 +1053,7 @@ rm -rf app/Domain/Logs/Services/
 1. Paketi güncelleyin:
 
    ```bash
-   composer update lvntr/laravel-starter-kit
+   composer update lvntr/laravel-starter-kit -W
    php artisan sk:update
    ```
 
@@ -1555,7 +1555,7 @@ Bu sürümde `sk:doctor` / System Health paneli, File Manager için İmzalı Pay
 **1. Paketi güncelleyin:**
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 ```
 
 **2. Yeni migration'ları yayınlayın ve çalıştırın:**
@@ -1608,7 +1608,7 @@ Bu sürümde paket runtime vendor'a taşındı. `app/` dizinindeki mevcut dosyal
 ### Yükseltme Adımları
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan migrate
 ```
 
@@ -1732,7 +1732,7 @@ Bkz. [CHANGELOG.md](../CHANGELOG.md#13490---2026-05-02).
 Kısa geçiş:
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 npm install
@@ -1746,7 +1746,7 @@ npm run build
 Bkz. [CHANGELOG.md](../CHANGELOG.md#134100---2026-05-04).
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 php artisan migrate
 npm install
@@ -1766,7 +1766,7 @@ npm run build
 | Paketi yeni kuranlar (`composer create-project` + `sk:install`) | Hiçbir şey — stubs zaten 13.4.1 sürümünde. |
 | `sk:update` düzenli çalıştıranlar | `composer update` + `php artisan sk:update`. `ApiResponse`, `ApiExceptionHandler`, `AssignTraceId`, `sk-helpers.php` otomatik taşınır; **controller'lar manuel** (Adım 4). |
 | Custom controller'lara sahip olanlar | Adım 4'teki patch'leri elle uygulayın — özellikle `catch (LogicException $e) → throw ApiException::...` pattern dönüşümü. |
-| Sadece paket `src/` kullananlar (publish yapmadı) | `composer update lvntr/laravel-starter-kit` yeter; Bootstrap otomatik register ediyor. |
+| Sadece paket `src/` kullananlar (publish yapmadı) | `composer update lvntr/laravel-starter-kit -W` yeter; Bootstrap otomatik register ediyor. |
 | Kendi `app/Http/Middleware/AssignTraceId.php` yazmış olanlar | Sınıf adı çakışır; paket stub'ını tercih edin veya kendi class'ınızı yeniden adlandırın. |
 
 ### 1. Upgrade öncesi hazırlık
@@ -1836,7 +1836,7 @@ throw \App\Exceptions\ApiException::badRequest('Invalid coupon code.');
 ### 3. Paket güncellemesi
 
 ```bash
-composer update lvntr/laravel-starter-kit --with-all-dependencies
+composer update lvntr/laravel-starter-kit -W --with-all-dependencies
 php artisan sk:update              # Otomatik: ApiResponse + ApiExceptionHandler + sk-helpers + AssignTraceId
 npm install                         # Değişmedi ama alışkanlık
 ```
@@ -2097,7 +2097,7 @@ php artisan sk:update --force   # publish edilmiş dosyaları eski sürüme dön
 | --- | --- |
 | Paketi yeni kuranlar (`composer create-project` + `sk:install`) | Hiçbir şey — stubs zaten yeni sürümde. |
 | Mevcut consumer app çalıştıranlar | Bu dokümandaki **Adım 1-8**'i takip edin. |
-| Sadece paket `src/` kullananlar (publish yapmadı) | `composer update lvntr/laravel-starter-kit` yeter. |
+| Sadece paket `src/` kullananlar (publish yapmadı) | `composer update lvntr/laravel-starter-kit -W` yeter. |
 
 ### 1. Upgrade öncesi hazırlık
 
@@ -2109,7 +2109,7 @@ php artisan sk:update --force   # publish edilmiş dosyaları eski sürüme dön
 ### 2. Paket güncellemesi
 
 ```bash
-composer update lvntr/laravel-starter-kit --with-all-dependencies
+composer update lvntr/laravel-starter-kit -W --with-all-dependencies
 npm install
 ```
 

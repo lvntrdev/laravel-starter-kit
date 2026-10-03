@@ -113,6 +113,8 @@ return [
         'all_installed' => 'All packages required by the kit are installed.',
         'missing' => 'Missing kit dependencies: :packages.',
         'missing_hint' => 'Run composer update lvntr/laravel-starter-kit -W to install them.',
+        'root_pinned' => 'Your composer.json requires kit-managed packages directly: :packages. This can hold back kit updates.',
+        'root_pinned_hint' => 'The kit installs them for you. Run composer remove :packages --no-update && composer update lvntr/laravel-starter-kit -W',
     ],
 
     // NodeVersionCheck

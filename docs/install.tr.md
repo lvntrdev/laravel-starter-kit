@@ -350,7 +350,7 @@ Yeni bir sürüm yayınlandığında:
 
 ```bash
 # 1. Composer paketini güncelleyin
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 
 # 2. Uygulama dosyalarını senkronize edin
 php artisan sk:update

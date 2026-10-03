@@ -12,6 +12,10 @@ use Lvntr\StarterKit\Support\KitDependencies;
  * Kit'in `composer.json` `require` bloğunda listelenen ama consumer app'te
  * kurulu olmayan paketleri tespit eder. Tespit mantığı `KitDependencies`'te
  * tekilleştirilmiştir; burada yalnızca `DoctorReport`'a çevrilir.
+ *
+ * Eksik paket yoksa, consumer'ın kök composer.json'ının kit'in yönettiği bir
+ * `lvntr/*` paketini doğrudan isteyip istemediğine bakar (WARN): o kayıt
+ * sonraki kit sürümünü sessizce engelleyebilir.
  */
 class MissingKitDependenciesCheck implements DoctorCheck
 {
@@ -23,6 +27,16 @@ class MissingKitDependenciesCheck implements DoctorCheck
     public function run(): DoctorReport
     {
         $missing = KitDependencies::missing();
+
+        $pinned = $missing === [] ? KitDependencies::rootPinned() : [];
+
+        if ($pinned !== []) {
+            return DoctorReport::warn(
+                $this->name(),
+                (string) __('sk-doctor.missing_kit_dependencies.root_pinned', ['packages' => implode(', ', $pinned)]),
+                (string) __('sk-doctor.missing_kit_dependencies.root_pinned_hint', ['packages' => implode(' ', $pinned)])
+            );
+        }
 
         if ($missing === []) {
             return DoctorReport::ok(

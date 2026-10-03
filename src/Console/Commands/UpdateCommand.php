@@ -218,6 +218,9 @@ class UpdateCommand extends Command
         // keys (and other settings) here. Never overwrite it on update, or a consumer's
         // added sensitive key would be lost and that value would be stored plaintext.
         'config/settings.php',
+        // Never copied wholesale: mergePackageJson() merges it key by key so the
+        // consumer's own dependencies and scripts survive every update.
+        'package.json',
         'node_modules/',
     ];
 
@@ -593,9 +596,7 @@ class UpdateCommand extends Command
         // npm dependencies (e.g. the @tiptap/* set added with EditorInput in v13.4.x)
         // land automatically on `sk:update` instead of forcing every consumer to copy
         // them by hand. Stub versions win for shared keys; user extras are preserved.
-        if (! $dryRun) {
-            $this->mergePackageJson();
-        }
+        $this->mergePackageJson($dryRun);
 
         // 5. Run new migrations
         //
@@ -1863,9 +1864,10 @@ PHP;
      * dependency versions, user-added dependencies (and any extra root-level
      * keys) are preserved. We only record an "updated" entry when the merge
      * actually changes the file on disk — re-running `sk:update` is otherwise
-     * a no-op for users whose package.json is already in sync.
+     * a no-op for users whose package.json is already in sync. A dry run
+     * reports the same entry without writing.
      */
-    private function mergePackageJson(): void
+    private function mergePackageJson(bool $dryRun = false): void
     {
         $stubPath = StarterKitServiceProvider::stubsPath('package.json');
         $targetPath = base_path('package.json');
@@ -1875,7 +1877,9 @@ PHP;
         }
 
         if (! $this->files->exists($targetPath)) {
-            $this->files->copy($stubPath, $targetPath);
+            if (! $dryRun) {
+                $this->files->copy($stubPath, $targetPath);
+            }
             $this->added[] = 'package.json';
 
             return;
@@ -1888,7 +1892,9 @@ PHP;
 
         if (! is_array($stub) || ! is_array($current)) {
             // Malformed JSON — fall back to stub to guarantee a working build.
-            $this->files->copy($stubPath, $targetPath);
+            if (! $dryRun) {
+                $this->files->copy($stubPath, $targetPath);
+            }
             $this->updated[] = 'package.json';
 
             return;
@@ -1897,9 +1903,9 @@ PHP;
         // Stub keys win at the root level; user-added extra keys are preserved.
         $merged = array_merge($current, $stub);
 
-        // For dependency sections, union the two maps so user extras survive
-        // while stub versions override any shared dependency versions.
-        foreach (['dependencies', 'devDependencies'] as $section) {
+        // For dependency and script sections, union the two maps so user extras
+        // survive while stub values override any shared key.
+        foreach (['dependencies', 'devDependencies', 'scripts'] as $section) {
             $stubSection = $stub[$section] ?? [];
             $currentSection = $current[$section] ?? [];
 
@@ -1907,13 +1913,15 @@ PHP;
                 continue;
             }
 
+            $isScripts = $section === 'scripts';
+
             // A MOVED constraint (not a newly added one) is what strands the
             // app's package-lock.json: the lock still pins the old graph, and
             // for a package family whose peers are pinned exactly — tiptap is
             // the standing example — npm cannot re-resolve it in place and
             // fails with ERESOLVE. printSummary() turns this flag into the
             // recovery command.
-            foreach ($stubSection as $name => $version) {
+            foreach ($isScripts ? [] : $stubSection as $name => $version) {
                 if (isset($currentSection[$name]) && $currentSection[$name] !== $version) {
                     $this->dependencyVersionsChanged = true;
                     break;
@@ -1921,7 +1929,10 @@ PHP;
             }
 
             $mergedSection = array_merge($currentSection, $stubSection);
-            ksort($mergedSection);
+            // Scripts keep the consumer's order; dependency maps are sorted like npm writes them.
+            if (! $isScripts) {
+                ksort($mergedSection);
+            }
             $merged[$section] = $mergedSection;
         }
 
@@ -1931,7 +1942,9 @@ PHP;
             return;
         }
 
-        $this->files->put($targetPath, $rendered);
+        if (! $dryRun) {
+            $this->files->put($targetPath, $rendered);
+        }
         $this->updated[] = 'package.json (merged stub dependencies — run npm install)';
     }
 

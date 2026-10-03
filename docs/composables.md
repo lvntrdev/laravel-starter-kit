@@ -6,7 +6,7 @@ Kit composables are shipped inside the package and run directly from the vendor 
 
 ### Upgrading composables via Composer
 
-Because the kit composables live in the package, they are updated when you run `composer update lvntr/laravel-starter-kit`. No manual file copying is required.
+Because the kit composables live in the package, they are updated when you run `composer update lvntr/laravel-starter-kit -W`. No manual file copying is required.
 
 ### Publishing composables for customization
 

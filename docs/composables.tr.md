@@ -6,7 +6,7 @@ Kit composable'ları artık pakete dahil edilmiştir ve varsayılan olarak doğr
 
 ### Composer üzerinden composable güncellemeleri
 
-Kit composable'ları pakette yer aldığından, `composer update lvntr/laravel-starter-kit` çalıştırıldığında otomatik olarak güncellenir. Elle dosya kopyalamaya gerek yoktur.
+Kit composable'ları pakette yer aldığından, `composer update lvntr/laravel-starter-kit -W` çalıştırıldığında otomatik olarak güncellenir. Elle dosya kopyalamaya gerek yoktur.
 
 ### Özelleştirmek için composable yayımlama
 

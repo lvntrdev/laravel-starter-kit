@@ -19,8 +19,19 @@ This guide explains the safest way to update the starter kit in an existing proj
 ## 1. Update Composer Package
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 ```
+
+Keep the `-W`. Without it Composer leaves the kit's own dependencies at their locked versions, and when a new kit release needs a newer one (13.8.2 needs `lvntr/api-dock` `~0.0.8`) it quietly installs the newest kit that still fits the old lock instead of failing.
+
+**Still on an older version?** Check with `composer show lvntr/laravel-starter-kit`. If your own `composer.json` lists `lvntr/api-dock` (for example from an earlier `composer require lvntr/api-dock`), remove it — the kit installs it for you, and Composer writes `^0.0.x` constraints that pin one exact patch:
+
+```bash
+composer remove lvntr/api-dock --no-update
+composer update lvntr/laravel-starter-kit -W
+```
+
+`php artisan sk:doctor` flags this case under **Kit Dependencies**.
 
 ## 2. Preview Changes First
 
@@ -64,7 +75,7 @@ Five behavior modules — **Files, Logs, ActivityLogs, ApiRoutes, Settings** —
 All five modules migrate automatically:
 
 ```bash
-composer update lvntr/laravel-starter-kit
+composer update lvntr/laravel-starter-kit -W
 php artisan sk:update
 npm run build
 ```

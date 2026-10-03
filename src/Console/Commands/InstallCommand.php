@@ -2693,9 +2693,9 @@ class InstallCommand extends Command
         // Stub keys win at the root level; user-added extra keys are preserved.
         $merged = array_merge($current, $stub);
 
-        // For dependency sections, union the two maps so user extras survive
-        // while stub versions override any shared dependency versions.
-        foreach (['dependencies', 'devDependencies'] as $section) {
+        // For dependency and script sections, union the two maps so user extras
+        // survive while stub values override any shared key.
+        foreach (['dependencies', 'devDependencies', 'scripts'] as $section) {
             $stubSection = $stub[$section] ?? [];
             $currentSection = $current[$section] ?? [];
 
@@ -2704,7 +2704,10 @@ class InstallCommand extends Command
             }
 
             $mergedSection = array_merge($currentSection, $stubSection);
-            ksort($mergedSection);
+            // Scripts keep the consumer's order; dependency maps are sorted like npm writes them.
+            if ($section !== 'scripts') {
+                ksort($mergedSection);
+            }
             $merged[$section] = $mergedSection;
         }
 

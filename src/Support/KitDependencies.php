@@ -59,4 +59,45 @@ final class KitDependencies
             return [];
         }
     }
+
+    /**
+     * Kit-managed `lvntr/*` packages the consumer's own composer.json requires
+     * directly.
+     *
+     * The kit brings these in transitively; a root entry only gets in the way.
+     * `composer require` writes `^0.0.x` for a 0.0.x package, which pins that
+     * exact patch, so the next kit release that raises its floor can never
+     * resolve and Composer quietly stays on the older kit.
+     *
+     * @return list<string>
+     */
+    public static function rootPinned(?string $rootComposerJsonPath = null): array
+    {
+        try {
+            $rootPath = $rootComposerJsonPath ?? base_path('composer.json');
+
+            if (! is_readable($rootPath)) {
+                return [];
+            }
+
+            $kit = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/composer.json'), true);
+            $root = json_decode((string) file_get_contents($rootPath), true);
+
+            if (! is_array($kit) || ! is_array($root)) {
+                return [];
+            }
+
+            $rootNames = array_keys(array_merge(
+                is_array($root['require'] ?? null) ? $root['require'] : [],
+                is_array($root['require-dev'] ?? null) ? $root['require-dev'] : [],
+            ));
+
+            return array_values(array_filter(
+                array_keys(is_array($kit['require'] ?? null) ? $kit['require'] : []),
+                fn ($name) => is_string($name) && str_starts_with($name, 'lvntr/') && in_array($name, $rootNames, true),
+            ));
+        } catch (Throwable) {
+            return [];
+        }
+    }
 }

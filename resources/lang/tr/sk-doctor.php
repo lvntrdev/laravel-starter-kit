@@ -111,6 +111,8 @@ return [
         'all_installed' => 'Kit tarafından gereken tüm paketler kurulu.',
         'missing' => 'Eksik kit bağımlılıkları: :packages.',
         'missing_hint' => '`composer update lvntr/laravel-starter-kit -W` komutunu çalıştırın.',
+        'root_pinned' => 'composer.json dosyanız kit\'in yönettiği paketleri doğrudan istiyor: :packages. Bu, kit güncellemelerini engelleyebilir.',
+        'root_pinned_hint' => 'Bu paketleri kit sizin için kurar. `composer remove :packages --no-update && composer update lvntr/laravel-starter-kit -W` komutunu çalıştırın.',
     ],
 
     // NodeVersionCheck

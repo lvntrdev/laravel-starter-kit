@@ -2,6 +2,20 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-10-03 — v13.8.3
+
+### Düzeltildi
+
+- **`sk:update`, `package.json`'a eklediğiniz script'leri artık silmiyor.** Kendi script'leriniz kalıyor, kit'in script'leri güncelleniyor. `sk:update --dry-run` artık `package.json`'da yapacağı değişikliği gösteriyor.
+
+### Eklendi
+
+- **`sk:doctor`, `composer.json` dosyanız `lvntr/api-dock`'u doğrudan istiyorsa uyarıyor.** Kit bu paketi zaten kuruyor; o kayıt kit'i eski bir sürümde tutabilir. Uyarı, sorunu çözen komutu yazdırıyor.
+
+### Değişti
+
+- **Güncellemeyi `composer update lvntr/laravel-starter-kit -W` ile yapın.** `-W` olmadan Composer kit'i sessizce eski bir sürümde bırakabilir (örneğin 13.8.2 yerine 13.8.1). Takıldıysanız: [update.tr.md](update.tr.md#1-composer-paketini-güncelleyin).
+
 ## 2026-10-01 — v13.8.2
 
 ### Değişti

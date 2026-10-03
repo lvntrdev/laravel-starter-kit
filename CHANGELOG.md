@@ -5,6 +5,21 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.3] - 2026-10-03
+
+### Fixed
+
+- **`sk:update` no longer drops your own `package.json` scripts.** The merge took the stub's `scripts` block wholesale, so scripts you added (`push`, `ci:local`, …) disappeared on every update while your extra dependencies survived. `scripts` is now merged like `dependencies` / `devDependencies`: your scripts stay in their order, the kit's own scripts take the stub's current value. `sk:install` merges an existing `package.json` the same way.
+- **`sk:update --dry-run` now reports the `package.json` merge it would make, and the real run no longer contradicts it.** The dry run used to list `package.json` as user-modified (skipped) while the real run merged it anyway; `package.json` is now handled only by the merge step, which runs in both modes and writes only in the real one.
+
+### Added
+
+- **`sk:doctor` warns when your `composer.json` requires a kit-managed package directly.** The `missing-kit-dependencies` check now reports a `lvntr/*` package the kit already brings in (today `lvntr/api-dock`) listed in your own `require` / `require-dev`. A `composer require lvntr/api-dock` writes `^0.0.x`, which pins one patch, so the next kit release that raises its floor never resolves. The hint prints the fix: `composer remove lvntr/api-dock --no-update && composer update lvntr/laravel-starter-kit -W`.
+
+### Changed
+
+- **Every documented package update command now carries `-W`.** Without it Composer keeps the kit's dependencies at their locked versions and, when a release needs a newer one, quietly installs the newest kit that fits the old lock — which is how apps stayed on 13.8.1 instead of 13.8.2. Stuck on an older version? See [docs/update.md](docs/update.md#1-update-composer-package).
+
 ## [13.8.2] - 2026-10-01
 
 ### Changed
