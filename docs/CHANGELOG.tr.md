@@ -6,6 +6,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ### Düzeltildi
 
+- **Dosya yöneticisi kartları daha okunaklı.** Dosya türü etiketi (`PNG` gibi) artık seçim kutusunun arkasında kalmıyor; üzerine gelince çıkan butonlar beyaz görsellerin üzerinde de görünüyor.
 - **`sk:update` artık kitin yeni veritabanı değişikliklerini çalıştırıyor.** Güncelleme, kitin ihtiyaç duyduğu yeni bir tabloyu atlayabiliyordu; bu yüzden aktif paylaşım linkleri listesi, `php artisan migrate` elle çalıştırılana kadar "A server error occurred." gösteriyordu.
 - **Kit'le gelen AI skill'leri yeniden kodla uyumlu.** Ajanlara doğru olmayan bazı bilgiler veriliyordu: her `LogicException`'ın 422'ye dönüştüğü, `useDialog()`'un `refreshKey` aldığı, `sk:seed-permissions --fresh`'in rutin adım olduğu (tüm rollerin yetkilerini sıfırlar) ve `site:install`'ın zararsız olduğu (tüm tabloları siler). Bunlar düzeltildi.
 - **Şifre alanları ekran okuyucular ve şifre yöneticileriyle doğru çalışıyor.** Giriş, kayıt, şifre sıfırlama ve şifre değiştirme ekranlarında şifre etiketine tıklamak artık alana odaklanıyor, ekran okuyucular alanın adını ve hatasını okuyor, şifre yöneticileri doğru "mevcut şifre" / "yeni şifre" ipucunu alıyor. Güç göstergeli FormBuilder şifre alanları da hata metnini aynı şekilde bağlıyor. Güncel sayfaları almak için `php artisan sk:update` çalıştırın; kendi düzenlediğiniz sayfalara dokunulmaz.

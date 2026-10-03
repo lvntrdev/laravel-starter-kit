@@ -265,7 +265,7 @@
 
     // Hover aksiyon butonu — önizleme üstü beyaz kareler.
     const actBtnClass =
-        'grid h-7 w-7 place-items-center rounded-[5px] border border-surface-200 bg-white/95 text-surface-500 transition-colors hover:text-primary-600 dark:border-surface-600 dark:bg-surface-900/90 dark:text-surface-300 dark:hover:text-primary-300';
+        'grid h-7 w-7 place-items-center rounded-[5px] border border-surface-300 bg-white text-surface-700 shadow-sm transition-colors hover:text-primary-600 dark:border-surface-600 dark:bg-surface-900 dark:text-surface-200 dark:hover:text-primary-300';
     // Liste satırı aksiyon butonu — çerçevesiz mini ikon.
     const rowActBtnClass =
         'grid h-7 w-7 place-items-center rounded-[5px] text-surface-400 transition-colors hover:bg-surface-200/60 hover:text-surface-700 dark:hover:bg-surface-700/60 dark:hover:text-surface-200';
@@ -501,7 +501,7 @@
 
                             <!-- Uzantı rozeti -->
                             <span
-                                class="absolute left-2 top-2 rounded-[5px] border border-surface-200 bg-white/95 px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wide text-surface-700 dark:border-surface-600 dark:bg-surface-900/85 dark:text-surface-200"
+                                class="absolute bottom-2 left-2 rounded-[5px] border border-surface-200 bg-white/95 px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wide text-surface-700 dark:border-surface-600 dark:bg-surface-900/85 dark:text-surface-200"
                             >
                                 {{ extOf(file) }}
                             </span>
