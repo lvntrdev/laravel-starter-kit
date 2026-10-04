@@ -23,6 +23,13 @@ This file is the cross-major-version migration guide. Every release gets its own
 - If you ran `sk:eject Session`, you own `app/Domain/Session/Actions/PurgeOtherSessionsAction.php` and `sk:update` will not touch it. Port the new `execute()` body by hand: inside `Model::withoutEvents()`, set a new remember token on the guard's user and re-hash the password through the session guard's `logoutOtherDevices()`; then delete the other session rows on the `database` driver.
 - If you ran `sk:eject User`, you own `app/Domain/User/Actions/UpdateUserAction.php`. Copy the `Auth::setUser($user)` block that follows the transaction in the package's `UpdateUserAction::execute()`. Without it, users who change their own password on the Users screen are signed out on their next request. Diff against the package copy in `vendor/lvntr/laravel-starter-kit/src/Domain/Session/Actions/PurgeOtherSessionsAction.php`.
 
+### `useFileManager().sort` can be `null`
+
+**Affects:** apps that read `sort` from `useFileManager()` in their own code.
+
+- `sort` is now `SortKey | null`. `null` means "the view's default order" (Trash opens newest-deleted first). Handle `null` before using it as a key. The stock `FileManager.vue` already does; only code you wrote yourself needs a check.
+- `GET /file-manager/favorites/contents` and `GET /file-manager/trash/contents` accept `sort` / `direction`; callers that send neither get the same order as before.
+
 ---
 
 ## v13.7.3 → v13.7.4

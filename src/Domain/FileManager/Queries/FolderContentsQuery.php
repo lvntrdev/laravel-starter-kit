@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Domain\FileManager\Queries;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
@@ -16,6 +17,16 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class FolderContentsQuery
 {
     use ResolvesMediaModel;
+
+    /**
+     * Sort key → media column. Shared with the favorites and trash queries so
+     * all three views order files the same way.
+     */
+    public const SORT_COLUMNS = [
+        'name' => 'name',
+        'size' => 'size',
+        'date' => 'created_at',
+    ];
 
     /**
      * @param  array{sort?: 'name'|'size'|'date', direction?: 'asc'|'desc'}  $options
@@ -104,13 +115,9 @@ class FolderContentsQuery
             ->where('collection_name', 'files')
             ->where('folder_id', $folderId);
 
-        $mediaQuery = match ($sort) {
-            'size' => $mediaQuery->orderBy('size', $direction),
-            'date' => $mediaQuery->orderBy('created_at', $direction),
-            default => $mediaQuery->orderBy('name', $direction),
-        };
-
-        $mediaList = $mediaQuery->get();
+        $mediaList = $mediaQuery
+            ->orderBy(Arr::get(self::SORT_COLUMNS, $sort, 'name'), $direction)
+            ->get();
 
         $files = $mediaList
             ->map(function (Media $media) use ($favoritedFileIds, $context) {

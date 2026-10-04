@@ -6,6 +6,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ### Düzeltildi
 
+- **Dosya yöneticisi bulunduğunuz yerde kalıyor.** Klasörler arasında hızlı gezinince artık önceki bir klasörün dosyaları görünmüyor, Favoriler veya Çöp Kutusu'nda sıralama yapınca o görünümde kalınıyor, başarısız bir yüklemenin hata kartı siz kapatana kadar duruyor.
 - **Dosya yöneticisi kartları daha okunaklı.** Dosya türü etiketi (`PNG` gibi) artık seçim kutusunun arkasında kalmıyor; üzerine gelince çıkan butonlar beyaz görsellerin üzerinde de görünüyor.
 - **`sk:update` artık kitin yeni veritabanı değişikliklerini çalıştırıyor.** Güncelleme, kitin ihtiyaç duyduğu yeni bir tabloyu atlayabiliyordu; bu yüzden aktif paylaşım linkleri listesi, `php artisan migrate` elle çalıştırılana kadar "A server error occurred." gösteriyordu.
 - **Kit'le gelen AI skill'leri yeniden kodla uyumlu.** Ajanlara doğru olmayan bazı bilgiler veriliyordu: her `LogicException`'ın 422'ye dönüştüğü, `useDialog()`'un `refreshKey` aldığı, `sk:seed-permissions --fresh`'in rutin adım olduğu (tüm rollerin yetkilerini sıfırlar) ve `site:install`'ın zararsız olduğu (tüm tabloları siler). Bunlar düzeltildi.
@@ -24,6 +25,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 - **Kayıtlı tablo görünümleri.** Bu özelliği açan tablolarda (Kullanıcılar listesi açık) bir yer imi butonu var: mevcut arama, sıralama, filtre ve sütunları "Aktif müşteriler" gibi bir adla kaydedin, tek tıkla geri getirin. Görünümler tarayıcınızda saklanır.
 - **Güncellemenin neyi atladığını görün.** `php artisan sk:update --dry-run --report=storage/sk-update.json` bir JSON raporu yazar; değiştirdiğiniz her dosya kitin yeni sürümüyle yan yana listelenir, ikisini karşılaştırabilirsiniz.
 - **Güncellemeler, yükseltilmiş bir uygulamada test ediliyor.** CI artık önceki sürümü kuruyor, birkaç dosyayı özelleştiriyor, yeni sürüme güncelliyor ve tarayıcı testlerini otomatik erişilebilirlik kontrolleriyle birlikte sonuç üzerinde çalıştırıyor.
+- **Favoriler ve Çöp Kutusu'nda sıralama.** İki görünümde de sıralama menüsü var (ad, boyut, tarih; artan veya azalan). Çöp Kutusu yine en son silinenler üstte olacak şekilde açılır.
 
 ### Değişti
 

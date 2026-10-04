@@ -23,6 +23,13 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 - `sk:eject Session` çalıştırdıysanız `app/Domain/Session/Actions/PurgeOtherSessionsAction.php` sizindir ve `sk:update` ona dokunmaz. Yeni `execute()` gövdesini elle taşıyın: `Model::withoutEvents()` içinde guard'ın kullanıcısına yeni bir remember token atayın ve şifreyi session guard'ın `logoutOtherDevices()` metoduyla yeniden hash'leyin; ardından `database` sürücüsünde diğer session satırlarını silin.
 - `sk:eject User` çalıştırdıysanız `app/Domain/User/Actions/UpdateUserAction.php` sizindir. Paketteki `UpdateUserAction::execute()` içinde transaction'dan sonra gelen `Auth::setUser($user)` bloğunu kendi dosyanıza kopyalayın. Bu blok olmadan Kullanıcılar ekranında kendi şifresini değiştiren kullanıcı bir sonraki istekte oturumdan çıkarılır. Karşılaştırma için `vendor/lvntr/laravel-starter-kit/src/Domain/Session/Actions/PurgeOtherSessionsAction.php` dosyasına bakın.
 
+### `useFileManager().sort` artık `null` olabilir
+
+**Etkilenen:** kendi kodunda `useFileManager()` içindeki `sort` değerini okuyan uygulamalar.
+
+- `sort` artık `SortKey | null` tipindedir. `null`, "görünümün varsayılan sırası" demektir (Çöp Kutusu en son silinenler üstte açılır). Anahtar olarak kullanmadan önce `null` durumunu ele alın. Hazır `FileManager.vue` bunu zaten yapar; yalnız kendi yazdığınız kodu kontrol etmeniz gerekir.
+- `GET /file-manager/favorites/contents` ve `GET /file-manager/trash/contents` artık `sort` / `direction` kabul eder; ikisini de göndermeyen çağıranlar eskisiyle aynı sırayı alır.
+
 ---
 
 ## v13.7.3 → v13.7.4

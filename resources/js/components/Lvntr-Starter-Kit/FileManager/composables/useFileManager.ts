@@ -65,7 +65,8 @@ export function useFileManager(options: Options) {
     const breadcrumb = ref<FolderSummary[]>([]);
     const loading = reactive({ tree: false, contents: false });
 
-    const sort = ref<SortKey>('name');
+    // null = the view's own default order (Trash: most recently deleted first); folders/favorites fall back to name.
+    const sort = ref<SortKey | null>('name');
     const direction = ref<SortDirection>('asc');
 
     const selectedKeys = ref<Set<SelectionKey>>(new Set());
@@ -133,26 +134,48 @@ export function useFileManager(options: Options) {
         return null;
     }
 
-    async function loadContents(folderId: string | null): Promise<void> {
+    // Sequence token: a late response from a superseded navigation must not overwrite the current view.
+    let loadSeq = 0;
+    // The newest load's destination. currentView/currentFolderId move only when its response lands,
+    // so a refresh fired meanwhile (e.g. a sort click) must reload this, not the view being left.
+    let target: { view: QuickView; folderId: string | null } = { view: 'all', folderId: null };
+
+    async function loadView(url: string, folderId: string | null, view: QuickView): Promise<void> {
+        const seq = ++loadSeq;
+        target = { view, folderId };
         loading.contents = true;
         try {
-            const query = qs({
-                folder_id: folderId ?? '',
-                sort: sort.value,
-                direction: direction.value,
-            });
-            const res = await api.get<FolderContents>(`/file-manager/contents?${query}`);
+            const res = await api.get<FolderContents>(url);
+            if (seq !== loadSeq) return;
             contents.folder = res.folder;
             contents.folders = res.folders;
             contents.files = res.files;
             contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
             currentFolderId.value = folderId;
-            currentView.value = 'all';
+            currentView.value = view;
             breadcrumb.value = folderId ? (findFolder(tree.value, folderId) ?? []) : [];
             clearSelection();
         } finally {
-            loading.contents = false;
+            if (seq === loadSeq) loading.contents = false;
         }
+    }
+
+    /** Folder and favorites listings have no unsorted state: a null sort resolves to name / asc. */
+    function ensureSort(): void {
+        if (sort.value === null) {
+            sort.value = 'name';
+            direction.value = 'asc';
+        }
+    }
+
+    function loadContents(folderId: string | null): Promise<void> {
+        ensureSort();
+        const query = qs({
+            folder_id: folderId ?? '',
+            sort: sort.value,
+            direction: direction.value,
+        });
+        return loadView(`/file-manager/contents?${query}`, folderId, 'all');
     }
 
     async function refresh(): Promise<void> {
@@ -163,12 +186,13 @@ export function useFileManager(options: Options) {
     function setSort(key: SortKey, dir: SortDirection = 'asc'): Promise<void> {
         sort.value = key;
         direction.value = dir;
-        return loadContents(currentFolderId.value);
+        return refreshCurrentView();
     }
 
     function toggleSortDirection(): Promise<void> {
+        ensureSort();
         direction.value = direction.value === 'asc' ? 'desc' : 'asc';
-        return loadContents(currentFolderId.value);
+        return refreshCurrentView();
     }
 
     // ── Selection ────────────────────────────────────────────────
@@ -224,7 +248,7 @@ export function useFileManager(options: Options) {
      * çağrısı currentView'ı 'all'a düşürür — bu helper bunu önler.
      */
     async function refreshCurrentView(): Promise<void> {
-        switch (currentView.value) {
+        switch (target.view) {
             case 'favorites':
                 await loadFavorites();
                 break;
@@ -232,7 +256,7 @@ export function useFileManager(options: Options) {
                 await loadTrash();
                 break;
             default:
-                await loadContents(currentFolderId.value);
+                await loadContents(target.folderId);
                 break;
         }
     }
@@ -258,21 +282,10 @@ export function useFileManager(options: Options) {
         await refreshCurrentView();
     }
 
-    async function loadFavorites(): Promise<void> {
-        loading.contents = true;
-        try {
-            const res = await api.get<FolderContents>(`/file-manager/favorites/contents?${contextQuery.value}`);
-            contents.folder = res.folder;
-            contents.folders = res.folders;
-            contents.files = res.files;
-            contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
-            currentFolderId.value = null;
-            currentView.value = 'favorites';
-            breadcrumb.value = [];
-            clearSelection();
-        } finally {
-            loading.contents = false;
-        }
+    function loadFavorites(): Promise<void> {
+        ensureSort();
+        const query = qs({ sort: sort.value, direction: direction.value });
+        return loadView(`/file-manager/favorites/contents?${query}`, null, 'favorites');
     }
 
     async function addFavorite(favoritableType: 'folder' | 'file', favoritableId: string): Promise<void> {
@@ -335,21 +348,9 @@ export function useFileManager(options: Options) {
         }
     }
 
-    async function loadTrash(): Promise<void> {
-        loading.contents = true;
-        try {
-            const res = await api.get<FolderContents>(`/file-manager/trash/contents?${contextQuery.value}`);
-            contents.folder = res.folder;
-            contents.folders = res.folders;
-            contents.files = res.files;
-            contents.stats = res.stats ?? { file_count: 0, total_size: 0 };
-            currentFolderId.value = null;
-            currentView.value = 'trash';
-            breadcrumb.value = [];
-            clearSelection();
-        } finally {
-            loading.contents = false;
-        }
+    function loadTrash(): Promise<void> {
+        const query = sort.value === null ? contextQuery.value : qs({ sort: sort.value, direction: direction.value });
+        return loadView(`/file-manager/trash/contents?${query}`, null, 'trash');
     }
 
     async function restoreItem(itemType: 'folder' | 'file', itemId: string): Promise<void> {
@@ -542,9 +543,9 @@ export function useFileManager(options: Options) {
         });
         await Promise.allSettled(tasks);
 
-        for (const p of queued) {
-            if (!p.error) removePending(p.tempId);
-        }
+        // Read the live list: updatePending replaces objects, so `queued` never sees `error`.
+        const queuedIds = new Set(queued.map((p) => p.tempId));
+        pendingUploads.value = pendingUploads.value.filter((p) => !queuedIds.has(p.tempId) || p.error);
         await refreshCurrentView();
         return { uploaded, errors };
     }

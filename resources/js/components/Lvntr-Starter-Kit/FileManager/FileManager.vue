@@ -162,6 +162,8 @@
             return;
         }
         if (view === 'trash') {
+            // Trash always opens in its own order (most recently deleted first) until a sort is picked.
+            fm.sort.value = null;
             await fm.loadTrash();
             return;
         }
@@ -229,7 +231,9 @@
         { key: 'size', label: trans('sk-file-manager.labels.sort_menu.size'), icon: 'pi pi-database' },
     ]);
 
-    const activeSortKey = computed<SortMenuKey>(() => {
+    /** null = the view's default order (Trash), so no option is checked. */
+    const activeSortKey = computed<SortMenuKey | null>(() => {
+        if (fm.sort.value === null) return null;
         if (fm.sort.value === 'date') return 'recent';
         if (fm.sort.value === 'size') return 'size';
         return 'name';
@@ -245,9 +249,6 @@
     function onWindowClick(): void {
         sortOpen.value = false;
     }
-
-    /** Sıralama yalnızca sunucudan yüklenen görünümlerde anlamlı (all/recent). */
-    const sortAvailable = computed(() => quickView.value === 'all' || quickView.value === 'recent');
 
     // ── Çöp kutusu satırları ─────────────────────────────────────
     function formatDeletedAt(deletedAt: string | null | undefined): string {
@@ -1340,7 +1341,7 @@
                         </div>
 
                         <!-- Sıralama menüsü -->
-                        <div v-if="sortAvailable" class="relative">
+                        <div class="relative">
                             <button
                                 v-tooltip.bottom="trans('sk-file-manager.labels.sort_by')"
                                 type="button"

@@ -6,6 +6,7 @@ Newly added features and improvements to the starter kit are listed here.
 
 ### Fixed
 
+- **The file manager keeps you where you are.** Clicking through folders quickly no longer shows an earlier folder's files, sorting in Favorites or Trash stays in that view, and a failed upload keeps its error card until you close it.
 - **File manager tiles are easier to read.** The file type label (such as `PNG`) is no longer hidden behind the selection box, and the buttons that appear on hover stay visible over white images.
 - **`sk:update` now runs the kit's new database changes.** Updating could leave out a new table the kit needs, so the active share links list showed "A server error occurred." until you ran `php artisan migrate` yourself.
 - **The AI skills shipped with the kit match the code again.** Agents were told a few things that are not true — that any `LogicException` becomes a 422, that `useDialog()` takes a `refreshKey`, that `sk:seed-permissions --fresh` is the routine step (it resets every role's permissions), and that `site:install` is harmless (it drops all tables). These are corrected.
@@ -24,6 +25,7 @@ Newly added features and improvements to the starter kit are listed here.
 - **Saved table views.** Tables that turn it on (the Users list does) get a bookmark button: save the current search, sorting, filters and columns under a name like "Active customers" and bring them back with one click. Views are kept in your browser.
 - **See what an update skipped.** `php artisan sk:update --dry-run --report=storage/sk-update.json` writes a JSON report; every file you changed is listed next to the kit's new version, so you can compare them.
 - **Updates are tested on an upgraded app.** CI now installs the previous release, customizes a few files, updates to the new one, and runs the browser tests against the result — including automatic accessibility checks.
+- **Sorting in Favorites and Trash.** Both views get the sort menu (name, size, date, ascending or descending). Trash still opens with the most recently deleted items first.
 
 ### Changed
 

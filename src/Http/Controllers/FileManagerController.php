@@ -81,13 +81,7 @@ class FileManagerController extends Controller
         $folderId = $request->query('folder_id');
         $folderId = $folderId === '' ? null : $folderId;
 
-        $sort = $request->query('sort', 'name');
-        $direction = $request->query('direction', 'asc');
-
-        return to_api($query->execute($context, $folderId, [
-            'sort' => in_array($sort, ['name', 'size', 'date'], true) ? $sort : 'name',
-            'direction' => $direction === 'desc' ? 'desc' : 'asc',
-        ]));
+        return to_api($query->execute($context, $folderId, $this->sortOptions($request)));
     }
 
     public function bulkDelete(BulkDeleteRequest $request, BulkDeleteAction $action): ApiResponse
@@ -173,7 +167,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeRead($context);
 
-        return to_api($query->execute($context));
+        return to_api($query->execute($context, $request->has('sort') ? $this->sortOptions($request) : []));
     }
 
     public function addFavorite(FavoriteRequest $request, AddFavoriteAction $action): ApiResponse
@@ -209,7 +203,7 @@ class FileManagerController extends Controller
         $context = $request->context();
         $this->authorizer->authorizeRead($context);
 
-        return to_api($query->execute($context));
+        return to_api($query->execute($context, $request->has('sort') ? $this->sortOptions($request) : []));
     }
 
     public function emptyTrash(FileManagerContextRequest $request, EmptyTrashAction $action): ApiResponse
@@ -326,5 +320,22 @@ class FileManagerController extends Controller
         $this->authorizer->authorizeRead($context);
 
         return $action->execute($context, $media);
+    }
+
+    /**
+     * Normalise the `sort` / `direction` query parameters shared by the
+     * folder, favorites and trash views.
+     *
+     * @return array{sort: 'name'|'size'|'date', direction: 'asc'|'desc'}
+     */
+    private function sortOptions(FileManagerContextRequest $request): array
+    {
+        $sort = $request->query('sort', 'name');
+        $direction = $request->query('direction', 'asc');
+
+        return [
+            'sort' => in_array($sort, ['name', 'size', 'date'], true) ? $sort : 'name',
+            'direction' => $direction === 'desc' ? 'desc' : 'asc',
+        ];
     }
 }

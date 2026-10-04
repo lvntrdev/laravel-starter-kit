@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Domain\FileManager\Queries;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
@@ -18,6 +19,7 @@ class TrashContentsQuery
     use ResolvesMediaModel;
 
     /**
+     * @param  array{sort?: 'name'|'size'|'date', direction?: 'asc'|'desc'}  $options  without `sort` both lists stay newest-deleted first
      * @return array{
      *     folder: null,
      *     folders: array<int, array<string, mixed>>,
@@ -25,15 +27,21 @@ class TrashContentsQuery
      *     stats: array{file_count: int, total_size: int, storage_used: int, storage_quota: int},
      * }
      */
-    public function execute(FileManagerContextDTO $context): array
+    public function execute(FileManagerContextDTO $context, array $options = []): array
     {
         /** @var class-string<Model> $folderModel */
         $folderModel = config('file-manager.models.folder', 'App\\Models\\FileFolder');
 
-        $allTrashedFolders = $folderModel::onlyTrashed()
+        $sorted = isset($options['sort']);
+        $direction = $options['direction'] ?? 'asc';
+
+        $folderQuery = $folderModel::onlyTrashed()
             ->where('owner_type', $context->ownerType)
-            ->where('owner_id', $context->ownerId)
-            ->orderBy('deleted_at', 'desc')
+            ->where('owner_id', $context->ownerId);
+
+        $allTrashedFolders = ($sorted
+            ? $folderQuery->orderBy('name')
+            : $folderQuery->orderBy('deleted_at', 'desc'))
             ->get();
 
         // Collect all trashed folder IDs so we can filter out nested children.
@@ -62,11 +70,14 @@ class TrashContentsQuery
             ->all();
 
         $mediaModel = $this->mediaModel();
-        $allTrashedMedia = $mediaModel::onlyTrashed()
+        $mediaQuery = $mediaModel::onlyTrashed()
             ->where('model_type', $context->ownerType)
             ->where('model_id', $context->ownerId)
-            ->where('collection_name', 'files')
-            ->orderBy('deleted_at', 'desc')
+            ->where('collection_name', 'files');
+
+        $allTrashedMedia = ($sorted
+            ? $mediaQuery->orderBy(Arr::get(FolderContentsQuery::SORT_COLUMNS, $options['sort'], 'name'), $direction)
+            : $mediaQuery->orderBy('deleted_at', 'desc'))
             ->get();
 
         // Hide files whose parent folder is also in trash — the folder restore will

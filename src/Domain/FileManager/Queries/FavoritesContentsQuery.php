@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Domain\FileManager\Queries;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Lvntr\StarterKit\Domain\FileManager\Concerns\ResolvesMediaModel;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileItemDTO;
 use Lvntr\StarterKit\Domain\FileManager\DTOs\FileManagerContextDTO;
@@ -17,6 +18,7 @@ class FavoritesContentsQuery
     use ResolvesMediaModel;
 
     /**
+     * @param  array{sort?: 'name'|'size'|'date', direction?: 'asc'|'desc'}  $options
      * @return array{
      *     folder: null,
      *     folders: array<int, array<string, mixed>>,
@@ -24,13 +26,16 @@ class FavoritesContentsQuery
      *     stats: array{file_count: int, total_size: int, storage_used: int, storage_quota: int},
      * }
      */
-    public function execute(FileManagerContextDTO $context): array
+    public function execute(FileManagerContextDTO $context, array $options = []): array
     {
         /** @var class-string<Model> $folderModel */
         $folderModel = config('file-manager.models.folder', 'App\\Models\\FileFolder');
 
         /** @var class-string<Model> $favoriteModel */
         $favoriteModel = config('file-manager.models.favorite', 'App\\Models\\FileFavorite');
+
+        $sort = $options['sort'] ?? 'name';
+        $direction = $options['direction'] ?? 'asc';
 
         $favorites = $favoriteModel::query()
             ->where('owner_type', $context->ownerType)
@@ -76,7 +81,7 @@ class FavoritesContentsQuery
                 ->where('model_id', $context->ownerId)
                 ->where('collection_name', 'files')
                 ->whereIn('id', $fileIds)
-                ->orderBy('name')
+                ->orderBy(Arr::get(FolderContentsQuery::SORT_COLUMNS, $sort, 'name'), $direction)
                 ->get();
 
         $files = $mediaModels

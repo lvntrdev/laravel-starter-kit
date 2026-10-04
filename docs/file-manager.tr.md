@@ -176,10 +176,10 @@ Tüm uçlar `context` ve `context_id` parametrelerini GET/DELETE'te query string
 | ------ | ---------------------------------------------------- | --------------------------------------------------------------------- |
 | GET    | `/file-manager/tree`                                 | Bağlamın tüm nested klasör ağacı                                      |
 | GET    | `/file-manager/contents?folder_id=&sort=&direction=` | Klasör içeriği + istatistik                                           |
-| GET    | `/file-manager/favorites/contents`                   | Context'in favori klasör/dosyaları                                    |
+| GET    | `/file-manager/favorites/contents?sort=&direction=`  | Context'in favori klasör/dosyaları (`sort` yoksa görünümün varsayılan sırası) |
 | POST   | `/file-manager/favorites`                            | Klasör/dosyayı favorilere ekle (`item_type`, `item_id`)               |
 | DELETE | `/file-manager/favorites`                            | Klasör/dosyayı favorilerden çıkar (`item_type`, `item_id`)            |
-| GET    | `/file-manager/trash/contents`                       | Context'in soft-delete edilmiş klasör/dosyaları                       |
+| GET    | `/file-manager/trash/contents?sort=&direction=`      | Context'in soft-delete edilmiş klasör/dosyaları (`sort` yoksa görünümün varsayılan sırası) |
 | DELETE | `/file-manager/trash/empty`                          | Context'teki tüm çöp öğelerini kalıcı sil                             |
 | POST   | `/file-manager/items/restore`                        | Çöpteki tek klasör/dosyayı geri yükle (`item_type`, `item_id`)        |
 | DELETE | `/file-manager/items/permanent`                      | Aktif veya çöpteki tek klasör/dosyayı kalıcı sil (`item_type`, `item_id`) |
@@ -424,7 +424,7 @@ await fm.loadContents(null); // root
 fm.setSort('size', 'desc');
 ```
 
-Dışa açılan state: `tree`, `contents`, `currentFolderId`, `breadcrumb`, `loading`, `sort`, `direction`, `selectedKeys`, `selectionCount`, `selectedItems`, `pendingUploads`.
+Dışa açılan state: `tree`, `contents`, `currentFolderId`, `breadcrumb`, `loading`, `sort`, `direction`, `selectedKeys`, `selectionCount`, `selectedItems`, `pendingUploads`. `sort` tipi `SortKey | null`; `null` görünümün varsayılan sırasıdır (Çöp Kutusu: en son silinen üstte).
 
 Metodlar: `loadTree` / `loadContents` / `loadFavorites` / `loadTrash` / `refresh` / `setSort` / `toggleSortDirection` / `isSelected` / `toggleSelect` / `setSelection` / `clearSelection` / `selectAll` / `createFolder` / `renameFolder` / `renameFile` / `copyFile` / `toggleFavorite` / `restoreItem` / `permanentlyDeleteItem` / `emptyTrash` / `deleteFolder` / `deleteFile` / `bulkDelete` / `bulkForceDelete` / `moveItem` / `uploadFiles` / `dismissPending`.
 

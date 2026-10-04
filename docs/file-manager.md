@@ -176,10 +176,10 @@ All endpoints accept `context` and `context_id` as query string on GET/DELETE or
 | ------ | ---------------------------------------------------- | ------------------------------------------------------------------- |
 | GET    | `/file-manager/tree`                                 | Entire nested folder tree for the context                           |
 | GET    | `/file-manager/contents?folder_id=&sort=&direction=` | Folder contents + stats                                             |
-| GET    | `/file-manager/favorites/contents`                   | Favorited folders/files for the context                             |
+| GET    | `/file-manager/favorites/contents?sort=&direction=`  | Favorited folders/files for the context (no `sort` → the view's default order) |
 | POST   | `/file-manager/favorites`                            | Add a folder/file to favorites (`item_type`, `item_id`)             |
 | DELETE | `/file-manager/favorites`                            | Remove a folder/file from favorites (`item_type`, `item_id`)        |
-| GET    | `/file-manager/trash/contents`                       | Soft-deleted folders/files for the context                          |
+| GET    | `/file-manager/trash/contents?sort=&direction=`      | Soft-deleted folders/files for the context (no `sort` → the view's default order) |
 | DELETE | `/file-manager/trash/empty`                          | Permanently delete all trashed items in the context                 |
 | POST   | `/file-manager/items/restore`                        | Restore one trashed folder/file (`item_type`, `item_id`)            |
 | DELETE | `/file-manager/items/permanent`                      | Permanently delete one folder/file, active or trashed (`item_type`, `item_id`) |
@@ -426,7 +426,7 @@ await fm.loadContents(null); // root
 fm.setSort('size', 'desc');
 ```
 
-Exposed state: `tree`, `contents`, `currentFolderId`, `breadcrumb`, `loading`, `sort`, `direction`, `selectedKeys`, `selectionCount`, `selectedItems`, `pendingUploads`.
+Exposed state: `tree`, `contents`, `currentFolderId`, `breadcrumb`, `loading`, `sort`, `direction`, `selectedKeys`, `selectionCount`, `selectedItems`, `pendingUploads`. `sort` is `SortKey | null`; `null` means the view's default order (Trash: newest-deleted first).
 
 Methods: `loadTree` / `loadContents` / `loadFavorites` / `loadTrash` / `refresh` / `setSort` / `toggleSortDirection` / `isSelected` / `toggleSelect` / `setSelection` / `clearSelection` / `selectAll` / `createFolder` / `renameFolder` / `renameFile` / `copyFile` / `toggleFavorite` / `restoreItem` / `permanentlyDeleteItem` / `emptyTrash` / `deleteFolder` / `deleteFile` / `bulkDelete` / `bulkForceDelete` / `moveItem` / `uploadFiles` / `dismissPending`.
 
