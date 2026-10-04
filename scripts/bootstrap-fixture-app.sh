@@ -24,6 +24,10 @@
 #   E2E_BOOT_TIMEOUT  seconds to wait for /login to answer (default: 120)
 #   LARAVEL_SKELETON  skeleton package to create the app from (default: laravel/laravel:^13.0)
 #   E2E_SEEDER_CLASS  seeder run after install (default: Database\Seeders\E2EAdminSeeder)
+#   SK_UPGRADE_FROM   released tag to start from (e.g. v13.8.3). When set, the
+#                     fixture installs THAT release from Packagist, customizes a
+#                     few kit files, then swaps in this checkout and runs
+#                     sk:update — the specs then run against an UPGRADED app.
 
 set -euo pipefail
 
@@ -38,6 +42,15 @@ E2E_PORT="${E2E_PORT:-8000}"
 E2E_BOOT_TIMEOUT="${E2E_BOOT_TIMEOUT:-120}"
 LARAVEL_SKELETON="${LARAVEL_SKELETON:-laravel/laravel:^13.0}"
 E2E_SEEDER_CLASS="${E2E_SEEDER_CLASS:-Database\\Seeders\\E2EAdminSeeder}"
+SK_UPGRADE_FROM="${SK_UPGRADE_FROM:-}"
+
+# Consumer-edited kit files in upgrade mode: sk:update must leave each one with
+# its marker intact (hash registry says "user-modified" → skip, never clobber).
+UPGRADE_MARKER='sk-e2e-upgrade: consumer customization'
+UPGRADE_CUSTOMIZED_FILES=(
+    "app/Models/User.php|// $UPGRADE_MARKER"
+    "resources/js/pages/Profile/Index.vue|<!-- $UPGRADE_MARKER -->"
+)
 
 BASE_URL="http://${E2E_HOST}:${E2E_PORT}"
 SEEDER_SOURCE_DIR="$REPO_ROOT/scripts/e2e/fixtures"
@@ -246,22 +259,34 @@ touch "$SQLITE_PATH"
 } > "$FIXTURE_DIR/.env"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. require the kit from this checkout (path repository → symlink)
+# 4. require the kit — this checkout, or (upgrade mode) the starting release
 # ─────────────────────────────────────────────────────────────────────────────
 
-step "Requiring lvntr/laravel-starter-kit from $REPO_ROOT"
+# The path repository symlinks this checkout into vendor/.
+require_checkout() {
+    step "Requiring lvntr/laravel-starter-kit from $REPO_ROOT"
 
-# `options.versions` pins the version instead of letting Composer guess it from
-# git. CI checks out a detached HEAD, where the guesser produces an unstable
-# dev-<sha> that no root constraint can name.
-in_fixture composer config repositories.starter-kit \
-    "{\"type\":\"path\",\"url\":\"$REPO_ROOT\",\"options\":{\"symlink\":true,\"versions\":{\"lvntr/laravel-starter-kit\":\"dev-main\"}}}"
+    # `options.versions` pins the version instead of letting Composer guess it from
+    # git. CI checks out a detached HEAD, where the guesser produces an unstable
+    # dev-<sha> that no root constraint can name.
+    in_fixture composer config repositories.starter-kit \
+        "{\"type\":\"path\",\"url\":\"$REPO_ROOT\",\"options\":{\"symlink\":true,\"versions\":{\"lvntr/laravel-starter-kit\":\"dev-main\"}}}"
 
-in_fixture composer require "lvntr/laravel-starter-kit:dev-main" \
-    --no-interaction --no-progress --with-all-dependencies
+    in_fixture composer require "lvntr/laravel-starter-kit:dev-main" \
+        --no-interaction --no-progress --with-all-dependencies
 
-if [ ! -e "$FIXTURE_DIR/vendor/lvntr/laravel-starter-kit" ]; then
-    die "The kit is not present at vendor/lvntr/laravel-starter-kit — the path repository did not resolve."
+    if [ ! -L "$FIXTURE_DIR/vendor/lvntr/laravel-starter-kit" ]; then
+        die "vendor/lvntr/laravel-starter-kit is not a symlink to this checkout — the path repository did not resolve."
+    fi
+}
+
+if [ -n "$SK_UPGRADE_FROM" ]; then
+    step "Requiring lvntr/laravel-starter-kit:$SK_UPGRADE_FROM from Packagist"
+
+    in_fixture composer require "lvntr/laravel-starter-kit:${SK_UPGRADE_FROM#v}" \
+        --no-interaction --no-progress --with-all-dependencies
+else
+    require_checkout
 fi
 
 step "Generating the application key"
@@ -271,12 +296,52 @@ artisan key:generate --force --no-interaction
 # 5. install the kit
 # ─────────────────────────────────────────────────────────────────────────────
 
-step "Running sk:install"
+step "Running sk:install${SK_UPGRADE_FROM:+ ($SK_UPGRADE_FROM)}"
 
 # --no-interaction auto-accepts every step (migrations, seeders, permissions,
 # passport, admin user, npm install + build) and takes the ADDITIVE migration
 # path — the destructive "fresh" branch is never offered without a TTY.
 artisan sk:install --no-interaction
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5b. upgrade mode: customize → swap in this checkout → sk:update → verify
+# ─────────────────────────────────────────────────────────────────────────────
+
+if [ -n "$SK_UPGRADE_FROM" ]; then
+    step "Customizing kit files the way a consumer would"
+
+    for entry in "${UPGRADE_CUSTOMIZED_FILES[@]}"; do
+        file="${entry%%|*}"
+        [ -f "$FIXTURE_DIR/$file" ] || die "$SK_UPGRADE_FROM did not install $file — pick another file to customize."
+        printf '\n%s\n' "${entry#*|}" >> "$FIXTURE_DIR/$file"
+        log "edited $file"
+    done
+
+    require_checkout
+
+    step "Running sk:update ($SK_UPGRADE_FROM → this checkout)"
+
+    # Non-interactive: pending migrations are run (prompt default), untracked
+    # files are left alone, missing Composer packages are only reported.
+    artisan sk:update --no-interaction
+
+    step "Verifying the upgrade"
+
+    for entry in "${UPGRADE_CUSTOMIZED_FILES[@]}"; do
+        file="${entry%%|*}"
+        grep -qF "$UPGRADE_MARKER" "$FIXTURE_DIR/$file" \
+            || die "sk:update overwrote the customized $file — consumer edits were lost."
+    done
+    log "Customized files survived."
+
+    if artisan migrate:status --no-interaction | grep -q Pending; then
+        die "Migrations are still pending after sk:update."
+    fi
+    log "No pending migrations."
+
+    # The release's build is stale against the updated stubs and package.json.
+    rm -rf "$FIXTURE_DIR/public/build"
+fi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. frontend build (the installer's npm steps are best-effort — verify them)
@@ -291,7 +356,7 @@ frontend_built() {
 if frontend_built; then
     log "Build manifest is present."
 else
-    log "sk:install did not leave a build manifest — building explicitly…"
+    log "No build manifest — building explicitly…"
     in_fixture npm install --no-audit --no-fund
     artisan wayfinder:generate --skip-actions
     in_fixture npm run build

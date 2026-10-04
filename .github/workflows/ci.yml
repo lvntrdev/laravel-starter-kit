@@ -275,11 +275,21 @@ jobs:
         run: npm run test --if-present
 
   e2e:
-    name: E2E smoke (Playwright)
+    name: E2E smoke (Playwright, ${{ matrix.mode }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # fresh   — sk:install of this checkout into a new app.
+        # upgrade — sk:install of the previous release, customize a few kit
+        #           files, swap in this checkout, sk:update, then the same specs.
+        mode: [fresh, upgrade]
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: upgrade mode needs the tag list to pick the previous release.
+          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -315,6 +325,21 @@ jobs:
       # foreground until /login answers, then exits — it is not a
       # long-running command. On success it appends E2E_BASE_URL /
       # E2E_FIXTURE_DIR to $GITHUB_ENV for the steps below.
+      # The newest release tag that is NOT this commit (on a tag push, the
+      # release before it) AND is on Packagist: a tag whose CI failed never
+      # reaches the packagist job, so it exists in git but cannot be required.
+      - name: Pick the release to upgrade from
+        if: matrix.mode == 'upgrade'
+        run: |
+          HEAD_TAG="$(git describe --tags --exact-match 2>/dev/null || true)"
+          PUBLISHED="$(curl -fsS --retry 3 https://repo.packagist.org/p2/lvntr/laravel-starter-kit.json \
+            | jq -r '.packages["lvntr/laravel-starter-kit"][].version')"
+          FROM="$(git tag --list 'v*' --sort=-v:refname | grep -vxF "${HEAD_TAG:-none}" \
+            | grep -xF -f <(printf '%s\n' "$PUBLISHED") | head -n 1)"
+          [ -n "$FROM" ] || { echo "::error::no release tag to upgrade from"; exit 1; }
+          echo "SK_UPGRADE_FROM=$FROM" >> "$GITHUB_ENV"
+          echo "Upgrading from $FROM"
+
       - name: Provision fixture app
         run: bash scripts/bootstrap-fixture-app.sh
 
@@ -325,7 +350,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.mode }}
           path: playwright-report/
           retention-days: 7
 
