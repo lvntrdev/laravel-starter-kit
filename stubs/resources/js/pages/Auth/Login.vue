@@ -99,12 +99,16 @@
         </div>
         <IconField class="auth-input auth-input--password">
           <InputIcon class="auth-input__icon pi pi-lock" />
+          <!-- PrimeVue sets aria-expanded/aria-haspopup for its strength overlay even with
+               feedback off; a password textbox may not carry them (axe aria-allowed-attr). -->
           <Password
             v-model="form.password"
             input-id="password"
             :input-props="{
               autocomplete: 'current-password',
               'aria-describedby': form.errors.password ? 'password-error' : undefined,
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
             }"
             :invalid="!!form.errors.password"
             :feedback="false"

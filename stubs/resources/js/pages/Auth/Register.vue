@@ -141,6 +141,8 @@
             :input-props="{
               autocomplete: 'new-password',
               'aria-describedby': form.errors.password ? 'password-error' : undefined,
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
             }"
             :invalid="!!form.errors.password"
             toggle-mask
@@ -174,6 +176,8 @@
               'aria-describedby': form.errors.password_confirmation
                 ? 'password-confirmation-error'
                 : undefined,
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
             }"
             :invalid="!!form.errors.password_confirmation"
             :feedback="false"

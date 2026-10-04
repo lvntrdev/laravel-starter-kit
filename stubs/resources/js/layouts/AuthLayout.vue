@@ -41,7 +41,10 @@
   <Head :title="title" />
   <div class="auth-layout">
     <button
+      type="button"
       class="auth-dark-toggle"
+      :aria-label="$t('sk-layout.dark_mode')"
+      :aria-pressed="isDark"
       @click="toggleDark"
     >
       <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" />

@@ -126,7 +126,7 @@
 
 .admin-header__tag--dev {
     background: color-mix(in srgb, var(--p-blue-500) 15%, transparent);
-    color: var(--p-blue-600);
+    color: var(--p-blue-800);
 }
 
 :root.dark .admin-header__tag--dev {
@@ -136,7 +136,8 @@
 
 .admin-header__tag--debug {
     background: color-mix(in srgb, var(--p-orange-500) 15%, transparent);
-    color: var(--p-orange-600);
+    /* No orange step reaches 4.5:1 on its own tint — darken past the palette. */
+    color: color-mix(in srgb, var(--p-orange-900), black 30%);
 }
 
 :root.dark .admin-header__tag--debug {

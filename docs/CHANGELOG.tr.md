@@ -11,6 +11,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 - **Kit'le gelen AI skill'leri yeniden kodla uyumlu.** Ajanlara doğru olmayan bazı bilgiler veriliyordu: her `LogicException`'ın 422'ye dönüştüğü, `useDialog()`'un `refreshKey` aldığı, `sk:seed-permissions --fresh`'in rutin adım olduğu (tüm rollerin yetkilerini sıfırlar) ve `site:install`'ın zararsız olduğu (tüm tabloları siler). Bunlar düzeltildi.
 - **Şifre alanları ekran okuyucular ve şifre yöneticileriyle doğru çalışıyor.** Giriş, kayıt, şifre sıfırlama ve şifre değiştirme ekranlarında şifre etiketine tıklamak artık alana odaklanıyor, ekran okuyucular alanın adını ve hatasını okuyor, şifre yöneticileri doğru "mevcut şifre" / "yeni şifre" ipucunu alıyor. Güç göstergeli FormBuilder şifre alanları da hata metnini aynı şekilde bağlıyor. Güncel sayfaları almak için `php artisan sk:update` çalıştırın; kendi düzenlediğiniz sayfalara dokunulmaz.
 - **Ekran okuyucular daha fazla form alanında hatayı ve zorunluluğu okuyor.** Admin formlarındaki sayı, kod (OTP), tarih, açılır liste, çoklu seçim, onay kutusu ve anahtar alanları odaklanınca doğrulama hatasını ve "zorunlu" bilgisini okutuyor.
+- **Admin paneli ekran okuyucularla daha iyi çalışıyor.** Giriş ekranındaki karanlık mod butonu, tablolardaki satır seçim kutuları ve ID butonları ile zengin metin editörü artık ne olduklarını okuyor; tablo filtre butonu da "Filtreleri Temizle" yerine "Filtrele" olarak okunuyor.
 
 ### Eklendi
 
@@ -19,6 +20,13 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 - **CI artık kitin hazır admin sayfalarını da kontrol ediyor.** `vendor/` içinden çalışan sayfalar, composable'lar ve plugin'ler, component kütüphanesi gibi CI'da lint ve tip kontrolünden geçiyor (`npm run lint:lib`, `npm run typecheck:lib`).
 - **İki adımlı doğrulama artık gerçek tarayıcıda test ediliyor.** CI, profil sayfasından iki adımlı doğrulamayı açıyor, kurtarma koduyla doğrulama adımından geçerek yeniden giriş yapıyor ve doğrulamayı kapatıyor.
 - **Bir dosyanın aktif paylaşım linklerini görme ve iptal etme.** Files'taki paylaşım penceresinde artık o dosya için hâlâ geçerli linkleri listeleyen ve her birini iptal etmeye izin veren bir "Aktif Paylaşım Linkleri" çekmecesi var. Güncellemeden sonra `php artisan migrate` çalıştırın (`sk:update` bunu sizin için yapar); güncellemeden önce oluşturulan linkler listelenmez ama zamanında sona erer.
+- **Kayıtlı tablo görünümleri.** Bu özelliği açan tablolarda (Kullanıcılar listesi açık) bir yer imi butonu var: mevcut arama, sıralama, filtre ve sütunları "Aktif müşteriler" gibi bir adla kaydedin, tek tıkla geri getirin. Görünümler tarayıcınızda saklanır.
+- **Güncellemenin neyi atladığını görün.** `php artisan sk:update --dry-run --report=storage/sk-update.json` bir JSON raporu yazar; değiştirdiğiniz her dosya kitin yeni sürümüyle yan yana listelenir, ikisini karşılaştırabilirsiniz.
+- **Güncellemeler, yükseltilmiş bir uygulamada test ediliyor.** CI artık önceki sürümü kuruyor, birkaç dosyayı özelleştiriyor, yeni sürüme güncelliyor ve tarayıcı testlerini otomatik erişilebilirlik kontrolleriyle birlikte sonuç üzerinde çalıştırıyor.
+
+### Değişti
+
+- **Varsayılan temada daha iyi metin kontrastı.** Açık moddaki butonlar, linkler ve soluk metinler WCAG AA kontrastını karşılayacak kadar koyulaştı: varsayılan mavi artık `#1976d2`; kırmızı, yeşil ve mavi butonlar daha koyu tonlarda, turuncu (uyarı) butonlar ise koyu yazılı. Ayarlar'dan seçilen accent rengi de bir ton koyu uygulanıyor. Güncel temayı almak için `php artisan sk:update` çalıştırın; kendi düzenlediğiniz dosyalara dokunulmaz.
 
 ## 2026-10-03 — v13.8.3
 

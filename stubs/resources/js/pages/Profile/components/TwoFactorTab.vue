@@ -661,7 +661,11 @@
           <Password
             v-model="passwordConfirmForm.password"
             input-id="confirm_password_dialog"
-            :input-props="{ autocomplete: 'current-password' }"
+            :input-props="{
+              autocomplete: 'current-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!passwordConfirmError"
             :feedback="false"
             toggle-mask

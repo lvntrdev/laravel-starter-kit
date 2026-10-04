@@ -251,7 +251,11 @@
           <Password
             v-model="logoutPasswordForm.password"
             input-id="logout_password"
-            :input-props="{ autocomplete: 'current-password' }"
+            :input-props="{
+              autocomplete: 'current-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!logoutPasswordError"
             :feedback="false"
             toggle-mask

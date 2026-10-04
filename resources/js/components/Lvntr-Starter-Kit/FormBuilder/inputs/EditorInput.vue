@@ -242,6 +242,10 @@
     }
     if (props.ariaLabelledby) {
         editableAttributes['aria-labelledby'] = props.ariaLabelledby;
+    } else if (props.placeholder) {
+        // No visible label (`.label(false)`): the placeholder is the only text that
+        // says what goes here, and a contenteditable gets no name from it on its own.
+        editableAttributes['aria-label'] = props.placeholder;
     }
     if (props.ariaRequired) {
         editableAttributes['aria-required'] = 'true';

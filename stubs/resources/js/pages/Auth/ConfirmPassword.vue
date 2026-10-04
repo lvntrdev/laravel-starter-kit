@@ -38,7 +38,11 @@
           <Password
             v-model="form.password"
             input-id="password"
-            :input-props="{ autocomplete: 'current-password' }"
+            :input-props="{
+              autocomplete: 'current-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!form.errors.password"
             :feedback="false"
             toggle-mask

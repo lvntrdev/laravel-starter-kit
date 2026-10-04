@@ -54,3 +54,11 @@ export function controlId(field: FieldConfig): string {
 export function describedById(field: FieldConfig): string {
     return `${field.key}__desc`;
 }
+
+/**
+ * Id of the field's visible `<label>`. Only a control that `<label for>` cannot
+ * name (the editor's contenteditable node) points at it, via `aria-labelledby`.
+ */
+export function labelId(field: FieldConfig): string {
+    return `${field.key}__label`;
+}

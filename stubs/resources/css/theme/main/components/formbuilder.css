@@ -150,7 +150,7 @@
 }
 
 .sk-fb__hint {
-    color: var(--p-surface-400);
+    color: var(--p-surface-500);
 }
 
 :root.dark .sk-fb__hint {

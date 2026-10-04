@@ -27,7 +27,7 @@
 
 .admin-page-header__subtitle {
     @apply text-sm;
-    color: var(--p-surface-500);
+    color: var(--p-surface-600);
 }
 
 :root.dark .admin-page-header__subtitle {

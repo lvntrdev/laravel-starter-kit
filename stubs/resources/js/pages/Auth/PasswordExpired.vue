@@ -45,7 +45,11 @@
           <Password
             v-model="form.current_password"
             input-id="current_password"
-            :input-props="{ autocomplete: 'current-password' }"
+            :input-props="{
+              autocomplete: 'current-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!form.errors.current_password"
             :feedback="false"
             toggle-mask
@@ -74,7 +78,11 @@
           <Password
             v-model="form.password"
             input-id="password"
-            :input-props="{ autocomplete: 'new-password' }"
+            :input-props="{
+              autocomplete: 'new-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!form.errors.password"
             toggle-mask
             fluid
@@ -101,7 +109,11 @@
           <Password
             v-model="form.password_confirmation"
             input-id="password_confirmation"
-            :input-props="{ autocomplete: 'new-password' }"
+            :input-props="{
+              autocomplete: 'new-password',
+              'aria-expanded': undefined,
+              'aria-haspopup': undefined,
+            }"
             :invalid="!!form.errors.password_confirmation"
             :feedback="false"
             toggle-mask

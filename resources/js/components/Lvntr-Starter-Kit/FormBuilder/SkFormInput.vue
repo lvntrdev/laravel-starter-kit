@@ -20,7 +20,7 @@
         TranslatableTextareaFieldConfig,
         TranslatableEditorFieldConfig,
     } from './core';
-    import { controlId, describedById, passwordUsesWrapper } from './core/ids';
+    import { controlId, describedById, labelId, passwordUsesWrapper } from './core/ids';
     import ColorSelector from './SkColorSelector.vue';
     import EditorInput from './inputs/EditorInput.vue';
     import TranslatableInput from './inputs/TranslatableInput.vue';
@@ -1022,7 +1022,7 @@
             input-class="w-full"
             class="w-full"
             :input-id="controlId(field)"
-            :input-props="controlAria"
+            :input-props="{ ...controlAria, 'aria-expanded': undefined, 'aria-haspopup': undefined }"
             v-bind="wrappedExtraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"
@@ -1070,6 +1070,7 @@
             :treat-empty-as-blank="asEditor.treatEmptyAsBlank ?? true"
             class="w-full"
             :aria-describedby="describedBy"
+            :aria-labelledby="field.hideLabel ? undefined : labelId(field)"
             v-bind="extraProps"
             :disabled="forcedDisabled"
             :invalid="forcedInvalid"

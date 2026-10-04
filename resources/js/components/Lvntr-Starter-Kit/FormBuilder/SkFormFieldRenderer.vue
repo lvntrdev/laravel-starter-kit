@@ -9,7 +9,7 @@
         TitleFieldConfig,
         ToggleSwitchFieldConfig,
     } from './core';
-    import { controlId, describedById } from './core/ids';
+    import { controlId, describedById, labelId } from './core/ids';
     import SkFormInput from './SkFormInput.vue';
     import SkIcon from '../ui/SkIcon.vue';
     import SkCard from '../ui/SkCard.vue';
@@ -536,6 +536,7 @@
                 <div v-if="ctx.hasInlineFieldLabel(field)" class="sk-fb__field-row">
                     <label
                         v-if="!field.hideLabel && !ctx.isTranslatableField(field)"
+                        :id="labelId(field)"
                         :for="controlId(field)"
                         class="sk-fb__label sk-fb__label--field-inline"
                     >
@@ -579,6 +580,7 @@
                 <template v-else>
                     <label
                         v-if="!field.hideLabel && !ctx.isTranslatableField(field)"
+                        :id="labelId(field)"
                         :for="controlId(field)"
                         class="sk-fb__label"
                     >

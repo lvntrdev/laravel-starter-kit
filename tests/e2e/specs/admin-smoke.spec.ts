@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { expectNoA11yViolations } from '../support/a11y';
 
 /**
  * Critical-path admin smoke test.
@@ -30,6 +31,7 @@ test('login, create user, assign role, update settings, logout', async ({ page }
 
     await test.step('log in with the seeded admin', async () => {
         await page.goto('/login');
+        await expectNoA11yViolations(page);
 
         // Both fields are reached through their <label>. PrimeVue's <Password>
         // puts a bare `id` on its wrapper div, so Login.vue must pass
@@ -53,6 +55,7 @@ test('login, create user, assign role, update settings, logout', async ({ page }
 
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible();
+        await expectNoA11yViolations(page, '[role="dialog"]');
 
         await dialog.getByLabel('First Name').fill(newUserFirstName);
         await dialog.getByLabel('Last Name').fill(newUserLastName);
@@ -83,6 +86,7 @@ test('login, create user, assign role, update settings, logout', async ({ page }
         await expect(dialog).toBeHidden();
 
         await expect(page.getByText(newUserEmail)).toBeVisible();
+        await expectNoA11yViolations(page);
     });
 
     await test.step('assign that user a non-admin role and confirm it persisted', async () => {
@@ -107,6 +111,26 @@ test('login, create user, assign role, update settings, logout', async ({ page }
         await expect(updatedRow.getByText('User', { exact: true })).toBeVisible();
     });
 
+    await test.step('save the current search as a named view and re-apply it', async () => {
+        const searchBox = page.getByPlaceholder('Search').first();
+        await searchBox.fill(newUserEmail);
+        await expect(page.getByRole('row', { name: new RegExp(newUserEmail) })).toBeVisible();
+
+        const viewName = `Smoke view ${unique}`;
+        await page.getByRole('button', { name: 'Saved views' }).click();
+        await page.getByRole('textbox', { name: 'View name' }).fill(viewName);
+        await page.getByRole('button', { name: 'Save current view' }).click();
+        await expectNoA11yViolations(page, '.sk-dt-colmenu');
+        await page.keyboard.press('Escape');
+
+        await searchBox.fill('');
+        await page.getByRole('button', { name: 'Saved views' }).click();
+        await page.getByRole('button', { name: viewName, exact: true }).click();
+
+        await expect(searchBox).toHaveValue(newUserEmail);
+        await expect(page.getByRole('row', { name: new RegExp(newUserEmail) })).toBeVisible();
+    });
+
     await test.step('change one harmless reversible settings field and confirm the success flash', async () => {
         await page.goto('/settings');
 
@@ -116,6 +140,8 @@ test('login, create user, assign role, update settings, logout', async ({ page }
         if (await generalTab.isVisible().catch(() => false)) {
             await generalTab.click();
         }
+
+        await expectNoA11yViolations(page);
 
         const taglineValue = `E2E smoke run ${unique}`;
         await page.getByLabel('Tagline / Description').fill(taglineValue);

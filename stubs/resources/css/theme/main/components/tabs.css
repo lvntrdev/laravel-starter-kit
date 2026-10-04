@@ -81,14 +81,14 @@
 
 /* Aktif sekmenin etiketi ve açıklaması accent renge döner. */
 .sk-vtab--active .sk-vtab__label {
-    color: var(--p-primary-600);
+    color: var(--p-primary-800);
 }
 :root.dark .sk-vtab--active .sk-vtab__label {
     color: var(--p-primary-300);
 }
 
 .sk-vtab--active .sk-vtab__description {
-    color: color-mix(in srgb, var(--p-primary-500) 60%, var(--p-surface-500));
+    color: color-mix(in srgb, var(--p-primary-700) 60%, var(--p-surface-600));
 }
 :root.dark .sk-vtab--active .sk-vtab__description {
     color: color-mix(in srgb, var(--p-primary-300) 60%, var(--p-surface-400));

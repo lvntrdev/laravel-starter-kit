@@ -38,12 +38,12 @@
         align-items: center;
         gap: 0.3rem;
         font-weight: 600;
-        color: var(--p-primary-600);
+        color: var(--p-primary-700);
         text-decoration: none;
         transition: color 150ms ease;
     }
     .admin-footer-link:hover {
-        color: var(--p-primary-500);
+        color: var(--p-primary-800);
     }
     :global(.dark) .admin-footer-link {
         color: var(--p-primary-300);

@@ -204,7 +204,7 @@
 .sk-toast-summary {
     font-size: 14px;
     font-weight: 600;
-    color: color-mix(in srgb, var(--toast-c), black 18%);
+    color: color-mix(in srgb, var(--toast-c), black 35%);
     letter-spacing: -0.01em;
     line-height: 1.35;
 }

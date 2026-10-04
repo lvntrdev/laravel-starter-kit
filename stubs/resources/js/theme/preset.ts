@@ -92,8 +92,20 @@ const AppPreset = definePreset(Material, {
         // bir adım koyu. CSS değil token üzerinden (focus/invalid cascade bozulmasın).
         // Light: idle slate.300, hover slate.400. Dark: idle slate.600, hover slate.400.
         // NOT: Preset renkleri app init'te uygulanır — değişiklik için TAM SAYFA YENİLE.
+        //
+        // Light primary sits on 700, not Material's 500: blue.500 (#2196f3) against white
+        // is 3.12:1, under WCAG AA's 4.5:1 for button labels and links; blue.700 is 4.6:1.
+        // Hover/active go darker rather than Material's lighter steps for the same reason.
+        // Light primary 500 yerine 700'de: blue.500 beyaz üstünde 3.12:1 (AA 4.5:1 ister),
+        // blue.700 4.6:1. Hover/active aynı sebeple açılmak yerine koyulaşır.
         colorScheme: {
             light: {
+                primary: {
+                    color: '{primary.700}',
+                    contrastColor: '#ffffff',
+                    hoverColor: '{primary.800}',
+                    activeColor: '{primary.900}',
+                },
                 formField: {
                     borderColor: '{surface.300}',
                     hoverBorderColor: '{surface.400}',
@@ -120,6 +132,51 @@ const AppPreset = definePreset(Material, {
         button: {
             paddingX: '1rem',
             borderRadius: '5px',
+            // Material's solid severities put white on the 500 step, which fails WCAG AA
+            // (orange 2.15:1, red 3.68:1, green 2.78:1). Red/green/sky move to the first
+            // step that clears 4.5:1; no orange step does, so warn keeps its fill and
+            // takes dark text instead. Hover/active go darker, not lighter.
+            // Material'in solid severity'leri 500 üstüne beyaz yazı koyar, AA'yı geçmez.
+            // Kırmızı/yeşil/sky 4.5:1'i geçen ilk tona iner; turuncuda böyle ton yok,
+            // warn dolgusunu korur ve koyu yazı alır.
+            colorScheme: {
+                light: {
+                    root: {
+                        warn: {
+                            color: '{surface.950}',
+                            hoverColor: '{surface.950}',
+                            activeColor: '{surface.950}',
+                        },
+                        danger: {
+                            background: '{red.700}',
+                            hoverBackground: '{red.800}',
+                            activeBackground: '{red.900}',
+                            borderColor: '{red.700}',
+                            hoverBorderColor: '{red.800}',
+                            activeBorderColor: '{red.900}',
+                            focusRing: { color: '{red.700}' },
+                        },
+                        success: {
+                            background: '{green.800}',
+                            hoverBackground: '{green.900}',
+                            activeBackground: '{green.950}',
+                            borderColor: '{green.800}',
+                            hoverBorderColor: '{green.900}',
+                            activeBorderColor: '{green.950}',
+                            focusRing: { color: '{green.800}' },
+                        },
+                        info: {
+                            background: '{sky.800}',
+                            hoverBackground: '{sky.900}',
+                            activeBackground: '{sky.950}',
+                            borderColor: '{sky.800}',
+                            hoverBorderColor: '{sky.900}',
+                            activeBorderColor: '{sky.950}',
+                            focusRing: { color: '{sky.800}' },
+                        },
+                    },
+                },
+            },
         },
 
         // ── Tag / Etiket (kit override) ──
