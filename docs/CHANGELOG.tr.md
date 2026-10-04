@@ -14,6 +14,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 - **Ekran okuyucular daha fazla form alanında hatayı ve zorunluluğu okuyor.** Admin formlarındaki sayı, kod (OTP), tarih, açılır liste, çoklu seçim, onay kutusu ve anahtar alanları odaklanınca doğrulama hatasını ve "zorunlu" bilgisini okutuyor.
 - **Admin paneli ekran okuyucularla daha iyi çalışıyor.** Giriş ekranındaki karanlık mod butonu, tablolardaki satır seçim kutuları ve ID butonları ile zengin metin editörü artık ne olduklarını okuyor; tablo filtre butonu da "Filtreleri Temizle" yerine "Filtrele" olarak okunuyor.
 - **"Diğer tarayıcı oturumlarını kapat" artık diğer cihazları gerçekten kapatıyor.** Bazı oturum ayarlarında diğer tarayıcılar açık kalıyordu ve başka bir cihazdaki "beni hatırla" çerezi hesabı yeniden açabiliyordu. İkisi de düzeltildi.
+- **Tablolar artık sayfayı birkaç piksel kaydırmıyor.** Satırlarla dolu bir tabloda yönetim sayfası dizüstü ekranda çok az kayabiliyordu; "sayfa başına" kutusu yanındaki sayfa butonlarından uzundu. Artık aynı yükseklikte ve sayfalama çubuğu daha ince. Güncel temayı almak için `php artisan sk:update` çalıştırın; kendi düzenlediğiniz dosyalara dokunulmaz.
 
 ### Eklendi
 

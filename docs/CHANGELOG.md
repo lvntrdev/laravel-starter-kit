@@ -14,6 +14,7 @@ Newly added features and improvements to the starter kit are listed here.
 - **Screen readers announce errors and required state on more form fields.** Number, code (OTP), date, dropdown, multi-select, checkbox and switch fields in admin forms now read out their validation error and "required" when focused.
 - **More of the admin works with screen readers.** The dark-mode button on the sign-in screen, the row selection checkboxes and ID buttons in tables, and the rich-text editor now announce what they are, and the table filter button is announced as "Filter" instead of "Clear Filters".
 - **"Log out other browser sessions" now really logs the other devices out.** On some session setups the other browsers stayed signed in, and a "remember me" cookie on another device could sign the account back in. Both are fixed.
+- **Tables no longer make the page scroll by a few pixels.** With a full page of rows, an admin page could scroll a tiny bit on a laptop screen because the "rows per page" box was taller than the page buttons next to it. It is now the same height and the pagination bar is slimmer. Run `php artisan sk:update` to get the updated theme; files you have edited are left alone.
 
 ### Added
 

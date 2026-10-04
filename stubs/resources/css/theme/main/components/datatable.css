@@ -818,11 +818,23 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .sk-dt-pagination {
-    @apply flex flex-col items-center justify-between gap-3 px-4 py-3 sm:flex-row border-t border-slate-200 dark:border-slate-700 bg-transparent;
+    @apply flex flex-col items-center justify-between gap-3 px-4 py-2.5 sm:flex-row border-t border-slate-200 dark:border-slate-700 bg-transparent;
 }
 
 .sk-dt-pagination__info {
     @apply flex flex-wrap items-center gap-3 text-[12.75px] text-slate-500 dark:text-slate-400;
+}
+
+/* Per-page select — sized to the small page buttons in the same row, the way the
+   toolbar sizes its controls. Left on the global form-field padding it rendered at
+   the roomy form height (~44px), set the row's height, and a full 10-row table
+   overflowed a laptop-height panel by a few pixels. */
+.sk-dt-pagination__info .p-select {
+    @apply h-[34px] items-center;
+}
+
+.sk-dt-pagination__info .p-select-label {
+    @apply py-0;
 }
 
 .sk-dt-pagination__per-page-label {
