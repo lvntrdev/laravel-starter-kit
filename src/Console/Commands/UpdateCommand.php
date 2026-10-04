@@ -30,7 +30,8 @@ class UpdateCommand extends Command
     protected $signature = 'sk:update
         {--force : Overwrite all files including user-modified ones}
         {--dry-run : Show what would be updated without making changes}
-        {--without-ai-skill : Skip regenerating the .codex/skills AI-skill mirror}';
+        {--without-ai-skill : Skip regenerating the .codex/skills AI-skill mirror}
+        {--report= : Also write the run summary as JSON to this path (pairs with --dry-run)}';
 
     protected $description = 'Update Starter Kit files while preserving user modifications';
 
@@ -709,6 +710,10 @@ class UpdateCommand extends Command
         // dependency is true regardless of whether this run touched any file,
         // and printSummary() returns early on "Everything is up to date!".
         $this->reportMissingDependencies($dryRun);
+
+        if (is_string($reportPath = $this->option('report')) && $reportPath !== '') {
+            $this->writeJsonReport($reportPath, $dryRun, $failedSteps);
+        }
 
         // A failed database step does not roll back the file work above, and the
         // hash registry deliberately still records it: the stub copies really are
@@ -2235,6 +2240,57 @@ PHP;
                 $this->line('  <fg=cyan>rm -rf node_modules package-lock.json && npm install && npm run build</>');
             }
         }
+    }
+
+    /**
+     * Write the run summary as JSON for CI or for working through a preserved
+     * file later. Every file the run did NOT overwrite carries the path of the
+     * stub it diverged from, so `diff -u <path> <stub>` shows what it is missing.
+     *
+     * The diff itself is left out on purpose: the registry keeps only the hash
+     * of the stub a file was installed from, not its contents, so a stub-vs-file
+     * diff mixes the consumer's own edits with the release's changes.
+     *
+     * @param  list<string>  $failedSteps
+     */
+    private function writeJsonReport(string $path, bool $dryRun, array $failedSteps): void
+    {
+        $withStub = fn (array $paths): array => array_map(fn (string $p): array => [
+            'path' => $p,
+            'stub' => $this->relativeToApp(StarterKitServiceProvider::stubsPath($p)),
+        ], $paths);
+
+        $report = [
+            'kit_version' => KitVersion::tag(),
+            'dry_run' => $dryRun,
+            'failed_steps' => $failedSteps,
+            'updated' => $this->updated,
+            'added' => $this->added,
+            'removed' => $this->removed,
+            'skipped' => $withStub($this->skipped),
+            'safe_path_conflicts' => $withStub($this->safePathConflicts),
+            'untracked' => $withStub($dryRun ? $this->untracked : []),
+            'preserved_deprecated' => $this->preservedDeprecated,
+        ];
+
+        // Absolute (`/…`, `\…`, `C:\…`) as given; anything else is relative to the app root.
+        $target = preg_match('#^([a-zA-Z]:)?[\\\\/]#', $path) === 1 ? $path : base_path($path);
+
+        try {
+            $this->ensureDirectoryExists(dirname($target));
+            $this->atomicPut($target, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
+            $this->line("  <fg=gray>Report written to {$this->relativeToApp($target)}</>");
+        } catch (\Throwable $e) {
+            // The update itself already ran; a report that cannot be written is advisory.
+            $this->components->warn('Update report could not be written: '.$e->getMessage());
+        }
+    }
+
+    private function relativeToApp(string $path): string
+    {
+        $base = rtrim(base_path(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+
+        return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
     }
 
     /**

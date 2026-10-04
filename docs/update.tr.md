@@ -41,6 +41,15 @@ php artisan sk:update --dry-run
 
 Projede özelleştirilmiş controller, route, sayfa veya config kararları varsa gerçek güncellemeden önce `--dry-run` kullanın.
 
+Özeti JSON olarak da almak için `--report=<path>` ekleyin (`--dry-run` ile ya da onsuz): `updated`, `added`, `removed`, `skipped`, `safe_path_conflicts`, `untracked` (yalnızca dry run), `preserved_deprecated` ve `failed_steps`. Değiştirdiğiniz için güncellemenin dokunmadığı her dosya, geldiği stub'la birlikte listelenir; yeni sürümün o dosyada neyi değiştirdiğini görebilirsiniz:
+
+```bash
+php artisan sk:update --dry-run --report=storage/sk-update.json
+diff -u app/Models/User.php vendor/lvntr/laravel-starter-kit/stubs/app/Models/User.php
+```
+
+Bu diff sizin değişikliklerinizi ve sürümün değişikliklerini birlikte gösterir; kit eski stub'ı saklamadığı için ikisini ayıramaz.
+
 ## 3. Güncellemeyi Uygulayın
 
 ```bash

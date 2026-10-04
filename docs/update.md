@@ -41,6 +41,15 @@ php artisan sk:update --dry-run
 
 Use `--dry-run` before real updates when the project has custom controllers, routes, pages, or config decisions.
 
+Add `--report=<path>` (with or without `--dry-run`) to also write the summary as JSON — `updated`, `added`, `removed`, `skipped`, `safe_path_conflicts`, `untracked` (dry run only), `preserved_deprecated` and `failed_steps`. Every file the update left alone because you changed it is listed with the stub it came from, so you can see what the new release changed in it:
+
+```bash
+php artisan sk:update --dry-run --report=storage/sk-update.json
+diff -u app/Models/User.php vendor/lvntr/laravel-starter-kit/stubs/app/Models/User.php
+```
+
+That diff shows your edits and the release's changes together — the kit does not keep the old stub to separate them.
+
 ## 3. Apply The Update
 
 ```bash
