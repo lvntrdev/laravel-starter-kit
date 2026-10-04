@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Gate;
@@ -886,7 +887,10 @@ class StarterKitServiceProvider extends ServiceProvider
         $router->aliasMiddleware('check.permission', CheckResourcePermission::class);
         $router->aliasMiddleware('check.resource.permission', CheckResourcePermission::class);
         $router->aliasMiddleware('sk.active', EnsureUserIsActive::class);
-        $this->app->booted(fn () => $this->attachActiveUserMiddleware($router));
+        $this->app->booted(function () use ($router): void {
+            $this->attachActiveUserMiddleware($router);
+            $this->attachSessionAuthenticationMiddleware($router);
+        });
 
         $this->registerRoutes();
         $this->shareInertiaData();
@@ -939,6 +943,53 @@ class StarterKitServiceProvider extends ServiceProvider
 
             $router->pushMiddlewareToGroup($group, EnsureUserIsActive::class);
         }
+    }
+
+    /**
+     * Append Laravel's AuthenticateSession to the `web` middleware group.
+     *
+     * WHY — a session is only as dead as its store says it is. The `database`
+     * driver can delete rows by user, but file/redis/memcached/cookie stores
+     * have no index from user to session, so "log out other devices" and a
+     * password change used to leave those sessions working until they expired.
+     * AuthenticateSession stamps every authenticated session with an HMAC of
+     * the password hash and logs the session out the moment the two disagree,
+     * so a purge (which rehashes the password) or ANY password change ends
+     * every other session on every driver on its next request. Remember-me
+     * cookies carry the same hash, so they die with it.
+     *
+     * WHY `web` ONLY — token guards (Passport, the `api` group) have no
+     * session to stamp; their credentials are revoked elsewhere.
+     *
+     * UPGRADE SAFETY — a session that has no stored hash yet (every session
+     * opened before this release) is STAMPED on its first request, not logged
+     * out, so `composer update` signs nobody out.
+     *
+     * REDIRECT — a mismatch throws AuthenticationException with the target
+     * from AuthenticateSession::redirectUsing(), which Bootstrap::middleware()'s
+     * `redirectTo(guests: '/login')` already registers.
+     *
+     * Same timing and the same two defensive rules as
+     * attachActiveUserMiddleware(): deferred to `booted()`; a missing `web`
+     * group is SKIPPED, never created; a group that already lists the class
+     * or the `auth.session` alias is left alone.
+     */
+    private function attachSessionAuthenticationMiddleware(Router $router): void
+    {
+        $groups = $router->getMiddlewareGroups();
+
+        if (! array_key_exists('web', $groups)) {
+            return;
+        }
+
+        $existing = (array) $groups['web'];
+
+        if (in_array(AuthenticateSession::class, $existing, true)
+            || in_array('auth.session', $existing, true)) {
+            return;
+        }
+
+        $router->pushMiddlewareToGroup('web', AuthenticateSession::class);
     }
 
     /**

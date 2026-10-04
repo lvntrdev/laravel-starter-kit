@@ -69,6 +69,15 @@ class UpdateUserAction extends BaseAction
             return [$user, $changedFields];
         });
 
+        // AuthenticateSession restamps the session from the guard's OWN user
+        // instance after the response. A user saving their own row here (the
+        // route-bound `User $user` is a separate copy) would leave the guard on
+        // the old hash, and the next request would log them out. Hand the guard
+        // the fresh copy; their other sessions still end on the new hash.
+        if (in_array('password', $changedFields, true) && $user->is(Auth::user())) {
+            Auth::setUser($user);
+        }
+
         // Deactivation must take the account's OTHER credentials with it — an
         // OAuth token or a database session outlives the cookie the middleware
         // can cut. Scheduled on the commit, so a rollback (this action inside an

@@ -452,8 +452,10 @@ class RevokeUserAccessAction extends BaseAction
      *
      * ONLY the `database` driver is touched. A file/redis/cookie session store
      * has no index from user to session, so there is nothing to delete without
-     * scanning the whole store — those drivers are covered by EnsureUserIsActive
-     * on the next request instead.
+     * scanning the whole store — on the status door those drivers are covered
+     * by EnsureUserIsActive on the next request instead; on the password-reset
+     * door they are ended by AuthenticateSession, because the reset changed the
+     * password hash those sessions were stamped with.
      *
      * Every session of the account goes, including the one belonging to the
      * admin performing the change when an admin disables their own account.

@@ -14,6 +14,15 @@ This file is the cross-major-version migration guide. Every release gets its own
 - Links created before the upgrade are not listed in the new "Active Share Links" drawer, because their signatures were never stored. They still expire on schedule, 30 days later at most.
 - If you copied `resources/js/composables/useFileShare.ts` or the Files page into your app, you keep the old UI until you re-sync those files (`php artisan sk:update --dry-run` shows the diff).
 
+### `AuthenticateSession` is now in every `web` group — a password change ends other sessions
+
+**Affects:** every app. Nobody is signed out by the upgrade itself.
+
+- The package appends Laravel's `AuthenticateSession` to the `web` middleware group. Sessions that were already open are stamped on their next request; from then on a password change or reset signs the user out of their other sessions on their next request. This is what makes "Log out other browser sessions" work on the `file`, `redis`, `memcached` and `cookie` drivers. Do not remove the middleware from `web`: on a non-`database` driver the purge would report success without ending anything.
+- The purge re-hashes the password without moving `password_changed_at`, and it cycles the remember token, so other devices' remember-me cookies stop working.
+- If you ran `sk:eject Session`, you own `app/Domain/Session/Actions/PurgeOtherSessionsAction.php` and `sk:update` will not touch it. Port the new `execute()` body by hand: inside `Model::withoutEvents()`, set a new remember token on the guard's user and re-hash the password through the session guard's `logoutOtherDevices()`; then delete the other session rows on the `database` driver.
+- If you ran `sk:eject User`, you own `app/Domain/User/Actions/UpdateUserAction.php`. Copy the `Auth::setUser($user)` block that follows the transaction in the package's `UpdateUserAction::execute()`. Without it, users who change their own password on the Users screen are signed out on their next request. Diff against the package copy in `vendor/lvntr/laravel-starter-kit/src/Domain/Session/Actions/PurgeOtherSessionsAction.php`.
+
 ---
 
 ## v13.7.3 → v13.7.4

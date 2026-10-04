@@ -14,6 +14,15 @@ Bu dosya büyük sürümler arası geçiş rehberidir. Her sürüm kendi bölüm
 - Yükseltmeden önce oluşturulan linkler yeni "Aktif Paylaşım Linkleri" çekmecesinde listelenmez, çünkü imzaları hiç saklanmamıştı. Yine de zamanında sona erer, en geç 30 gün sonra.
 - `resources/js/composables/useFileShare.ts` ya da Files sayfasını uygulamanıza kopyaladıysanız, bu dosyaları yeniden senkronlayana kadar eski arayüzü kullanmaya devam edersiniz (`php artisan sk:update --dry-run` farkı gösterir).
 
+### `AuthenticateSession` artık her `web` grubunda — şifre değişikliği diğer oturumları kapatır
+
+**Etkilenen:** tüm uygulamalar. Yükseltmenin kendisi kimseyi oturumdan çıkarmaz.
+
+- Paket, Laravel'in `AuthenticateSession` middleware'ini `web` grubuna ekler. Zaten açık olan oturumlar bir sonraki istekte damgalanır; bundan sonra şifre değişikliği veya sıfırlama, kullanıcının diğer oturumlarını bir sonraki isteklerinde kapatır. "Diğer tarayıcı oturumlarını kapat" özelliğinin `file`, `redis`, `memcached` ve `cookie` sürücülerinde çalışmasını bu sağlar. Middleware'i `web` grubundan çıkarmayın: `database` dışındaki sürücüde işlem hiçbir şey sonlandırmadan başarılı görünür.
+- Oturum kapatma şifreyi `password_changed_at` değerine dokunmadan yeniden hash'ler ve remember token'ı yeniler; böylece diğer cihazlardaki "beni hatırla" çerezleri çalışmaz.
+- `sk:eject Session` çalıştırdıysanız `app/Domain/Session/Actions/PurgeOtherSessionsAction.php` sizindir ve `sk:update` ona dokunmaz. Yeni `execute()` gövdesini elle taşıyın: `Model::withoutEvents()` içinde guard'ın kullanıcısına yeni bir remember token atayın ve şifreyi session guard'ın `logoutOtherDevices()` metoduyla yeniden hash'leyin; ardından `database` sürücüsünde diğer session satırlarını silin.
+- `sk:eject User` çalıştırdıysanız `app/Domain/User/Actions/UpdateUserAction.php` sizindir. Paketteki `UpdateUserAction::execute()` içinde transaction'dan sonra gelen `Auth::setUser($user)` bloğunu kendi dosyanıza kopyalayın. Bu blok olmadan Kullanıcılar ekranında kendi şifresini değiştiren kullanıcı bir sonraki istekte oturumdan çıkarılır. Karşılaştırma için `vendor/lvntr/laravel-starter-kit/src/Domain/Session/Actions/PurgeOtherSessionsAction.php` dosyasına bakın.
+
 ---
 
 ## v13.7.3 → v13.7.4

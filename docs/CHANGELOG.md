@@ -12,6 +12,7 @@ Newly added features and improvements to the starter kit are listed here.
 - **Password fields work properly with screen readers and password managers.** On the sign-in, registration, password reset and password-change screens, clicking a password label now focuses the field, screen readers read the field's name and its error, and password managers get the right "current password" / "new password" hint. FormBuilder password fields with the strength meter link their error text the same way. Run `php artisan sk:update` to get the updated pages; pages you have edited are left alone.
 - **Screen readers announce errors and required state on more form fields.** Number, code (OTP), date, dropdown, multi-select, checkbox and switch fields in admin forms now read out their validation error and "required" when focused.
 - **More of the admin works with screen readers.** The dark-mode button on the sign-in screen, the row selection checkboxes and ID buttons in tables, and the rich-text editor now announce what they are, and the table filter button is announced as "Filter" instead of "Clear Filters".
+- **"Log out other browser sessions" now really logs the other devices out.** On some session setups the other browsers stayed signed in, and a "remember me" cookie on another device could sign the account back in. Both are fixed.
 
 ### Added
 
@@ -27,6 +28,7 @@ Newly added features and improvements to the starter kit are listed here.
 ### Changed
 
 - **Better text contrast in the default theme.** Buttons, links and muted text in light mode are darker so they meet WCAG AA contrast: the default blue is now `#1976d2`, red, green and blue buttons use deeper shades, and orange (warning) buttons use dark text. An accent color picked in Settings is applied one shade darker too. Run `php artisan sk:update` to get the updated theme; files you have edited are left alone.
+- **Changing or resetting your password signs you out everywhere else.** Other browsers and devices are signed out the next time they load a page; the device you used stays signed in. When an admin sets a new password for a user on the Users screen, that user is signed out everywhere. Upgrading does not sign anyone out.
 
 ## 2026-10-03 — v13.8.3
 
