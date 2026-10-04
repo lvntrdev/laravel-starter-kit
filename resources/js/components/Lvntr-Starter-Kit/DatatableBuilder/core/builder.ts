@@ -411,6 +411,12 @@ export class TableBuilder<T = unknown> {
         return this;
     }
 
+    /** Let users save the current search/sort/filters/columns as named views (per browser). Default: off. */
+    savedViews(enabled = true): this {
+        this.config.savedViews = enabled;
+        return this;
+    }
+
     perPage(count: number): this {
         this.config.perPage = count;
         return this;

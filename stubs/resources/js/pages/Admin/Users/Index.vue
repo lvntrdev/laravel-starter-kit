@@ -112,6 +112,7 @@
         .route(users.dtApi.url())
         // .searchable(true)
         .sortable(true)
+        .savedViews()
         // .isCard(false)
         // .pagination(true)
         .addColumns(

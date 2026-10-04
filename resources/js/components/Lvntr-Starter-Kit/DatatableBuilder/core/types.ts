@@ -180,6 +180,8 @@ export interface DataTableConfig<T = unknown> {
     message?: MessageConfig;
     /** Show the column visibility/order menu button. Default: true. */
     columnToggle: boolean;
+    /** Show the saved-views menu (named search/sort/filter/column snapshots, kept in localStorage). Default: false. */
+    savedViews?: boolean;
     perPage: number;
     idColumn: IdColumnConfig;
     columns: ColumnConfig[];

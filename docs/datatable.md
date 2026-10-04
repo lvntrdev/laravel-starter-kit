@@ -76,6 +76,7 @@ Main capabilities:
 - `subtitle(subtitle)` — sub-heading shown under the toolbar title
 - `message(text | config, severity?)` — notice strip between the toolbar and the table head
 - `columnToggle(enabled)` — show/hide the column visibility & order menu button (default: `true`)
+- `savedViews(enabled = true)` — show the saved-views menu (default: off) — see [Saved Views](#saved-views)
 - `perPage(count)`
 - `idColumn(config | false)`
 - `addColumns(...columns)`
@@ -387,7 +388,17 @@ The toolbar shows a column menu button with a live `visible/total` counter. From
 - reorder columns by dragging the grip handle — the built-in ID and selection checkbox columns are fixed and never move
 - restore everything with "Show all"
 
-Column state (order + hidden set) persists in `sessionStorage` together with the rest of the table state. Disable the whole feature with `columnToggle(false)`.
+Column state (order + hidden set) persists in `localStorage` per table route, so it survives navigation; search, sort, page and filters live in `sessionStorage`. Disable the whole feature with `columnToggle(false)`.
+
+## Saved Views
+
+`savedViews()` adds a bookmark button to the toolbar. The user names the current search, sort, page size, filters and column order/visibility ("Active customers", "Added this month") and re-applies it later with one click; a saved name can be overwritten or deleted.
+
+```ts
+DB.table<User>().route(users.dtApi.url()).savedViews()
+```
+
+Views are stored in `localStorage` under `dt:views:<route>` — per browser, not per account, so they do not follow the user to another device. Applying a view resets the page to 1 and clears the row selection. A filter or column the table no longer declares is ignored, and a sort on a column that is no longer sortable falls back to the default.
 
 On every fetch, `SkDatatable` sends the visible column keys as a `columns=key1,key2` query param. Backends that don't opt in simply ignore it; backends that declare `DatatableQueryBuilder::columns()` shape their payload to the selection (see below).
 

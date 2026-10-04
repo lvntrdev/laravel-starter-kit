@@ -15,6 +15,7 @@
     } from './core';
     import { escapeHtml } from './core/escapeHtml';
     import type { UseDatatableSelectionReturn } from './selection';
+    import { loadViews, storeViews, upsertView, type SavedView } from './savedViews';
     import { getActiveLanguage, trans } from 'laravel-vue-i18n';
     import type { MenuItem } from 'primevue/menuitem';
     import Ripple from 'primevue/ripple';
@@ -414,6 +415,35 @@
         return allColumns.value.some((c) => c.key === key && c.sortable !== false);
     }
 
+    const daterangeFilterKeys = new Set(
+        props.config.filters.filter((f) => f.type === 'daterange').map((f) => f.key),
+    );
+
+    /** Active filters with daterange dates as ISO strings — the stored (session blob / saved view) shape. */
+    function serializeFilters(): Record<string, unknown> {
+        const out: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(activeFilters.value)) {
+            out[key] =
+                daterangeFilterKeys.has(key) && Array.isArray(value)
+                    ? (value as (Date | null)[]).map((d) => (d instanceof Date ? d.toISOString() : null))
+                    : value;
+        }
+
+        return out;
+    }
+
+    /** Inverse of serializeFilters(); keys this table no longer declares are ignored. */
+    function applyStoredFilters(stored: Record<string, unknown> | undefined): void {
+        if (!stored) return;
+        for (const [key, val] of Object.entries(stored)) {
+            if (!(key in activeFilters.value)) continue;
+            activeFilters.value[key] =
+                daterangeFilterKeys.has(key) && Array.isArray(val)
+                    ? val.map((d: unknown) => (typeof d === 'string' ? new Date(d) : null))
+                    : (val as FilterValue);
+        }
+    }
+
     /**
      * Restore DataTable state.
      * Priority: URL query params (shareable links) → sessionStorage (survives reload & navigation).
@@ -445,23 +475,7 @@
                 sortOrder.value = (saved.sortOrder as 'asc' | 'desc') ?? 'asc';
                 currentPage.value = (saved.page as number) ?? 1;
                 meta.value.per_page = (saved.perPage as number) ?? props.config.perPage;
-                const daterangeKeys = new Set(
-                    props.config.filters.filter((f) => f.type === 'daterange').map((f) => f.key),
-                );
-                const savedFilters = saved.filters as Record<string, unknown> | undefined;
-                if (savedFilters) {
-                    for (const [key, val] of Object.entries(savedFilters)) {
-                        if (key in activeFilters.value) {
-                            if (daterangeKeys.has(key) && Array.isArray(val)) {
-                                activeFilters.value[key] = val.map((d: unknown) =>
-                                    typeof d === 'string' ? new Date(d) : null,
-                                );
-                            } else {
-                                activeFilters.value[key] = val as FilterValue;
-                            }
-                        }
-                    }
-                }
+                applyStoredFilters(saved.filters as Record<string, unknown> | undefined);
                 // Column order/visibility are NOT read here anymore — they live in
                 // their own localStorage bucket (see restoreColumnState) so they
                 // survive Inertia navigation independently of this session blob.
@@ -626,17 +640,7 @@
         const qs = params.toString();
         const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 
-        // Serialize dates as ISO strings for sessionStorage
-        const serializableFilters: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(activeFilters.value)) {
-            if (daterangeKeys.has(key) && Array.isArray(value)) {
-                serializableFilters[key] = (value as (Date | null)[]).map((d) =>
-                    d instanceof Date ? d.toISOString() : null,
-                );
-            } else {
-                serializableFilters[key] = value;
-            }
-        }
+        const serializableFilters = serializeFilters();
 
         try {
             sessionStorage.setItem(
@@ -658,6 +662,77 @@
         saveColumnState();
 
         window.history.replaceState(window.history.state, '', url);
+    }
+
+    // ── Saved views (opt-in: DB.savedViews()) ────────────────────────────────────
+
+    const showSavedViews = computed(() => props.config.savedViews === true);
+    const savedViews = ref<SavedView[]>([]);
+    const viewsPopoverRef = ref();
+    const viewsPopoverOpen = ref(false);
+    const newViewName = ref('');
+
+    function saveCurrentView(): void {
+        const name = newViewName.value.trim();
+        if (!name) return;
+
+        savedViews.value = upsertView(savedViews.value, {
+            name,
+            search: search.value,
+            sortKey: sortKey.value,
+            sortOrder: sortOrder.value,
+            perPage: meta.value.per_page,
+            filters: serializeFilters(),
+            order: [...columnOrder.value],
+            hidden: [...hiddenColumns.value],
+        });
+        storeViews(props.config.route, savedViews.value);
+        newViewName.value = '';
+    }
+
+    function applyView(view: SavedView): void {
+        // Same guard as the initial restore: the search/filter watchers would each
+        // refetch (and reset the page); the single fetchData() below covers them.
+        initializing = true;
+        props.selection?.clearSelection();
+
+        search.value = view.search;
+        sortKey.value = isOwnSortKey(view.sortKey) ? view.sortKey : '';
+        sortOrder.value = view.sortOrder;
+        meta.value.per_page = view.perPage;
+        currentPage.value = 1;
+        for (const key of Object.keys(activeFilters.value)) {
+            activeFilters.value[key] = null;
+        }
+        applyStoredFilters(view.filters);
+
+        columnOrder.value = [...view.order];
+        hiddenColumns.value = new Set(view.hidden);
+        for (const key of view.order) {
+            defaultAppliedKeys.add(key);
+            userTouchedKeys.add(key);
+        }
+        reconcileColumns();
+
+        viewsPopoverRef.value?.hide();
+        fetchData();
+
+        // The guard also swallows real input made inside the window; if search or
+        // filters moved since the view was applied, fetch once for them.
+        const applied = JSON.stringify([search.value, activeFilters.value]);
+        setTimeout(() => {
+            initializing = false;
+            if (JSON.stringify([search.value, activeFilters.value]) !== applied) {
+                props.selection?.clearSelection();
+                currentPage.value = 1;
+                fetchData();
+            }
+        }, 500);
+    }
+
+    function deleteView(name: string): void {
+        savedViews.value = savedViews.value.filter((v) => v.name !== name);
+        storeViews(props.config.route, savedViews.value);
     }
 
     // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -777,6 +852,9 @@
         // state that restoreState() handles (and its URL-param early return).
         restoreColumnState();
         restoreState();
+        if (showSavedViews.value) {
+            savedViews.value = loadViews(props.config.route);
+        }
         fetchData();
 
         // Disable init guard after debounce period (350ms) + safety buffer.
@@ -1264,6 +1342,7 @@
                     config.createButton ||
                     hasToolbarHead ||
                     showColumnToggle ||
+                    showSavedViews ||
                     $slots.toolbar ||
                     $slots['toolbar-start'] ||
                     $slots['toolbar-end']
@@ -1504,7 +1583,8 @@
                             'sk-dt-filterbtn--active': panelFilterBadge,
                             'sk-dt-filterbtn--open': filterPopoverOpen,
                         }"
-                        :aria-label="$t('sk-datatable.clear_filters')"
+                        :aria-label="$t('sk-button.filter')"
+                        :aria-expanded="filterPopoverOpen"
                         @click="(e: Event) => filterPopoverRef?.toggle(e)"
                     >
                         <i class="pi pi-filter" />
@@ -1522,6 +1602,18 @@
                     >
                         <i class="pi pi-table" />
                         <span class="sk-dt-colbtn__count">{{ visibleColumnCount }}/{{ allColumns.length }}</span>
+                    </button>
+
+                    <!-- Saved views menu (opt-in) -->
+                    <button
+                        v-if="showSavedViews"
+                        type="button"
+                        class="sk-dt-colbtn"
+                        :class="{ 'sk-dt-colbtn--open': viewsPopoverOpen }"
+                        :aria-label="$t('sk-datatable.views')"
+                        @click="(e: Event) => viewsPopoverRef?.toggle(e)"
+                    >
+                        <i class="pi pi-bookmark" />
                     </button>
 
                     <!-- Custom slot — right-hand side, after the filter/columns buttons -->
@@ -1699,6 +1791,50 @@
                 </div>
             </Popover>
 
+            <!-- Saved views — apply / delete a named snapshot, or save the current state -->
+            <Popover
+                v-if="showSavedViews"
+                ref="viewsPopoverRef"
+                class="sk-dt-colmenu"
+                @show="viewsPopoverOpen = true"
+                @hide="viewsPopoverOpen = false"
+            >
+                <div class="sk-dt-colmenu__head">
+                    <span class="sk-dt-colmenu__title">{{ $t('sk-datatable.views') }}</span>
+                </div>
+                <p v-if="!savedViews.length" class="sk-dt-views__empty">{{ $t('sk-datatable.no_views') }}</p>
+                <div v-for="view in savedViews" :key="view.name" class="sk-dt-colmenu__item sk-dt-views__item">
+                    <button type="button" class="sk-dt-views__apply" @click="applyView(view)">
+                        <i class="pi pi-bookmark" aria-hidden="true" />
+                        <span class="sk-dt-colmenu__label">{{ view.name }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="sk-dt-views__delete"
+                        :aria-label="$t('sk-datatable.delete_view', { name: view.name })"
+                        @click="deleteView(view.name)"
+                    >
+                        <i class="pi pi-trash" />
+                    </button>
+                </div>
+                <form class="sk-dt-views__save" @submit.prevent="saveCurrentView">
+                    <InputText
+                        v-model="newViewName"
+                        size="small"
+                        maxlength="60"
+                        :placeholder="$t('sk-datatable.view_name')"
+                        :aria-label="$t('sk-datatable.view_name')"
+                    />
+                    <Button
+                        type="submit"
+                        size="small"
+                        icon="pi pi-plus"
+                        :aria-label="$t('sk-datatable.save_view')"
+                        :disabled="!newViewName.trim()"
+                    />
+                </form>
+            </Popover>
+
             <!-- Search Popover (mobile only) -->
             <Popover v-if="config.searchable" ref="searchPopoverRef" class="sk-dt-search-popover">
                 <div class="sk-dt-search-popover__content">
@@ -1766,6 +1902,7 @@
                                         :model-value="selection!.isPageFullySelected(data)"
                                         :indeterminate="selection!.isPagePartiallySelected(data)"
                                         binary
+                                        :aria-label="$t('sk-datatable.select_page')"
                                         @update:model-value="(val) => selection!.togglePageSelection(data, val)"
                                     />
                                 </th>
@@ -1842,6 +1979,7 @@
                                         <Checkbox
                                             :model-value="selection!.isRowSelected(row)"
                                             binary
+                                            :aria-label="$t('sk-datatable.select_row')"
                                             @update:model-value="() => selection!.toggleRow(row)"
                                         />
                                     </td>
@@ -1849,7 +1987,9 @@
                                     <!-- Built-in ID cell -->
                                     <td v-if="showIdColumn" class="sk-dt__td sk-dt__td--sticky sk-dt__td--id">
                                         <button
+                                            type="button"
                                             class="sk-dt__id-trigger"
+                                            :aria-label="$t('sk-datatable.show_id')"
                                             @click="openIdPopover($event, getNestedValue(row, idKey))"
                                         >
                                             <i class="pi pi-info-circle" />

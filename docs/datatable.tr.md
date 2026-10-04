@@ -76,6 +76,7 @@ Temel yetenekler:
 - `subtitle(subtitle)` — toolbar başlığının altındaki alt başlık
 - `message(text | config, severity?)` — toolbar ile tablo başlığı arasındaki bilgi şeridi
 - `columnToggle(enabled)` — sütun görünürlük/sıralama menü butonunu aç/kapat (varsayılan: `true`)
+- `savedViews(enabled = true)` — kayıtlı görünümler menüsünü göster (varsayılan: kapalı) — bkz. [Kayıtlı Görünümler](#kayıtlı-görünümler)
 - `perPage(count)`
 - `idColumn(config | false)`
 - `addColumns(...columns)`
@@ -386,7 +387,17 @@ Toolbar'da canlı `görünür/toplam` sayaçlı bir sütun menüsü butonu bulun
 - tutamaçtan sürükleyerek sütunları yeniden sıralayabilir — dahili ID ve seçim checkbox sütunları sabittir, yerinden oynamaz
 - "Tümünü göster" ile her şeyi geri getirebilir
 
-Sütun durumu (sıra + gizli küme) tablonun diğer durumuyla birlikte `sessionStorage` içinde kalıcıdır. Özelliğin tamamı `columnToggle(false)` ile kapatılır.
+Sütun durumu (sıra + gizli küme) tablo route'u başına `localStorage` içinde tutulur, sayfa geçişlerinde kaybolmaz; arama, sıralama, sayfa ve filtreler `sessionStorage`'da kalır. Özelliğin tamamı `columnToggle(false)` ile kapatılır.
+
+## Kayıtlı Görünümler
+
+`savedViews()` toolbar'a bir yer imi butonu ekler. Kullanıcı mevcut arama, sıralama, sayfa boyutu, filtreler ve sütun sırası/görünürlüğüne bir ad verir ("Aktif müşteriler", "Bu ay eklenenler") ve sonra tek tıkla yeniden uygular; kayıtlı bir adın üzerine yazılabilir ya da silinebilir.
+
+```ts
+DB.table<User>().route(users.dtApi.url()).savedViews()
+```
+
+Görünümler `localStorage`'da `dt:views:<route>` anahtarıyla saklanır: hesap başına değil tarayıcı başınadır, kullanıcıyla başka cihaza taşınmaz. Bir görünümü uygulamak sayfayı 1'e döndürür ve satır seçimini temizler. Tablonun artık tanımlamadığı bir filtre ya da sütun yok sayılır; artık sıralanamayan bir sütundaki sıralama varsayılana döner.
 
 `SkDatatable` her veri çekişinde görünür sütun anahtarlarını `columns=key1,key2` query parametresiyle gönderir. Opt-in yapmayan backend'ler bunu yok sayar; `DatatableQueryBuilder::columns()` tanımlayan backend'ler payload'ı seçime göre şekillendirir (aşağıya bakın).
 
