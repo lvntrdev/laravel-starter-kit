@@ -86,6 +86,14 @@ Yukarıdaki login anındaki kontrol, **zaten açık** bir oturuma ulaşamaz — 
 
 > `mergeConfigFrom` yalnızca **üst seviye** anahtarları birleştirir. Bu sürümden önce yayınlanmış bir `config/starter-kit.php` hiç `security` anahtarı taşımaz ve vendor bloğunu bütün olarak devralır; **kısmi** bir `security` dizisi taşıyan bir dosya ise yazmadığı her iç anahtar için vendor bloğunun yerine geçer. Bu yüzden middleware, gönderilen literal değerleri birebir tekrarlayan sınıf sabitlerine (`EnsureUserIsActive::ENFORCE_DEFAULT` / `::DENIED_DEFAULT` / `::GUARDS_DEFAULT`) düşer; her iki kitle de aynı değerleri çözer.
 
+### Diğer oturumları kapatmak
+
+**`web` grubunda `AuthenticateSession`.** `StarterKitServiceProvider`, Laravel'in `AuthenticateSession` middleware'ini de `web` grubuna ekler; böylece mevcut bir kurulum `bootstrap/app.php` dosyasına dokunmadan `composer update` ile bunu alır. Middleware, giriş yapılmış her tarayıcı oturumunu kullanıcının parola hash'iyle damgalar; ikisi artık eşleşmediğinde oturumu bir sonraki istekte kapatır. Henüz damgası olmayan bir oturum (güncellemeden önce açılmış olan) kapatılmaz, damgalanır. Sınıfı ya da `auth.session` alias'ını zaten listeleyen bir `web` grubuna dokunulmaz.
+
+- **Şifre değişikliği veya sıfırlama, kullanıcıyı diğer her yerde oturumdan çıkarır.** Profilden şifre güncelleme, bir yöneticinin kullanıcının şifresini değiştirmesi ve şifremi-unuttum sıfırlaması hash'i değiştirir; bu yüzden diğer tüm tarayıcı ve cihazlar, "beni hatırla" çerezleri dahil, oturumdan çıkar. Kullanıcı kendi şifresini değiştirdiğinde o an kullandığı tarayıcıda oturumu açık kalır.
+- **"Diğer tarayıcı oturumlarını kapat" her session sürücüsünde çalışır.** Profildeki işlem önce şifreyi doğrular, ardından session guard'ın `logoutOtherDevices()` metodu üzerinden şifreyi yeniden hash'ler ve yeni bir remember token kaydeder; bu, `file`, `redis`, `memcached` ve `cookie` store'larında tutulan oturumları da kapatır. `database` sürücüsünde diğer session satırları ayrıca silinir, böylece oturum listesinden hemen düşerler. Yeniden hash'leme model event'leri olmadan çalışır: `password_changed_at` (geçerlilik süresi sayacı) değişmez ve activity log'a şifre değişikliği yazılmaz.
+- `PurgeOtherSessionsAction`, varsayılan guard'ın aynı kullanıcıyla giriş yapmış bir session guard olmasını ister; değilse başarı bildirmek yerine `LogicException` fırlatır.
+
 ## API Kimlik Doğrulama
 
 API tarafında Passport kullanılır:

@@ -86,6 +86,14 @@ The login-time check above cannot reach a session that is *already open* — an 
 
 > `mergeConfigFrom` merges **top-level** keys only. A `config/starter-kit.php` published before this release has no `security` key at all and inherits the vendor block whole; a file carrying a *partial* `security` array replaces the vendor one for every nested key it omits. The middleware therefore falls back to class constants (`EnsureUserIsActive::ENFORCE_DEFAULT` / `::DENIED_DEFAULT` / `::GUARDS_DEFAULT`) that reproduce the shipped literals exactly, so both populations resolve the same values.
 
+### Signing out other sessions
+
+**`AuthenticateSession` in the `web` group.** `StarterKitServiceProvider` also appends Laravel's `AuthenticateSession` middleware to the `web` group, so an existing install picks it up on `composer update` without touching `bootstrap/app.php`. It stamps every signed-in browser session with a hash of the user's password and logs the session out on its next request once the two no longer match. A session with no stamp yet (one opened before the update) is stamped, not logged out. A `web` group that already lists the class or its `auth.session` alias is left as it is.
+
+- **A password change or reset signs the user out everywhere else.** The profile password update, an admin changing the user's password and the forgot-password reset all change the hash, so every other browser and device is signed out, remember-me cookies included. When users change their own password, the browser they are using stays signed in.
+- **"Log out other browser sessions" works on every session driver.** The profile action checks the password, re-hashes it through the session guard's `logoutOtherDevices()` and stores a new remember token, which also signs out sessions kept in `file`, `redis`, `memcached` and `cookie` stores. On the `database` driver the other session rows are deleted as well, so they leave the sessions list at once. The re-hash runs without model events: `password_changed_at` (the expiry clock) does not move and the activity log records no password change.
+- `PurgeOtherSessionsAction` needs the default guard to be a session guard signed in as the same user; otherwise it throws a `LogicException` instead of reporting success.
+
 ## API Authentication
 
 Passport powers the API side:
