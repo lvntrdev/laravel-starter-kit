@@ -3,10 +3,14 @@
 # Starter Kit yayın scripti — sürümü seçer, kalite kapısını çalıştırır, etiketi
 # oluşturur ve remote'a gönderir.
 #
-# Kullanım: ./release.sh [--skip-checks] [--allow-branch]
+# Kullanım: ./release.sh [--skip-checks] [--allow-branch] [--allow-floor-raise]
 #   --skip-checks   Kalite kapısının TAMAMINI atlar (yerel kontroller + uzak CI
 #                   doğrulaması + changelog kontrolü). Bilinçli ve tek kaçamak.
 #   --allow-branch  'main' dışındaki bir branch'ten yayına izin verir.
+#   --allow-floor-raise
+#                   Bir bağımlılığın alt sınırı önceki etikete göre yükseldiyse
+#                   yayın DURUR (--skip-checks bunu atlamaz); bu flag bilerek
+#                   geçer. Bkz. verify_dependency_floors.
 #
 # Gereksinimler (kapı --skip-checks olmadan çalıştığında):
 #   - php + composer      → composer lint / test / analyse / security
@@ -41,10 +45,12 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SKIP_CHECKS=0
 ALLOW_BRANCH=0
+ALLOW_FLOOR_RAISE=0
 for arg in "$@"; do
     case "${arg}" in
         --skip-checks)  SKIP_CHECKS=1 ;;
         --allow-branch) ALLOW_BRANCH=1 ;;
+        --allow-floor-raise) ALLOW_FLOOR_RAISE=1 ;;
     esac
 done
 
@@ -171,7 +177,7 @@ smoke_test_dist() {
     local unexpected
     unexpected=$(git -C "${DIR}" archive HEAD 2>/dev/null | tar -t 2>/dev/null \
         | grep -vE '/$' \
-        | grep -E '^(\.ai/|\.github/|\.claude/|release\.sh$|scripts/|plan-docs/|package-audit-notes/|tests/|phpunit\.xml$|testbench\.yaml$|pint\.json$|CHANGELOG\.md$|README-tr\.md$|\.gitignore$|\.gitattributes$|\.npmignore$)' \
+        | grep -E '^(\.ai/|\.github/|\.claude/|release\.sh$|scripts/|plan-docs/|package-audit-notes/|tests/|phpunit\.xml$|testbench\.yaml$|pint\.json$|README-tr\.md$|\.gitignore$|\.gitattributes$|\.npmignore$)' \
         || true)
     if [[ -n "${unexpected}" ]]; then
         warn "Dağıtım arşivinde beklenmeyen (geliştirmeye özel) yollar var:"
@@ -270,6 +276,32 @@ verify_remote_ci() {
 
     detail "Uzak CI (${sha:0:12})" "${GREEN}GEÇTİ${NC}"
 }
+
+# Bağımlılık alt sınırı kapısı: uygulamaların lock'unda zaten olan bir paketin
+# alt sınırı yükselirse, -W'siz 'composer update lvntr/laravel-starter-kit'
+# kiti SESSİZCE eski sürümde bırakır (13.8.2 → api-dock ~0.0.8). Ucuz ve yayının
+# asıl riski olduğu için --skip-checks ile atlanmaz.
+verify_dependency_floors() {
+    local prev raised
+    prev=$(git -C "${DIR}" describe --tags --abbrev=0 2>/dev/null) || {
+        detail "Bağımlılık alt sınırları" "${GRAY}önceki etiket yok${NC}"
+        return
+    }
+    if raised=$(php "${DIR}/scripts/ci/check-dependency-floors.php" "${prev}"); then
+        detail "Bağımlılık alt sınırları" "${GREEN}GEÇTİ${NC} ${GRAY}(${prev} sonrası yükselen yok)${NC}"
+        return
+    fi
+    [[ -z "${raised}" ]] && error "Bağımlılık alt sınırı kontrolü çalışamadı (php ve vendor/ kurulu mu?)."
+    if [[ "${ALLOW_FLOOR_RAISE}" -eq 1 ]]; then
+        warn "${prev} sonrası alt sınırı yükselen bağımlılıklar (--allow-floor-raise ile bilerek geçiliyor):"
+        echo "${raised}" | sed 's/^/      /'
+        warn "Changelog girişi 'composer update lvntr/laravel-starter-kit -W' (ya da 'composer sk-update') demeli."
+        return
+    fi
+    error "${prev} sonrası şu bağımlılıkların alt sınırı yükseldi:\n$(echo "${raised}" | sed 's/^/      /')\n  -W'siz güncelleyen uygulamalar sessizce eski kitte kalır. Alt sınırı geri al (yeni özelliği class_exists / method_exists ile koşullu kullan) ya da bilerek geçmek için --allow-floor-raise."
+}
+
+verify_dependency_floors
 
 if [[ "${SKIP_CHECKS}" -eq 1 ]]; then
     warn "Kalite kapısı atlandı (--skip-checks): yerel kontroller, frontend zinciri ve uzak CI doğrulaması çalıştırılmadı."

@@ -20,6 +20,7 @@ use Lvntr\StarterKit\Console\Support\RecipeRegistry;
 use Lvntr\StarterKit\StarterKitServiceProvider;
 use Lvntr\StarterKit\Support\DocsLink;
 use Lvntr\StarterKit\Support\Encryption\DataEncrypterFactory;
+use Lvntr\StarterKit\Support\KitDependencies;
 use Lvntr\StarterKit\Support\KitVersion;
 use PhpParser\Error;
 use PhpParser\Node;
@@ -631,6 +632,11 @@ class InstallCommand extends Command
             // 4g. Register custom helpers autoload entry in composer.json
             $this->step('Registering custom helpers autoload', function () {
                 $this->injectHelpersAutoload();
+            });
+
+            // 4g'. One-command kit update that cannot forget `-W`: `composer sk-update`
+            $this->step('Adding the composer sk-update script', function () {
+                KitDependencies::ensureUpdateScript();
             });
 
             // 4h. Default domain eject (User + Role) on first install only.

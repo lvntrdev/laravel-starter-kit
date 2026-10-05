@@ -2,6 +2,17 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-10-06 — v13.8.5
+
+### Added
+
+- **Update the kit with one command: `composer sk-update`.** It runs `composer update lvntr/laravel-starter-kit -W` and then `php artisan sk:update`, so `-W` can no longer be forgotten. The script is added to your `composer.json` the next time you run `php artisan sk:update`. See [update.md](update.md#1-update-composer-package).
+- **`sk:update` and `sk:doctor` tell you when Composer kept you on an older kit.** Instead of updating silently to nothing, they show the newer version and the command that fixes it.
+
+### Changed
+
+- **The changelog and upgrade guide now come with the package.** You (and your AI agent) can read what each release changed in `vendor/lvntr/laravel-starter-kit/CHANGELOG.md` and the manual upgrade steps in `vendor/lvntr/laravel-starter-kit/docs/UPGRADE.md`. Run `php artisan sk:update` so the AI skills point there.
+
 ## 2026-10-03 — v13.8.4
 
 ### Fixed

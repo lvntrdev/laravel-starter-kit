@@ -86,8 +86,9 @@ Stop the moment any of these thoughts appears:
   `sk:seed-permissions`)
 - Customizing a published Vue component or composable (run `sk:publish` first)
 - Taking ownership of a kit module (`sk:eject {Domain}` — read the trade-off)
-- Upgrading the kit (`composer update lvntr/laravel-starter-kit -W`, then
-  `sk:update --dry-run`, then `sk:update`) — keep the `-W`, see `references/update-flow.md`
+- Upgrading the kit (`composer sk-update`, or `composer update lvntr/laravel-starter-kit -W`, then
+  `sk:update --dry-run`, then `sk:update`) — keep the `-W`, see `references/update-flow.md`;
+  what changed is in `vendor/lvntr/laravel-starter-kit/CHANGELOG.md`
 - Diagnosing environment/config issues (`sk:doctor`)
 
 ## When NOT to apply

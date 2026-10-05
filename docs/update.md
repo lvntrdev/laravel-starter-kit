@@ -24,6 +24,10 @@ composer update lvntr/laravel-starter-kit -W
 
 Keep the `-W`. Without it Composer leaves the kit's own dependencies at their locked versions, and when a new kit release needs a newer one (13.8.2 needs `lvntr/api-dock` `~0.0.8`) it quietly installs the newest kit that still fits the old lock instead of failing.
 
+**One command instead:** `sk:install` and `sk:update` (13.8.5+) add a `sk-update` script to your `composer.json`. `composer sk-update` runs the command above and then `php artisan sk:update` as a separate process, so the updater is the new release's, and `-W` cannot be forgotten. A script of that name you already had is left alone.
+
+`sk:update` and `sk:doctor` (13.8.5+) also ask Packagist whether a newer kit is out on your major line; if Composer kept you on an older one they say so and print `composer why-not lvntr/laravel-starter-kit <version>`, which names the blocker. Offline, the check is skipped.
+
 **Still on an older version?** Check with `composer show lvntr/laravel-starter-kit`. If your own `composer.json` lists `lvntr/api-dock` (for example from an earlier `composer require lvntr/api-dock`), remove it — the kit installs it for you, and Composer writes `^0.0.x` constraints that pin one exact patch:
 
 ```bash

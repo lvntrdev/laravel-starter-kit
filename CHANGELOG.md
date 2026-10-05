@@ -5,6 +5,18 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.5] - 2026-10-06
+
+### Added
+
+- **`composer sk-update`: one command to update the kit, with `-W` built in.** `sk:install` and `sk:update` add a `sk-update` script to the app's `composer.json` (`Composer\Config::disableProcessTimeout`, `@composer update lvntr/laravel-starter-kit -W`, `@php artisan sk:update --ansi`); an existing script of that name is left alone. `sk:update` runs as its own process after Composer, so it is the new release's updater. This takes effect once an app has run `sk:update` from 13.8.5 or later.
+- **`sk:update` and `sk:doctor` notice when Composer held the kit back.** They ask Packagist (3-second timeout, skipped offline and on untagged installs) for the newest stable release on the installed major line; when it is newer than the installed kit, `sk:update` warns before it starts and the doctor's **Kit Dependencies** check reports a warning (new `sk-doctor.missing_kit_dependencies.held_back` / `held_back_hint` strings), both printing `composer update lvntr/laravel-starter-kit -W` and `composer why-not lvntr/laravel-starter-kit <version>`. Previously the old `sk:update` ran and reported nothing.
+- **`release.sh` stops when a release raises a dependency floor.** `scripts/ci/check-dependency-floors.php` compares each `require` entry's lower bound with the previous tag (as 13.8.2 did with `lvntr/api-dock` `~0.0.8`); a raised floor stops the release, `--skip-checks` does not bypass it, and `--allow-floor-raise` passes it on purpose. A newly added package is not a floor raise.
+
+### Changed
+
+- **`CHANGELOG.md` and `docs/UPGRADE.md` now ship inside the package.** Both were `export-ignore`d, so an installed app had no record of what a release changed — while the bundled `lvntr-starter-kit` skill told agents to read "the package `CHANGELOG.md`". They are now at `vendor/lvntr/laravel-starter-kit/CHANGELOG.md` and `vendor/lvntr/laravel-starter-kit/docs/UPGRADE.md`, and the skill points there. The rest of `docs/` stays out of the dist. Run `php artisan sk:update` to refresh the skill.
+
 ## [13.8.4] - 2026-10-03
 
 ### Fixed

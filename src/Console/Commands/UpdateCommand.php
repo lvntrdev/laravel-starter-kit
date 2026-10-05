@@ -550,6 +550,16 @@ class UpdateCommand extends Command
         $this->line('  <fg=gray>composer update is enough; runtime files are not copied to your app.</>');
         $this->newLine();
 
+        $heldBackBy = KitDependencies::heldBackBy();
+
+        if ($heldBackBy !== null) {
+            $this->components->warn('Composer kept the kit at '.KitVersion::tag().' although '.$heldBackBy.' is out — this run applies the older release.');
+            $this->line('  <fg=gray>Update the kit first, then run sk:update again:</>');
+            $this->line('  <fg=cyan>composer update lvntr/laravel-starter-kit -W</>');
+            $this->line('  <fg=gray>Still stuck? `composer why-not lvntr/laravel-starter-kit '.ltrim($heldBackBy, 'v').'` names the blocker.</>');
+            $this->newLine();
+        }
+
         $force = (bool) $this->option('force');
         $dryRun = (bool) $this->option('dry-run');
 
@@ -592,6 +602,10 @@ class UpdateCommand extends Command
             $this->injectRoleColorsConfig();
             $this->migrateLegacyHelpersFile();
             $this->rewriteHelpersAutoload();
+
+            if (KitDependencies::ensureUpdateScript()) {
+                $this->updated[] = 'composer.json (added the `composer '.KitDependencies::UPDATE_SCRIPT.'` script)';
+            }
         }
 
         // 4c. Merge stub package.json into the consumer's package.json so newly added

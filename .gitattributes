@@ -4,9 +4,9 @@
 /tests/** export-ignore
 /phpunit.xml export-ignore
 /docs/** export-ignore
+/docs/UPGRADE.md -export-ignore
 /package-audit-notes/** export-ignore
 /plan-docs/** export-ignore
-/CHANGELOG.md export-ignore
 /README-tr.md export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore

@@ -24,6 +24,10 @@ composer update lvntr/laravel-starter-kit -W
 
 `-W`'yi atlamayın. O olmadan Composer kit'in kendi bağımlılıklarını lock'taki sürümlerinde bırakır; yeni bir kit sürümü daha yeni bir bağımlılık istediğinde (13.8.2, `lvntr/api-dock` `~0.0.8` istiyor) hata vermek yerine eski lock'a hâlâ uyan en yeni kit sürümünü sessizce kurar.
 
+**Tek komutla:** `sk:install` ve `sk:update` (13.8.5+) `composer.json` dosyanıza bir `sk-update` scripti ekler. `composer sk-update` yukarıdaki komutu, ardından `php artisan sk:update`'i ayrı bir süreç olarak çalıştırır; böylece güncelleyici yeni sürümünkidir ve `-W` unutulamaz. Aynı adla sizin yazdığınız bir script varsa ona dokunulmaz.
+
+`sk:update` ve `sk:doctor` (13.8.5+) ayrıca aynı major hatta daha yeni bir kit sürümü olup olmadığını Packagist'e sorar; Composer sizi eskisinde bıraktıysa bunu söyler ve engeli gösteren `composer why-not lvntr/laravel-starter-kit <sürüm>` komutunu yazdırır. Çevrimdışıyken bu kontrol atlanır.
+
 **Hâlâ eski sürümde misiniz?** `composer show lvntr/laravel-starter-kit` ile kontrol edin. Kendi `composer.json` dosyanızda `lvntr/api-dock` varsa (örneğin daha önce çalıştırılmış bir `composer require lvntr/api-dock`'tan), kaldırın — kit onu sizin için kurar, Composer ise `^0.0.x` kısıtı yazar ve bu tek bir patch sürümüne kilitler:
 
 ```bash

@@ -2,6 +2,17 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-10-06 — v13.8.5
+
+### Eklendi
+
+- **Kit'i tek komutla güncelleyin: `composer sk-update`.** Önce `composer update lvntr/laravel-starter-kit -W`, ardından `php artisan sk:update` çalışır; `-W` artık unutulamaz. Script, bir sonraki `php artisan sk:update`'te `composer.json` dosyanıza eklenir. Bkz. [update.tr.md](update.tr.md#1-composer-paketini-güncelleyin).
+- **`sk:update` ve `sk:doctor`, Composer sizi eski bir kit sürümünde bıraktığında söylüyor.** Sessizce "hiçbir şey" güncellemek yerine yeni sürümü ve sorunu çözen komutu gösteriyorlar.
+
+### Değişti
+
+- **Changelog ve yükseltme rehberi artık paketle birlikte geliyor.** Her sürümün neyi değiştirdiğini `vendor/lvntr/laravel-starter-kit/CHANGELOG.md`'de, elle uygulanacak yükseltme adımlarını `vendor/lvntr/laravel-starter-kit/docs/UPGRADE.md`'de siz de AI ajanınız da okuyabilirsiniz. AI skill'lerinin oraya yönlenmesi için `php artisan sk:update` çalıştırın.
+
 ## 2026-10-03 — v13.8.4
 
 ### Düzeltildi

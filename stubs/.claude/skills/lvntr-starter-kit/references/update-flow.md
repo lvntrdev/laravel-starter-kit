@@ -46,17 +46,26 @@ The kit tracks every published file in `storage/starter-kit/hashes.json`
    non-interactive run that skipped it)? Run `php artisan migrate`: a kit
    page whose table is missing answers with a 500.
 
-8. **After update:** re-run `npm install && npm run build`; read the package
-   `CHANGELOG.md` and `docs/UPGRADE.md` for breaking notes (e.g. the
-   v13.5.11 → v13.6.0 theme-tree migration). If a kit dependency's version
+8. **After update:** re-run `npm install && npm run build`; read
+   `vendor/lvntr/laravel-starter-kit/CHANGELOG.md` (every entry newer than
+   the version you came from — `composer show lvntr/laravel-starter-kit`
+   prints the installed one) and `vendor/lvntr/laravel-starter-kit/docs/UPGRADE.md`
+   for breaking notes and hand-applied steps (e.g. the v13.5.11 → v13.6.0
+   theme-tree migration). Both ship inside the package. If a kit dependency's version
    moved and `npm install` fails with `ERESOLVE`, `sk:update` prints the
    recovery: `rm -rf node_modules package-lock.json && npm install && npm run build`.
 
 ## Before `sk:update` — the Composer step
 
 ```bash
+composer sk-update        # = composer update lvntr/laravel-starter-kit -W, then php artisan sk:update
+# or, when the app's composer.json has no sk-update script yet:
 composer update lvntr/laravel-starter-kit -W
 ```
+
+If `sk:update` or `sk:doctor` says Composer kept the kit at an older
+release, run `composer why-not lvntr/laravel-starter-kit <version>` — it names
+the package holding the kit back.
 
 **Keep the `-W`.** Without it Composer leaves the kit's own dependencies at
 their locked versions; when a new kit release needs a newer one (13.8.2+
