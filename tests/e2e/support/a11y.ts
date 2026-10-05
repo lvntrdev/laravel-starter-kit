@@ -9,12 +9,15 @@ import { expect, type Page } from '@playwright/test';
 export async function expectNoA11yViolations(page: Page, scope?: string): Promise<void> {
     // Let enter transitions (dialog/popover fade-in) settle first: mid-fade text is
     // half-transparent and color-contrast would measure that instead of the real
-    // colors. Infinite animations (spinners) never finish, so they are skipped.
+    // colors. Infinite animations (spinners) never finish, so they are skipped —
+    // and so is the toast's life countdown (`sk-toast-life`): it ends just as the
+    // toast starts fading out, so waiting for it landed the scan on that fade.
     await page.evaluate(() =>
         Promise.all(
             document
                 .getAnimations()
                 .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+                .filter((a) => !(a instanceof CSSAnimation && a.animationName === 'sk-toast-life'))
                 .map((a) => a.finished.catch(() => undefined)),
         ),
     );
