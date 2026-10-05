@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.8.5] - 2026-10-06
 
+### Fixed
+
+- **Same-named uploads outside the File Manager no longer overwrite or delete each other.** Avatar and form-attachment collections (`UploadMediaAction`, `HasMediaCollections::syncMediaCollection()`) share one directory per model, so a file with the client's name replaced the earlier one on disk, and replacing an avatar with a same-named image deleted the new file together with the old row. New uploads are now stored as `{uuid}.{extension}`; the client name stays on `media.name`, and `getMediaForForm()` returns it (with the extension) as `name`. Existing media keep their stored file names. File Manager uploads were not affected (each file already has its own `{uuid}/` directory).
+
 ### Added
 
 - **`composer sk-update`: one command to update the kit, with `-W` built in.** `sk:install` and `sk:update` add a `sk-update` script to the app's `composer.json` (`Composer\Config::disableProcessTimeout`, `@composer update lvntr/laravel-starter-kit -W`, `@php artisan sk:update --ansi`); an existing script of that name is left alone. `sk:update` runs as its own process after Composer, so it is the new release's updater. This takes effect once an app has run `sk:update` from 13.8.5 or later.

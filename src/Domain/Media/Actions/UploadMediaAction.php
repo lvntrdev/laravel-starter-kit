@@ -4,6 +4,8 @@ namespace Lvntr\StarterKit\Domain\Media\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Lvntr\StarterKit\Domain\Shared\Actions\BaseAction;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -23,7 +25,9 @@ class UploadMediaAction extends BaseAction
         // failed upload simply leaves the existing one in place.
         $previousIds = $model->getMedia($collection)->pluck('id')->all();
 
-        $model->addMediaFromRequest($inputName)->toMediaCollection($collection);
+        $model->addMediaFromRequest($inputName)
+            ->usingFileName(self::diskFileName($request->file($inputName)))
+            ->toMediaCollection($collection);
 
         if ($previousIds === []) {
             return;
@@ -41,5 +45,20 @@ class UploadMediaAction extends BaseAction
             ->whereIn('id', $previousIds)
             ->get()
             ->each(static fn (Media $media) => $media->delete());
+    }
+
+    /**
+     * Store under a generated name; the client name stays on `media.name`.
+     *
+     * Every non-FileManager collection shares one directory per model
+     * ({model}/{id}/{collection}/). Keeping the client name on disk made a
+     * same-named upload overwrite the previous file, and deleting the old
+     * row (singleFile, replace-by-upload) then removed the new one with it.
+     */
+    public static function diskFileName(mixed $file): string
+    {
+        $extension = $file instanceof UploadedFile ? $file->getClientOriginalExtension() : '';
+
+        return Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
     }
 }

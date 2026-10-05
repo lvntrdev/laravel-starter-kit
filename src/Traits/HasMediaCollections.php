@@ -3,6 +3,7 @@
 namespace Lvntr\StarterKit\Traits;
 
 use Illuminate\Http\UploadedFile;
+use Lvntr\StarterKit\Domain\Media\Actions\UploadMediaAction;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 trait HasMediaCollections
@@ -40,7 +41,9 @@ trait HasMediaCollections
 
         // Add new uploads
         foreach ($newFiles as $file) {
-            $this->addMedia($file)->toMediaCollection($collection);
+            $this->addMedia($file)
+                ->usingFileName(UploadMediaAction::diskFileName($file))
+                ->toMediaCollection($collection);
         }
     }
 
@@ -60,7 +63,8 @@ trait HasMediaCollections
 
             return [
                 'id' => $media->id,
-                'name' => $media->file_name,
+                // file_name is a generated disk name; show the client's.
+                'name' => $media->name.($media->extension !== '' ? '.'.$media->extension : ''),
                 'url' => $url,
                 'size' => $media->size,
                 'mime_type' => $media->mime_type,

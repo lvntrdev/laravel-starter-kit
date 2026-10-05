@@ -4,6 +4,10 @@ Newly added features and improvements to the starter kit are listed here.
 
 ## 2026-10-06 — v13.8.5
 
+### Fixed
+
+- **Uploading a file with the same name no longer replaces the earlier one.** A new avatar with the same file name as the old one could leave the profile without a picture, and two form attachments with the same name ended up as one file. Uploads are now stored on disk under a generated name, while the screen still shows the original file name.
+
 ### Added
 
 - **Update the kit with one command: `composer sk-update`.** It runs `composer update lvntr/laravel-starter-kit -W` and then `php artisan sk:update`, so `-W` can no longer be forgotten. The script is added to your `composer.json` the next time you run `php artisan sk:update`. See [update.md](update.md#1-update-composer-package).

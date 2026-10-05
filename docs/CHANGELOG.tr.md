@@ -4,6 +4,10 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 ## 2026-10-06 — v13.8.5
 
+### Düzeltildi
+
+- **Aynı adlı bir dosya yüklemek artık öncekinin yerine geçmiyor.** Eskisiyle aynı dosya adını taşıyan yeni bir avatar profili resimsiz bırakabiliyordu, aynı adlı iki form eki ise tek dosyaya dönüşüyordu. Yüklenen dosyalar artık diskte üretilen bir adla saklanıyor; ekranda yine orijinal dosya adı görünüyor.
+
 ### Eklendi
 
 - **Kit'i tek komutla güncelleyin: `composer sk-update`.** Önce `composer update lvntr/laravel-starter-kit -W`, ardından `php artisan sk:update` çalışır; `-W` artık unutulamaz. Script, bir sonraki `php artisan sk:update`'te `composer.json` dosyanıza eklenir. Bkz. [update.tr.md](update.tr.md#1-composer-paketini-güncelleyin).
