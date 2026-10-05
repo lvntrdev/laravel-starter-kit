@@ -3313,7 +3313,7 @@ class InstallCommand extends Command
         $names = [];
 
         foreach ($tables as $table) {
-            $name = is_array($table) ? (string) ($table['name'] ?? '') : (string) $table;
+            $name = $table['name'];
 
             if ($prefix !== '' && str_starts_with($name, $prefix)) {
                 $name = substr($name, strlen($prefix));
