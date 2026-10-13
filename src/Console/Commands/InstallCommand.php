@@ -537,6 +537,12 @@ class InstallCommand extends Command
             // 2. Database configuration (writes DB_* into the now-seeded .env)
             $this->configureDatabaseStep();
 
+            // 2b. No database, no install: migrations, seeders, permissions,
+            // the Passport client and the admin user all need the connection.
+            // Checked here, before the rest of the scaffold, the optional
+            // modules and npm run, so a wrong DB_* value costs seconds.
+            $this->requireDatabaseConnection();
+
             // 3. Remove conflicting default Laravel files — FIRST INSTALL ONLY.
             //
             // On a fresh project these are stock-Laravel leftovers the kit
@@ -714,7 +720,9 @@ class InstallCommand extends Command
             // A soft reachability probe replaces a hard crash when the DB is down:
             // the operator can create/fix the connection and `sk:install --resume`
             // to pick these up without redoing the earlier filesystem steps.
-            if ($this->databaseReachable()) {
+            $databaseReachable = $this->databaseReachable();
+
+            if ($databaseReachable) {
                 // 7. Run migrations — no gate: an installed app with no schema
                 // is not a valid outcome, so this always runs. The destructive
                 // fresh/skip choice inside runMigrations() is untouched — that
@@ -741,7 +749,7 @@ class InstallCommand extends Command
                 $this->installIncomplete = true;
 
                 $this->newLine();
-                $this->components->warn('Database is not reachable — skipping migrations, seeders, and permission seeding.');
+                $this->components->warn('Database is not reachable — skipping migrations, seeders, permission seeding, the Passport client, and the admin user.');
                 $this->line('  <fg=gray>Create/fix the database connection, then run: php artisan sk:install --resume</>');
                 $this->newLine();
             }
@@ -751,9 +759,15 @@ class InstallCommand extends Command
                 $this->step('Generating Passport keys', function () {
                     return $this->runArtisan('passport:keys', ['--force' => true]);
                 });
-                $this->step('Creating Passport personal access client', function () {
-                    return $this->runArtisan('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
-                });
+
+                // The client is a row in oauth_clients: with no database it can
+                // only fail, and as a mandatory step it would abort the install
+                // on a raw SQLSTATE instead of the "not reachable" notice above.
+                if ($databaseReachable) {
+                    $this->step('Creating Passport personal access client', function () {
+                        return $this->runArtisan('passport:client', ['--personal' => true, '--name' => config('app.name').' Personal Access Client', '--provider' => 'users', '--no-interaction' => true]);
+                    });
+                }
 
                 // ROOT CAUSE FIX: passport:client is invoked with --no-interaction,
                 // whose configurePrompts() flips the GLOBAL static
@@ -768,7 +782,7 @@ class InstallCommand extends Command
             }
 
             // 11. Create admin user
-            if ($this->confirmStep('Create default admin user?')) {
+            if ($databaseReachable && $this->confirmStep('Create default admin user?')) {
                 $this->createAdminUser();
             }
 
@@ -1718,11 +1732,10 @@ class InstallCommand extends Command
         // Purge old connection so new config is used
         DB::purge();
 
-        // Test connection
-        $this->testDatabaseConnection();
-
+        // The connection itself is tested by requireDatabaseConnection(), which
+        // handle() calls right after this step.
         $this->newLine();
-        $this->components->info('Database configured successfully.');
+        $this->components->info('Database settings written to .env.');
     }
 
     /**
@@ -2285,17 +2298,28 @@ class InstallCommand extends Command
     }
 
     /**
-     * Test the database connection.
+     * Stop the install when the database cannot be reached.
+     *
+     * Deliberately not a checkpointed step(): it runs on every run, so a
+     * `--resume` checks again. Throwing lands in handle()'s catch, which names
+     * the step and prints the resume command.
      */
-    private function testDatabaseConnection(): void
+    private function requireDatabaseConnection(): void
     {
+        $this->currentStep = 'Checking database connection';
+
         try {
             DB::connection()->getPdo();
-            $this->components->twoColumnDetail('Connection test', '<fg=green>OK</>');
-        } catch (\Exception $e) {
-            $this->components->warn('Could not connect to database: '.$e->getMessage());
-            $this->line('  <fg=gray>You may need to create the database manually before running migrations.</>');
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                'The database is not reachable: '.$e->getMessage().PHP_EOL
+                .'  Create the database or fix the DB_* values in .env — the install cannot continue without it.',
+                previous: $e,
+            );
         }
+
+        $this->components->twoColumnDetail($this->currentStep, '<fg=green>DONE</>');
+        $this->currentStep = null;
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -2855,6 +2879,15 @@ class InstallCommand extends Command
                 continue;
             }
 
+            // Already published by an earlier run: publishing again would put a
+            // second, re-dated copy of the migration next to the first, and the
+            // migrate step would die on "table already exists".
+            if ($this->recipeMigrationsPublished($recipe['migrations'])) {
+                $this->installedRecipes[] = $key;
+
+                continue;
+            }
+
             foreach ($recipe['post_install'] as $artisanCommand) {
                 if ($this->runProcessStep($this->recipeArtisanCommand($artisanCommand), timeout: 120)) {
                     continue;
@@ -2888,11 +2921,28 @@ class InstallCommand extends Command
     }
 
     /**
+     * Whether database/migrations already holds one of these migrations, under
+     * any date prefix.
+     *
+     * @param  list<string>  $basenames
+     */
+    private function recipeMigrationsPublished(array $basenames): bool
+    {
+        foreach ($basenames as $basename) {
+            if (glob(database_path("migrations/*_{$basename}.php"))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The composer invocation for one recipe. Pure — built here rather than
      * inline so it can be asserted without a network call.
      *
      * @param  list<string>  $composer
-     * @param  array{composer: string, dev: bool, label: string, post_install: list<string>}  $recipe
+     * @param  array{composer: string, dev: bool, label: string, post_install: list<string>, migrations: list<string>}  $recipe
      * @return list<string>
      */
     private function recipeRequireCommand(array $composer, array $recipe): array

@@ -20,7 +20,13 @@ use Lvntr\StarterKit\Console\Commands\PublishCommand;
 class RecipeRegistry
 {
     /**
-     * @var array<string, array{composer: string, dev: bool, label: string, post_install: list<string>}>
+     * `migrations` lists the basenames (no date prefix) of the migrations a
+     * recipe's `post_install` publishes into database/migrations. Laravel's
+     * vendor:publish re-dates a published migration to "now", so a second run
+     * cannot see the first copy; the installer uses these names to skip a
+     * recipe that is already published.
+     *
+     * @var array<string, array{composer: string, dev: bool, label: string, post_install: list<string>, migrations: list<string>}>
      */
     private const RECIPES = [
         // NOT a --dev requirement, deliberately: `telescope:install` registers
@@ -36,6 +42,7 @@ class RecipeRegistry
             'dev' => false,
             'label' => 'Laravel Telescope (debugging/request inspector)',
             'post_install' => ['telescope:install'],
+            'migrations' => ['create_telescope_entries_table'],
         ],
         // Pulse registers its migrations as PUBLISHABLE, not as an auto-loaded
         // migration path, so the installer's later `migrate` creates no Pulse
@@ -45,23 +52,26 @@ class RecipeRegistry
             'dev' => false,
             'label' => 'Laravel Pulse (application performance monitoring)',
             'post_install' => ['vendor:publish --tag=pulse-migrations'],
+            'migrations' => ['create_pulse_tables'],
         ],
         'horizon' => [
             'composer' => 'laravel/horizon',
             'dev' => false,
             'label' => 'Laravel Horizon (Redis queue dashboard/supervisor)',
             'post_install' => ['horizon:install'],
+            'migrations' => [],
         ],
         'sentry' => [
             'composer' => 'sentry/sentry-laravel',
             'dev' => false,
             'label' => 'Sentry (error tracking)',
             'post_install' => ['vendor:publish --tag=sentry-config'],
+            'migrations' => [],
         ],
     ];
 
     /**
-     * @return array<string, array{composer: string, dev: bool, label: string, post_install: list<string>}>
+     * @return array<string, array{composer: string, dev: bool, label: string, post_install: list<string>, migrations: list<string>}>
      */
     public static function all(): array
     {
@@ -69,7 +79,7 @@ class RecipeRegistry
     }
 
     /**
-     * @return array{composer: string, dev: bool, label: string, post_install: list<string>}
+     * @return array{composer: string, dev: bool, label: string, post_install: list<string>, migrations: list<string>}
      */
     public static function get(string $key): array
     {

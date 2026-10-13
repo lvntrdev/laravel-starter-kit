@@ -2,6 +2,16 @@
 
 Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
+## 2026-10-13 — v13.8.6
+
+### Düzeltildi
+
+- **`sk:install`'ı ikinci kez çalıştırmak artık Telescope veya Pulse yüzünden bozulmuyor.** Yarıda kalan bir kurulumdan sonraki çalıştırma bu modüllerin migration'larını yeniden kopyalıyor ve boş bir veritabanında bile "Running migrations" adımında "table already exists" hatasıyla duruyordu. Kurulum artık bunların zaten orada olduğunu görüyor. Önceki bir çalıştırma `database/migrations` içinde `create_telescope_entries_table` veya `create_pulse_tables` dosyasından iki kopya bıraktıysa yeni olanı silin.
+
+### Değişti
+
+- **`sk:install` devam etmeden önce veritabanını kontrol ediyor.** Bağlanamazsa kurulum, çok sonra bir veritabanı hatasıyla patlamak yerine veritabanı sorularının hemen ardından durur ve nedenini gösterir. Veritabanını oluşturun ya da `.env`'deki `DB_*` değerlerini düzeltin, ardından `php artisan sk:install --resume` çalıştırın. Çalışan bir veritabanı olmadan kurulum artık yapılamaz. Bkz. [install.tr.md](install.tr.md).
+
 ## 2026-10-06 — v13.8.5
 
 ### Düzeltildi

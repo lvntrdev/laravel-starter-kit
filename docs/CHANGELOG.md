@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-10-13 — v13.8.6
+
+### Fixed
+
+- **Running `sk:install` a second time no longer breaks on Telescope or Pulse.** After an interrupted install, the next run copied their migrations again and stopped at "Running migrations" with a "table already exists" error, even on an empty database. The installer now sees that they are already there. If an earlier run already left two copies of `create_telescope_entries_table` or `create_pulse_tables` in `database/migrations`, delete the newer one.
+
+### Changed
+
+- **`sk:install` checks the database before it goes on.** If it cannot connect, the install stops right after the database questions and shows the reason, instead of failing much later with a database error. Create the database or fix the `DB_*` values in `.env`, then run `php artisan sk:install --resume`. An install can no longer be run without a working database. See [install.md](install.md).
+
 ## 2026-10-06 — v13.8.5
 
 ### Fixed

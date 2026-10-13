@@ -43,6 +43,42 @@ afterEach(function (): void {
 
 // ── The unreachable-database verdict ───────────────────────────────────────
 
+it('stops the install when the database cannot be reached', function (): void {
+    config([
+        'database.default' => 'missing',
+        'database.connections.missing' => ['driver' => 'sqlite', 'database' => sys_get_temp_dir().'/sk-no-such-db.sqlite'],
+    ]);
+
+    [$command] = iciCommand();
+
+    expect(fn () => iciInvoke($command, 'requireDatabaseConnection'))
+        ->toThrow(RuntimeException::class, 'The database is not reachable')
+        // The step name renderStepFailure() prints with the resume command.
+        ->and(iciProperty($command, 'currentStep'))->toBe('Checking database connection');
+});
+
+it('lets the install continue when the database answers', function (): void {
+    [$command, $output] = iciCommand();
+
+    iciInvoke($command, 'requireDatabaseConnection');
+
+    expect($output->fetch())->toContain('Checking database connection')
+        ->and(iciProperty($command, 'currentStep'))->toBeNull();
+});
+
+it('checks the connection right after the database settings, on every run', function (): void {
+    // Asserted at the source: handle() cannot be driven past the database
+    // prompt here (see the file docblock). Outside step(), so never skipped
+    // by a --resume checkpoint.
+    $source = (string) file_get_contents(
+        (new ReflectionClass(InstallCommand::class))->getFileName(),
+    );
+
+    expect($source)->toMatch(
+        '/\$this->configureDatabaseStep\(\);\s+(\/\/[^\n]*\s+)*\$this->requireDatabaseConnection\(\);/',
+    );
+});
+
 it('exits non-zero and keeps the checkpoint when the database steps never ran', function (): void {
     // THE regression: the exit code is what a consumer pipeline reads, and the
     // checkpoint is what the recommended `--resume` needs in order to skip the

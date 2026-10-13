@@ -19,6 +19,10 @@ require_once __DIR__.'/InstallDecisionHarness.php';
  * the dry-run summary, which reads recipeKeysFromOption() but never calls
  * installRecipes() at all (see InstallCommand::renderDryRunPlan — no Process
  * construction on that path, confirmed by reading the method).
+ *
+ * The one test that does call installRecipes() points it at a throwaway tree
+ * holding a stand-in `composer.phar` and `artisan`, so both child processes
+ * are local scripts.
  */
 
 /**
@@ -101,6 +105,34 @@ it('builds the post-install artisan command as a child php process with --no-int
 
     expect(iciInvoke($command, 'recipeArtisanCommand', ['telescope:install']))
         ->toBe([PHP_BINARY, $dir.'/artisan', 'telescope:install', '--no-interaction']);
+
+    iciRemove($dir);
+});
+
+it('publishes each module migration once when the recipe step runs twice', function () {
+    // Stand-ins for the two child processes installRecipes() spawns, so no
+    // network is involved: a composer.phar that succeeds, and an artisan that
+    // publishes the way vendor:publish does — under a new date prefix each time.
+    $dir = iciBoot([
+        'composer.phar' => '<?php',
+        'artisan' => <<<'PHP'
+            <?php
+            $name = in_array('telescope:install', $argv, true) ? 'create_telescope_entries_table' : 'create_pulse_tables';
+            $dir = __DIR__.'/database/migrations';
+            is_dir($dir) || mkdir($dir, 0700, true);
+            file_put_contents(sprintf('%s/2026_01_01_%06d_%s.php', $dir, count(glob($dir.'/*')), $name), '<?php');
+            PHP,
+    ]);
+
+    [$first] = icrCommand();
+    [$second] = icrCommand();
+
+    expect(iciInvoke($first, 'installRecipes', [['telescope', 'pulse']]))->toBeTrue()
+        ->and(iciInvoke($second, 'installRecipes', [['telescope', 'pulse']]))->toBeTrue()
+        ->and(glob($dir.'/database/migrations/*_create_telescope_entries_table.php'))->toHaveCount(1)
+        ->and(glob($dir.'/database/migrations/*_create_pulse_tables.php'))->toHaveCount(1)
+        // Skipped, but still reported as installed in the closing summary.
+        ->and(iciProperty($second, 'installedRecipes'))->toBe(['telescope', 'pulse']);
 
     iciRemove($dir);
 });

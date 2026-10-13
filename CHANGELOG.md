@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.6] - 2026-10-13
+
+### Fixed
+
+- **Re-running `sk:install` no longer duplicates the Telescope and Pulse migrations.** The "Installing optional modules" step is skipped only on `--resume`, so a plain second run (after a failed install, or with `--force`) ran `telescope:install` / `vendor:publish --tag=pulse-migrations` again. Laravel re-dates a published migration to the current time, so a second copy landed next to the first and "Running migrations" stopped on `SQLSTATE[42S01] ... already exists` — on an empty database too. `RecipeRegistry` now names the migrations each recipe publishes, and `installRecipes()` skips a recipe's post-install commands when `database/migrations/*_<name>.php` is already there (the module is still reported as installed). No file is deleted: if an earlier run already left two copies of `create_telescope_entries_table` or `create_pulse_tables`, delete the newer one by hand.
+
+### Changed
+
+- **`sk:install` checks the database connection before it goes on, and stops when it cannot connect.** Right after the database prompt — on every run, `--resume` and `--no-interaction` included — the installer opens the connection. When that fails the run stops at "Checking database connection" with the driver's error and a non-zero exit code, before the rest of the scaffold, the optional modules and `npm` run; create the database or fix `DB_*` in `.env`, then run `php artisan sk:install --resume`. Previously an unreachable database only produced a warning: the run went on, skipped migrations, seeders and permission seeding, and then aborted at "Creating Passport personal access client" on a raw `SQLSTATE`. If the connection is lost later in the run, the Passport client and the admin user are now skipped together with the other database steps, and the run closes as `INCOMPLETE` as before. **A pipeline that ran `sk:install` without a database (an image build, for instance) now stops at this check** instead of finishing the file and `npm` steps.
+
 ## [13.8.5] - 2026-10-06
 
 ### Fixed
