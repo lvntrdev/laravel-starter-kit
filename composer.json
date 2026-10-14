@@ -39,10 +39,11 @@
     "spatie/laravel-translatable": "^6.11"
   },
   "require-dev": {
-    "larastan/larastan": "^3.11",
+    "larastan/larastan": "3.13.0",
     "laravel/pint": "^1.29",
     "orchestra/testbench": "^11.0",
-    "pestphp/pest": "^4.4"
+    "pestphp/pest": "^4.4",
+    "phpstan/phpstan": "2.3.1"
   },
   "suggest": {
     "laravel/telescope": "Enables the optional sk:install --modules=telescope recipe (debug assistant).",

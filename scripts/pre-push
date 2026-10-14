@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Runs the fast CI gates before a push leaves the machine.
+# Install once: ln -sf ../../scripts/pre-push .git/hooks/pre-push
+# (ggshield's global pre-push calls .git/hooks/pre-push first.)
+# Skip once: git push --no-verify
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+log=$(mktemp)
+trap 'rm -f "$log"' EXIT
+failed=()
+run() {
+    local name=$1; shift
+    printf '→ %s\n' "$name"
+    "$@" >"$log" 2>&1 || { failed+=("$name"); tail -30 "$log"; }
+}
+
+run "composer validate" composer validate --strict --no-check-lock
+run "pint"              vendor/bin/pint --test
+run "phpstan"           composer analyse
+run "composer audit"    composer audit
+run "npm audit"         npm --prefix stubs audit --audit-level=high --omit=dev
+
+if [ ${#failed[@]} -gt 0 ]; then
+    printf '\n✗ pre-push blocked: %s\n  (git push --no-verify to skip)\n' "${failed[*]}" >&2
+    exit 1
+fi
+printf '✓ pre-push gates passed\n'
