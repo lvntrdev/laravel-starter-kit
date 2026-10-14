@@ -7,6 +7,7 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 ### Düzeltildi
 
 - **`sk:install`'ı ikinci kez çalıştırmak artık Telescope veya Pulse yüzünden bozulmuyor.** Yarıda kalan bir kurulumdan sonraki çalıştırma bu modüllerin migration'larını yeniden kopyalıyor ve boş bir veritabanında bile "Running migrations" adımında "table already exists" hatasıyla duruyordu. Kurulum artık bunların zaten orada olduğunu görüyor. Önceki bir çalıştırma `database/migrations` içinde `create_telescope_entries_table` veya `create_pulse_tables` dosyasından iki kopya bıraktıysa yeni olanı silin.
+- **Yeni uygulamalar artık yüksek önemli bir `npm audit` uyarısıyla başlamıyor.** Pakette gelen `package-lock.json` artık `source-map-js` 1.2.2 kuruyor; bu sürüm [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q) açığını kapatıyor. Mevcut bir uygulamada `npm audit fix` çalıştırın.
 
 ### Değişti
 

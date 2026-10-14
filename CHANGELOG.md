@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Re-running `sk:install` no longer duplicates the Telescope and Pulse migrations.** The "Installing optional modules" step is skipped only on `--resume`, so a plain second run (after a failed install, or with `--force`) ran `telescope:install` / `vendor:publish --tag=pulse-migrations` again. Laravel re-dates a published migration to the current time, so a second copy landed next to the first and "Running migrations" stopped on `SQLSTATE[42S01] ... already exists` — on an empty database too. `RecipeRegistry` now names the migrations each recipe publishes, and `installRecipes()` skips a recipe's post-install commands when `database/migrations/*_<name>.php` is already there (the module is still reported as installed). No file is deleted: if an earlier run already left two copies of `create_telescope_entries_table` or `create_pulse_tables`, delete the newer one by hand.
+- **The stub `package-lock.json` installs `source-map-js` 1.2.2.** 1.2.1 and older carry a high-severity advisory ([GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q): event-loop denial of service through crafted source-map section offsets), so `npm audit --audit-level=high` failed on a fresh app. New installs get the fixed version; an existing app runs `npm audit fix`. The same lock refresh moved `brace-expansion`, `concurrently` and `shell-quote` within their allowed ranges.
 
 ### Changed
 

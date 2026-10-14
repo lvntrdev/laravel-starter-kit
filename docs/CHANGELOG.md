@@ -7,6 +7,7 @@ Newly added features and improvements to the starter kit are listed here.
 ### Fixed
 
 - **Running `sk:install` a second time no longer breaks on Telescope or Pulse.** After an interrupted install, the next run copied their migrations again and stopped at "Running migrations" with a "table already exists" error, even on an empty database. The installer now sees that they are already there. If an earlier run already left two copies of `create_telescope_entries_table` or `create_pulse_tables` in `database/migrations`, delete the newer one.
+- **New apps no longer start with a high-severity `npm audit` warning.** The bundled `package-lock.json` now installs `source-map-js` 1.2.2, which closes [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q). In an existing app, run `npm audit fix`.
 
 ### Changed
 
