@@ -535,12 +535,6 @@ parameters:
 			path: src/Domain/Shared/Pipelines/ActionPipeline.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Definition\>\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: src/Domain/Shared/Services/DefinitionService.php
-
-		-
 			message: '#^Call to function method_exists\(\) with ''Laravel\\\\Passport\\\\Passport'' and ''deviceCode'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1

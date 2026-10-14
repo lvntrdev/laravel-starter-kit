@@ -455,7 +455,7 @@ class StarterKitServiceProvider extends ServiceProvider
      * HttpsOrLocalhostUrl and TurnstileRule ship a thin App\ subclass shim in the
      * scaffold, so they need no alias here either.
      *
-     * @return array<class-string, class-string>
+     * @return array<string, string>
      */
     protected function backwardCompatAliasPlan(string $basePath): array
     {
@@ -702,7 +702,7 @@ class StarterKitServiceProvider extends ServiceProvider
      * (best-effort — a non-writable bootstrap/cache degrades to computing every
      * request, i.e. exactly the pre-cache behaviour, never a boot failure).
      *
-     * @return array<class-string, class-string>
+     * @return array<string, string>
      */
     protected function resolveBackwardCompatAliases(string $basePath): array
     {
@@ -803,7 +803,7 @@ class StarterKitServiceProvider extends ServiceProvider
      * temp-file + rename keeps a concurrent reader from ever seeing a partial
      * file on the register() hot path.
      *
-     * @param  array<class-string, class-string>  $plan
+     * @param  array<string, string>  $plan
      */
     private function writeAliasManifest(string $path, array $plan): void
     {
