@@ -1,13 +1,5 @@
 # Kurulum
 
-> **Aktif Geliştirme Uyarısı**
->
-> Bu depo (repository) sürekli bir değişim içerisindedir. Projenin stabilitesi henüz tam olarak sağlanmamıştır. Kullanırken lütfen aşağıdaki noktaları göz önünde bulundurun:
->
-> 1. **Kod Değişiklikleri:** Ana dizin yapısı veya çekirdek sınıflar radikal şekilde değişebilir.
-> 2. **Güncelleme Süreci:** Güncellemeler her zaman otomatik bir geçiş (migration) sunmayabilir. Güncelleme sonrası README veya CHANGELOG dosyalarını kontrol ederek elle müdahale etmeniz gerekebilir.
-> 3. **Risk:** Yapılan değişiklikler mevcut projenizde veri kaybına veya hatalara yol açabilir.
-
 Bu rehber, sıfır bir proje için önerilen kurulum akışını anlatır.
 
 > **Boş bir Laravel kurulumundan başlayın.** Bu paketi kurmadan önce `php artisan install:inertia`, `install:api`, Breeze, Jetstream veya başka bir starter preset **çalıştırmayın**. Preset'ler bu starter kit'in de yayınladığı controller, route, sayfa ve layout'ları oluşturur — installer bunları tespit edemediği için kit'in kendi dosyalarının yanında yetim "ölü kod" olarak kalırlar.

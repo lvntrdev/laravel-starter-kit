@@ -1,13 +1,5 @@
 # Proje Bilgisi
 
-> **Aktif Geliştirme Uyarısı**
->
-> Bu depo (repository) sürekli bir değişim içerisindedir. Projenin stabilitesi henüz tam olarak sağlanmamıştır. Kullanırken lütfen aşağıdaki noktaları göz önünde bulundurun:
->
-> 1. **Kod Değişiklikleri:** Ana dizin yapısı veya çekirdek sınıflar radikal şekilde değişebilir.
-> 2. **Güncelleme Süreci:** Güncellemeler her zaman otomatik bir geçiş (migration) sunmayabilir. Güncelleme sonrası README veya CHANGELOG dosyalarını kontrol ederek elle müdahale etmeniz gerekebilir.
-> 3. **Risk:** Yapılan değişiklikler mevcut projenizde veri kaybına veya hatalara yol açabilir.
-
 Bu starter kit, boş bir panel yerine üretime yakın bir temel sunan, admin odaklı bir Laravel 13 paketidir.
 
 ## Neler İçerir

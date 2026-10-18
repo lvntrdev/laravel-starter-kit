@@ -1,13 +1,5 @@
 # Installation
 
-> **Active Development Notice**
->
-> This repository is under active development and is subject to frequent changes. The stability of the project is not yet guaranteed. Please consider the following points before use:
->
-> 1. **Code Changes:** The directory structure or core classes may undergo radical changes without prior notice.
-> 2. **Update Process:** Updates may not always provide an automated migration path. In addition to running update commands, you may need to perform manual interventions by checking the README or CHANGELOG files.
-> 3. **Risk:** Significant changes may lead to data loss or breaking issues in your existing project.
-
 This guide explains the recommended installation flow for a fresh project.
 
 > **Start from a bare Laravel install.** Do **not** run `php artisan install:inertia`, `install:api`, Breeze, Jetstream, or any other starter preset before installing this package. Presets scaffold controllers, routes, pages, and layouts that this starter kit also ships — the installer cannot detect them, so they remain as orphaned dead code next to the kit's own files.

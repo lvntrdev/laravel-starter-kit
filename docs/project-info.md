@@ -1,13 +1,5 @@
 # Project Info
 
-> **Active Development Notice**
->
-> This repository is under active development and is subject to frequent changes. The stability of the project is not yet guaranteed. Please consider the following points before use:
->
-> 1. **Code Changes:** The directory structure or core classes may undergo radical changes without prior notice.
-> 2. **Update Process:** Updates may not always provide an automated migration path. In addition to running update commands, you may need to perform manual interventions by checking the README or CHANGELOG files.
-> 3. **Risk:** Significant changes may lead to data loss or breaking issues in your existing project.
-
 This starter kit is an admin-first Laravel 13 package that gives a new project a production-ready foundation instead of a blank panel.
 
 ## What It Includes
