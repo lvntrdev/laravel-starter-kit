@@ -8,6 +8,10 @@ Starter kit'e yeni eklenen özellikler ve iyileştirmeler burada listelenir.
 
 - **API dokümantasyonundaki try-it paneli kayıtlı kimlik bilgilerini daha güvenli tutuyor.** Kit artık `lvntr/api-dock` 0.0.9 istiyor; bu sürüm tenant'ların birbirinin kayıtlı try-it kimlik bilgisini görmesini engelliyor, değiştirilen profilin token'ının önceki profilin sunucusuna gitmesini durduruyor ve silinen bir profilin geri gelmesini önlüyor. `composer update lvntr/laravel-starter-kit -W` (ya da `composer sk-update`) ile güncelleyin; `-W` olmadan önceki kit sürümünde kalırsınız. Bkz. [update.tr.md](update.tr.md#1-composer-paketini-güncelleyin).
 
+### Düzeltildi
+
+- **Ekran okuyucular artık tablonun sütun sayısını ve etkin filtre sayısını okuyor.** Tablonun üstündeki sütun ve filtre butonları, üzerlerinde görünen sayıları değil, yalnızca "Sütunlar" ve "Filtre" adlarını söylüyordu.
+
 ### Değişti
 
 - **`config/api-dock.php` api-dock 0.0.9 ile uyumlu.** `try_it.proxy` seçeneği (varsayılan kapalı) ve güncel açıklamalar eklendi; davranış değişmiyor. `php artisan sk:update`, dosyayı değiştirmediyseniz onu yeniliyor.

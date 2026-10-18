@@ -1583,7 +1583,7 @@
                             'sk-dt-filterbtn--active': panelFilterBadge,
                             'sk-dt-filterbtn--open': filterPopoverOpen,
                         }"
-                        :aria-label="$t('sk-button.filter')"
+                        :aria-label="panelFilterBadge ? `${$t('sk-button.filter')} ${panelFilterBadge}` : $t('sk-button.filter')"
                         :aria-expanded="filterPopoverOpen"
                         @click="(e: Event) => filterPopoverRef?.toggle(e)"
                     >
@@ -1597,7 +1597,7 @@
                         type="button"
                         class="sk-dt-colbtn"
                         :class="{ 'sk-dt-colbtn--open': columnsPopoverOpen }"
-                        :aria-label="$t('sk-datatable.columns')"
+                        :aria-label="`${$t('sk-datatable.columns')} ${visibleColumnCount}/${allColumns.length}`"
                         @click="(e: Event) => columnsPopoverRef?.toggle(e)"
                     >
                         <i class="pi pi-table" />
