@@ -5,6 +5,16 @@ All notable changes to `lvntr/laravel-starter-kit` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.8.7] - 2026-10-18
+
+### Security
+
+- **Requires `lvntr/api-dock` `~0.0.9`.** The release fixes three try-it credential issues: a `try_it.profile_persistence.key_namespace` resolver returning an int was ignored, so tenants sharing a guard and user id read each other's stored profile (an unusable return value now falls back to session storage); switching profiles from Settings could send the new credential to the previous profile's server; and an in-flight try-it request could write a deleted profile back into the session (API Dock routes now use Laravel session blocking when `session.block_store` supports atomic locks). This raises the dependency floor, so update with `composer update lvntr/laravel-starter-kit -W` (or `composer sk-update`); without `-W` Composer keeps api-dock 0.0.8 and installs 13.8.6.
+
+### Changed
+
+- **The shipped `config/api-dock.php` matches api-dock 0.0.9 again.** It gains the `try_it.proxy` key (`null`, the package default, so behaviour does not change), the revised `self_hosts` note (a subdomain of an entry is trusted only while it resolves to the same addresses) and the `key_namespace` return-type note. The kit's `middleware` stack is unchanged. `sk:update` refreshes the file unless you edited it.
+
 ## [13.8.6] - 2026-10-13
 
 ### Fixed

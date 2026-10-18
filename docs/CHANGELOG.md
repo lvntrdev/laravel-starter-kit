@@ -2,6 +2,16 @@
 
 Newly added features and improvements to the starter kit are listed here.
 
+## 2026-10-18 — v13.8.7
+
+### Security
+
+- **API documentation's try-it panel handles saved credentials more safely.** The kit now requires `lvntr/api-dock` 0.0.9, which keeps tenants from seeing each other's saved try-it credential, stops a switched profile's token from going to the previous profile's server, and keeps a deleted profile deleted. Update with `composer update lvntr/laravel-starter-kit -W` (or `composer sk-update`); without `-W` you stay on the previous kit. See [update.md](update.md#1-update-composer-package).
+
+### Changed
+
+- **`config/api-dock.php` is in step with api-dock 0.0.9.** It adds the `try_it.proxy` option (off by default) and updated notes; nothing behaves differently. `php artisan sk:update` refreshes the file unless you changed it.
+
 ## 2026-10-13 — v13.8.6
 
 ### Fixed

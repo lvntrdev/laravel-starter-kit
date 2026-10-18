@@ -97,10 +97,14 @@ return [
         // This list is only for FOREIGN hosts. Empty denies every one of them. A bare name ('api.example.com') is an exact match; a leading dot ('.example.com') covers that site and its subdomains, the way a cookie domain does.
         'allowed_hosts' => [],
         // THIS application's own additional domains — nothing else. The host of `app.url` is already treated as self and needs no entry; add a name here only when this app is also served under it (a second domain, a reverse proxy in front of a different `APP_URL`, a tenant domain of yours).
-        // A subdomain of any entry counts as self too. An entry skips the allowlist above, the internal-host list AND the address-class check that follows DNS, so every line is a deliberate decision to trust that name: an internal service name here reopens SSRF on purpose. Bare hostnames only — a leading-dot form is ignored, and so is an address literal in any spelling ('127.0.0.1', '127.1', '2130706433', '0x7f000001'), since the last label of a real name starts with a letter.
+        // A subdomain of an entry counts as self too, but it is trusted only while it resolves to the SAME addresses as that entry: 'tenant.example.com' on the app's own address is the app under another label, while a subdomain pointing anywhere else is checked like a foreign host and reaches no private address.
+        // An entry skips the allowlist above, the internal-host list AND the address-class check that follows DNS, so every line is a deliberate decision to trust that name: an internal service name here reopens SSRF on purpose. Bare hostnames only — a leading-dot form is ignored, and so is an address literal in any spelling ('127.0.0.1', '127.1', '2130706433', '0x7f000001'), since the last label of a real name starts with a letter.
         // A 'name:port' entry ('ikinci-alan.test:8080') also reaches that name on that port without listing it in 'allowed_ports' below; the port applies to that entry and its subdomains only. An out-of-range port drops the whole entry rather than being read as "no port".
         'self_hosts' => [],
         'allowed_ports' => [80, 443], // Ports the proxy may reach on a FOREIGN host. An allowlisted host usually co-locates internal services, so an open port range would turn one allowed name into a port scanner. Empty or malformed falls back to these two. This application's own port is added automatically when 'app.url' (or a 'self_hosts' entry) carries one, so 'http://localhost:8000' works without widening this list for every allowlisted host.
+        // Null disables every proxy for the try-it request, including one this server inherits from the environment (HTTP_PROXY/HTTPS_PROXY): the guard pins the address it checked, and a proxy would resolve the name a second time on its own, so an ambient one is never used.
+        // Set this only when outbound traffic MUST leave through an egress proxy; until you do, try-it reaches no external host in such a setup (this application's own host usually needs no proxy). Only 'socks5://' and 'socks4://' are accepted, e.g. 'socks5://proxy.internal:1080': cURL hands a SOCKS proxy the address it resolved itself, so the pinned address survives. An HTTP proxy ('http://', 'https://') is refused because cURL gives it the hostname — in the request line or a CONNECT — and the proxy resolves it again on its own; 'socks5h://' and 'socks4a://' delegate resolution the same way and are refused with it.
+        'proxy' => null,
         'timeout' => 10, // Maximum outbound request duration in seconds.
         'connect_timeout' => 5, // Seconds allowed for the connection itself, so an unreachable host fails fast instead of holding a worker.
         'max_request_bytes' => 262144, // 256 KB ceiling on the body the panel may send out. The throttle bounds how often a request leaves, not how much this server buffers and ships per request.
@@ -139,7 +143,9 @@ return [
             // while every tenant shares one cache store — set a closure here that
             // returns the current tenant's id (e.g. `fn () => tenant('id')`) to also
             // namespace by tenant. Leave null for a single-tenant app; the guard+id key
-            // is already unique there.
+            // is already unique there. The closure must return a non-empty string or an
+            // int; anything else (null, '', a non-callable value) makes that request fall
+            // back to session storage rather than to a key shared across tenants.
             'key_namespace' => null,
         ],
     ],
